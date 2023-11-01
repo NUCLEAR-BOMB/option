@@ -8,6 +8,29 @@
 #include <functional>
 #include <exception>
 
+#ifndef OPTION_VERIFY
+    #ifdef __clang__
+        #define OPTION_DEBUG_BREAK __builtin_debugtrap()
+    #elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+        #define OPTION_DEBUG_BREAK __debugbreak()
+    #elif defined(__GNUC__) || defined(__GNUG__)
+        #define OPTION_DEBUG_BREAK __builtin_trap()
+    #else
+        #include <csignal>
+        #if defined(SIGTRAP)
+            #define OPTION_DEBUG_BREAK ::std::raise(SIGTRAP)
+        #else
+            #define OPTION_DEBUG_BREAK ::std::raise(SIGABRT)
+        #endif
+    #endif
+
+    #define OPTION_VERIFY(expression, message) \
+        ((expression) ? (void)0 : ( \
+            (void)std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
+            (void)OPTION_DEBUG_BREAK) \
+        )
+#endif
+
 namespace opt {
 
 namespace impl {
@@ -203,21 +226,27 @@ public:
     }
 
     constexpr const T* operator->() const noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
         return std::launder(&base::value);
     }
     constexpr T* operator->() noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
         return std::launder(&this->base::value);
     }
     constexpr const T& operator*() const& noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
         return *std::launder(&this->base::value);
     }
     constexpr T& operator*() & noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
         return *std::launder(&this->base::value);
     }
     constexpr const T&& operator*() const&& noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
         return std::move(*std::launder(&this->base::value));
     }
     constexpr T&& operator*() && noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
         return std::move(*std::launder(&this->base::value));
     }
 
