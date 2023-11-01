@@ -18,6 +18,7 @@ function(target_add_warnings target)
         /wd4711 # function 'function' selected for inline expansion
         /wd4866 # 'file(line_number)' compiler may not enforce left-to-right evaluation order for call to operator_name
         /wd4623 # 'derived class' : default constructor was implicitly defined as deleted
+        /wd4582 # 'type': constructor is not implicitly called
         )
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE
