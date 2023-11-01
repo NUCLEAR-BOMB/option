@@ -6,6 +6,7 @@
 #include <memory>
 #include <new>
 #include <functional>
+#include <exception>
 
 namespace opt {
 
@@ -102,6 +103,16 @@ namespace impl {
     }
 }
 
+class bad_access : public std::exception {
+public:
+    bad_access() noexcept = default;
+    bad_access(const bad_access&) noexcept = default;
+
+    const char* what() const noexcept override {
+        return "Bad opt::option access";
+    }
+};
+
 template<class T, auto sentinel = impl::sentinel_maker<T>::value>
 class option : private impl::option_base<T, sentinel> {
     using base = impl::option_base<T, sentinel>;
@@ -190,6 +201,24 @@ public:
     constexpr T&& operator*() && noexcept {
         return std::move(*std::launder(&this->base::value));
     }
+
+    constexpr T& value_or_throw() & {
+        if (!has_value()) { throw bad_access{}; }
+        return base::value;
+    }
+    constexpr const T& value_or_throw() const& {
+        if (!has_value()) { throw bad_access{}; }
+        return base::value;
+    }
+    constexpr T&& value_or_throw() && {
+        if (!has_value()) { throw bad_access{}; }
+        return std::move(base::value);
+    }
+    constexpr const T&& value_or_throw() const&& {
+        if (!has_value()) { throw bad_access{}; }
+        return std::move(base::value);
+    }
+
 private:
     template<class U>
     constexpr void _assign(U&& other) {

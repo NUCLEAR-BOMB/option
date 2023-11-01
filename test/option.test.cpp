@@ -81,5 +81,12 @@ TEST_F(option, hash) {
     b = opt::none;
     EXPECT_EQ(hash_fn(a), hash_fn(b));
 }
+TEST_F(option, value_or_throw) {
+    opt::option<int> a{1};
+    EXPECT_NO_THROW((void)a.value_or_throw());
+    a = opt::none;
+    EXPECT_THROW((void)a.value_or_throw(), opt::bad_access);
+}
+
 
 }
