@@ -94,5 +94,13 @@ TEST_F(option, value_or) {
     EXPECT_EQ(a.value_or(3), 1);
     EXPECT_EQ(std::move(a).value_or(4), 1);
 }
+TEST_F(option, and_then) {
+    const auto convert_to_float = [](int x) {
+        return x >= 0 ? opt::option<float>{float(x + 1)} : opt::none;
+    };
+    EXPECT_EQ(opt::option<int>{2}.and_then(convert_to_float), 3.f);
+    EXPECT_EQ(opt::option<int>{-10}.and_then(convert_to_float), opt::none);
+    EXPECT_EQ(opt::option<int>{opt::none}.and_then(convert_to_float), opt::none);
+}
 
 }

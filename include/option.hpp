@@ -32,6 +32,9 @@ namespace impl {
 
 }
 
+template<class T, auto sentinel = impl::sentinel_maker<T>::value>
+class option;
+
 namespace impl {
     template<class T>
     using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -101,6 +104,11 @@ namespace impl {
     constexpr void construct_at(T& obj, Args&&... args) {
         ::new(static_cast<void*>(std::addressof(obj))) T(std::forward<Args>(args)...);
     }
+
+    template<class T>
+    inline constexpr bool is_option_specialization = false;
+    template<class T, auto Value>
+    inline constexpr bool is_option_specialization<opt::option<T, Value>> = true;
 }
 
 class bad_access : public std::exception {
@@ -113,7 +121,7 @@ public:
     }
 };
 
-template<class T, auto sentinel = impl::sentinel_maker<T>::value>
+template<class T, auto sentinel>
 class option : private impl::option_base<T, sentinel> {
     using base = impl::option_base<T, sentinel>;
 public:
@@ -234,7 +242,27 @@ public:
         return static_cast<T>(std::forward<U>(default_value));
     }
 
+    template<class F>
+    constexpr auto and_then(F&& f) & { return and_then_impl(**this, std::forward<F>(f)); }
+    template<class F>
+    constexpr auto and_then(F&& f) const& { return and_then_impl(**this, std::forward<F>(f)); }
+    template<class F>
+    constexpr auto and_then(F&& f) && { return and_then_impl(std::move(**this), std::forward<F>(f)); }
+    template<class F>
+    constexpr auto and_then(F&& f) const&& { return and_then_impl(std::move(**this), std::forward<F>(f)); }
+
 private:
+    template<class Value, class F>
+    constexpr auto and_then_impl(Value&& val, F&& f) noexcept {
+        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, Value>>;
+        static_assert(impl::is_option_specialization<invoke_res>);
+        if (has_value()) {
+            return std::invoke(std::forward<F>(f), std::forward<Value>(val));
+        } else {
+            return impl::remove_cvref<invoke_res>{};
+        }
+    }
+
     template<class U>
     constexpr void _assign(U&& other) {
         if (has_value()) {
