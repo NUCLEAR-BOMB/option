@@ -8,6 +8,9 @@ namespace {
 template<class T>
 T& unmove(T&& x) { return static_cast<T&>(x); }
 
+template<class T>
+std::size_t hash_fn(const T& x) { return std::hash<T>{}(x); }
+
 static_assert(std::is_trivially_destructible_v<opt::option<int>>);
 
 struct trivial_struct {};
@@ -69,6 +72,14 @@ TEST_F(option, emplace) {
     a.emplace(1);
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(*a, 1);
+}
+TEST_F(option, hash) {
+    opt::option<int> a{1}, b{1};
+    EXPECT_EQ(hash_fn(a), hash_fn(b));
+    a = opt::none;
+    EXPECT_NE(hash_fn(a), hash_fn(b));
+    b = opt::none;
+    EXPECT_EQ(hash_fn(a), hash_fn(b));
 }
 
 }

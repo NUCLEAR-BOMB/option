@@ -353,4 +353,23 @@ constexpr bool operator>=(const T1& left, const option<T2>& right) noexcept(noex
     return impl::do_option_comparison_with_value<std::greater_equal<>, true>(left, right);
 }
 
+namespace impl {
+    template<class T, class...>
+    using first_type = T;
 }
+
+}
+
+template<class T>
+struct std::hash<opt::impl::first_type<opt::option<T>,
+    std::enable_if_t<std::is_default_constructible_v<std::hash<std::remove_const_t<T>>>>>> {
+private:
+    using value_hash = std::hash<std::remove_const_t<T>>;
+public:
+    std::size_t operator()(const opt::option<T>& val) noexcept(noexcept(value_hash{}(*val))) {
+        if (val.has_value()) {
+            return value_hash{}(*val);
+        }
+        return static_cast<std::size_t>(-96391);
+    }
+};
