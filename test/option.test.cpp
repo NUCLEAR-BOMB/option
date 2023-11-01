@@ -126,6 +126,11 @@ TEST_F(option, or_else) {
     EXPECT_EQ(opt::option<int>{}.or_else(func), 1 << 10);
     EXPECT_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);
 }
-
+TEST_F(option, take) {
+    opt::option<int> a{1};
+    auto b = a.take();
+    EXPECT_EQ(a, opt::none);
+    EXPECT_EQ(b, 1);
+}
 
 }

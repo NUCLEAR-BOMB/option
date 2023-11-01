@@ -193,6 +193,15 @@ public:
     }
     constexpr explicit operator bool() const noexcept { return has_value(); }
 
+    constexpr option take() & noexcept(std::is_nothrow_constructible_v<T, const T&>) {
+        auto tmp = *this;
+        reset();
+        return tmp;
+    }
+    constexpr option take() && noexcept(std::is_nothrow_constructible_v<T, const T&>) {
+        return *this;
+    }
+
     constexpr const T* operator->() const noexcept {
         return std::launder(&base::value);
     }
@@ -245,21 +254,21 @@ public:
     }
 
     template<class F>
-    constexpr auto and_then(F&& f) & { return and_then_impl(**this, std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) & { return and_then_impl(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto and_then(F&& f) const& { return and_then_impl(**this, std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) const& { return and_then_impl(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto and_then(F&& f) && { return and_then_impl(std::move(**this), std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) && { return and_then_impl(std::move(*this), std::forward<F>(f)); }
     template<class F>
-    constexpr auto and_then(F&& f) const&& { return and_then_impl(std::move(**this), std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) const&& { return and_then_impl(std::move(*this), std::forward<F>(f)); }
 
 private:
-    template<class Value, class F>
-    constexpr auto and_then_impl(Value&& val, F&& f) {
-        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, Value>>;
+    template<class Self, class F>
+    constexpr auto and_then_impl(Self&& self, F&& f) {
+        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
         static_assert(impl::is_option_specialization<invoke_res>);
         if (has_value()) {
-            return std::invoke(std::forward<F>(f), std::forward<Value>(val));
+            return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
         } else {
             return impl::remove_cvref<invoke_res>{};
         }
@@ -267,25 +276,27 @@ private:
 public:
 
     template<class F>
-    constexpr auto map(F&& f) & { return map_impl(**this, std::forward<F>(f)); }
+    constexpr auto map(F&& f) & { return map_impl(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto map(F&& f) const& { return map_impl(**this, std::forward<F>(f)); }
+    constexpr auto map(F&& f) const& { return map_impl(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto map(F&& f) && { return map_impl(std::move(**this), std::forward<F>(f)); }
+    constexpr auto map(F&& f) && { return map_impl(std::move(*this), std::forward<F>(f)); }
     template<class F>
-    constexpr auto map(F&& f) const&& { return map_impl(std::move(**this), std::forward<F>(f)); }
+    constexpr auto map(F&& f) const&& { return map_impl(std::move(*this), std::forward<F>(f)); }
 
 private:
-    template<class V, class F>
-    constexpr auto map_impl(V&& val, F&& f) {
-        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, V>>;
+    template<class Self, class F>
+    constexpr auto map_impl(Self&& self, F&& f) {
+        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
         if (has_value()) {
-            return opt::option<invoke_res>{std::invoke(std::forward<F>(f), std::forward<V>(val))};
+            return opt::option<invoke_res>{std::invoke(std::forward<F>(f), *std::forward<Self>(self))};
         } else {
             return opt::option<invoke_res>{opt::none};
         }
     }
 public:
+
+
     template<class F>
     constexpr option or_else(F&& f) const& noexcept(noexcept(std::is_nothrow_invocable_v<F>)) {
         return has_value() ? *this : std::invoke(std::forward<F>(f));
