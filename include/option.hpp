@@ -132,11 +132,13 @@ public:
     constexpr option(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&>) {
         if (other) {
             impl::construct_at(base::value, *other);
+            base::has_value = true;
         }
     }
     constexpr option(option&& other) noexcept(std::is_nothrow_constructible_v<T, T&&>) {
         if (other) {
             impl::construct_at(base::value, std::move(*other));
+            base::has_value = true;
         }
     }
 
@@ -282,6 +284,15 @@ private:
         } else {
             return opt::option<invoke_res>{opt::none};
         }
+    }
+public:
+    template<class F>
+    constexpr option or_else(F&& f) const& noexcept(noexcept(std::is_nothrow_invocable_v<F>)) {
+        return has_value() ? *this : std::invoke(std::forward<F>(f));
+    }
+    template<class F>
+    constexpr option or_else(F&& f) && noexcept(noexcept(std::is_nothrow_invocable_v<F>)) {
+        return has_value() ? std::move(*this) : std::invoke(std::forward<F>(f));
     }
 
 private:

@@ -2,6 +2,17 @@
 
 #include <option.hpp>
 
+namespace opt {
+    template<class T>
+    void PrintTo(const opt::option<T>& value, ::std::ostream* os) {
+        if (value) {
+            *os << *value;
+        } else {
+            *os << "[empty]";
+        }
+    }
+}
+
 namespace {
 
 // https://stackoverflow.com/a/67059296
@@ -108,6 +119,12 @@ TEST_F(option, map) {
     EXPECT_EQ(opt::option<int>{1}.map(func), 0);
     EXPECT_EQ(opt::option<int>{}.map(func), opt::none);
     EXPECT_EQ(opt::option<int>{10}.map(func).map(func), 8);
+}
+TEST_F(option, or_else) {
+    const auto func = []() { return 1 << 10; };
+    EXPECT_EQ(opt::option<int>{1}.or_else(func), 1);
+    EXPECT_EQ(opt::option<int>{}.or_else(func), 1 << 10);
+    EXPECT_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);
 }
 
 
