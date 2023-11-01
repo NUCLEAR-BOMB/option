@@ -24,11 +24,15 @@
         #endif
     #endif
 
-    #define OPTION_VERIFY(expression, message) \
-        ((expression) ? (void)0 : ( \
-            (void)std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
-            (void)OPTION_DEBUG_BREAK) \
-        )
+    #ifndef NDEBUG
+        #define OPTION_VERIFY(expression, message) \
+            ((expression) ? (void)0 : ( \
+                (void)std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
+                (void)OPTION_DEBUG_BREAK) \
+            )
+    #else
+        #define OPTION_VERIFY(expression, message) ((void)0)
+    #endif
 #endif
 
 namespace opt {
