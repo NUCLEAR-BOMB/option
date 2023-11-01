@@ -1,5 +1,6 @@
 
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
+include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
 
 add_executable(option-test "option.test.cpp" "operators.test.cpp" )
 target_add_warnings(option-test)
@@ -18,6 +19,8 @@ set(INSTALL_GTEST FALSE)
 FetchContent_MakeAvailable(googletest)
 
 target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
+
+target_add_sanitizer(option-test)
 
 include(GoogleTest)
 gtest_discover_tests(option-test)
