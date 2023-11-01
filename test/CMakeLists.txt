@@ -1,7 +1,7 @@
 
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
 
-add_executable(option-test "option.test.cpp")
+add_executable(option-test "option.test.cpp" "operators.test.cpp" )
 target_add_warnings(option-test)
 target_link_libraries(option-test PRIVATE option)
 

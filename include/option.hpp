@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <new>
+#include <functional>
 
 namespace opt {
 
@@ -200,5 +201,156 @@ private:
         this->base::has_value = true;
     }
 };
+
+namespace impl {
+    template<class Op, class T1, class T2>
+    constexpr bool do_option_comparison(const option<T1>& left, const option<T2>& right) {
+        if (left.has_value() && right.has_value()) {
+            return Op{}(*left, *right);
+        }
+        return Op{}(left.has_value(), right.has_value());
+    }
+}
+
+// Compare two opt::option
+template<class T1, class T2>
+constexpr bool operator==(const option<T1>& left, const option<T2>& right) noexcept(noexcept(*left == *right)) {
+    return impl::do_option_comparison<std::equal_to<>>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator!=(const option<T1>& left, const option<T2>& right) noexcept(noexcept(*left != *right)) {
+    return impl::do_option_comparison<std::not_equal_to<>>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator<(const option<T1>& left, const option<T2>& right) noexcept(noexcept(*left < *right)) {
+    return impl::do_option_comparison<std::less<>>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator<=(const option<T1>& left, const option<T2>& right) noexcept(noexcept(*left <= *right)) {
+    return impl::do_option_comparison<std::less_equal<>>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator>(const option<T1>& left, const option<T2>& right) noexcept(noexcept(*left > *right)) {
+    return impl::do_option_comparison<std::greater<>>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator>=(const option<T1>& left, const option<T2>& right) noexcept(noexcept(*left >= *right)) {
+    return impl::do_option_comparison<std::greater_equal<>>(left, right);
+}
+// Compare an opt::option with a opt::none
+template<class T>
+constexpr bool operator==(const option<T>& left, none_t) noexcept {
+    return !left.has_value();
+}
+template<class T>
+constexpr bool operator==(none_t, const option<T>& right) noexcept {
+    return !right.has_value();
+}
+template<class T>
+constexpr bool operator!=(const option<T>& left, none_t) noexcept {
+    return left.has_value();
+}
+template<class T>
+constexpr bool operator!=(none_t, const option<T>& right) noexcept {
+    return right.has_value();
+}
+template<class T>
+constexpr bool operator<(const option<T>& left, none_t) noexcept {
+    return false;
+}
+template<class T>
+constexpr bool operator<(none_t, const option<T>& right) noexcept {
+    return right.has_value();
+}
+template<class T>
+constexpr bool operator<=(const option<T>& left, none_t) noexcept {
+    return !left.has_value();
+}
+template<class T>
+constexpr bool operator<=(none_t, const option<T>& right) noexcept {
+    return true;
+}
+template<class T>
+constexpr bool operator>(const option<T>& left, none_t) noexcept {
+    return left.has_value();
+}
+template<class T>
+constexpr bool operator>(none_t, const option<T>& right) noexcept {
+    return false;
+}
+template<class T>
+constexpr bool operator>=(const option<T>& left, none_t) noexcept {
+    return true;
+}
+template<class T>
+constexpr bool operator>=(none_t, const option<T>& right) noexcept {
+    return !right.has_value();
+}
+
+namespace impl {
+    template<class Op, bool if_hasnt_value, class T1, class T2>
+    constexpr bool do_option_comparison_with_value(const option<T1>& left, const T2& right) {
+        if (left.has_value()) {
+            return Op{}(*left, right);
+        }
+        return if_hasnt_value;
+    }
+    template<class Op, bool if_hasnt_value, class T1, class T2>
+    constexpr bool do_option_comparison_with_value(const T1& left, const option<T2>& right) {
+        if (right.has_value()) {
+            return Op{}(left, *right);
+        }
+        return if_hasnt_value;
+    }
+}
+
+template<class T1, class T2>
+constexpr bool operator==(const option<T1>& left, const T2& right) noexcept(noexcept(*left == right)) {
+    return impl::do_option_comparison_with_value<std::equal_to<>, false>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator==(const T1& left, const option<T2>& right) noexcept(noexcept(left == *right)) {
+    return impl::do_option_comparison_with_value<std::equal_to<>, false>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator!=(const option<T1>& left, const T2& right) noexcept(noexcept(*left != right)) {
+    return impl::do_option_comparison_with_value<std::not_equal_to<>, true>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator!=(const T1& left, const option<T2>& right) noexcept(noexcept(left != *right)) {
+    return impl::do_option_comparison_with_value<std::not_equal_to<>, true>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator<(const option<T1>& left, const T2& right) noexcept(noexcept(*left < right)) {
+    return impl::do_option_comparison_with_value<std::less<>, true>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator<(const T1& left, const option<T2>& right) noexcept(noexcept(left < *right)) {
+    return impl::do_option_comparison_with_value<std::less<>, false>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator<=(const option<T1>& left, const T2& right) noexcept(noexcept(*left <= right)) {
+    return impl::do_option_comparison_with_value<std::less_equal<>, true>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator<=(const T1& left, const option<T2>& right) noexcept(noexcept(left <= *right)) {
+    return impl::do_option_comparison_with_value<std::less_equal<>, false>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator>(const option<T1>& left, const T2& right) noexcept(noexcept(*left > right)) {
+    return impl::do_option_comparison_with_value<std::greater<>, false>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator>(const T1& left, const option<T2>& right) noexcept(noexcept(left > *right)) {
+    return impl::do_option_comparison_with_value<std::greater<>, true>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator>=(const option<T1>& left, const T2& right) noexcept(noexcept(*left >= right)) {
+    return impl::do_option_comparison_with_value<std::greater_equal<>, false>(left, right);
+}
+template<class T1, class T2>
+constexpr bool operator>=(const T1& left, const option<T2>& right) noexcept(noexcept(left >= *right)) {
+    return impl::do_option_comparison_with_value<std::greater_equal<>, true>(left, right);
+}
 
 }
