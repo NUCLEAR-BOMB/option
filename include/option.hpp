@@ -253,7 +253,7 @@ public:
 
 private:
     template<class Value, class F>
-    constexpr auto and_then_impl(Value&& val, F&& f) noexcept {
+    constexpr auto and_then_impl(Value&& val, F&& f) {
         using invoke_res = impl::remove_cvref<std::invoke_result_t<F, Value>>;
         static_assert(impl::is_option_specialization<invoke_res>);
         if (has_value()) {
@@ -262,6 +262,29 @@ private:
             return impl::remove_cvref<invoke_res>{};
         }
     }
+public:
+
+    template<class F>
+    constexpr auto map(F&& f) & { return map_impl(**this, std::forward<F>(f)); }
+    template<class F>
+    constexpr auto map(F&& f) const& { return map_impl(**this, std::forward<F>(f)); }
+    template<class F>
+    constexpr auto map(F&& f) && { return map_impl(std::move(**this), std::forward<F>(f)); }
+    template<class F>
+    constexpr auto map(F&& f) const&& { return map_impl(std::move(**this), std::forward<F>(f)); }
+
+private:
+    template<class V, class F>
+    constexpr auto map_impl(V&& val, F&& f) {
+        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, V>>;
+        if (has_value()) {
+            return opt::option<invoke_res>{std::invoke(std::forward<F>(f), std::forward<V>(val))};
+        } else {
+            return opt::option<invoke_res>{opt::none};
+        }
+    }
+
+private:
 
     template<class U>
     constexpr void _assign(U&& other) {
