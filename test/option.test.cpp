@@ -87,6 +87,12 @@ TEST_F(option, value_or_throw) {
     a = opt::none;
     EXPECT_THROW((void)a.value_or_throw(), opt::bad_access);
 }
-
+TEST_F(option, value_or) {
+    opt::option<int> a;
+    EXPECT_EQ(a.value_or(2), 2);
+    a = 1;
+    EXPECT_EQ(a.value_or(3), 1);
+    EXPECT_EQ(std::move(a).value_or(4), 1);
+}
 
 }

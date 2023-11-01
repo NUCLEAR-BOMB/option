@@ -204,19 +204,34 @@ public:
 
     constexpr T& value_or_throw() & {
         if (!has_value()) { throw bad_access{}; }
-        return base::value;
+        return *(*this);
     }
     constexpr const T& value_or_throw() const& {
         if (!has_value()) { throw bad_access{}; }
-        return base::value;
+        return *(*this);
     }
     constexpr T&& value_or_throw() && {
         if (!has_value()) { throw bad_access{}; }
-        return std::move(base::value);
+        return std::move(*(*this));
     }
     constexpr const T&& value_or_throw() const&& {
         if (!has_value()) { throw bad_access{}; }
-        return std::move(base::value);
+        return std::move(*(*this));
+    }
+
+    template<class U>
+    constexpr T value_or(U&& default_value) const& {
+        if (has_value()) {
+            return *(*this);
+        }
+        return static_cast<T>(std::forward<U>(default_value));
+    }
+    template<class U>
+    constexpr T value_or(U&& default_value) && {
+        if (has_value()) {
+            return std::move(*(*this));
+        }
+        return static_cast<T>(std::forward<U>(default_value));
     }
 
 private:
