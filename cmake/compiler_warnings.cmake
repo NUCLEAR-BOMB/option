@@ -34,6 +34,9 @@ function(target_add_warnings target)
         -Wdouble-promotion # Give a warning when a value of type float is implicitly promoted to double
         -Wold-style-cast # Warn for C style casting
         -Wshadow # Warn whenever a local variable or type declaration shadows another variable
+        -Wno-c++98-compat
+        -Wno-pre-c++17-compat
+        -Wno-pre-c++14-compat
         )
     endif()
 endfunction()
