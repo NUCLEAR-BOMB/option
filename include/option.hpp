@@ -7,6 +7,7 @@
 #include <new>
 #include <functional>
 #include <exception>
+#include <cstring>
 
 #ifndef OPTION_VERIFY
     #ifdef __clang__
