@@ -14,7 +14,7 @@ struct special : public ::testing::Test {
 };
 
 using special_types = ::testing::Types<bool>;
-TYPED_TEST_SUITE(special, special_types);
+TYPED_TEST_SUITE(special, special_types,);
 
 TYPED_TEST(special, assigment) {
     opt::option<T> a;
