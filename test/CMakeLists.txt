@@ -16,6 +16,7 @@ FetchContent_Declare(
 set(gtest_force_shared_crt TRUE CACHE BOOL "" FORCE)
 set(BUILD_GMOCK FALSE)
 set(INSTALL_GTEST FALSE)
+set(CMAKE_DISABLE_FIND_PACKAGE_Python TRUE)
 FetchContent_MakeAvailable(googletest)
 
 target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
