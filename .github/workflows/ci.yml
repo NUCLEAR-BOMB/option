@@ -4,24 +4,30 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.platform.name }} [${{ matrix.type.name }}]
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-2022 ]
-        generator: [ "Unix Makefiles", "Visual Studio 17 2022" ]
-        exclude:
-          - os: ubuntu-latest
-            generator: "Visual Studio 17 2022"
+        platform:
+        - { name: Linux Clang,        os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ }
+        - { name: Linux GCC,          os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++ }
+        - { name: Windows Clang,      os: windows-2022,  flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G "Unix Makefiles" }
+        - { name: Windows VS x86,     os: windows-2022,  flags: -A Win32 }
+        - { name: Windows VS x64,     os: windows-2022,  flags: -A x64 }
+        - { name: Windows VS ClangCL, os: windows-2022,  flags: -T ClangCL }
+        type:
+        - { name: Release, flags: -DCMAKE_BUILD_TYPE=Release }
+        - { name: Debug,   flags: -DCMAKE_BUILD_TYPE=Debug }
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -G "${{ matrix.generator }}"
+      run: cmake -B build ${{ matrix.platform.flags }} ${{ matrix.type.flags }}
 
     - name: Build
-      run: cmake --build build --config Debug
+      run: cmake --build build --config ${{ matrix.type.name }}
 
     - name: Test
-      run: ctest --test-dir build/ --output-on-failure -j 2
+      run: ctest --test-dir build/ --output-on-failure --config ${{ matrix.type.name }} -j 2
