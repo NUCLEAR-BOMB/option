@@ -49,6 +49,25 @@ inline constexpr none_t none{impl::none_tag_ctor{}};
 template<class T>
 class option;
 
+template<class T>
+struct option_flag;
+
+namespace impl {
+    template<class T, class Int, Int unused_value>
+    struct option_flag_for_unused_value {
+        static constexpr Int empty_value = unused_value;
+        static_assert(sizeof(T) == sizeof(Int));
+        static void reset(T& value) noexcept {
+            std::memcpy(&value, &empty_value, sizeof(T));
+        }
+        static bool has_value(const T& value) noexcept {
+            return std::memcmp(&value, &empty_value, sizeof(T)) != 0;
+        }
+    };
+}
+
+template<> struct option_flag<bool> : impl::option_flag_for_unused_value<bool, std::uint8_t, 2> {};
+
 namespace impl {
     template<class T>
     using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -57,38 +76,59 @@ namespace impl {
         constexpr nontrivial_dummy_t() noexcept {}
     };
 
-    template<class T, bool store_state = true, bool is_trivially_destructible = std::is_trivially_destructible_v<T>>
+    template<class T, class = std::size_t>
+    inline constexpr bool has_option_flag = false;
+    template<class T>
+    inline constexpr bool has_option_flag<T, decltype(sizeof(opt::option_flag<T>))> = true;
+
+
+    template<class T, class... Args>
+    constexpr void construct_at(T& obj, Args&&... args) {
+        ::new(static_cast<void*>(std::addressof(obj))) T(std::forward<Args>(args)...);
+    }
+
+    template<class T, bool store_flag = !has_option_flag<T>, bool is_trivially_destructible = std::is_trivially_destructible_v<T>>
     struct option_base;
 
     template<class T>
-    struct option_base<T, /*store_state=*/true, /*is_trivially_destructible=*/true> {
-        constexpr option_base() noexcept : dummy(), has_value(false) {}
+    struct option_base<T, /*store_flag=*/true, /*is_trivially_destructible=*/true> {
+        constexpr option_base() noexcept : dummy(), has_value_flag(false) {}
 
         template<class... Args>
         constexpr option_base(Args&&... args)
             noexcept(std::is_nothrow_constructible_v<T, Args...>)
-            : value(std::forward<Args>(args)...), has_value(true) {}
+            : value(std::forward<Args>(args)...), has_value_flag(true) {}
+
+        template<class... Args>
+        constexpr void construct(Args&&... args) {
+            impl::construct_at(value, std::forward<Args>(args)...);
+            has_value_flag = true;
+        }
 
         constexpr void reset() noexcept {
-            has_value = false;
+            has_value_flag = false;
+        }
+        constexpr bool has_value() const noexcept {
+            return has_value_flag;
         }
 
         union {
             nontrivial_dummy_t dummy;
             T value;
         };
-        bool has_value;
+    private:
+        bool has_value_flag;
     };
     template<class T>
-    struct option_base<T, /*store_state=*/true, /*is_trivially_destructible=*/false> {
-        constexpr option_base() noexcept : dummy(), has_value(false) {}
+    struct option_base<T, /*store_flag=*/true, /*is_trivially_destructible=*/false> {
+        constexpr option_base() noexcept : dummy(), has_value_flag(false) {}
 
         template<class... Args>
         constexpr option_base(Args&&... args)
-            : value(std::forward<Args>(args)...), has_value(true) {}
+            : value(std::forward<Args>(args)...), has_value_flag(true) {}
 
         ~option_base() {
-            if (has_value) {
+            if (has_value()) {
                 value.~T();
             }
         }
@@ -99,23 +139,56 @@ namespace impl {
         constexpr option_base& operator=(option_base&&) = default;
         
         constexpr void reset() noexcept(std::is_nothrow_destructible_v<T>) {
-            if (has_value) {
+            if (has_value()) {
                 value.~T();
-                has_value = false;
+                has_value_flag = false;
             }
+        }
+        template<class... Args>
+        constexpr void construct(Args&&... args) {
+            impl::construct_at(value, std::forward<Args>(args)...);
+            has_value_flag = true;
+        }
+
+        constexpr bool has_value() const noexcept {
+            return has_value_flag;
         }
 
         union {
             nontrivial_dummy_t dummy;
             T value;
         };
-        bool has_value;
+    private:
+        bool has_value_flag;
+    };
+    template<class T>
+    struct option_base<T, /*store_flag=*/false, /*is_trivially_destructible=*/true> {
+        using opt_flag = opt::option_flag<T>;
+
+        constexpr option_base() noexcept {
+            opt_flag::reset(value);
+        }
+        template<class... Args>
+        constexpr option_base(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+            : value(std::forward<Args>(args)...) {}
+
+        constexpr bool has_value() const noexcept {
+            return opt_flag::has_value(value);
+        }
+
+        constexpr void reset() noexcept {
+            opt_flag::reset(value);
+        }
+
+        template<class... Args>
+        constexpr void construct(Args&&... args) {
+            impl::construct_at(value, std::forward<Args>(args)...);
+        }
+
+
+        T value;
     };
 
-    template<class T, class... Args>
-    constexpr void construct_at(T& obj, Args&&... args) {
-        ::new(static_cast<void*>(std::addressof(obj))) T(std::forward<Args>(args)...);
-    }
 
     template<class T>
     inline constexpr bool is_option_specialization = false;
@@ -143,14 +216,12 @@ public:
 
     constexpr option(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&>) {
         if (other) {
-            impl::construct_at(base::value, *other);
-            base::has_value = true;
+            base::construct(*other);
         }
     }
-    constexpr option(option&& other) noexcept(std::is_nothrow_constructible_v<T, T&&>) {
+    constexpr option(option&& other) noexcept(std::is_nothrow_constructible_v<T, T>) {
         if (other) {
-            impl::construct_at(base::value, std::move(*other));
-            base::has_value = true;
+            base::construct(std::move(*other));
         }
     }
 
@@ -184,7 +255,9 @@ public:
         return *this;
     }
 
-    template<class First, class... Args, std::enable_if_t<std::is_constructible_v<T, First, Args...>, int> = 0>
+    template<class First, class... Args, std::enable_if_t<
+        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, option>
+    , int> = 0>
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
         : base(std::forward<First>(first), std::forward<Args>(args)...) {}
 
@@ -195,13 +268,12 @@ public:
     template<class... Args>
     constexpr T& emplace(Args&&... args) {
         reset();
-        impl::construct_at(base::value, std::forward<Args>(args)...);
-        base::has_value = true;
+        base::construct(std::forward<Args>(args)...);
         return *(*this);
     }
 
     constexpr bool has_value() const noexcept {
-        return base::has_value;
+        return base::has_value();
     }
     constexpr explicit operator bool() const noexcept { return has_value(); }
 
@@ -331,9 +403,8 @@ private:
         if (has_value()) {
             this->base::value = std::forward<U>(other);
         } else {
-            emplace(std::forward<U>(other));
+            base::construct(std::forward<U>(other));
         }
-        this->base::has_value = true;
     }
 };
 

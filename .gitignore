@@ -4,6 +4,7 @@
 !.editorconfig
 !.gitattributes
 !CMakeLists.txt
+!option_visualization.natvis
 !include/
 !test/
 !cmake/
