@@ -26,7 +26,7 @@ function(target_add_sanitizer target)
             target_link_options(${target} PRIVATE /INCREMENTAL:NO)
             set_target_properties(${target} ${libraries} PROPERTIES
                 MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-                MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>"
+                MSVC_DEBUG_INFORMATION_FORMAT "ProgramDatabase"
             )
             return()
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
