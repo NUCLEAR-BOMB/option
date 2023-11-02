@@ -46,20 +46,7 @@ struct none_t {
 };
 inline constexpr none_t none{impl::none_tag_ctor{}};
 
-namespace impl {
-    enum class no_sentinel_t {};
-
-    template<class T>
-    struct sentinel_maker {
-        static constexpr no_sentinel_t value{};
-    };
-    template<> struct sentinel_maker<bool> {
-        static constexpr std::uint_least8_t value = 2;
-    };
-
-}
-
-template<class T, auto sentinel = impl::sentinel_maker<T>::value>
+template<class T>
 class option;
 
 namespace impl {
@@ -70,13 +57,11 @@ namespace impl {
         constexpr nontrivial_dummy_t() noexcept {}
     };
 
-    template<class T, auto sentinel,
-        bool store_state = std::is_same_v<decltype(sentinel), no_sentinel_t>,
-        bool is_trivially_destructible = std::is_trivially_destructible_v<T>>
+    template<class T, bool store_state = true, bool is_trivially_destructible = std::is_trivially_destructible_v<T>>
     struct option_base;
 
-    template<class T, auto sentinel>
-    struct option_base<T, sentinel, /*store_state=*/true, /*is_trivially_destructible=*/true> {
+    template<class T>
+    struct option_base<T, /*store_state=*/true, /*is_trivially_destructible=*/true> {
         constexpr option_base() noexcept : dummy(), has_value(false) {}
 
         template<class... Args>
@@ -94,8 +79,8 @@ namespace impl {
         };
         bool has_value;
     };
-    template<class T, auto sentinel>
-    struct option_base<T, sentinel, /*store_state=*/true, /*is_trivially_destructible=*/false> {
+    template<class T>
+    struct option_base<T, /*store_state=*/true, /*is_trivially_destructible=*/false> {
         constexpr option_base() noexcept : dummy(), has_value(false) {}
 
         template<class... Args>
@@ -134,8 +119,8 @@ namespace impl {
 
     template<class T>
     inline constexpr bool is_option_specialization = false;
-    template<class T, auto Value>
-    inline constexpr bool is_option_specialization<opt::option<T, Value>> = true;
+    template<class T>
+    inline constexpr bool is_option_specialization<opt::option<T>> = true;
 }
 
 class bad_access : public std::exception {
@@ -148,9 +133,9 @@ public:
     }
 };
 
-template<class T, auto sentinel>
-class option : private impl::option_base<T, sentinel> {
-    using base = impl::option_base<T, sentinel>;
+template<class T>
+class option : private impl::option_base<T> {
+    using base = impl::option_base<T>;
 public:
 
     constexpr option() noexcept : base() {}
