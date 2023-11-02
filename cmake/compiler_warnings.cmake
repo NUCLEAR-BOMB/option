@@ -39,6 +39,7 @@ function(target_add_warnings target)
         -Wno-pre-c++14-compat
         -Wno-c++98-compat-pedantic
         -Wno-global-constructors
+        -Wno-unused-member-function
         )
     endif()
 endfunction()
