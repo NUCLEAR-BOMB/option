@@ -106,13 +106,13 @@ TEST_F(option, value_or) {
     EXPECT_EQ(std::move(a).value_or(4), 1);
 }
 TEST_F(option, and_then) {
-    const auto convert_to_float = [](int x) -> opt::option<float> {
-        if (x >= 0) return opt::option<float>{float(x + 1)};
+    const auto convert_to_uint = [](int x) -> opt::option<unsigned> {
+        if (x >= 0) return opt::option<unsigned>{unsigned(x + 1)};
         return opt::none;
     };
-    EXPECT_EQ(opt::option<int>{2}.and_then(convert_to_float), 3.f);
-    EXPECT_EQ(opt::option<int>{-10}.and_then(convert_to_float), opt::none);
-    EXPECT_EQ(opt::option<int>{opt::none}.and_then(convert_to_float), opt::none);
+    EXPECT_EQ(opt::option<int>{2}.and_then(convert_to_uint), 3u);
+    EXPECT_EQ(opt::option<int>{-10}.and_then(convert_to_uint), opt::none);
+    EXPECT_EQ(opt::option<int>{opt::none}.and_then(convert_to_uint), opt::none);
 }
 TEST_F(option, map) {
     const auto func = [](auto x) { return x - 1; };
