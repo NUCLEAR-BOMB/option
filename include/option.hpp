@@ -215,12 +215,14 @@ public:
     constexpr option() noexcept : base() {}
     constexpr option(opt::none_t) noexcept : base() {}
 
-    constexpr option(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&>) {
+    constexpr option(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&>)
+        : base() {
         if (other) {
             base::construct(*other);
         }
     }
-    constexpr option(option&& other) noexcept(std::is_nothrow_constructible_v<T, T>) {
+    constexpr option(option&& other) noexcept(std::is_nothrow_constructible_v<T, T>)
+        : base() {
         if (other) {
             base::construct(std::move(*other));
         }
