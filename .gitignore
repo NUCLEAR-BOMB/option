@@ -5,6 +5,7 @@
 !.gitattributes
 !CMakeLists.txt
 !option_visualization.natvis
+!.github/
 !include/
 !test/
 !cmake/
