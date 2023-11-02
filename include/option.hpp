@@ -461,7 +461,7 @@ constexpr bool operator!=(none_t, const option<T>& right) noexcept {
     return right.has_value();
 }
 template<class T>
-constexpr bool operator<(const option<T>& left, none_t) noexcept {
+constexpr bool operator<(const option<T>&, none_t) noexcept {
     return false;
 }
 template<class T>
@@ -473,7 +473,7 @@ constexpr bool operator<=(const option<T>& left, none_t) noexcept {
     return !left.has_value();
 }
 template<class T>
-constexpr bool operator<=(none_t, const option<T>& right) noexcept {
+constexpr bool operator<=(none_t, const option<T>&) noexcept {
     return true;
 }
 template<class T>
@@ -481,11 +481,11 @@ constexpr bool operator>(const option<T>& left, none_t) noexcept {
     return left.has_value();
 }
 template<class T>
-constexpr bool operator>(none_t, const option<T>& right) noexcept {
+constexpr bool operator>(none_t, const option<T>&) noexcept {
     return false;
 }
 template<class T>
-constexpr bool operator>=(const option<T>& left, none_t) noexcept {
+constexpr bool operator>=(const option<T>&, none_t) noexcept {
     return true;
 }
 template<class T>
