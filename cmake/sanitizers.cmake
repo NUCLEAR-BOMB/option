@@ -24,7 +24,10 @@ function(target_add_sanitizer target)
         if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
             set_property(TARGET ${target} ${libraries} APPEND PROPERTY COMPILE_OPTIONS /fsanitize=address)
             target_link_options(${target} PRIVATE /INCREMENTAL:NO)
-            set_property(TARGET ${target} ${libraries} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+            set_target_properties(${target} ${libraries} PROPERTIES
+                MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+                MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>"
+            )
             return()
         elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             set_property(TARGET ${target} ${libraries} APPEND PROPERTY COMPILE_OPTIONS -fsanitize=address,undefined)
