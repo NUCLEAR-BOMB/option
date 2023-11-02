@@ -22,7 +22,9 @@ FetchContent_MakeAvailable(googletest)
 
 target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
 
-target_add_sanitizer(option-test)
+if (USE_SANITIZER)
+    target_add_sanitizer(option-test)
+endif()
 
 include(GoogleTest)
 gtest_discover_tests(option-test)
