@@ -33,7 +33,7 @@ jobs:
 
 
   clang-tidy:
-    name: ${{ matrix.platform.name }}
+    name: Analyze code on ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.os }}
 
     strategy:
@@ -48,7 +48,7 @@ jobs:
 
     - name: Configure CMake
       run: >
-        cmake -B build ${{ matrix.platform.flags }}
+        cmake -B build ${{ matrix.platform.flags }} -DUSE_CLANG_TIDY=TRUE
         -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE -DCMAKE_BUILD_TYPE=Debug
 
     - name: Analyze Code
