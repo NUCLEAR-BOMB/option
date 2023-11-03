@@ -202,6 +202,13 @@ namespace impl {
             && !(std::is_same_v<impl::remove_cvref<T>, bool> && impl::is_option_specialization<impl::remove_cvref<U>>)
             && (std::is_convertible_v<U&&, T> == !is_explicit) // is explicit
         , int>;
+
+        template<class T, class U>
+        using enable_assigment_operator_4 = std::enable_if_t<
+            !std::is_same_v<opt::option<T>, impl::remove_cvref<U>>
+            && (!std::is_scalar_v<T> || !std::is_same_v<T, std::decay_t<U>>)
+            && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
+        , int>;
     }
 }
 
@@ -245,12 +252,20 @@ public:
     template<class U = T, impl::checks::enable_constructor_5<T, U, /*is_explicit=*/false> = 0>
     constexpr option(U&& value) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : base(std::forward<U>(value)) {}
+    // 6
+    template<class First, class... Args, std::enable_if_t<
+        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
+    , int> = 0>
+    constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
+        : base(std::forward<First>(first), std::forward<Args>(args)...) {}
 
 
+    // 1
     constexpr option& operator=(opt::none_t) noexcept {
         reset();
         return *this;
     }
+    // 2
     constexpr option& operator=(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&> && std::is_nothrow_assignable_v<T&, const T&>) {
         if (other) {
             _assign(*other);
@@ -259,6 +274,7 @@ public:
         }
         return *this;
     }
+    // 3
     constexpr option& operator=(option&& other) noexcept(std::is_nothrow_constructible_v<T, T> && std::is_nothrow_assignable_v<T&, T>) {
         if (other) {
             _assign(std::move(*other));
@@ -267,21 +283,12 @@ public:
         }
         return *this;
     }
-    template<class U = T, std::enable_if_t<
-        !std::is_same_v<option, impl::remove_cvref<U>>
-        && (!std::is_scalar_v<T> || !std::is_same_v<T, std::decay_t<U>>)
-        && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
-    , int> = 0>
+    // 4
+    template<class U = T, impl::checks::enable_assigment_operator_4<T, U> = 0>
     constexpr option& operator=(U&& value) noexcept(std::is_nothrow_assignable_v<T&, U> && std::is_nothrow_constructible_v<T, U>) {
         _assign(std::forward<U>(value));
         return *this;
     }
-
-    template<class First, class... Args, std::enable_if_t<
-        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
-    , int> = 0>
-    constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
-        : base(std::forward<First>(first), std::forward<Args>(args)...) {}
 
     constexpr void reset() noexcept {
         base::reset();
