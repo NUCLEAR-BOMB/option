@@ -190,11 +190,19 @@ namespace impl {
         T value;
     };
 
-
     template<class T>
     inline constexpr bool is_option_specialization = false;
     template<class T>
     inline constexpr bool is_option_specialization<opt::option<T>> = true;
+
+    namespace checks {
+        template<class T, class U, bool is_explicit>
+        using enable_constructor_5 = std::enable_if_t<
+            std::is_constructible_v<T, U&&> && !std::is_same_v<impl::remove_cvref<U>, opt::option<T>>
+            && !(std::is_same_v<impl::remove_cvref<T>, bool> && impl::is_option_specialization<impl::remove_cvref<U>>)
+            && (std::is_convertible_v<U&&, T> == !is_explicit) // is explicit
+        , int>;
+    }
 }
 
 class bad_access : public std::exception {
@@ -211,22 +219,33 @@ template<class T>
 class option : private impl::option_base<T> {
     using base = impl::option_base<T>;
 public:
-
+    // 1
     constexpr option() noexcept : base() {}
+    // 2
     constexpr option(opt::none_t) noexcept : base() {}
 
+    // 3
     constexpr option(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&>)
         : base() {
         if (other) {
             base::construct(*other);
         }
     }
+    // 4
     constexpr option(option&& other) noexcept(std::is_nothrow_constructible_v<T, T>)
         : base() {
         if (other) {
             base::construct(std::move(*other));
         }
     }
+    // 5
+    template<class U = T, impl::checks::enable_constructor_5<T, U, /*is_explicit=*/true> = 0>
+    constexpr explicit option(U&& value) noexcept(std::is_nothrow_constructible_v<T, U&&>)
+        : base(std::forward<U>(value)) {}
+    template<class U = T, impl::checks::enable_constructor_5<T, U, /*is_explicit=*/false> = 0>
+    constexpr option(U&& value) noexcept(std::is_nothrow_constructible_v<T, U&&>)
+        : base(std::forward<U>(value)) {}
+
 
     constexpr option& operator=(opt::none_t) noexcept {
         reset();
@@ -259,7 +278,7 @@ public:
     }
 
     template<class First, class... Args, std::enable_if_t<
-        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, option>
+        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
     , int> = 0>
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
         : base(std::forward<First>(first), std::forward<Args>(args)...) {}

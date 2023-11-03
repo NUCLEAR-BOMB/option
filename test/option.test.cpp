@@ -46,6 +46,10 @@ TEST_F(option, default_ctor) {
     const opt::option<int> c = opt::none;
     EXPECT_FALSE(c.has_value());
 }
+TEST_F(option, constructors) {
+    const opt::option<int> a{{}};
+    EXPECT_EQ(a, 0);
+}
 TEST_F(option, assigment) {
     opt::option<int> a = 1;
     a = opt::none;
