@@ -37,13 +37,13 @@ struct option : ::testing::Test {
 };
 
 TEST_F(option, default_ctor) {
-    opt::option<int> a;
+    const opt::option<int> a;
     EXPECT_FALSE(a.has_value());
 
-    opt::option<int> b(opt::none);
+    const opt::option<int> b(opt::none);
     EXPECT_FALSE(b.has_value());
 
-    opt::option<int> c = opt::none;
+    const opt::option<int> c = opt::none;
     EXPECT_FALSE(c.has_value());
 }
 TEST_F(option, assigment) {
