@@ -195,12 +195,17 @@ namespace impl {
     template<class T>
     inline constexpr bool is_option_specialization<opt::option<T>> = true;
 
-    namespace checks {
+    namespace option {
         template<class T, class U, bool is_explicit>
         using enable_constructor_5 = std::enable_if_t<
             std::is_constructible_v<T, U&&> && !std::is_same_v<impl::remove_cvref<U>, opt::option<T>>
             && !(std::is_same_v<impl::remove_cvref<T>, bool> && impl::is_option_specialization<impl::remove_cvref<U>>)
-            && (std::is_convertible_v<U&&, T> == !is_explicit) // is explicit
+            && (std::is_convertible_v<U&&, T> == !is_explicit) // explicit( condition )
+        , int>;
+
+        template<class T, class First, class... Args>
+        using enable_constructor_6 = std::enable_if_t<
+            std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
         , int>;
 
         template<class T, class U>
@@ -209,6 +214,37 @@ namespace impl {
             && (!std::is_scalar_v<T> || !std::is_same_v<T, std::decay_t<U>>)
             && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
         , int>;
+
+
+        // implementation of opt::option<T>::and_then(F&&)
+        template<class Self, class F>
+        constexpr auto and_then(Self&& self, F&& f) {
+            using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
+            static_assert(impl::is_option_specialization<invoke_res>);
+            if (self.has_value()) {
+                return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
+            } else {
+                return impl::remove_cvref<invoke_res>{};
+            }
+        }
+        // implementation of opt::option<T>::map(F&&)
+        template<class Self, class F>
+        constexpr auto map(Self&& self, F&& f) {
+            using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
+            if (self.has_value()) {
+                return opt::option<invoke_res>{std::invoke(std::forward<F>(f), *std::forward<Self>(self))};
+            } else {
+                return opt::option<invoke_res>{opt::none};
+            }
+        }
+        // implementation of opt::option<T>::or_else(F&&)
+        template<class T, class Self, class F>
+        constexpr opt::option<T> or_else(Self&& self, F&& f) {
+            if (self.has_value()) {
+                return std::forward<Self>(self);
+            }
+            return std::invoke(std::forward<F>(f));
+        }
     }
 }
 
@@ -246,16 +282,14 @@ public:
         }
     }
     // 5
-    template<class U = T, impl::checks::enable_constructor_5<T, U, /*is_explicit=*/true> = 0>
+    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/true> = 0>
     constexpr explicit option(U&& value) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : base(std::forward<U>(value)) {}
-    template<class U = T, impl::checks::enable_constructor_5<T, U, /*is_explicit=*/false> = 0>
+    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/false> = 0>
     constexpr option(U&& value) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : base(std::forward<U>(value)) {}
     // 6
-    template<class First, class... Args, std::enable_if_t<
-        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
-    , int> = 0>
+    template<class First, class... Args, impl::option::enable_constructor_6<T, First, Args...> = 0>
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
         : base(std::forward<First>(first), std::forward<Args>(args)...) {}
 
@@ -267,26 +301,18 @@ public:
     }
     // 2
     constexpr option& operator=(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&> && std::is_nothrow_assignable_v<T&, const T&>) {
-        if (other) {
-            _assign(*other);
-        } else {
-            reset();
-        }
+        assign_from_option(other);
         return *this;
     }
     // 3
     constexpr option& operator=(option&& other) noexcept(std::is_nothrow_constructible_v<T, T> && std::is_nothrow_assignable_v<T&, T>) {
-        if (other) {
-            _assign(std::move(*other));
-        } else {
-            reset();
-        }
+        assign_from_option(std::move(other));
         return *this;
     }
     // 4
-    template<class U = T, impl::checks::enable_assigment_operator_4<T, U> = 0>
+    template<class U = T, impl::option::enable_assigment_operator_4<T, U> = 0>
     constexpr option& operator=(U&& value) noexcept(std::is_nothrow_assignable_v<T&, U> && std::is_nothrow_constructible_v<T, U>) {
-        _assign(std::forward<U>(value));
+        assign_from_value(std::forward<U>(value));
         return *this;
     }
 
@@ -373,66 +399,43 @@ public:
     }
 
     template<class F>
-    constexpr auto and_then(F&& f) & { return and_then_impl(*this, std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto and_then(F&& f) const& { return and_then_impl(*this, std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) const& { return impl::option::and_then(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto and_then(F&& f) && { return and_then_impl(std::move(*this), std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) && { return impl::option::and_then(std::move(*this), std::forward<F>(f)); }
     template<class F>
-    constexpr auto and_then(F&& f) const&& { return and_then_impl(std::move(*this), std::forward<F>(f)); }
+    constexpr auto and_then(F&& f) const&& { return impl::option::and_then(std::move(*this), std::forward<F>(f)); }
+
+    template<class F>
+    constexpr auto map(F&& f) & { return impl::option::map(*this, std::forward<F>(f)); }
+    template<class F>
+    constexpr auto map(F&& f) const& { return impl::option::map(*this, std::forward<F>(f)); }
+    template<class F>
+    constexpr auto map(F&& f) && { return impl::option::map(std::move(*this), std::forward<F>(f)); }
+    template<class F>
+    constexpr auto map(F&& f) const&& { return impl::option::map(std::move(*this), std::forward<F>(f)); }
+
+    template<class F>
+    constexpr option or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
+    template<class F>
+    constexpr option or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
 
 private:
-    template<class Self, class F>
-    constexpr auto and_then_impl(Self&& self, F&& f) {
-        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
-        static_assert(impl::is_option_specialization<invoke_res>);
-        if (has_value()) {
-            return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
-        } else {
-            return impl::remove_cvref<invoke_res>{};
-        }
-    }
-public:
-
-    template<class F>
-    constexpr auto map(F&& f) & { return map_impl(*this, std::forward<F>(f)); }
-    template<class F>
-    constexpr auto map(F&& f) const& { return map_impl(*this, std::forward<F>(f)); }
-    template<class F>
-    constexpr auto map(F&& f) && { return map_impl(std::move(*this), std::forward<F>(f)); }
-    template<class F>
-    constexpr auto map(F&& f) const&& { return map_impl(std::move(*this), std::forward<F>(f)); }
-
-private:
-    template<class Self, class F>
-    constexpr auto map_impl(Self&& self, F&& f) {
-        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
-        if (has_value()) {
-            return opt::option<invoke_res>{std::invoke(std::forward<F>(f), *std::forward<Self>(self))};
-        } else {
-            return opt::option<invoke_res>{opt::none};
-        }
-    }
-public:
-
-
-    template<class F>
-    constexpr option or_else(F&& f) const& noexcept(noexcept(std::is_nothrow_invocable_v<F>)) {
-        return has_value() ? *this : std::invoke(std::forward<F>(f));
-    }
-    template<class F>
-    constexpr option or_else(F&& f) && noexcept(noexcept(std::is_nothrow_invocable_v<F>)) {
-        return has_value() ? std::move(*this) : std::invoke(std::forward<F>(f));
-    }
-
-private:
-
     template<class U>
-    constexpr void _assign(U&& other) {
+    constexpr void assign_from_value(U&& other) {
         if (has_value()) {
             this->base::value = std::forward<U>(other);
         } else {
             base::construct(std::forward<U>(other));
+        }
+    }
+    template<class Option>
+    constexpr void assign_from_option(Option&& other) {
+        if (other.has_value()) {
+            assign_from_value(*std::forward<Option>(other));
+        } else {
+            reset();
         }
     }
 };
@@ -454,7 +457,7 @@ constexpr option<T> option_cast(option<U>&& value) noexcept(std::is_nothrow_cons
 
 namespace impl {
     template<class Op, class T1, class T2>
-    constexpr bool do_option_comparison(const option<T1>& left, const option<T2>& right) {
+    constexpr bool do_option_comparison(const opt::option<T1>& left, const opt::option<T2>& right) {
         if (left.has_value() && right.has_value()) {
             return Op{}(*left, *right);
         }
@@ -539,14 +542,14 @@ constexpr bool operator>=(none_t, const option<T>& right) noexcept {
 
 namespace impl {
     template<class Op, bool if_hasnt_value, class T1, class T2>
-    constexpr bool do_option_comparison_with_value(const option<T1>& left, const T2& right) {
+    constexpr bool do_option_comparison_with_value(const opt::option<T1>& left, const T2& right) {
         if (left.has_value()) {
             return Op{}(*left, right);
         }
         return if_hasnt_value;
     }
     template<class Op, bool if_hasnt_value, class T1, class T2>
-    constexpr bool do_option_comparison_with_value(const T1& left, const option<T2>& right) {
+    constexpr bool do_option_comparison_with_value(const T1& left, const opt::option<T2>& right) {
         if (right.has_value()) {
             return Op{}(left, *right);
         }
