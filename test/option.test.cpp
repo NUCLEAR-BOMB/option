@@ -91,6 +91,7 @@ TEST_F(option, hash) {
     EXPECT_NE(hash_fn(a), hash_fn(b));
     b = opt::none;
     EXPECT_EQ(hash_fn(a), hash_fn(b));
+    
 }
 TEST_F(option, value_or_throw) {
     opt::option<int> a{1};
@@ -131,6 +132,14 @@ TEST_F(option, take) {
     auto b = a.take();
     EXPECT_EQ(a, opt::none);
     EXPECT_EQ(b, 1);
+}
+
+TEST_F(option, option_cast) {
+    opt::option<int> a{1};
+    opt::option<unsigned> b = opt::option_cast<unsigned>(a);
+    EXPECT_EQ(*b, 1u);
+    b = opt::option_cast<unsigned>(std::move(a));
+    EXPECT_EQ(*b, 1u);
 }
 
 }

@@ -411,6 +411,21 @@ private:
     }
 };
 
+template<class T, class U>
+constexpr option<T> option_cast(const option<U>& value) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
+    if (value) {
+        return option<T>{static_cast<T>(*value)};
+    }
+    return opt::none;
+}
+template<class T, class U>
+constexpr option<T> option_cast(option<U>&& value) noexcept(std::is_nothrow_constructible_v<T, U>) {
+    if (value) {
+        return option<T>(static_cast<T>(std::move(*value)));
+    }
+    return opt::none;
+}
+
 namespace impl {
     template<class Op, class T1, class T2>
     constexpr bool do_option_comparison(const option<T1>& left, const option<T2>& right) {
