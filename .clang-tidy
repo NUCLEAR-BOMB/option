@@ -1,0 +1,37 @@
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  clang-diagnostic-warning,
+  -readability-uppercase-literal-suffix,
+  -readability-magic-numbers,
+  -modernize-avoid-c-arrays,
+  -readability-identifier-length,
+  -modernize-use-trailing-return-type,
+  -bugprone-exception-escape,
+  -readability-braces-around-statements,
+  -readability-simplify-boolean-expr,
+  -readability-function-cognitive-complexity,
+  -misc-non-private-member-variables-in-classes,
+  -readability-named-parameter,
+  -modernize-use-bool-literals,
+  -readability-qualified-auto,
+  -readability-container-data-pointer,
+  -bugprone-easily-swappable-parameters,
+WarningsAsErrors: '*'
+CheckOptions:
+  - { key: readability-identifier-naming.ClassCase, value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase, value: lower_case }
+  - { key: readability-identifier-naming.FunctionIgnoredRegexp, value: (TEST|TYPED).*}
+  - { key: readability-identifier-naming.VariableCase, value: lower_case }
+  - { key: readability-identifier-naming.ParameterCase, value: lower_case }
+  - { key: readability-identifier-naming.EnumCase, value: lower_case }
+  - { key: readability-identifier-naming.EnumConstantCase, value: lower_case }
+  - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
+  - { key: readability-identifier-naming.MacroDefinitionIgnoredRegexp, value: TypeParam }

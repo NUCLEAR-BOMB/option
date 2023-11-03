@@ -5,6 +5,7 @@
 !.gitattributes
 !CMakeLists.txt
 !option_visualization.natvis
+!.clang-tidy
 !.github/
 !include/
 !test/
