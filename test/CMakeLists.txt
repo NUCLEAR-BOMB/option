@@ -1,6 +1,5 @@
 
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
-include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
 
 add_executable(option-test "option.test.cpp" "operators.test.cpp" "special.test.cpp")
 target_add_warnings(option-test)
@@ -22,7 +21,14 @@ FetchContent_MakeAvailable(googletest)
 target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
 
 if (USE_SANITIZER)
+    include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
     target_add_sanitizer(option-test)
+endif()
+
+if (USE_CLANG_TIDY)
+    include("${PROJECT_SOURCE_DIR}/cmake/clang_tidy.cmake")
+    set_target_properties(option-test PROPERTIES EXPORT_COMPILE_COMMANDS TRUE)
+    add_clang_tidy_target(clang-tidy)
 endif()
 
 include(GoogleTest)

@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project(option LANGUAGES CXX)
 
-option(USE_SANITIZER "Enable sanitizers for option-test target" TRUE)
+option(USE_SANITIZER "Enable sanitizers for test target" TRUE)
+option(USE_CLANG_TIDY "Enable clang-tidy for test target" FALSE)
 
 add_library(option INTERFACE "include/option.hpp")
 target_include_directories(option INTERFACE "include/")
