@@ -30,3 +30,26 @@ jobs:
 
     - name: Test
       run: ctest --test-dir build/ --output-on-failure --build-config ${{ matrix.type.name }} -j 2
+
+
+  clang-tidy:
+    name: ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: Windows, os: windows-2022,  flags: -G "Unix Makefiles" }
+          - { name: Linux,   os: ubuntu-latest, flags: -G "Unix Makefiles" }
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure CMake
+      run: >
+        cmake -B build ${{ matrix.platform.flags }}
+        -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE -DCMAKE_BUILD_TYPE=Debug
+
+    - name: Analyze Code
+      run: cmake --build build --target clang-tidy
