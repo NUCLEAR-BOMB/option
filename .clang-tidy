@@ -24,6 +24,7 @@ Checks: >
   -readability-qualified-auto,
   -readability-container-data-pointer,
   -bugprone-easily-swappable-parameters,
+  -readability-isolate-declaration,
 WarningsAsErrors: '*'
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: lower_case }

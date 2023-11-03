@@ -4,7 +4,7 @@
 
 namespace opt {
     template<class T>
-    void PrintTo(const opt::option<T>& value, ::std::ostream* os) {
+    void PrintTo(const opt::option<T>& value, ::std::ostream* os) { // NOLINT(readability-identifier-naming)
         if (value) {
             *os << *value;
         } else {
@@ -28,7 +28,7 @@ struct trivial_struct {};
 static_assert(std::is_trivially_destructible_v<opt::option<trivial_struct>>);
 
 struct nontrivial_struct {
-    ~nontrivial_struct() {}
+    ~nontrivial_struct() {} // NOLINT
 };
 static_assert(!std::is_trivially_destructible_v<opt::option<nontrivial_struct>>);
 
