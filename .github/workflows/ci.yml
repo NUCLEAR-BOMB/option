@@ -33,4 +33,4 @@ jobs:
       run: cmake --build build --config ${{ matrix.type.name }}
 
     - name: Test
-      run: ctest --test-dir build/ --output-on-failure
+      run: ctest --test-dir build/ --output-on-failure --build-config ${{ matrix.type.name }} -j 2
