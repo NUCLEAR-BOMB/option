@@ -638,6 +638,17 @@ constexpr opt::option<U> operator&(const opt::option<T>& left, const opt::option
     return opt::none;
 }
 
+template<class T>
+constexpr opt::option<T> operator^(const opt::option<T>& left, const opt::option<T>& right) {
+    if (left.has_value() && !right.has_value()) {
+        return left;
+    }
+    if (!left.has_value() && right.has_value()) {
+        return right;
+    }
+    return opt::none;
+}
+
 namespace impl {
     template<class Op, class T1, class T2>
     constexpr bool do_option_comparison(const opt::option<T1>& left, const opt::option<T2>& right) {

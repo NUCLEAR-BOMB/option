@@ -87,5 +87,11 @@ TEST_F(operators, and) {
     EXPECT_EQ(A & E, E);
     EXPECT_EQ(E & E, E);
 }
+TEST_F(operators, xor) {
+    EXPECT_EQ(A ^ B, E);
+    EXPECT_EQ(A ^ E, A);
+    EXPECT_EQ(E ^ B, B);
+    EXPECT_EQ(E ^ E, E);
+}
 
 }
