@@ -16,6 +16,28 @@ struct special : public ::testing::Test {
 using special_types = ::testing::Types<bool>;
 TYPED_TEST_SUITE(special, special_types,);
 
+TYPED_TEST(special, none) {
+    const opt::option<T> a;
+    EXPECT_FALSE(a.has_value());
+}
+TYPED_TEST(special, reset) {
+    opt::option<T> a;
+    EXPECT_FALSE(a.has_value());
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a = this->A;
+    ASSERT_TRUE(a.has_value());
+    EXPECT_EQ(*a, this->A);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a = this->B;
+    ASSERT_TRUE(a.has_value());
+    EXPECT_EQ(*a, this->B);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+}
 TYPED_TEST(special, assigment) {
     opt::option<T> a;
     EXPECT_FALSE(a.has_value());
@@ -35,6 +57,8 @@ TYPED_TEST(special, assigment) {
     a = opt::option<T>{this->A};
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(a, this->A);
+    a = opt::none;
+    EXPECT_FALSE(a.has_value());
     a = opt::none;
     EXPECT_FALSE(a.has_value());
 }
