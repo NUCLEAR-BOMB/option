@@ -101,6 +101,10 @@ namespace impl {
         constexpr nontrivial_dummy_t() noexcept {}
     };
 
+    struct construct_from_invoke_tag {
+        explicit construct_from_invoke_tag() = default;
+    };
+
     template<class T, class = std::size_t>
     inline constexpr bool has_option_flag = false;
     template<class T>
@@ -138,6 +142,10 @@ namespace impl {
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...), has_value_flag(true) {}
 
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
+
         constexpr void reset() noexcept {
             has_value_flag = false;
         }
@@ -167,6 +175,10 @@ namespace impl {
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...), has_value_flag(true) {}
+
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
 
         ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
             if (has_value_flag) {
@@ -209,6 +221,12 @@ namespace impl {
             flag::destroy_empty_flag(value);
             // has_value() == true
         }
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            flag::destroy_empty_flag(value);
+            // has_value() == true
+        }
 
         constexpr void reset() noexcept {
             flag::construct_empty_flag(value);
@@ -244,6 +262,13 @@ namespace impl {
             flag::destroy_empty_flag(value);
             // has_value() == true
         }
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            flag::destroy_empty_flag(value);
+            // has_value() == true
+        }
+
         ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
             if (has_value()) {
                 value.~T();
@@ -323,14 +348,14 @@ namespace impl {
             }
         }
         // implementation of opt::option<T>::map(F&&)
+        // map(F&&) -> option<U> : F(T&&) -> U
         template<class Self, class F>
         constexpr auto map(Self&& self, F&& f) {
-            using invoke_res = std::remove_cv_t<decltype(std::forward<F>(f)(*std::forward<Self>(self)))>;
+            using U = std::remove_cv_t<decltype(std::forward<F>(f)(*std::forward<Self>(self)))>;
             if (self.has_value()) {
-                return opt::option<invoke_res>{std::forward<F>(f)(*std::forward<Self>(self))};
-            } else {
-                return opt::option<invoke_res>{opt::none};
+                return opt::option<U>{construct_from_invoke_tag{}, std::forward<F>(f), *std::forward<Self>(self)};
             }
+            return opt::option<U>{opt::none};
         }
         // implementation of opt::option<T>::or_else(F&&)
         template<class T, class Self, class F>
@@ -390,6 +415,9 @@ public:
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
         : base(std::forward<First>(first), std::forward<Args>(args)...) {}
 
+    template<class F, class Arg>
+    constexpr explicit option(impl::construct_from_invoke_tag, F&& f, Arg&& arg)
+        : base(impl::construct_from_invoke_tag{}, std::forward<F>(f), std::forward<Arg>(arg)) {}
 
     // 1
     constexpr option& operator=(opt::none_t) noexcept(noexcept(reset())) {
