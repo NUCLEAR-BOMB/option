@@ -610,6 +610,34 @@ constexpr opt::option<To> option_cast(opt::option<From>&& value) {
     return std::move(value).map(impl::static_cast_functor<To, From&&>{});
 }
 
+template<class T>
+constexpr T operator|(const opt::option<T>& left, const T& right) {
+    return left.value_or(right);
+}
+template<class T>
+constexpr opt::option<T> operator|(const opt::option<T>& left, const opt::option<T>& right) {
+    if (left.has_value()) {
+        return left.get();
+    }
+    return right;
+}
+template<class T>
+constexpr opt::option<T> operator|(const opt::option<T>& left, none_t) {
+    return left;
+}
+template<class T>
+constexpr opt::option<T> operator|(none_t, const opt::option<T>& right) {
+    return right;
+}
+
+template<class T, class U>
+constexpr opt::option<U> operator&(const opt::option<T>& left, const opt::option<U>& right) {
+    if (left.has_value()) {
+        return right;
+    }
+    return opt::none;
+}
+
 namespace impl {
     template<class Op, class T1, class T2>
     constexpr bool do_option_comparison(const opt::option<T1>& left, const opt::option<T2>& right) {
