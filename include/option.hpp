@@ -295,6 +295,21 @@ namespace impl {
             && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
         , int>;
 
+        template<class T>
+        inline constexpr bool nothrow_assigment_operator_2 =
+            std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>
+            && std::is_nothrow_destructible_v<T>;
+
+        template<class T>
+        inline constexpr bool nothrow_assigment_operator_3 =
+            std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>
+            && std::is_nothrow_destructible_v<T>;
+
+        template<class T, class U>
+        inline constexpr bool nothrow_assigment_operator_4 =
+            std::is_nothrow_assignable_v<T&, U&&> && std::is_nothrow_constructible_v<T, U&&>
+            && std::is_nothrow_destructible_v<T>;
+
 
         // implementation of opt::option<T>::and_then(F&&)
         template<class Self, class F>
@@ -304,15 +319,15 @@ namespace impl {
             if (self.has_value()) {
                 return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
             } else {
-                return impl::remove_cvref<invoke_res>{};
+                return impl::remove_cvref<invoke_res>{opt::none};
             }
         }
         // implementation of opt::option<T>::map(F&&)
         template<class Self, class F>
         constexpr auto map(Self&& self, F&& f) {
-            using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
+            using invoke_res = std::remove_cv_t<decltype(std::forward<F>(f)(*std::forward<Self>(self)))>;
             if (self.has_value()) {
-                return opt::option<invoke_res>{std::invoke(std::forward<F>(f), *std::forward<Self>(self))};
+                return opt::option<invoke_res>{std::forward<F>(f)(*std::forward<Self>(self))};
             } else {
                 return opt::option<invoke_res>{opt::none};
             }
@@ -342,6 +357,8 @@ template<class T>
 class option : private impl::option_destruct_base<T> {
     using base = impl::option_destruct_base<T>;
 public:
+    using value_type = T;
+
     // 1
     constexpr option() noexcept : base() {}
     // 2
@@ -375,33 +392,33 @@ public:
 
 
     // 1
-    constexpr option& operator=(opt::none_t) noexcept {
+    constexpr option& operator=(opt::none_t) noexcept(noexcept(reset())) {
         reset();
         return *this;
     }
     // 2
-    constexpr option& operator=(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&> && std::is_nothrow_assignable_v<T&, const T&>) {
+    constexpr option& operator=(const option& other) noexcept(impl::option::nothrow_assigment_operator_2<T>) {
         assign_from_option(other);
         return *this;
     }
     // 3
-    constexpr option& operator=(option&& other) noexcept(std::is_nothrow_constructible_v<T, T> && std::is_nothrow_assignable_v<T&, T>) {
+    constexpr option& operator=(option&& other) noexcept(impl::option::nothrow_assigment_operator_3<T>) {
         assign_from_option(std::move(other));
         return *this;
     }
     // 4
     template<class U = T, impl::option::enable_assigment_operator_4<T, U> = 0>
-    constexpr option& operator=(U&& value) noexcept(std::is_nothrow_assignable_v<T&, U> && std::is_nothrow_constructible_v<T, U>) {
+    constexpr option& operator=(U&& value) noexcept(impl::option::nothrow_assigment_operator_4<T, U>) {
         assign_from_value(std::forward<U>(value));
         return *this;
     }
 
-    constexpr void reset() noexcept {
+    constexpr void reset() noexcept(std::is_nothrow_destructible_v<T>) {
         base::reset();
     }
 
     template<class... Args>
-    constexpr T& emplace(Args&&... args) {
+    constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && noexcept(reset())) {
         reset();
         base::construct(std::forward<Args>(args)...);
         return *(*this);
@@ -412,12 +429,12 @@ public:
     }
     constexpr explicit operator bool() const noexcept { return has_value(); }
 
-    constexpr option take() & noexcept(std::is_nothrow_constructible_v<T, const T&>) {
+    constexpr option take() & noexcept(std::is_nothrow_copy_constructible_v<T> && noexcept(reset())) {
         auto tmp = *this;
         reset();
         return tmp;
     }
-    constexpr option take() && noexcept(std::is_nothrow_constructible_v<T, const T&>) {
+    constexpr option take() && noexcept(std::is_nothrow_copy_constructible_v<T>) {
         return *this;
     }
 
@@ -464,20 +481,25 @@ public:
     }
 
     template<class U>
-    constexpr T value_or(U&& default_value) const& {
+    constexpr T value_or(U&& default_value) const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>) {
+        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
+        static_assert(std::is_convertible_v<U&&, T>, "U&& must be convertible to T");
         if (has_value()) {
             return *(*this);
         }
         return static_cast<T>(std::forward<U>(default_value));
     }
     template<class U>
-    constexpr T value_or(U&& default_value) && {
+    constexpr T value_or(U&& default_value) && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>) {
+        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
+        static_assert(std::is_convertible_v<U&&, T>, "U&& must be convertible to T");
         if (has_value()) {
             return std::move(*(*this));
         }
         return static_cast<T>(std::forward<U>(default_value));
     }
 
+    // and_then(F&&) -> option<U> : F(option<T>) -> option<U>
     template<class F>
     constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, std::forward<F>(f)); }
     template<class F>
@@ -487,6 +509,7 @@ public:
     template<class F>
     constexpr auto and_then(F&& f) const&& { return impl::option::and_then(std::move(*this), std::forward<F>(f)); }
 
+    // map(F&&) -> option<U> : F(option<T>) -> U
     template<class F>
     constexpr auto map(F&& f) & { return impl::option::map(*this, std::forward<F>(f)); }
     template<class F>
@@ -496,6 +519,7 @@ public:
     template<class F>
     constexpr auto map(F&& f) const&& { return impl::option::map(std::move(*this), std::forward<F>(f)); }
 
+    // or_else(F&&) -> option<T> : F() -> option<T>
     template<class F>
     constexpr option or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
     template<class F>
@@ -520,19 +544,22 @@ private:
     }
 };
 
-template<class T, class U>
-constexpr option<T> option_cast(const option<U>& value) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-    if (value) {
-        return option<T>{static_cast<T>(*value)};
-    }
-    return opt::none;
+namespace impl {
+    template<class To, class From>
+    struct static_cast_functor {
+        constexpr To operator()(From&& from) noexcept(std::is_nothrow_constructible_v<To, From&&>) {
+            return static_cast<To>(std::forward<From>(from));
+        }
+    };
 }
-template<class T, class U>
-constexpr option<T> option_cast(option<U>&& value) noexcept(std::is_nothrow_constructible_v<T, U>) {
-    if (value) {
-        return option<T>(static_cast<T>(std::move(*value)));
-    }
-    return opt::none;
+
+template<class To, class From>
+constexpr opt::option<To> option_cast(const opt::option<From>& value) {
+    return value.map(impl::static_cast_functor<To, const From&>{});
+}
+template<class To, class From>
+constexpr opt::option<To> option_cast(opt::option<From>&& value) {
+    return std::move(value).map(impl::static_cast_functor<To, From&&>{});
 }
 
 namespace impl {
