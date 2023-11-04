@@ -283,11 +283,11 @@ public:
     }
     // 5
     template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/true> = 0>
-    constexpr explicit option(U&& value) noexcept(std::is_nothrow_constructible_v<T, U&&>)
-        : base(std::forward<U>(value)) {}
+    constexpr explicit option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
+        : base(std::forward<U>(val)) {}
     template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/false> = 0>
-    constexpr option(U&& value) noexcept(std::is_nothrow_constructible_v<T, U&&>)
-        : base(std::forward<U>(value)) {}
+    constexpr option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
+        : base(std::forward<U>(val)) {}
     // 6
     template<class First, class... Args, impl::option::enable_constructor_6<T, First, Args...> = 0>
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)

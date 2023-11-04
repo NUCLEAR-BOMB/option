@@ -21,6 +21,16 @@ function(target_add_warnings target)
         /wd4582 # 'type': constructor is not implicitly called
         )
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            set(clang_opts
+                -Wno-unused-member-function
+                -Wno-global-constructors
+                -Wno-c++98-compat-pedantic
+                -Wno-pre-c++14-compat
+                -Wno-pre-c++17-compat
+                -Wno-c++98-compat
+            )
+        endif()
         target_compile_options(${target} PRIVATE
         -Wall # Enables all the warnings
         -Wextra # Enables some extra warning flags that are not enabled by -Wall
@@ -34,12 +44,7 @@ function(target_add_warnings target)
         -Wdouble-promotion # Give a warning when a value of type float is implicitly promoted to double
         -Wold-style-cast # Warn for C style casting
         -Wshadow # Warn whenever a local variable or type declaration shadows another variable
-        -Wno-c++98-compat
-        -Wno-pre-c++17-compat
-        -Wno-pre-c++14-compat
-        -Wno-c++98-compat-pedantic
-        -Wno-global-constructors
-        -Wno-unused-member-function
+        ${clang_opts}
         )
     endif()
 endfunction()
