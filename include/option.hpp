@@ -299,73 +299,6 @@ namespace impl {
     inline constexpr bool is_option_specialization = false;
     template<class T>
     inline constexpr bool is_option_specialization<opt::option<T>> = true;
-
-    namespace option {
-        template<class T, class U, bool is_explicit>
-        using enable_constructor_5 = std::enable_if_t<
-            std::is_constructible_v<T, U&&> && !std::is_same_v<impl::remove_cvref<U>, opt::option<T>>
-            && !(std::is_same_v<impl::remove_cvref<T>, bool> && impl::is_option_specialization<impl::remove_cvref<U>>)
-            && (std::is_convertible_v<U&&, T> == !is_explicit) // explicit( condition )
-        , int>;
-
-        template<class T, class First, class... Args>
-        using enable_constructor_6 = std::enable_if_t<
-            std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
-        , int>;
-
-        template<class T, class U>
-        using enable_assigment_operator_4 = std::enable_if_t<
-            !std::is_same_v<opt::option<T>, impl::remove_cvref<U>>
-            && (!std::is_scalar_v<T> || !std::is_same_v<T, std::decay_t<U>>)
-            && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
-        , int>;
-
-        template<class T>
-        inline constexpr bool nothrow_assigment_operator_2 =
-            std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>
-            && std::is_nothrow_destructible_v<T>;
-
-        template<class T>
-        inline constexpr bool nothrow_assigment_operator_3 =
-            std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>
-            && std::is_nothrow_destructible_v<T>;
-
-        template<class T, class U>
-        inline constexpr bool nothrow_assigment_operator_4 =
-            std::is_nothrow_assignable_v<T&, U&&> && std::is_nothrow_constructible_v<T, U&&>
-            && std::is_nothrow_destructible_v<T>;
-
-
-        // implementation of opt::option<T>::and_then(F&&)
-        template<class Self, class F>
-        constexpr auto and_then(Self&& self, F&& f) {
-            using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
-            static_assert(impl::is_option_specialization<invoke_res>);
-            if (self.has_value()) {
-                return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
-            } else {
-                return impl::remove_cvref<invoke_res>{opt::none};
-            }
-        }
-        // implementation of opt::option<T>::map(F&&)
-        // map(F&&) -> option<U> : F(T&&) -> U
-        template<class Self, class F>
-        constexpr auto map(Self&& self, F&& f) {
-            using U = std::remove_cv_t<decltype(std::forward<F>(f)(*std::forward<Self>(self)))>;
-            if (self.has_value()) {
-                return opt::option<U>{construct_from_invoke_tag{}, std::forward<F>(f), *std::forward<Self>(self)};
-            }
-            return opt::option<U>{opt::none};
-        }
-        // implementation of opt::option<T>::or_else(F&&)
-        template<class T, class Self, class F>
-        constexpr opt::option<T> or_else(Self&& self, F&& f) {
-            if (self.has_value()) {
-                return std::forward<Self>(self);
-            }
-            return std::invoke(std::forward<F>(f));
-        }
-    }
 }
 
 class bad_access : public std::exception {
@@ -377,6 +310,81 @@ public:
         return "Bad opt::option access";
     }
 };
+
+namespace impl::option {
+    template<class T, class U, bool is_explicit>
+    using enable_constructor_5 = std::enable_if_t<
+        std::is_constructible_v<T, U&&> && !std::is_same_v<impl::remove_cvref<U>, opt::option<T>>
+        && !(std::is_same_v<impl::remove_cvref<T>, bool> && impl::is_option_specialization<impl::remove_cvref<U>>)
+        && (std::is_convertible_v<U&&, T> == !is_explicit) // explicit( condition )
+    , int>;
+
+    template<class T, class First, class... Args>
+    using enable_constructor_6 = std::enable_if_t<
+        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
+    , int>;
+
+    template<class T, class U>
+    using enable_assigment_operator_4 = std::enable_if_t<
+        !std::is_same_v<opt::option<T>, impl::remove_cvref<U>>
+        && (!std::is_scalar_v<T> || !std::is_same_v<T, std::decay_t<U>>)
+        && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
+    , int>;
+
+    template<class T>
+    inline constexpr bool nothrow_assigment_operator_2 =
+        std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>
+        && std::is_nothrow_destructible_v<T>;
+
+    template<class T>
+    inline constexpr bool nothrow_assigment_operator_3 =
+        std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>
+        && std::is_nothrow_destructible_v<T>;
+
+    template<class T, class U>
+    inline constexpr bool nothrow_assigment_operator_4 =
+        std::is_nothrow_assignable_v<T&, U&&> && std::is_nothrow_constructible_v<T, U&&>
+        && std::is_nothrow_destructible_v<T>;
+
+
+    // implementation of opt::option<T>::and_then(F&&)
+    template<class Self, class F>
+    constexpr auto and_then(Self&& self, F&& f) {
+        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
+        static_assert(impl::is_option_specialization<invoke_res>);
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
+        } else {
+            return impl::remove_cvref<invoke_res>{opt::none};
+        }
+    }
+    // implementation of opt::option<T>::map(F&&)
+    // map(F&&) -> option<U> : F(T&&) -> U
+    template<class Self, class F>
+    constexpr auto map(Self&& self, F&& f) {
+        using U = std::remove_cv_t<decltype(std::forward<F>(f)(*std::forward<Self>(self)))>;
+        if (self.has_value()) {
+            return opt::option<U>{construct_from_invoke_tag{}, std::forward<F>(f), *std::forward<Self>(self)};
+        }
+        return opt::option<U>{opt::none};
+    }
+    // implementation of opt::option<T>::or_else(F&&)
+    template<class T, class Self, class F>
+    constexpr opt::option<T> or_else(Self&& self, F&& f) {
+        if (self.has_value()) {
+            return std::forward<Self>(self);
+        }
+        return std::invoke(std::forward<F>(f));
+    }
+    // implementation of opt::option<T>::value_or_throw()
+    template<class Self>
+    constexpr auto&& value_or_throw(Self&& self) {
+        if (!self.has_value()) {
+            throw bad_access{};
+        }
+        return *std::forward<Self>(self);
+    }
+}
 
 template<class T>
 class option : private impl::option_destruct_base<T> {
@@ -466,47 +474,59 @@ public:
         return *this;
     }
 
-    constexpr const T* operator->() const noexcept {
-        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
-        return std::launder(&base::value);
-    }
-    constexpr T* operator->() noexcept {
-        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
-        return std::launder(&this->base::value);
-    }
-    constexpr const T& operator*() const& noexcept {
-        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
+    constexpr T& get() & noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return *std::launder(&this->base::value);
     }
-    constexpr T& operator*() & noexcept {
-        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
+    constexpr const T& get() const& noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return *std::launder(&this->base::value);
     }
-    constexpr const T&& operator*() const&& noexcept {
-        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
+    constexpr T&& get() && noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(*std::launder(&this->base::value));
     }
-    constexpr T&& operator*() && noexcept {
-        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option");
+    constexpr const T&& get() const&& noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(*std::launder(&this->base::value));
     }
 
-    constexpr T& value_or_throw() & {
-        if (!has_value()) { throw bad_access{}; }
-        return *(*this);
+    constexpr const T* operator->() const noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
+        return &get();
     }
-    constexpr const T& value_or_throw() const& {
-        if (!has_value()) { throw bad_access{}; }
-        return *(*this);
+    constexpr T* operator->() noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
+        return &get();
     }
-    constexpr T&& value_or_throw() && {
-        if (!has_value()) { throw bad_access{}; }
-        return std::move(*(*this));
+    constexpr T& operator*() & noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
+        return get();
     }
-    constexpr const T&& value_or_throw() const&& {
-        if (!has_value()) { throw bad_access{}; }
-        return std::move(*(*this));
+    constexpr const T& operator*() const& noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
+        return get();
     }
+    constexpr T&& operator*() && noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
+        return std::move(get());
+    }
+    constexpr const T&& operator*() const&& noexcept {
+        OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
+        return std::move(get());
+    }
+
+    // More verbose version of opt::option<T>::value() or std::option<T>::value()
+    constexpr T& value_or_throw() & { return impl::option::value_or_throw(*this); }
+    constexpr const T& value_or_throw() const& { return impl::option::value_or_throw(*this); }
+    constexpr T&& value_or_throw() && { return impl::option::value_or_throw(std::move(*this)); }
+    constexpr const T&& value_or_throw() const&& { return impl::option::value_or_throw(std::move(*this)); }
+
+    // Same as std::optional<T>::value()
+    constexpr T& value() & { return value_or_throw(); }
+    constexpr const T& value() const& { return value_or_throw(); }
+    constexpr T&& value() && { return std::move(value_or_throw()); }
+    constexpr const T&& value() const&& { return std::move(value_or_throw()); }
 
     template<class U>
     constexpr T value_or(U&& default_value) const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>) {

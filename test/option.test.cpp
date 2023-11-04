@@ -50,6 +50,13 @@ TEST_F(option, constructors) {
     const opt::option<int> a{{}};
     EXPECT_EQ(a, 0);
 }
+TEST_F(option, get) {
+    opt::option<int> a{1};
+    EXPECT_EQ(a.get(), 1);
+    EXPECT_EQ(std::as_const(a).get(), 1);
+    EXPECT_EQ(std::move(std::as_const(a)).get(), 1);
+    EXPECT_EQ(std::move(a).get(), 1);
+}
 TEST_F(option, assigment) {
     opt::option<int> a = 1;
     a = opt::none;
@@ -100,8 +107,14 @@ TEST_F(option, hash) {
 TEST_F(option, value_or_throw) {
     opt::option<int> a{1};
     EXPECT_NO_THROW((void)a.value_or_throw());
+    EXPECT_NO_THROW((void)a.value());
+    EXPECT_NO_THROW((void)std::as_const(a).value());
+    EXPECT_NO_THROW((void)std::move(std::as_const(a)).value());
     a = opt::none;
     EXPECT_THROW((void)a.value_or_throw(), opt::bad_access);
+    EXPECT_THROW((void)a.value(), opt::bad_access);
+    EXPECT_THROW((void)std::as_const(a).value(), opt::bad_access);
+    EXPECT_THROW((void)std::move(std::as_const(a)).value(), opt::bad_access);
 }
 TEST_F(option, value_or) {
     opt::option<int> a;
