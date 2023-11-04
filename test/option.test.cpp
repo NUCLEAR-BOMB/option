@@ -163,9 +163,9 @@ TEST_F(option, option_cast) {
     EXPECT_EQ(*b, 1u);
 }
 TEST_F(option, deduction_guides) {
-    auto a = opt::option{1};
+    auto a = opt::option{1}; // NOLINT(misc-const-correctness)
     static_assert(std::is_same_v<decltype(a), opt::option<int>>);
-    opt::option b{1u};
+    opt::option b{1u}; // NOLINT(misc-const-correctness)
     static_assert(std::is_same_v<decltype(b), opt::option<unsigned>>);
 }
 
