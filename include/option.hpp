@@ -93,7 +93,11 @@ namespace impl {
 
     template<class T, class... Args>
     constexpr void construct_at(T& obj, Args&&... args) {
-        ::new(static_cast<void*>(std::addressof(obj))) T(std::forward<Args>(args)...);
+        if constexpr (std::is_trivially_copy_assignable_v<T>) {
+            obj = T(std::forward<Args>(args)...);
+        } else {
+            ::new(static_cast<void*>(std::addressof(obj))) T(std::forward<Args>(args)...);
+        }
     }
 
     template<class T,
