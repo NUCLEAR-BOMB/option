@@ -150,13 +150,18 @@ TEST_F(option, take) {
     EXPECT_EQ(a, opt::none);
     EXPECT_EQ(b, 1);
 }
-
 TEST_F(option, option_cast) {
     opt::option<int> a{1};
     opt::option<unsigned> b = opt::option_cast<unsigned>(a);
     EXPECT_EQ(*b, 1u);
     b = opt::option_cast<unsigned>(std::move(a));
     EXPECT_EQ(*b, 1u);
+}
+TEST_F(option, deduction_guides) {
+    auto a = opt::option{1};
+    static_assert(std::is_same_v<decltype(a), opt::option<int>>);
+    opt::option b{1u};
+    static_assert(std::is_same_v<decltype(b), opt::option<unsigned>>);
 }
 
 }

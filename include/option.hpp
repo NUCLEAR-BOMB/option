@@ -592,6 +592,9 @@ private:
     }
 };
 
+template<class T>
+option(T) -> option<T>;
+
 namespace impl {
     template<class To, class From>
     struct static_cast_functor {
