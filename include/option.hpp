@@ -604,19 +604,37 @@ namespace impl {
     };
 }
 
+// Constructs 'opt::option<To>' using 'const From&', if passed 'opt::option<From>' has value
+// else return 'opt::none'
 template<class To, class From>
 constexpr opt::option<To> option_cast(const opt::option<From>& value) {
     return value.map(impl::static_cast_functor<To, const From&>{});
 }
+// Constructs 'opt::option<To>' using 'From&&', if passed 'opt::option<From>' has value
+// else return 'opt::none'
 template<class To, class From>
 constexpr opt::option<To> option_cast(opt::option<From>&& value) {
     return std::move(value).map(impl::static_cast_functor<To, From&&>{});
 }
 
+// x = left option value
+// y = right value
+// N = empty option (none)
+//| left | right | result |
+//|   x  |   y   |    x   |
+//|   N  |   y   |    y   |
 template<class T>
 constexpr T operator|(const opt::option<T>& left, const T& right) {
     return left.value_or(right);
 }
+// x = left option value
+// y = right option value
+// N = empty option (none)
+//| left | right | result |
+//|   x  |   y   |    x   |
+//|   x  |   N   |    x   |
+//|   N  |   y   |    y   |
+//|   N  |   N   |    N   |
 template<class T>
 constexpr opt::option<T> operator|(const opt::option<T>& left, const opt::option<T>& right) {
     if (left.has_value()) {
@@ -624,15 +642,33 @@ constexpr opt::option<T> operator|(const opt::option<T>& left, const opt::option
     }
     return right;
 }
+// x = left option value
+// N = empty option (none)
+//| left | right | result |
+//|   x  |   N   |   x    |
+//|   N  |   N   |   N    |
 template<class T>
 constexpr opt::option<T> operator|(const opt::option<T>& left, none_t) {
     return left;
 }
+// y = right option value
+// N = empty option (none)
+//| left | right | result |
+//|   N  |   y   |   y    |
+//|   N  |   N   |   N    |
 template<class T>
 constexpr opt::option<T> operator|(none_t, const opt::option<T>& right) {
     return right;
 }
 
+// x = left option value
+// y = right option value
+// N = empty option (none)
+//| left | right | result |
+//|   x  |   y   |   y    |
+//|   x  |   N   |   N    |
+//|   N  |   y   |   N    |
+//|   N  |   N   |   N    |
 template<class T, class U>
 constexpr opt::option<U> operator&(const opt::option<T>& left, const opt::option<U>& right) {
     if (left.has_value()) {
@@ -641,6 +677,14 @@ constexpr opt::option<U> operator&(const opt::option<T>& left, const opt::option
     return opt::none;
 }
 
+// x = left option value
+// y = right option value
+// E = empty option (none)
+//| left | right | result |
+//|   x  |   y   |   E    |
+//|   x  |   E   |   x    |
+//|   E  |   y   |   y    |
+//|   E  |   E   |   E    |
 template<class T>
 constexpr opt::option<T> operator^(const opt::option<T>& left, const opt::option<T>& right) {
     if (left.has_value() && !right.has_value()) {
