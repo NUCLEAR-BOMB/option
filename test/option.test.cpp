@@ -17,7 +17,12 @@ namespace {
 
 // https://stackoverflow.com/a/67059296
 template<class T>
-T& unmove(T&& x) { return static_cast<T&>(x); }
+constexpr T& unmove(T&& x) { return static_cast<T&>(x); }
+
+template<class T>
+constexpr decltype(auto) move_as_const(T&& x) noexcept {
+    return static_cast<const std::remove_reference_t<T>&&>(x);
+}
 
 template<class T>
 std::size_t hash_fn(const T& x) { return std::hash<T>{}(x); }
@@ -54,7 +59,7 @@ TEST_F(option, get) {
     opt::option<int> a{1};
     EXPECT_EQ(a.get(), 1);
     EXPECT_EQ(std::as_const(a).get(), 1);
-    EXPECT_EQ(std::move(std::as_const(a)).get(), 1);
+    EXPECT_EQ(move_as_const(a).get(), 1);
     EXPECT_EQ(std::move(a).get(), 1);
 }
 TEST_F(option, assigment) {
@@ -109,12 +114,12 @@ TEST_F(option, value_or_throw) {
     EXPECT_NO_THROW((void)a.value_or_throw());
     EXPECT_NO_THROW((void)a.value());
     EXPECT_NO_THROW((void)std::as_const(a).value());
-    EXPECT_NO_THROW((void)std::move(std::as_const(a)).value());
+    EXPECT_NO_THROW((void)move_as_const(a).value());
     a = opt::none;
     EXPECT_THROW((void)a.value_or_throw(), opt::bad_access);
     EXPECT_THROW((void)a.value(), opt::bad_access);
     EXPECT_THROW((void)std::as_const(a).value(), opt::bad_access);
-    EXPECT_THROW((void)std::move(std::as_const(a)).value(), opt::bad_access);
+    EXPECT_THROW((void)move_as_const(a).value(), opt::bad_access);
 }
 TEST_F(option, value_or) {
     opt::option<int> a;
