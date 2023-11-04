@@ -54,23 +54,16 @@ template<class T>
 struct option_flag;
 
 namespace impl {
-    template<class To, class From>
-    To bit_cast(const From& from) noexcept {
-        static_assert(sizeof(To) == sizeof(From));
-        To result;
-        std::memcpy(&result, &from, sizeof(To));
-        return result;
-    }
-
     template<class T, auto sentinel>
     class sentinel_option_flag {
+        static_assert(sizeof(T) == sizeof(sentinel));
         static constexpr auto empty_value = sentinel; // for IntelliSense natvis
     public:
         static bool is_empty(const T& value) noexcept {
-            return value == bit_cast<T>(sentinel);
+            return std::memcmp(&value, &empty_value, sizeof(T)) == 0;
         }
         static void construct_empty_flag(T& value) noexcept {
-            value = bit_cast<T>(sentinel);
+            std::memcpy(&value, &empty_value, sizeof(T));
         }
         static constexpr void destroy_empty_flag(T&) noexcept {}
     };
