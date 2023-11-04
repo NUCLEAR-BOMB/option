@@ -54,16 +54,38 @@ template<class T>
 struct option_flag;
 
 namespace impl {
+    template<class T>
+    inline constexpr bool is_bit_representable = std::is_unsigned_v<T> && !std::is_same_v<T, bool>;
+
+    template<class Left, class Right>
+    constexpr int bit_cmp(const Left& left, const Right& right) noexcept {
+        static_assert(sizeof(Left) == sizeof(Right));
+        if constexpr (impl::is_bit_representable<Left> && impl::is_bit_representable<Right>) {
+            return left == right ? 0 : left - right;
+        } else {
+            return std::memcmp(&left, &right, sizeof(Left));
+        }
+    }
+    template<class Dest, class Source>
+    constexpr void bit_copy(Dest& dest, const Source& src) noexcept {
+        static_assert(sizeof(Dest) == sizeof(Source));
+        if constexpr (impl::is_bit_representable<Dest> && impl::is_bit_representable<Source>) {
+            dest = src;
+        } else {
+            std::memcpy(&dest, &src, sizeof(Dest));
+        }
+    }
+
     template<class T, auto sentinel>
     class sentinel_option_flag {
         static_assert(sizeof(T) == sizeof(sentinel));
         static constexpr auto empty_value = sentinel; // for IntelliSense natvis
     public:
         static bool is_empty(const T& value) noexcept {
-            return std::memcmp(&value, &empty_value, sizeof(T)) == 0;
+            return impl::bit_cmp(value, sentinel) == 0;
         }
         static void construct_empty_flag(T& value) noexcept {
-            std::memcpy(&value, &empty_value, sizeof(T));
+            impl::bit_copy(value, sentinel);
         }
         static constexpr void destroy_empty_flag(T&) noexcept {}
     };
