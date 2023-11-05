@@ -491,11 +491,11 @@ public:
         return std::move(*std::launder(&this->base::value));
     }
 
-    constexpr const T* operator->() const noexcept {
+    constexpr std::add_pointer_t<const T> operator->() const noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return &get();
     }
-    constexpr T* operator->() noexcept {
+    constexpr std::add_pointer_t<T> operator->() noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return &get();
     }
