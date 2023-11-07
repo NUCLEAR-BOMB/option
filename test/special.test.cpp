@@ -143,6 +143,15 @@ TEST_F(reference, basic) {
     >);
     ref = opt::option{std::ref(b)};
     EXPECT_EQ(&(ref.get()), &b);
+
+    const opt::option<int&> refc{a};
+    EXPECT_TRUE(refc.has_value());
+    EXPECT_EQ(&(refc.get()), &a);
+    EXPECT_EQ(*refc, 3);
+
+    *refc = 4;
+    EXPECT_EQ(*refc, 4);
+    EXPECT_EQ(a, 4);
 }
 
 TEST_F(reference, const_basic) {
@@ -206,6 +215,11 @@ TEST_F(reference, const_basic) {
     ref = std::cref(b);
     EXPECT_TRUE(ref.has_value());
     EXPECT_EQ(&(ref.get()), &b);
+
+    const opt::option<const int&> refc{a};
+    EXPECT_TRUE(refc.has_value());
+    EXPECT_EQ(&(refc.get()), &a);
+    EXPECT_EQ(*refc, 1);
 }
 
 }
