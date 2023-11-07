@@ -8,6 +8,8 @@ namespace {
 
 template<class T>
 struct special : public ::testing::Test {
+    static_assert(sizeof(opt::option<T>) == sizeof(T));
+
     const T A = T(0);
     const T B = T(1);
     const opt::option<T> E{opt::none};
@@ -97,6 +99,8 @@ TYPED_TEST(special, take) {
 }
 
 struct reference : ::testing::Test {};
+
+static_assert(sizeof(opt::option<int&>) == sizeof(int*));
 
 TEST_F(reference, basic) {
     int a = 1;
