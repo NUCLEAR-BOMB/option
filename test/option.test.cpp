@@ -166,5 +166,21 @@ TEST_F(option, filter) {
     a = opt::none;
     EXPECT_EQ(a.filter(is_even), opt::none);
 }
+TEST_F(option, flatten) {
+    auto a = opt::option{opt::option{1}};
+    EXPECT_EQ(**a, 1);
+    auto b = a.flatten();
+    EXPECT_EQ(*b, 1);
+
+    a = opt::option{opt::option<int>{opt::none}};
+    b = a.flatten();
+    EXPECT_FALSE(b.has_value());
+    a = opt::option<int>{opt::none};
+    b = a.flatten();
+    EXPECT_FALSE(b.has_value());
+    a = opt::none;
+    b = a.flatten();
+    EXPECT_FALSE(b.has_value());
+}
 
 }

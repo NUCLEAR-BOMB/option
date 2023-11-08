@@ -36,6 +36,12 @@
     #endif
 #endif
 
+#ifdef _MSC_VER
+    #define OPTION_DECLSPEC_EMPTY_BASES __declspec(empty_bases)
+#else
+    #define OPTION_DECLSPEC_EMPTY_BASES
+#endif
+
 namespace opt {
 
 namespace impl {
@@ -516,6 +522,8 @@ namespace impl {
 
     template<class T>
     inline constexpr bool is_cv_bool = std::is_same_v<T, std::remove_cv_t<T>>;
+
+    struct secret_type {};
 }
 
 class bad_access : public std::exception {
@@ -647,13 +655,35 @@ namespace impl::option {
         }
         return *std::forward<Self>(self);
     }
+
+    template<class Self>
+    constexpr auto flatten(Self&& self) {
+        // this is for a nice error message if Self is not an opt::option<opt::option<T>>
+        constexpr bool is_option_option = impl::is_option_specialization<typename impl::remove_cvref<Self>::value_type>;
+        if constexpr (is_option_option) {
+            return [&]() -> typename impl::remove_cvref<Self>::value_type {
+                if (self.has_value() && self->has_value()) {
+                    return std::forward<Self>(self)->get();
+                }
+                return opt::none;
+            }();
+        } else {
+            static_assert(is_option_option, "To flatten opt::option<T>, T must be opt::option<U>");
+        }
+    }
 }
 
 template<class T>
-class option : private impl::option_move_assign_base<T> {
+class OPTION_DECLSPEC_EMPTY_BASES option : private impl::option_move_assign_base<T>
+{
     using base = impl::option_move_assign_base<T>;
     using raw_type = std::remove_reference_t<T>;
 public:
+    static_assert(!std::is_same_v<T, opt::none_t>,
+        "In opt::option<T>, T cannot be opt::none_t."
+        "If you using CTAD (Class template argument deduction),"
+        "you should probably specify the type for an empty opt::option<T>");
+
     using value_type = T;
 
     // 1
@@ -877,8 +907,9 @@ public:
     constexpr void ptr_or_null() && = delete;
     constexpr void ptr_or_null() const&& = delete;
 
+    // filter(F&&) -> option<T> : F(const T&) -> bool
     template<class F>
-    constexpr option filter(F&& f) const {
+    constexpr option<T> filter(F&& f) const {
         if (has_value()) {
             // f(*this) can return an object that can be explicitly converted to bool
             if (std::invoke(std::forward<F>(f), get())) {
@@ -887,6 +918,9 @@ public:
         }
         return opt::none;
     }
+
+    constexpr auto flatten() const& { return impl::option::flatten(*this); }
+    constexpr auto flatten() && { return impl::option::flatten(std::move(*this)); }
 
     // and_then(F&&) -> option<U> : F(option<T>) -> option<U>
     template<class F>
@@ -924,6 +958,9 @@ private:
 
 template<class T>
 option(T) -> option<T>;
+
+template<class T>
+option(option<T>) -> option<option<T>>;
 
 namespace impl {
     template<class To, class From>
