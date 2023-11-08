@@ -7,26 +7,8 @@ namespace {
 struct trivial_struct {};
 static_assert(std::is_trivially_destructible_v<opt::option<trivial_struct>>);
 
-// NOLINTBEGIN
-struct nontrivial_struct {
-    ~nontrivial_struct() {}
-    nontrivial_struct(const nontrivial_struct&) {}
-    nontrivial_struct(nontrivial_struct&&) {}
-    nontrivial_struct& operator=(const nontrivial_struct&) { return *this; }
-    nontrivial_struct& operator=(nontrivial_struct&&) { return *this; }
-};
-// NOLINTEND
-static_assert(!std::is_trivially_destructible_v<opt::option<nontrivial_struct>>);
-static_assert(!std::is_trivially_copy_constructible_v<opt::option<nontrivial_struct>>);
-static_assert(!std::is_trivially_move_constructible_v<opt::option<nontrivial_struct>>);
-static_assert(!std::is_trivially_copy_assignable_v<opt::option<nontrivial_struct>>);
-static_assert(!std::is_trivially_move_assignable_v<opt::option<nontrivial_struct>>);
-
-static_assert(std::is_trivially_destructible_v<opt::option<int>>);
-static_assert(std::is_trivially_copy_constructible_v<opt::option<int>>);
-static_assert(std::is_trivially_move_constructible_v<opt::option<int>>);
-static_assert(std::is_trivially_copy_assignable_v<opt::option<int>>);
-static_assert(std::is_trivially_move_assignable_v<opt::option<int>>);
+static_assert(is_not_trivial_compatible<opt::option<nontrivial_struct>>);
+static_assert(is_trivial_compatible<opt::option<int>>);
 
 struct option : ::testing::Test {
 

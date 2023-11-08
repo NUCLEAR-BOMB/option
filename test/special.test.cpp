@@ -9,6 +9,7 @@ namespace {
 template<class T>
 struct special : public ::testing::Test {
     static_assert(sizeof(opt::option<T>) == sizeof(T));
+    static_assert(is_trivial_compatible<opt::option<T>>);
 
     const T A = T(0);
     const T B = T(1);
@@ -101,6 +102,9 @@ TYPED_TEST(special, take) {
 struct reference : ::testing::Test {};
 
 static_assert(sizeof(opt::option<int&>) == sizeof(int*));
+
+static_assert(is_trivial_compatible<opt::option<int&>>);
+static_assert(is_trivial_compatible<opt::option<nontrivial_struct&>>);
 
 TEST_F(reference, basic) {
     int a = 1;

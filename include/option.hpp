@@ -465,7 +465,8 @@ namespace impl {
             this->construct_from_option(std::move(other));
         }
     };
-    template<class T, bool /*true*/ = std::is_trivially_copy_assignable_v<T>>
+    template<class T, bool /*true*/ =
+        std::is_trivially_copy_assignable_v<T> || std::is_reference_v<T>>
     struct option_copy_assign_base : option_move_base<T> {
         using option_move_base<T>::option_move_base;
     };
@@ -485,7 +486,8 @@ namespace impl {
             return *this;
         }
     };
-    template<class T, bool /*true*/ = std::is_trivially_move_assignable_v<T>>
+    template<class T, bool /*true*/ =
+        std::is_trivially_move_assignable_v<T> || std::is_reference_v<T>>
     struct option_move_assign_base : option_copy_assign_base<T> {
         using option_copy_assign_base<T>::option_copy_assign_base;
     };
