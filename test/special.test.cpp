@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <option.hpp>
+#include "utils.hpp"
 
 #define TypeParam T
 
@@ -107,8 +107,8 @@ TEST_F(reference, basic) {
     opt::option<int&> ref{a};
 
     static_assert(std::is_same_v<decltype(*ref), int&>);
-    static_assert(std::is_same_v<decltype(*std::as_const(ref)), int&>);
-    static_assert(std::is_same_v<decltype(*std::move(ref)), int&&>);
+    static_assert(std::is_same_v<decltype(*as_const(ref)), int&>);
+    static_assert(std::is_same_v<decltype(*as_rvalue(ref)), int&&>);
 
     EXPECT_TRUE(ref.has_value());
     EXPECT_EQ(&(ref.get()), &a);
@@ -163,8 +163,8 @@ TEST_F(reference, const_basic) {
     opt::option<const int&> ref{a};
 
     static_assert(std::is_same_v<decltype(*ref), const int&>);
-    static_assert(std::is_same_v<decltype(*std::as_const(ref)), const int&>);
-    static_assert(std::is_same_v<decltype(*std::move(ref)), const int&&>);
+    static_assert(std::is_same_v<decltype(*as_const(ref)), const int&>);
+    static_assert(std::is_same_v<decltype(*as_rvalue(ref)), const int&&>);
 
     EXPECT_TRUE(ref.has_value());
     EXPECT_EQ(&(ref.get()), &a);
