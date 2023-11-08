@@ -27,15 +27,29 @@ constexpr decltype(auto) move_as_const(T&& x) noexcept {
 template<class T>
 std::size_t hash_fn(const T& x) { return std::hash<T>{}(x); }
 
-static_assert(std::is_trivially_destructible_v<opt::option<int>>);
-
 struct trivial_struct {};
 static_assert(std::is_trivially_destructible_v<opt::option<trivial_struct>>);
 
+// NOLINTBEGIN
 struct nontrivial_struct {
-    ~nontrivial_struct() {} // NOLINT
+    ~nontrivial_struct() {}
+    nontrivial_struct(const nontrivial_struct&) {}
+    nontrivial_struct(nontrivial_struct&&) {}
+    nontrivial_struct& operator=(const nontrivial_struct&) { return *this; }
+    nontrivial_struct& operator=(nontrivial_struct&&) { return *this; }
 };
+// NOLINTEND
 static_assert(!std::is_trivially_destructible_v<opt::option<nontrivial_struct>>);
+static_assert(!std::is_trivially_copy_constructible_v<opt::option<nontrivial_struct>>);
+static_assert(!std::is_trivially_move_constructible_v<opt::option<nontrivial_struct>>);
+static_assert(!std::is_trivially_copy_assignable_v<opt::option<nontrivial_struct>>);
+static_assert(!std::is_trivially_move_assignable_v<opt::option<nontrivial_struct>>);
+
+static_assert(std::is_trivially_destructible_v<opt::option<int>>);
+static_assert(std::is_trivially_copy_constructible_v<opt::option<int>>);
+static_assert(std::is_trivially_move_constructible_v<opt::option<int>>);
+static_assert(std::is_trivially_copy_assignable_v<opt::option<int>>);
+static_assert(std::is_trivially_move_assignable_v<opt::option<int>>);
 
 struct option : ::testing::Test {
 

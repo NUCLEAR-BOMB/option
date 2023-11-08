@@ -152,6 +152,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return has_value_flag;
         }
+        // precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -195,6 +196,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return has_value_flag;
         }
+        // precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -235,6 +237,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return !flag::is_empty(value);
         }
+        // precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -285,6 +288,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return !flag::is_empty(value);
         }
+        // precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -322,12 +326,19 @@ namespace impl {
         constexpr void assign_from_option(Option&& other) {
             if (other.has_value()) {
                 if (has_value()) {
-                    get() = *std::forward<Option>(other);
+                    get() = std::forward<Option>(other).get();
                 } else {
-                    construct(*std::forward<Option>(other));
+                    construct(std::forward<Option>(other).get());
                 }
             } else {
                 reset();
+            }
+        }
+        // precondition: has_value() == false
+        template<class Option>
+        constexpr void construct_from_option(Option&& other) {
+            if (other.has_value()) {
+                construct(std::forward<Option>(other).get());
             }
         }
     };
@@ -379,12 +390,22 @@ namespace impl {
         constexpr void reset() noexcept {
             value = nullptr;
         }
+
+        constexpr T& get() const& noexcept { return *value; }
+        constexpr T&& get() const&& noexcept { return std::move(*value); }
+
+        // precondition: has_value() == false
         template<class Arg>
         constexpr void construct(Arg&& arg) noexcept {
             value = ref_to_ptr(std::forward<Arg>(arg));
         }
-        constexpr T& get() const& noexcept { return *value; }
-        constexpr T&& get() const&& noexcept { return std::move(*value); }
+        // precondition: has_value() == false
+        template<class Option>
+        constexpr void construct_from_option(Option&& other) {
+            if (other.has_value()) {
+                construct(std::forward<Option>(other).get());
+            }
+        }
 
         template<class U>
         constexpr void assign_from_value(U&& other) {
@@ -398,15 +419,94 @@ namespace impl {
 
             if (other.has_value()) {
                 if constexpr (std::is_reference_v<option_value_type>) {
-                    construct(*other);
+                    construct(other.get());
                 } else {
-                    construct(*std::forward<Option>(other));
+                    construct(std::forward<Option>(other).get());
                 }
             } else {
                 reset();
             }
         }
     };
+
+    template<class T, bool /*true*/ = std::is_trivially_copy_constructible_v<T>>
+    struct option_copy_base : option_storage_base<T> {
+        using option_storage_base<T>::option_storage_base;
+    };
+    template<class T>
+    struct option_copy_base<T, false> : option_storage_base<T> {
+        using option_storage_base<T>::option_storage_base;
+        using value_type = T;
+
+        option_copy_base() = default;
+        option_copy_base(option_copy_base&&) = default;
+        option_copy_base& operator=(const option_copy_base&) = default;
+        option_copy_base& operator=(option_copy_base&&) = default;
+
+        constexpr option_copy_base(const option_copy_base& other) noexcept(std::is_nothrow_copy_constructible_v<T>) {
+            this->construct_from_option(other);
+        }
+    };
+    template<class T, bool /*true*/ = std::is_trivially_move_constructible_v<T>>
+    struct option_move_base : option_copy_base<T> {
+        using option_copy_base<T>::option_copy_base;
+    };
+    template<class T>
+    struct option_move_base<T, false> : option_copy_base<T> {
+        using option_copy_base<T>::option_copy_base;
+        using value_type = T;
+
+        option_move_base() = default;
+        option_move_base(const option_move_base&) = default;
+        option_move_base& operator=(const option_move_base&) = default;
+        option_move_base& operator=(option_move_base&&) = default;
+
+        constexpr option_move_base(option_move_base&& other) noexcept(std::is_nothrow_move_constructible_v<T>) {
+            this->construct_from_option(std::move(other));
+        }
+    };
+    template<class T, bool /*true*/ = std::is_trivially_copy_assignable_v<T>>
+    struct option_copy_assign_base : option_move_base<T> {
+        using option_move_base<T>::option_move_base;
+    };
+    template<class T>
+    struct option_copy_assign_base<T, false> : option_move_base<T> {
+        using option_move_base<T>::option_move_base;
+        using value_type = T;
+
+        option_copy_assign_base() = default;
+        option_copy_assign_base(const option_copy_assign_base&) = default;
+        option_copy_assign_base(option_copy_assign_base&&) = default;
+        option_copy_assign_base& operator=(option_copy_assign_base&&) = default;
+
+        constexpr option_copy_assign_base& operator=(const option_copy_assign_base& other)
+            noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
+            this->assign_from_option(other);
+            return *this;
+        }
+    };
+    template<class T, bool /*true*/ = std::is_trivially_move_assignable_v<T>>
+    struct option_move_assign_base : option_copy_assign_base<T> {
+        using option_copy_assign_base<T>::option_copy_assign_base;
+    };
+    template<class T>
+    struct option_move_assign_base<T, false> : option_copy_assign_base<T> {
+        using option_copy_assign_base<T>::option_copy_assign_base;
+        using value_type = T;
+
+        option_move_assign_base() = default;
+        option_move_assign_base(const option_move_assign_base&) = default;
+        option_move_assign_base(option_move_assign_base&&) = default;
+        option_move_assign_base& operator=(const option_move_assign_base&) = default;
+
+        constexpr option_move_assign_base& operator=(option_move_assign_base&& other)
+            noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
+            this->assign_from_option(std::move(other));
+            return *this;
+        }
+    };
+
+
 
     template<class T>
     inline constexpr bool is_option_specialization = false;
@@ -549,8 +649,8 @@ namespace impl::option {
 }
 
 template<class T>
-class option : private impl::option_storage_base<T> {
-    using base = impl::option_storage_base<T>;
+class option : private impl::option_move_assign_base<T> {
+    using base = impl::option_move_assign_base<T>;
     using raw_type = std::remove_reference_t<T>;
 public:
     using value_type = T;
@@ -564,20 +664,10 @@ public:
 
     // 3
     // postcondition: has_value() == other.has_value()
-    constexpr option(const option& other) noexcept(std::is_nothrow_constructible_v<T, const T&>)
-        : base() {
-        if (other) {
-            base::construct(*other);
-        }
-    }
+    option(const option&) = default;
     // 4
     // postcondition: has_value() == other.has_value()
-    constexpr option(option&& other) noexcept(std::is_nothrow_constructible_v<T, T>)
-        : base() {
-        if (other) {
-            base::construct(std::move(*other));
-        }
-    }
+    option(option&&) = default;
     // 5
     // postcondition: has_value() == true
     template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/true> = 0>
@@ -625,16 +715,10 @@ public:
     }
     // 2
     // postcondition: has_value() == other.has_value()
-    constexpr option& operator=(const option& other) noexcept(impl::option::nothrow_assigment_operator_2<T>) {
-        base::assign_from_option(other);
-        return *this;
-    }
+    option& operator=(const option&) = default;
     // 3
     // postcondition: has_value() == other.has_value()
-    constexpr option& operator=(option&& other) noexcept(impl::option::nothrow_assigment_operator_3<T>) {
-        base::assign_from_option(std::move(other));
-        return *this;
-    }
+    option& operator=(option&&) = default;
     // 4
     // postcondition: has_value() == true
     template<class U = T, impl::option::enable_assigment_operator_4<T, U> = 0>
