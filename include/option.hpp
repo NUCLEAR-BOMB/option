@@ -877,6 +877,17 @@ public:
     constexpr void ptr_or_null() && = delete;
     constexpr void ptr_or_null() const&& = delete;
 
+    template<class F>
+    constexpr option filter(F&& f) const {
+        if (has_value()) {
+            // f(*this) can return an object that can be explicitly converted to bool
+            if (std::invoke(std::forward<F>(f), get())) {
+                return get();
+            }
+        }
+        return opt::none;
+    }
+
     // and_then(F&&) -> option<U> : F(option<T>) -> option<U>
     template<class F>
     constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, std::forward<F>(f)); }

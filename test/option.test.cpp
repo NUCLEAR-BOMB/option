@@ -156,5 +156,15 @@ TEST_F(option, ptr_or_pull) {
     a = 2;
     EXPECT_EQ(*(as_const(a).ptr_or_null()), 2);
 }
+TEST_F(option, filter) {
+    const auto is_even = [](int x) { return x % 2 == 0; };
+
+    opt::option a{1};
+    EXPECT_EQ(a.filter(is_even), opt::none);
+    a = 2;
+    EXPECT_EQ(a.filter(is_even), 2);
+    a = opt::none;
+    EXPECT_EQ(a.filter(is_even), opt::none);
+}
 
 }
