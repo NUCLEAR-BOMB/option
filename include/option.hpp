@@ -303,10 +303,10 @@ namespace impl {
         using base::reset;
         using base::construct;
 
-        constexpr T& get() & noexcept { return *std::launder(&this->base::value); }
-        constexpr const T& get() const& noexcept { return *std::launder(&this->base::value); }
-        constexpr T&& get() && noexcept { return std::move(*std::launder(&this->base::value)); }
-        constexpr const T&& get() const&& noexcept { return std::move(*std::launder(&this->base::value)); }
+        constexpr T& get() & noexcept { return base::value; }
+        constexpr const T& get() const& noexcept { return base::value; }
+        constexpr T&& get() && noexcept { return base::value; }
+        constexpr const T&& get() const&& noexcept { return base::value; }
 
         // logic of assigning opt::option<T&> from a value
         template<class U>
@@ -332,6 +332,7 @@ namespace impl {
         }
     };
 
+    // 
     template<class T>
     class option_storage_base<T, /*is_reference=*/true> {
         using raw_type = std::remove_reference_t<T>;
