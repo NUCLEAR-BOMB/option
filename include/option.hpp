@@ -791,12 +791,12 @@ public:
     // precondition: has_value() == true
     constexpr std::add_pointer_t<const T> operator->() const noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return &get();
+        return std::addressof(get());
     }
     // precondition: has_value() == true
     constexpr std::add_pointer_t<T> operator->() noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return &get();
+        return std::addressof(get());
     }
     // precondition: has_value() == true
     constexpr T& operator*() & noexcept {
@@ -867,6 +867,15 @@ public:
         }
         return T{};
     }
+
+    constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept {
+        return has_value() ? std::addressof(get()) : nullptr;
+    }
+    constexpr const std::remove_reference_t<T>* ptr_or_null() const& noexcept {
+        return has_value() ? std::addressof(get()) : nullptr;
+    }
+    constexpr void ptr_or_null() && = delete;
+    constexpr void ptr_or_null() const&& = delete;
 
     // and_then(F&&) -> option<U> : F(option<T>) -> option<U>
     template<class F>

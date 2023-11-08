@@ -147,5 +147,14 @@ TEST_F(option, value_or_default) {
     a = opt::none;
     EXPECT_EQ(a.value_or_default(), int{});
 }
+TEST_F(option, ptr_or_pull) {
+    opt::option a{1};
+
+    EXPECT_EQ(*(a.ptr_or_null()), 1);
+    a = opt::none;
+    EXPECT_EQ(a.ptr_or_null(), nullptr);
+    a = 2;
+    EXPECT_EQ(*(as_const(a).ptr_or_null()), 2);
+}
 
 }
