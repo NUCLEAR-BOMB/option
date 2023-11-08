@@ -971,6 +971,35 @@ constexpr opt::option<T> operator|(none_t, const opt::option<T>& right) {
     return right;
 }
 
+template<class T>
+constexpr opt::option<T>& operator|=(opt::option<T>& left, const opt::option<T>& right) {
+    if (!left.has_value()) {
+        left = right;
+    }
+    return left;
+}
+template<class T>
+constexpr opt::option<T>& operator|=(opt::option<T>& left, opt::option<T>&& right) {
+    if (!left.has_value()) {
+        left = std::move(right);
+    }
+    return left;
+}
+template<class T>
+constexpr opt::option<T>& operator|=(opt::option<T>& left, const T& right) {
+    if (!left.has_value()) {
+        left = right;
+    }
+    return left;
+}
+template<class T>
+constexpr opt::option<T>& operator|=(opt::option<T>& left, T&& right) {
+    if (!left.has_value()) {
+        left = std::move(right);
+    }
+    return left;
+}
+
 // x = left option value
 // y = right option value
 // N = empty option (none)

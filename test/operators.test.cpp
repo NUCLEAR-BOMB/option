@@ -93,5 +93,24 @@ TEST_F(operators, xor) {
     EXPECT_EQ(E ^ B, B);
     EXPECT_EQ(E ^ E, E);
 }
+TEST_F(operators, or_assign) {
+    opt::option<int> C{A};
+    C |= B;
+    EXPECT_EQ(C, A);
+    C |= E;
+    EXPECT_EQ(C, A);
+
+    C = opt::none;
+    C |= E;
+    EXPECT_EQ(C, E);
+    C |= B;
+    EXPECT_EQ(C, B);
+
+    C = opt::none;
+    C |= 3;
+    EXPECT_EQ(C, 3);
+    C |= 4;
+    EXPECT_EQ(C, 3);
+}
 
 }
