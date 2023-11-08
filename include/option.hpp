@@ -373,8 +373,7 @@ namespace impl {
             }
         }
     public:
-        constexpr option_storage_base() noexcept
-            : value(nullptr) {}
+        option_storage_base() = default;
 
         template<class Arg>
         constexpr option_storage_base(Arg&& arg) noexcept
@@ -659,7 +658,7 @@ public:
 
     // 1
     // postcondition: has_value() == false
-    constexpr option() noexcept : base() {}
+    option() = default;
     // 2
     // postcondition: has_value() == false
     constexpr option(opt::none_t) noexcept : base() {}
