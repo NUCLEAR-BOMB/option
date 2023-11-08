@@ -332,7 +332,8 @@ namespace impl {
         }
     };
 
-    // 
+    // "specialization" of opt::option<T&>
+    // std::option<T&> is currently ill-formed, but opt::option<T&> allows it
     template<class T>
     class option_storage_base<T, /*is_reference=*/true> {
         using raw_type = std::remove_reference_t<T>;
@@ -762,6 +763,24 @@ public:
             return std::move(*(*this));
         }
         return static_cast<T>(std::forward<U>(default_value));
+    }
+
+    constexpr T value_or_default() const& {
+        static_assert(std::is_default_constructible_v<T>, "T must be default constructible");
+        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
+        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
+        if (has_value()) {
+            return get();
+        }
+        return T{};
+    }
+    constexpr T value_or_default() && {
+        static_assert(std::is_default_constructible_v<T>, "T must be default constructible");
+        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
+        if (has_value()) {
+            return std::move(get());
+        }
+        return T{};
     }
 
     // and_then(F&&) -> option<U> : F(option<T>) -> option<U>

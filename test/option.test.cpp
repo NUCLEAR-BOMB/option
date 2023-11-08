@@ -168,5 +168,11 @@ TEST_F(option, deduction_guides) {
     opt::option b{1u}; // NOLINT(misc-const-correctness)
     static_assert(std::is_same_v<decltype(b), opt::option<unsigned>>);
 }
+TEST_F(option, value_or_default) {
+    opt::option a{1};
+    EXPECT_EQ(a.value_or_default(), 1);
+    a = opt::none;
+    EXPECT_EQ(a.value_or_default(), int{});
+}
 
 }
