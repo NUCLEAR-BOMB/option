@@ -866,6 +866,15 @@ public:
         return opt::none;
     }
 
+    constexpr T& insert(const raw_type& val) {
+        this->emplace(val);
+        return get();
+    }
+    constexpr T& insert(raw_type&& val) {
+        this->emplace(std::move(val));
+        return get();
+    }
+
     // precondition: has_value() == true
     constexpr T& get() & noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");

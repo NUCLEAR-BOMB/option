@@ -233,5 +233,15 @@ TEST_F(option, has_value_and) {
     EXPECT_FALSE(a.has_value_and([](int x) { return x == 1; }));
     EXPECT_FALSE(a.has_value_and([](int x) { return x == 2; }));
 }
+TEST_F(option, insert) {
+    opt::option a{1};
+    auto& x = a.insert(2);
+    EXPECT_EQ(&x, a.ptr_or_null());
+    EXPECT_EQ(*a, 2);
+
+    auto& y = a.insert(as_lvalue(3));
+    EXPECT_EQ(&y, a.ptr_or_null());
+    EXPECT_EQ(*a, 3);
+}
 
 }
