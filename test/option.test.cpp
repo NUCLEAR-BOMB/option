@@ -188,6 +188,12 @@ TEST_F(option, map_or) {
     EXPECT_EQ(a.map_or(10, add_one), 2);
     a = opt::none;
     EXPECT_EQ(a.map_or(11, add_one), 11);
+
+    const auto add_two = [](int x) { return float(x) + 2.f; };
+    a = 2;
+    EXPECT_EQ(a.map_or(0.f, add_two), 4.f);
+    a = opt::none;
+    EXPECT_EQ(a.map_or(5.f, add_two), 5.f);
 }
 
 }

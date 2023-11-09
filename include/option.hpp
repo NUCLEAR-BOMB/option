@@ -651,13 +651,14 @@ namespace impl::option {
         }
         return opt::option<U>{opt::none};
     }
-
+    // implementation of opt::option<T>::map_or(U&&, F&&)
     template<class T, class Self, class U, class F>
-    constexpr T map_or(Self&& self, U&& default_value, F&& f) {
+    constexpr impl::remove_cvref<U> map_or(Self&& self, U&& default_value, F&& f) {
         if (self.has_value()) {
-            return static_cast<T>(std::invoke(std::forward<F>(f), std::forward<Self>(self).get()));
+            using raw_u = impl::remove_cvref<U>;
+            return static_cast<raw_u>(std::invoke(std::forward<F>(f), std::forward<Self>(self).get()));
         }
-        return static_cast<T>(std::forward<U>(default_value));
+        return std::forward<U>(default_value);
     }
 
     // implementation of opt::option<T>::or_else(F&&)
@@ -919,13 +920,13 @@ public:
     }
 
     template<class U, class F>
-    constexpr T map_or(U&& def, F&& f) & { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
+    constexpr auto map_or(U&& def, F&& f) & { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
     template<class U, class F>
-    constexpr T map_or(U&& def, F&& f) const& { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
+    constexpr auto map_or(U&& def, F&& f) const& { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
     template<class U, class F>
-    constexpr T map_or(U&& def, F&& f) && { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
+    constexpr auto map_or(U&& def, F&& f) && { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
     template<class U, class F>
-    constexpr T map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
+    constexpr auto map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
 
     constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept {
         return has_value() ? std::addressof(get()) : nullptr;
