@@ -720,6 +720,13 @@ namespace impl::option {
         }
         return false;
     }
+    template<class Self, class F>
+    constexpr Self&& inspect(Self&& self, F&& f) {
+        if (self.has_value()) {
+            std::invoke(std::forward<F>(f), self.get());
+        }
+        return std::forward<Self>(self);
+    }
 }
 
 template<class T>
@@ -874,6 +881,15 @@ public:
         this->emplace(std::move(val));
         return get();
     }
+
+    template<class F>
+    constexpr option& inspect(F&& f) & { return impl::option::inspect(*this, std::forward<F>(f)); }
+    template<class F>
+    constexpr const option& inspect(F&& f) const& { return impl::option::inspect(*this, std::forward<F>(f)); }
+    template<class F>
+    constexpr option&& inspect(F&& f) && { return impl::option::inspect(std::move(*this), std::forward<F>(f)); }
+    template<class F>
+    constexpr const option&& inspect(F&& f) const&& { return impl::option::inspect(std::move(*this), std::forward<F>(f)); }
 
     // precondition: has_value() == true
     constexpr T& get() & noexcept {

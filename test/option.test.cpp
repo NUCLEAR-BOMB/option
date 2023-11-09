@@ -243,5 +243,15 @@ TEST_F(option, insert) {
     EXPECT_EQ(&y, a.ptr_or_null());
     EXPECT_EQ(*a, 3);
 }
+TEST_F(option, inspect) {
+    opt::option a{1};
+    int x = 0;
+    a.inspect([&](int y) { x += y; });
+    EXPECT_EQ(x, 1);
+    as_rvalue(a)
+        .inspect([&](const int& y) { x += y; })
+        .inspect([&](int& y) { return x += y * 2; });
+    EXPECT_EQ(x, 4);
+}
 
 }
