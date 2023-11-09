@@ -204,5 +204,26 @@ TEST_F(option, map_or_else) {
     a = opt::none;
     EXPECT_EQ(a.map_or_else(default_fn, do_fn), 2);
 }
+TEST_F(option, take_if) {
+    opt::option a{1};
+    auto b = a.take_if([](int) { return false; });
+    EXPECT_FALSE(b.has_value());
+    EXPECT_TRUE(a.has_value());
+
+    b = a.take_if([](int& x) {
+        return ++x == 2;
+    });
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(*b, 2);
+    EXPECT_FALSE(a.has_value());
+
+    auto c = a.take_if([](int) { return false; });
+    EXPECT_FALSE(c.has_value());
+    EXPECT_FALSE(a.has_value());
+
+    c = a.take_if([](int) { return true; });
+    EXPECT_FALSE(c.has_value());
+    EXPECT_FALSE(a.has_value());
+}
 
 }

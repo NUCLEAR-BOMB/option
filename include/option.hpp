@@ -831,13 +831,23 @@ public:
     constexpr explicit operator bool() const noexcept { return has_value(); }
 
     // postcondition: has_value() == false
-    constexpr option take() & noexcept(std::is_nothrow_copy_constructible_v<T> && noexcept(reset())) {
+    constexpr option<T> take() & noexcept(std::is_nothrow_copy_constructible_v<T> && noexcept(reset())) {
         auto tmp = *this;
         reset();
         return tmp;
     }
-    constexpr option take() && noexcept(std::is_nothrow_copy_constructible_v<T>) {
-        return *this;
+    constexpr option<T> take() && noexcept(std::is_nothrow_copy_constructible_v<T>) {
+        return std::move(*this);
+    }
+
+    template<class P>
+    constexpr option<T> take_if(P&& predicate) {
+        if (has_value()) {
+            if (std::invoke(std::forward<P>(predicate), get())) {
+                return take();
+            }
+        }
+        return opt::none;
     }
 
     // precondition: has_value() == true
