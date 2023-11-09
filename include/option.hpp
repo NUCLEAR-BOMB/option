@@ -713,6 +713,13 @@ namespace impl::option {
             static_assert(is_option_option, "To flatten opt::option<T>, T must be opt::option<U>");
         }
     }
+    template<class Self, class P>
+    constexpr bool has_value_and(Self&& self, P&& predicate) {
+        if (self.has_value()) {
+            return std::invoke(std::forward<P>(predicate), std::forward<Self>(self).get());
+        }
+        return false;
+    }
 }
 
 template<class T>
@@ -829,6 +836,15 @@ public:
         return base::has_value();
     }
     constexpr explicit operator bool() const noexcept { return has_value(); }
+
+    template<class P>
+    constexpr bool has_value_and(P&& predicate) & { return impl::option::has_value_and(*this, std::forward<P>(predicate)); }
+    template<class P>
+    constexpr bool has_value_and(P&& predicate) const& { return impl::option::has_value_and(*this, std::forward<P>(predicate)); }
+    template<class P>
+    constexpr bool has_value_and(P&& predicate) && { return impl::option::has_value_and(std::move(*this), std::forward<P>(predicate)); }
+    template<class P>
+    constexpr bool has_value_and(P&& predicate) const&& { return impl::option::has_value_and(std::move(*this), std::forward<P>(predicate)); }
 
     // postcondition: has_value() == false
     constexpr option<T> take() & noexcept(std::is_nothrow_copy_constructible_v<T> && noexcept(reset())) {

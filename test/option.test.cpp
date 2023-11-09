@@ -225,5 +225,13 @@ TEST_F(option, take_if) {
     EXPECT_FALSE(c.has_value());
     EXPECT_FALSE(a.has_value());
 }
+TEST_F(option, has_value_and) {
+    opt::option a{1};
+    EXPECT_TRUE(a.has_value_and([](int x) { return x == 1; }));
+    EXPECT_FALSE(a.has_value_and([](int x) { return x == 2; }));
+    a.reset();
+    EXPECT_FALSE(a.has_value_and([](int x) { return x == 1; }));
+    EXPECT_FALSE(a.has_value_and([](int x) { return x == 2; }));
+}
 
 }
