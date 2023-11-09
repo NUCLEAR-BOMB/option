@@ -123,6 +123,16 @@ namespace impl {
     template<class T>
     using unwrap_reference = typename unwrap_reference_t<T>::type;
 
+    template<class T, class U>
+    struct copy_cvref_t {
+        using U1 = std::conditional_t<std::is_const_v<T>, std::add_const_t<U>, U>;
+        using U2 = std::conditional_t<std::is_volatile_v<T>, std::add_volatile_t<U1>, U1>;
+        using U3 = std::conditional_t<std::is_lvalue_reference_v<T>, std::add_lvalue_reference_t<U2>, U2>;
+        using type = std::conditional_t<std::is_rvalue_reference_v<T>, std::add_rvalue_reference_t<U3>, U3>;
+    };
+    template<class T, class U>
+    using copy_cvref = typename copy_cvref_t<T, U>::type;
+
     template<class T, class = std::size_t>
     inline constexpr bool has_option_flag = false;
     template<class T>
@@ -643,13 +653,13 @@ namespace impl::option {
     }
     // implementation of opt::option<T>::map(F&&)
     // map(F&&) -> option<U> : F(T&&) -> U
-    template<class Self, class F>
+    template<class T, class Self, class F>
     constexpr auto map(Self&& self, F&& f) {
-        using U = std::remove_cv_t<decltype(std::forward<F>(f)(*std::forward<Self>(self)))>;
+        using f_result = std::remove_cv_t<std::invoke_result_t<F, impl::copy_cvref<Self, T>>>;
         if (self.has_value()) {
-            return opt::option<U>{construct_from_invoke_tag{}, std::forward<F>(f), *std::forward<Self>(self)};
+            return opt::option<f_result>{construct_from_invoke_tag{}, std::forward<F>(f), *std::forward<Self>(self)};
         }
-        return opt::option<U>{opt::none};
+        return opt::option<f_result>{opt::none};
     }
     // implementation of opt::option<T>::map_or(U&&, F&&)
     template<class T, class Self, class U, class F>
@@ -659,6 +669,17 @@ namespace impl::option {
             return static_cast<raw_u>(std::invoke(std::forward<F>(f), std::forward<Self>(self).get()));
         }
         return std::forward<U>(default_value);
+    }
+    template<class T, class Self, class D, class F>
+    constexpr auto map_or_else(Self&& self, D&& d, F&& f) {
+        using d_result = std::invoke_result_t<D>;
+        using f_result = std::invoke_result_t<F, impl::copy_cvref<Self, T>>;
+        static_assert(std::is_same_v<d_result, f_result>,
+            "The type of the invoke result functions D and F must be the same");
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f), std::forward<Self>(self).get());
+        }
+        return std::invoke(std::forward<D>(d));
     }
 
     // implementation of opt::option<T>::or_else(F&&)
@@ -928,6 +949,15 @@ public:
     template<class U, class F>
     constexpr auto map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
 
+    template<class D, class F>
+    constexpr auto map_or_else(D&& def, F&& f) & { return impl::option::map_or_else<T>(*this, std::forward<D>(def), std::forward<F>(f)); }
+    template<class D, class F>
+    constexpr auto map_or_else(D&& def, F&& f) const& { return impl::option::map_or_else<T>(*this, std::forward<D>(def), std::forward<F>(f)); }
+    template<class D, class F>
+    constexpr auto map_or_else(D&& def, F&& f) && { return impl::option::map_or_else<T>(std::move(*this), std::forward<D>(def), std::forward<F>(f)); }
+    template<class D, class F>
+    constexpr auto map_or_else(D&& def, F&& f) const&& { return impl::option::map_or_else<T>(std::move(*this), std::forward<D>(def), std::forward<F>(f)); }
+
     constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept {
         return has_value() ? std::addressof(get()) : nullptr;
     }
@@ -964,13 +994,13 @@ public:
 
     // map(F&&) -> option<U> : F(option<T>) -> U
     template<class F>
-    constexpr auto map(F&& f) & { return impl::option::map(*this, std::forward<F>(f)); }
+    constexpr auto map(F&& f) & { return impl::option::map<T>(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto map(F&& f) const& { return impl::option::map(*this, std::forward<F>(f)); }
+    constexpr auto map(F&& f) const& { return impl::option::map<T>(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr auto map(F&& f) && { return impl::option::map(std::move(*this), std::forward<F>(f)); }
+    constexpr auto map(F&& f) && { return impl::option::map<T>(std::move(*this), std::forward<F>(f)); }
     template<class F>
-    constexpr auto map(F&& f) const&& { return impl::option::map(std::move(*this), std::forward<F>(f)); }
+    constexpr auto map(F&& f) const&& { return impl::option::map<T>(std::move(*this), std::forward<F>(f)); }
 
     // or_else(F&&) -> option<T> : F() -> option<T>
     template<class F>

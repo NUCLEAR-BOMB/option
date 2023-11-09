@@ -195,5 +195,14 @@ TEST_F(option, map_or) {
     a = opt::none;
     EXPECT_EQ(a.map_or(5.f, add_two), 5.f);
 }
+TEST_F(option, map_or_else) {
+    const auto default_fn = []() { return 2; };
+    const auto do_fn = [](int x) { return x - 1; };
+
+    opt::option a{1};
+    EXPECT_EQ(a.map_or_else(default_fn, do_fn), 0);
+    a = opt::none;
+    EXPECT_EQ(a.map_or_else(default_fn, do_fn), 2);
+}
 
 }
