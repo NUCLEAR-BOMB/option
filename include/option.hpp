@@ -651,6 +651,15 @@ namespace impl::option {
         }
         return opt::option<U>{opt::none};
     }
+
+    template<class T, class Self, class U, class F>
+    constexpr T map_or(Self&& self, U&& default_value, F&& f) {
+        if (self.has_value()) {
+            return static_cast<T>(std::invoke(std::forward<F>(f), std::forward<Self>(self).get()));
+        }
+        return static_cast<T>(std::forward<U>(default_value));
+    }
+
     // implementation of opt::option<T>::or_else(F&&)
     template<class T, class Self, class F>
     constexpr opt::option<T> or_else(Self&& self, F&& f) {
@@ -908,6 +917,15 @@ public:
         }
         return T{};
     }
+
+    template<class U, class F>
+    constexpr T map_or(U&& def, F&& f) & { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
+    template<class U, class F>
+    constexpr T map_or(U&& def, F&& f) const& { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
+    template<class U, class F>
+    constexpr T map_or(U&& def, F&& f) && { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
+    template<class U, class F>
+    constexpr T map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
 
     constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept {
         return has_value() ? std::addressof(get()) : nullptr;

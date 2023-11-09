@@ -182,5 +182,12 @@ TEST_F(option, flatten) {
     b = a.flatten();
     EXPECT_FALSE(b.has_value());
 }
+TEST_F(option, map_or) {
+    const auto add_one = [](int x) { return x + 1; };
+    opt::option a{1};
+    EXPECT_EQ(a.map_or(10, add_one), 2);
+    a = opt::none;
+    EXPECT_EQ(a.map_or(11, add_one), 11);
+}
 
 }
