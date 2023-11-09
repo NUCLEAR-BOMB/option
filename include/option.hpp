@@ -111,6 +111,18 @@ namespace impl {
         explicit construct_from_invoke_tag() = default;
     };
 
+    template<class>
+    inline constexpr bool is_reference_wrapper = false;
+    template<class T>
+    inline constexpr bool is_reference_wrapper<std::reference_wrapper<T>> = true;
+
+    template<class T>
+    struct unwrap_reference_t { using type = T; };
+    template<class T>
+    struct unwrap_reference_t<std::reference_wrapper<T>> { using type = T&; };
+    template<class T>
+    using unwrap_reference = typename unwrap_reference_t<T>::type;
+
     template<class T, class = std::size_t>
     inline constexpr bool has_option_flag = false;
     template<class T>
@@ -304,7 +316,7 @@ namespace impl {
         }
     };
 
-    template<class T, bool is_reference = std::is_reference_v<T>> // is_reference=false
+    template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
     class option_storage_base : private option_destruct_base<T> {
         using base = option_destruct_base<T>;
     public:
@@ -658,15 +670,14 @@ namespace impl::option {
 
     template<class Self>
     constexpr auto flatten(Self&& self) {
+        using pure_self = impl::remove_cvref<Self>;
         // this is for a nice error message if Self is not an opt::option<opt::option<T>>
-        constexpr bool is_option_option = impl::is_option_specialization<typename impl::remove_cvref<Self>::value_type>;
+        constexpr bool is_option_option = impl::is_option_specialization<typename pure_self::value_type>;
         if constexpr (is_option_option) {
-            return [&]() -> typename impl::remove_cvref<Self>::value_type {
-                if (self.has_value() && self->has_value()) {
-                    return std::forward<Self>(self)->get();
-                }
-                return opt::none;
-            }();
+            if (self.has_value() && self->has_value()) {
+                return typename pure_self::value_type{std::forward<Self>(self)->get()};
+            }
+            return typename pure_self::value_type{opt::none};
         } else {
             static_assert(is_option_option, "To flatten opt::option<T>, T must be opt::option<U>");
         }

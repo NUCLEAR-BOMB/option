@@ -230,5 +230,4 @@ TEST_F(reference, const_basic) {
     EXPECT_EQ(&(refc.get()), &a);
     EXPECT_EQ(*refc, 1);
 }
-
 }
