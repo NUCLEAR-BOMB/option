@@ -253,5 +253,10 @@ TEST_F(option, inspect) {
         .inspect([&](int& y) { return x += y * 2; });
     EXPECT_EQ(x, 4);
 }
+TEST_F(option, assume_has_value) {
+    opt::option a{1};
+    a.assume_has_value();
+    EXPECT_EQ(*a, 1);
+}
 
 }

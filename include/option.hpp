@@ -9,6 +9,29 @@
 #include <exception>
 #include <cstring>
 
+#ifdef __has_builtin
+    #if __has_builtin(__builtin_assume)
+        #define OPTION_ASSUME(expression) __builtin_assume(expression)
+    #endif
+#endif
+#ifndef OPTION_ASSUME
+        #if defined(__GNUC__) || defined(__GNUG__)
+            #define OPTION_ASSUME(expression) ((expression) ? (void)0 : (void)__builtin_unreachable())
+        #elif defined(_MSC_VER)
+            #define OPTION_ASSUME(expression) __assume(expression)
+        #else
+            #define OPTION_ASSUME(expression) ((void)0)
+        #endif
+#endif
+
+#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
+    #define OPTION_CONST_ATTR [[gnu::const]]
+#elif defined(_MSC_VER)
+    #define OPTION_CONST_ATTR __declspec(noalias)
+#else
+    #define OPTION_CONST_ATTR
+#endif
+
 #ifndef OPTION_VERIFY
     #ifdef __clang__
         #define OPTION_DEBUG_BREAK __builtin_debugtrap()
@@ -32,7 +55,7 @@
                 (void)OPTION_DEBUG_BREAK) \
             )
     #else
-        #define OPTION_VERIFY(expression, message) ((void)0)
+        #define OPTION_VERIFY(expression, message) OPTION_ASSUME(expression)
     #endif
 #endif
 
@@ -79,12 +102,12 @@ namespace impl {
     inline constexpr bool is_bit_representable = std::is_unsigned_v<T> && !std::is_same_v<T, bool>;
 
     template<class Left, class Right>
-    constexpr int bit_cmp(const Left& left, const Right& right) noexcept {
+    constexpr bool bit_equal(const Left& left, const Right& right) noexcept {
         static_assert(sizeof(Left) == sizeof(Right));
         if constexpr (impl::is_bit_representable<Left> && impl::is_bit_representable<Right>) {
-            return left == right ? 0 : left - right;
+            return left == right;
         } else {
-            return std::memcmp(&left, &right, sizeof(Left));
+            return std::memcmp(&left, &right, sizeof(Left)) == 0;
         }
     }
     template<class Dest, class Source>
@@ -103,16 +126,47 @@ namespace impl {
         static constexpr auto empty_value = sentinel; // for IntelliSense natvis
     public:
         static bool is_empty(const T& value) noexcept {
-            return impl::bit_cmp(value, sentinel) == 0;
+            return impl::bit_equal(value, sentinel);
         }
         static void construct_empty_flag(T& value) noexcept {
             impl::bit_copy(value, sentinel);
         }
-        static constexpr void destroy_empty_flag(T&) noexcept {}
     };
 }
 
 template<> struct option_flag<bool> : impl::sentinel_option_flag<bool, std::uint8_t{2}> {};
+
+template<class T>
+struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
+    static constexpr std::uintptr_t empty_value = [] {
+        if constexpr (sizeof(void*) == 8) {
+            // Uses 48-bit virtual address space implementation
+            // 0x00007FFFFFFFFFFF = Canonical lower half
+            // 0xFFFF800000000000 = Canonical higher half
+            // 0x7FFFFFFFFFFFFFFF = Noncanonical middle address
+            // (0x00007FFFFFFFFFFF + 0xFFFF800000000000) / 2
+            return 0x7FFFFFFFFFFFFFFFu;
+        } else if constexpr (sizeof(void*) == 4) {
+            // For x86 architecture
+            return 0xFFFFFFF3u;
+        } else if constexpr (sizeof(void*) == 2) {
+            // For 16-bit architecture
+            return 0xFFFFu;
+        } else if constexpr (sizeof(void*) == 1) {
+            // For 8-bit architecture
+            return 0xFFu;
+        } else {
+            static_assert(!sizeof(T*), "Unknown architecture");
+        }
+    }();
+
+    static bool is_empty(const T& value) noexcept {
+        return impl::bit_equal(value, empty_value);
+    }
+    static void construct_empty_flag(T& value) noexcept {
+        impl::bit_copy(value, empty_value);
+    }
+};
 
 template<class T>
 struct option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>>
@@ -267,13 +321,11 @@ namespace impl {
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...) {
-            flag::destroy_empty_flag(value);
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
-            flag::destroy_empty_flag(value);
             // has_value() == true
         }
 
@@ -289,7 +341,6 @@ namespace impl {
         constexpr void construct(Args&&... args) {
             // has_value() == false
             impl::construct_at(value, std::forward<Args>(args)...);
-            flag::destroy_empty_flag(value);
             // has_value() == true
         }
     };
@@ -746,6 +797,8 @@ class OPTION_DECLSPEC_EMPTY_BASES option : private impl::option_move_assign_base
 {
     using base = impl::option_move_assign_base<T>;
     using raw_type = std::remove_reference_t<T>;
+
+    using natvis_opt_flag = opt::option_flag<T>; // For IntelliSense Natvis visualizations
 public:
     static_assert(!std::is_same_v<T, opt::none_t>,
         "In opt::option<T>, T cannot be opt::none_t."
@@ -851,9 +904,11 @@ public:
         return *(*this);
     }
 
+    OPTION_CONST_ATTR
     constexpr bool has_value() const noexcept {
         return base::has_value();
     }
+    OPTION_CONST_ATTR
     constexpr explicit operator bool() const noexcept { return has_value(); }
 
     template<class P>
@@ -1070,6 +1125,10 @@ public:
     constexpr option or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
     template<class F>
     constexpr option or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
+
+    constexpr void assume_has_value() const noexcept {
+        OPTION_ASSUME(has_value());
+    }
 private:
     template<class Option>
     constexpr void construct_from_option(Option&& other) {

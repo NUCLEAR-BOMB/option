@@ -6,6 +6,12 @@
 
 namespace {
 
+struct some_struct {
+    int x;
+    int y;
+    int z() { return 0; };
+};
+
 template<class T>
 struct special : public ::testing::Test {
     static_assert(sizeof(opt::option<T>) == sizeof(T));
@@ -16,10 +22,29 @@ struct special : public ::testing::Test {
     const opt::option<T> E{opt::none};
 };
 
-using special_types = ::testing::Types<bool>;
+template<>
+struct special<int*> : public ::testing::Test {
+    int* A = nullptr;
+    int* B = nullptr;
+    const opt::option<int*> E{opt::none};
+
+    void SetUp() override {
+        A = new int{0};
+        B = new int{1};
+    }
+    void TearDown() override {
+        delete A;
+        delete B;
+    }
+};
+static_assert((opt::option_flag<int*>::empty_value % 2) != 0);
+
+using special_types = ::testing::Types<bool, int*>;
 TYPED_TEST_SUITE(special, special_types,);
 
 TYPED_TEST(special, none) {
+    static_assert(sizeof(opt::option<T>) == sizeof(T));
+
     const opt::option<T> a;
     EXPECT_FALSE(a.has_value());
 }

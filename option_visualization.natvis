@@ -2,8 +2,11 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <Type Name="opt::option&lt;*&gt;">
         <DisplayString Condition="base::has_value_flag" Optional="true">[none]</DisplayString>
-        <DisplayString Condition="base::value == base::flag::empty_value" Optional="true">[none]</DisplayString>
+        <DisplayString Condition="natvis_opt_flag::empty_value == base::value" Optional="true">[none]</DisplayString>
 
         <DisplayString>{base::value}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="value">base::value</Item>
+        </Expand>
     </Type>
 </AutoVisualizer>
