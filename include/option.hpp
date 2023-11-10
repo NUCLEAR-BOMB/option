@@ -59,6 +59,11 @@ class option;
 template<class T, class = void>
 struct option_flag;
 
+template<class T>
+inline constexpr bool is_option = false;
+template<class T>
+inline constexpr bool is_option<opt::option<T>> = true;
+
 namespace impl {
     template<class T, bool is_enum = std::is_enum_v<T>, class = void>
     struct has_exploit_unused_value : std::false_type {};
@@ -549,13 +554,6 @@ namespace impl {
         }
     };
 
-
-
-    template<class T>
-    inline constexpr bool is_option_specialization = false;
-    template<class T>
-    inline constexpr bool is_option_specialization<opt::option<T>> = true;
-
     template<class T>
     inline constexpr bool is_cv_bool = std::is_same_v<T, std::remove_cv_t<T>>;
 
@@ -576,7 +574,7 @@ namespace impl::option {
     template<class T, class U, bool is_explicit>
     using enable_constructor_5 = std::enable_if_t<
            std::is_constructible_v<T, U&&> && !std::is_same_v<impl::remove_cvref<U>, opt::option<T>>
-        && !(std::is_same_v<impl::remove_cvref<T>, bool> && impl::is_option_specialization<impl::remove_cvref<U>>)
+        && !(std::is_same_v<impl::remove_cvref<T>, bool> && opt::is_option<impl::remove_cvref<U>>)
         && (std::is_convertible_v<U&&, T> == !is_explicit) // explicit( condition )
     , int>;
 
@@ -587,7 +585,7 @@ namespace impl::option {
 
     template<class T, class U>
     using enable_assigment_operator_4 = std::enable_if_t<
-           !is_option_specialization<U>
+           !opt::is_option<U>
         && (!std::is_scalar_v<T> || !std::is_same_v<T, std::decay_t<U>>)
         && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
     , int>;
@@ -658,7 +656,7 @@ namespace impl::option {
     template<class Self, class F>
     constexpr auto and_then(Self&& self, F&& f) {
         using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
-        static_assert(impl::is_option_specialization<invoke_res>);
+        static_assert(opt::is_option<invoke_res>);
         if (self.has_value()) {
             return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
         } else {
@@ -717,7 +715,7 @@ namespace impl::option {
     constexpr auto flatten(Self&& self) {
         using pure_self = impl::remove_cvref<Self>;
         // this is for a nice error message if Self is not an opt::option<opt::option<T>>
-        constexpr bool is_option_option = impl::is_option_specialization<typename pure_self::value_type>;
+        constexpr bool is_option_option = opt::is_option<typename pure_self::value_type>;
         if constexpr (is_option_option) {
             if (self.has_value() && self->has_value()) {
                 return typename pure_self::value_type{std::forward<Self>(self)->get()};
