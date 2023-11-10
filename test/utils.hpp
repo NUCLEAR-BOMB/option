@@ -6,7 +6,7 @@ namespace opt {
     template<class T>
     void PrintTo(const opt::option<T>& value, ::std::ostream* os) { // NOLINT(readability-identifier-naming)
         if (value) {
-            *os << *value;
+            PrintTo<T>(*value, os);
         } else {
             *os << "[empty]";
         }

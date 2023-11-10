@@ -119,6 +119,13 @@ namespace impl {
             std::memcpy(&dest, &src, sizeof(Dest));
         }
     }
+    template<class To, class From>
+    constexpr To bit_cast(const From& from) noexcept {
+        static_assert(sizeof(To) == sizeof(From));
+        To result;
+        impl::bit_copy(result, from);
+        return result;
+    }
 
     template<class T, auto sentinel>
     class sentinel_option_flag {
@@ -134,7 +141,20 @@ namespace impl {
     };
 }
 
-template<> struct option_flag<bool> : impl::sentinel_option_flag<bool, std::uint8_t{2}> {};
+template<>
+struct option_flag<bool> {
+    static constexpr std::uint_least8_t empty_value = 0b0010;
+
+    static bool is_empty(const bool& value) noexcept {
+        const auto uint_value = impl::bit_cast<std::uint_least8_t>(value);
+        return uint_value & empty_value;
+    }
+    static void construct_empty_flag(bool& value) noexcept {
+        auto uint_value = impl::bit_cast<std::uint_least8_t>(value);
+        uint_value |= empty_value;
+        impl::bit_copy(value, uint_value);
+    }
+};
 
 template<class T>
 struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
@@ -1009,6 +1029,11 @@ public:
         return std::move(get());
     }
 
+    constexpr T& get_unchecked() & noexcept { return base::get(); }
+    constexpr const T& get_unchecked() const& noexcept { return base::get(); }
+    constexpr raw_type&& get_unchecked() && noexcept { return std::move(base::get()); }
+    constexpr const raw_type&& get_unchecked() const&& noexcept { return std::move(base::get()); }
+
     // More verbose version of opt::option<T>::value() or std::option<T>::value()
     constexpr T& value_or_throw() & { return impl::option::value_or_throw(*this); }
     constexpr const T& value_or_throw() const& { return impl::option::value_or_throw(*this); }
@@ -1127,7 +1152,7 @@ public:
     constexpr option or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
 
     constexpr void assume_has_value() const noexcept {
-        OPTION_ASSUME(has_value());
+        OPTION_VERIFY(has_value(), "Assumption 'has_value()' failed");
     }
 private:
     template<class Option>
@@ -1273,6 +1298,21 @@ constexpr opt::option<T> operator^(const opt::option<T>& left, const opt::option
     }
     return opt::none;
 }
+
+template<>
+struct option_flag<opt::option<bool>> {
+    static constexpr std::uint_least8_t empty_value = 0b0100;
+
+    static bool is_empty(const opt::option<bool>& value) noexcept {
+        const auto uint_value = impl::bit_cast<std::uint_least8_t>(value.get_unchecked());
+        return uint_value & empty_value;
+    }
+    static void construct_empty_flag(opt::option<bool>& value) noexcept {
+        auto uint_value = impl::bit_cast<std::uint_least8_t>(value.get_unchecked());
+        uint_value |= empty_value;
+        impl::bit_copy(value.get_unchecked(), uint_value);
+    }
+};
 
 namespace impl {
     template<class Op, class T1, class T2>

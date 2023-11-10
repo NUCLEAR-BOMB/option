@@ -17,8 +17,8 @@ struct special : public ::testing::Test {
     static_assert(sizeof(opt::option<T>) == sizeof(T));
     static_assert(is_trivial_compatible<opt::option<T>>);
 
-    const T A = T(0);
-    const T B = T(1);
+    const T A = false;
+    const T B = true;
     const opt::option<T> E{opt::none};
 };
 
@@ -39,7 +39,7 @@ struct special<int*> : public ::testing::Test {
 };
 static_assert((opt::option_flag<int*>::empty_value % 2) != 0);
 
-using special_types = ::testing::Types<bool, int*>;
+using special_types = ::testing::Types<bool, int*, opt::option<bool>>;
 TYPED_TEST_SUITE(special, special_types,);
 
 TYPED_TEST(special, none) {
