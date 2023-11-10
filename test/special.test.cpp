@@ -231,5 +231,39 @@ TEST_F(reference, const_basic) {
     EXPECT_EQ(*refc, 1);
 }
 
+enum class some_enum {
+    x, y, z,
+    OPTION_EXPLOIT_UNUSED_VALUE
+};
+enum class simple_enum {
+    a, b, c
+};
+
+struct exploit_enum : ::testing::Test {};
+
+static_assert(sizeof(opt::option<some_enum>) == sizeof(some_enum));
+static_assert(sizeof(opt::option<simple_enum>) > sizeof(some_enum));
+
+TEST_F(exploit_enum, basic) {
+    opt::option<some_enum> a{some_enum::x};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(*a, some_enum::x);
+
+    a = some_enum::y;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(*a, some_enum::y);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    a = some_enum::z;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(*a, some_enum::z);
+    a = some_enum::z;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(*a, some_enum::z);
+}
 
 }

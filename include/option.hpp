@@ -56,10 +56,20 @@ inline constexpr none_t none{impl::none_tag_ctor{}};
 template<class T>
 class option;
 
-template<class T>
+template<class T, class = void>
 struct option_flag;
 
 namespace impl {
+    template<class T, bool is_enum = std::is_enum_v<T>, class = void>
+    struct has_exploit_unused_value : std::false_type {};
+    template<class T>
+    struct has_exploit_unused_value<T, true, std::void_t<
+        decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)
+    >> : std::true_type {};
+
+    template<class T, class...>
+    using first_type = T;
+
     template<class T>
     inline constexpr bool is_bit_representable = std::is_unsigned_v<T> && !std::is_same_v<T, bool>;
 
@@ -98,6 +108,10 @@ namespace impl {
 }
 
 template<> struct option_flag<bool> : impl::sentinel_option_flag<bool, std::uint8_t{2}> {};
+
+template<class T>
+struct option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>>
+    : impl::sentinel_option_flag<T, T::OPTION_EXPLOIT_UNUSED_VALUE> {};
 
 namespace impl {
     template<class T>
@@ -1352,11 +1366,6 @@ constexpr bool operator>=(const option<T1>& left, const T2& right) noexcept(noex
 template<class T1, class T2>
 constexpr bool operator>=(const T1& left, const option<T2>& right) noexcept(noexcept(left >= *right)) {
     return impl::do_option_comparison_with_value<std::greater_equal<>, true>(left, right);
-}
-
-namespace impl {
-    template<class T, class...>
-    using first_type = T;
 }
 
 }
