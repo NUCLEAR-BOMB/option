@@ -258,5 +258,75 @@ TEST_F(option, assume_has_value) {
     a.assume_has_value();
     EXPECT_EQ(*a, 1);
 }
+TEST_F(option, unzip) {
+    { // std::tuple
+        opt::option a{std::tuple{1, 2u, 3.f, 4.}};
+        EXPECT_TRUE(a.has_value());
+
+        auto b = a.unzip();
+        static_assert(std::is_same_v<decltype(b), std::tuple<
+            opt::option<int>, opt::option<unsigned int>, opt::option<float>, opt::option<double>
+        >>);
+        auto& [b1, b2, b3, b4] = b;
+
+        EXPECT_TRUE(b1.has_value());
+        EXPECT_EQ(*b1, 1);
+        EXPECT_TRUE(b2.has_value());
+        EXPECT_EQ(*b2, 2u);
+        EXPECT_TRUE(b3.has_value());
+        EXPECT_EQ(*b3, 3.f);
+        EXPECT_TRUE(b4.has_value());
+        EXPECT_EQ(*b4, 4.);
+
+        a.reset();
+        auto c = a.unzip();
+        auto& [c1, c2, c3, c4] = c;
+        EXPECT_FALSE(c1.has_value());
+        EXPECT_FALSE(c2.has_value());
+        EXPECT_FALSE(c3.has_value());
+        EXPECT_FALSE(c4.has_value());
+    }
+    { // std::pair
+        opt::option a{std::pair{1, 2.f}};
+        EXPECT_TRUE(a.has_value());
+
+        auto b = a.unzip();
+        static_assert(std::is_same_v<decltype(b), std::pair<opt::option<int>, opt::option<float>>>);
+        auto& [b1, b2] = b;
+
+        EXPECT_TRUE(b1.has_value());
+        EXPECT_EQ(*b1, 1);
+        EXPECT_TRUE(b2.has_value());
+        EXPECT_EQ(*b2, 2.f);
+
+        a.reset();
+        auto c = a.unzip();
+        auto& [c1, c2] = c;
+        EXPECT_FALSE(c1.has_value());
+        EXPECT_FALSE(c2.has_value());
+    }
+    { // std::array
+        opt::option a{std::array{1, 2, 3}};
+        EXPECT_TRUE(a.has_value());
+
+        auto b = a.unzip();
+        static_assert(std::is_same_v<decltype(b), std::array<opt::option<int>, 3>>);
+        auto& [b1, b2, b3] = b;
+
+        EXPECT_TRUE(b1.has_value());
+        EXPECT_EQ(*b1, 1);
+        EXPECT_TRUE(b2.has_value());
+        EXPECT_EQ(*b2, 2);
+        EXPECT_TRUE(b3.has_value());
+        EXPECT_EQ(*b3, 3);
+
+        a.reset();
+        auto c = a.unzip();
+        auto& [c1, c2, c3] = c;
+        EXPECT_FALSE(c1.has_value());
+        EXPECT_FALSE(c2.has_value());
+        EXPECT_FALSE(c3.has_value());
+    }
+}
 
 }

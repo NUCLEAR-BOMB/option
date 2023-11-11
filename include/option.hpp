@@ -8,6 +8,8 @@
 #include <functional>
 #include <exception>
 #include <cstring>
+#include <tuple>
+#include <array>
 
 #ifdef __has_builtin
     #if __has_builtin(__builtin_assume)
@@ -230,6 +232,36 @@ namespace impl {
     inline constexpr bool has_option_flag = false;
     template<class T>
     inline constexpr bool has_option_flag<T, decltype(sizeof(opt::option_flag<T>))> = true;
+
+    template<class T>
+    struct is_tuple_like_impl : std::false_type {};
+    template<class T, std::size_t N>
+    struct is_tuple_like_impl<std::array<T, N>> : std::true_type {};
+    template<class T1, class T2>
+    struct is_tuple_like_impl<std::pair<T1, T2>> : std::true_type {};
+    template<class... Ts>
+    struct is_tuple_like_impl<std::tuple<Ts...>> : std::true_type {};
+
+    template<class T>
+    inline constexpr bool is_tuple_like = is_tuple_like_impl<T>::value;
+
+    template<class Tuple>
+    struct tuple_like_of_options_t;
+
+    template<class... Ts>
+    struct tuple_like_of_options_t<std::tuple<Ts...>> {
+        using type = std::tuple<opt::option<Ts>...>;
+    };
+    template<class T1, class T2>
+    struct tuple_like_of_options_t<std::pair<T1, T2>> {
+        using type = std::pair<opt::option<T1>, opt::option<T2>>;
+    };
+    template<class T, std::size_t N>
+    struct tuple_like_of_options_t<std::array<T, N>> {
+        using type = std::array<opt::option<T>, N>;
+    };
+    template<class Tuple>
+    using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
 
     template<class T, class... Args>
     constexpr void construct_at(T& obj, Args&&... args) {
@@ -810,6 +842,29 @@ namespace impl::option {
         }
         return std::forward<Self>(self);
     }
+    template<class TupleOfOptions, class Tuple, std::size_t... Idx>
+    constexpr auto unzip_impl(std::index_sequence<Idx...>) {
+        return TupleOfOptions{opt::option<std::tuple_element_t<Idx, Tuple>>{}...};
+    }
+
+    template<class Self>
+    constexpr auto unzip(Self&& self) {
+        using tuple_type = impl::remove_cvref<typename impl::remove_cvref<Self>::value_type>;
+        static_assert(is_tuple_like<tuple_type>,
+            "To unzip opt::option<T>, T must be tuple-like."
+            "A type T that satisfies tuple-like must be a specialization of "
+            "std::array, std::pair, std::tuple");
+
+        using tuple_of_options = impl::tuple_like_of_options<tuple_type>;
+        if (self.has_value()) {
+            return std::apply([&](auto&&... vals) {
+                return tuple_of_options{opt::option{std::forward<decltype(vals)>(vals)}...};
+            }, std::forward<Self>(self).get());
+        } else {
+            constexpr auto indexes = std::make_index_sequence<std::tuple_size_v<tuple_type>>{};
+            return unzip_impl<tuple_of_options, tuple_type>(indexes);
+        }
+    }
 }
 
 template<class T>
@@ -1154,6 +1209,12 @@ public:
     constexpr void assume_has_value() const noexcept {
         OPTION_VERIFY(has_value(), "Assumption 'has_value()' failed");
     }
+
+    constexpr auto unzip() & { return impl::option::unzip(*this); }
+    constexpr auto unzip() const& { return impl::option::unzip(*this); }
+    constexpr auto unzip() && { return impl::option::unzip(std::move(*this)); }
+    constexpr auto unzip() const&& { return impl::option::unzip(std::move(*this)); }
+
 private:
     template<class Option>
     constexpr void construct_from_option(Option&& other) {
