@@ -1174,7 +1174,7 @@ public:
                 return get();
             }
         }
-        return opt::none;
+        return {};
     }
 
     constexpr auto flatten() const& { return impl::option::flatten(*this); }
@@ -1215,11 +1215,20 @@ public:
     constexpr auto unzip() && { return impl::option::unzip(std::move(*this)); }
     constexpr auto unzip() const&& { return impl::option::unzip(std::move(*this)); }
 
+    template<class U>
+    constexpr option<T> replace(U&& val) & {
+        option<T> tmp{std::move(*this)};
+        // should call the destructor after moving, because moving does not end lifetime
+        base::reset();
+        base::construct(std::forward<U>(val));
+        return tmp; // copy elision
+    }
+
 private:
     template<class Option>
     constexpr void construct_from_option(Option&& other) {
         if (other.has_value()) {
-            base::construct(*std::forward<Option>(other));
+            base::construct(std::forward<Option>(other).get());
         }
     }
 };

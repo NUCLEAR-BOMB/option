@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <memory>
 
 #include "utils.hpp"
 
@@ -364,6 +365,15 @@ TEST_F(option, function_zip_with) {
 
     c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
     EXPECT_FALSE(c.has_value());
+}
+TEST_F(option, replace) {
+    opt::option a{std::make_unique<int>(1)};
+
+    auto c = a.replace(std::make_unique<int>(2));
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(**c, 1);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(**a, 2);
 }
 
 }
