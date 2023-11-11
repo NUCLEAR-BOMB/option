@@ -459,8 +459,8 @@ namespace impl {
 
         constexpr T& get() & noexcept { return base::value; }
         constexpr const T& get() const& noexcept { return base::value; }
-        constexpr T&& get() && noexcept { return base::value; }
-        constexpr const T&& get() const&& noexcept { return base::value; }
+        constexpr T&& get() && noexcept { return std::move(base::value); }
+        constexpr const T&& get() const&& noexcept { return std::move(base::value); }
 
         // logic of assigning opt::option<T&> from a value
         template<class U>
@@ -1229,6 +1229,19 @@ option(T) -> option<T>;
 
 template<class T>
 option(option<T>) -> option<option<T>>;
+
+template<class... Options, std::enable_if_t<
+    (opt::is_option<impl::remove_cvref<Options>> && ...)
+, int> = 0>
+constexpr auto zip(Options&&... options)
+    -> opt::option<std::tuple<typename impl::remove_cvref<Options>::value_type...>>
+{
+    if ((options.has_value() && ...)) {
+        return opt::option{std::tuple{std::forward<Options>(options).get()...}};
+    } else {
+        return {};
+    }
+}
 
 namespace impl {
     template<class To, class From>

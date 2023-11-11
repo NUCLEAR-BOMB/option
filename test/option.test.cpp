@@ -328,5 +328,21 @@ TEST_F(option, unzip) {
         EXPECT_FALSE(c3.has_value());
     }
 }
+TEST_F(option, function_zip) {
+    opt::option<int> a{1};
+    opt::option<float> b{2.f};
+
+    auto c = opt::zip(a, b);
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(*c, std::tuple(1, 2.f));
+
+    a.reset();
+    c = opt::zip(a, b);
+    EXPECT_FALSE(c.has_value());
+
+    b.reset();
+    c = opt::zip(a, b);
+    EXPECT_FALSE(c.has_value());
+}
 
 }
