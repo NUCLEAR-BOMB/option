@@ -344,5 +344,26 @@ TEST_F(option, function_zip) {
     c = opt::zip(a, b);
     EXPECT_FALSE(c.has_value());
 }
+TEST_F(option, function_zip_with) {
+    struct point { float x, y; };
+    const auto construct_point = [](float x, float y) {
+        return point{x, y};
+    };
+
+    opt::option<int> a{1};
+    opt::option<float> b{2.f};
+
+    auto c = opt::zip_with(construct_point, opt::option_cast<float>(a), b);
+
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 1.f);
+    EXPECT_EQ(c->y, 2.f);
+
+    c = opt::zip_with(construct_point, opt::option<float>{}, b);
+    EXPECT_FALSE(c.has_value());
+
+    c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
+    EXPECT_FALSE(c.has_value());
+}
 
 }

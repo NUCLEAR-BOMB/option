@@ -1243,6 +1243,19 @@ constexpr auto zip(Options&&... options)
     }
 }
 
+template<class Fn, class... Options, std::enable_if_t<
+    (opt::is_option<impl::remove_cvref<Options>> && ...)
+, int> = 0>
+constexpr auto zip_with(Fn&& fn, Options&&... options)
+    -> opt::option<std::invoke_result_t<Fn, decltype(std::forward<Options>(options).get())...>>
+{
+    if ((options.has_value() && ...)) {
+        return std::invoke(std::forward<Fn>(fn), std::forward<Options>(options).get()...);
+    } else {
+        return {};
+    }
+}
+
 namespace impl {
     template<class To, class From>
     struct static_cast_functor {
