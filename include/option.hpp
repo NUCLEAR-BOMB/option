@@ -57,14 +57,9 @@
                 (void)OPTION_DEBUG_BREAK) \
             )
     #else
-        #define OPTION_VERIFY(expression, message) OPTION_ASSUME(expression)
+        //#define OPTION_VERIFY(expression, message) OPTION_ASSUME(expression)
+        #define OPTION_VERIFY(expression, message)
     #endif
-#endif
-
-#ifdef _MSC_VER
-    #define OPTION_DECLSPEC_EMPTY_BASES __declspec(empty_bases)
-#else
-    #define OPTION_DECLSPEC_EMPTY_BASES
 #endif
 
 namespace opt {
@@ -933,7 +928,7 @@ namespace impl::option {
 }
 
 template<class T>
-class OPTION_DECLSPEC_EMPTY_BASES option : private impl::option_move_assign_base<T>
+class option : private impl::option_move_assign_base<T>
 {
     using base = impl::option_move_assign_base<T>;
     using raw_type = std::remove_reference_t<T>;
