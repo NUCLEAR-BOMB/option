@@ -9,7 +9,7 @@ namespace {
 struct some_struct {
     int x;
     int y;
-    int z() { return 0; };
+    int z() { return 0; } // NOLINT
 };
 
 template<class T>

@@ -362,8 +362,8 @@ TEST_F(option, function_zip_with) {
         return point{x, y};
     };
 
-    opt::option<int> a{1};
-    opt::option<float> b{2.f};
+    const opt::option<int> a{1};
+    const opt::option<float> b{2.f};
 
     auto c = opt::zip_with(construct_point, opt::option_cast<float>(a), b);
 
