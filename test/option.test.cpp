@@ -9,7 +9,7 @@ struct trivial_struct {};
 static_assert(std::is_trivially_destructible_v<opt::option<trivial_struct>>);
 
 static_assert(is_not_trivial_compatible<opt::option<nontrivial_struct>>);
-//static_assert(is_trivial_compatible<opt::option<int>>);
+static_assert(is_trivial_compatible<opt::option<int>>);
 
 struct option : ::testing::Test {
 

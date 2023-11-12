@@ -58,8 +58,8 @@
                 (void)OPTION_DEBUG_BREAK) \
             )
     #else
-        #define OPTION_VERIFY(expression, message) OPTION_ASSUME(expression)
-        //#define OPTION_VERIFY(expression, message)
+        //#define OPTION_VERIFY(expression, message) OPTION_ASSUME(expression)
+        #define OPTION_VERIFY(expression, message)
     #endif
 #endif
 
@@ -650,18 +650,6 @@ namespace impl {
     >
     struct option_copy_assign_base : option_move_base<T> {
         using option_move_base<T>::option_move_base;
-        using value_type = T;
-
-        option_copy_assign_base() = default;
-        option_copy_assign_base(const option_copy_assign_base&) = default;
-        option_copy_assign_base(option_copy_assign_base&&) = default;
-        option_copy_assign_base& operator=(option_copy_assign_base&&) = default;
-
-        constexpr option_copy_assign_base& operator=(const option_copy_assign_base& other)
-            noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
-            this->assign_from_option(other);
-            return *this;
-        }
     };
     template<class T>
     struct option_copy_assign_base<T, false, true> : option_move_base<T> {

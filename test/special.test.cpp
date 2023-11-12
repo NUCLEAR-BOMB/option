@@ -15,7 +15,7 @@ struct some_struct {
 template<class T>
 struct special : public ::testing::Test {
     static_assert(sizeof(opt::option<T>) == sizeof(T));
-    //static_assert(is_trivial_compatible<opt::option<T>>);
+    static_assert(is_trivial_compatible<opt::option<T>>);
 
     const T A = false;
     const T B = true;
@@ -128,9 +128,9 @@ struct reference : ::testing::Test {};
 
 static_assert(sizeof(opt::option<int&>) == sizeof(int*));
 
-//static_assert(is_trivial_compatible<opt::option<int&>>);
+static_assert(is_trivial_compatible<opt::option<int&>>);
 static_assert(std::is_trivially_default_constructible_v<opt::option<int&>>);
-//static_assert(is_trivial_compatible<opt::option<nontrivial_struct&>>);
+static_assert(is_trivial_compatible<opt::option<nontrivial_struct&>>);
 
 TEST_F(reference, basic) {
     int a = 1;
