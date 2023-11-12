@@ -40,17 +40,26 @@ TEST_F(option, assigment) {
     opt::option<int> a = 1;
     a = opt::none;
     EXPECT_FALSE(a.has_value());
-    a = as_lvalue(opt::option<int>(2));
+    {
+        const opt::option tmp{2};
+        a = tmp;
+    }
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(*a, 2);
-    a = as_lvalue(opt::option<int>(opt::none));
+    {
+        const opt::option<int> tmp{opt::none};
+        a = tmp;
+    }
     EXPECT_FALSE(a.has_value());
     a = opt::option<int>(3);
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(*a, 3);
     a = opt::option<int>(opt::none);
     EXPECT_FALSE(a.has_value());
-    a = as_lvalue(4);
+    {
+        const int tmp = 4;
+        a = tmp;
+    }
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(*a, 4);
     a = 5;
@@ -240,7 +249,9 @@ TEST_F(option, insert) {
     EXPECT_EQ(&x, a.ptr_or_null());
     EXPECT_EQ(*a, 2);
 
-    auto& y = a.insert(as_lvalue(3));
+    const int tmp = 3;
+    auto& y = a.insert(tmp);
+
     EXPECT_EQ(&y, a.ptr_or_null());
     EXPECT_EQ(*a, 3);
 }

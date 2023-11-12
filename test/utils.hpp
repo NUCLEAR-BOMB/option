@@ -18,12 +18,6 @@ constexpr std::remove_reference_t<T>&& as_rvalue(T&& x) noexcept {
     return static_cast<std::remove_reference_t<T>&&>(x);
 }
 
-// https://stackoverflow.com/a/67059296
-template<class T>
-constexpr T& as_lvalue(T&& x) {
-    return static_cast<T&>(x);
-}
-
 template<class T>
 constexpr const std::remove_reference_t<T>&& as_const_rvalue(T&& x) noexcept {
     return static_cast<const std::remove_reference_t<T>&&>(x);
