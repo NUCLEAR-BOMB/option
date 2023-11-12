@@ -12,17 +12,17 @@
 #include <array>
 
 #ifdef __has_builtin
-    #if __has_builtin(__builtin_assume)
-        #define OPTION_ASSUME(expression) __builtin_assume(expression)
+    #if __has_builtin(__builtin_unreachable)
+        #define OPTION_UNREACHABLE() __builtin_unreachable()
     #endif
 #endif
-#ifndef OPTION_ASSUME
+#ifndef OPTION_UNREACHABLE
         #if defined(__GNUC__) || defined(__GNUG__)
-            #define OPTION_ASSUME(expression) ((expression) ? (void)0 : (void)__builtin_unreachable())
+            #define OPTION_UNREACHABLE() __builtin_unreachable()
         #elif defined(_MSC_VER)
-            #define OPTION_ASSUME(expression) __assume(expression)
+            #define OPTION_UNREACHABLE() __assume(0)
         #else
-            #define OPTION_ASSUME(expression) ((void)0)
+            #define OPTION_UNREACHABLE() ((void)0)
         #endif
 #endif
 
@@ -50,8 +50,8 @@
                 (void)OPTION_DEBUG_BREAK) \
             )
     #else
-        //#define OPTION_VERIFY(expression, message) OPTION_ASSUME(expression)
-        #define OPTION_VERIFY(expression, message)
+        #define OPTION_VERIFY(expression, message) \
+            if (expression) {} else { OPTION_UNREACHABLE(); } ((void)0)
     #endif
 #endif
 
