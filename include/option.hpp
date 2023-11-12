@@ -26,14 +26,6 @@
         #endif
 #endif
 
-#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
-    #define OPTION_CONST_ATTR [[gnu::const]]
-#elif defined(_MSC_VER)
-    #define OPTION_CONST_ATTR __declspec(noalias)
-#else
-    #define OPTION_CONST_ATTR
-#endif
-
 #ifndef OPTION_VERIFY
     #ifdef __clang__
         #define OPTION_DEBUG_BREAK __builtin_debugtrap()
@@ -1040,11 +1032,9 @@ public:
         return *(*this);
     }
 
-    OPTION_CONST_ATTR
     constexpr bool has_value() const noexcept {
         return base::has_value();
     }
-    OPTION_CONST_ATTR
     constexpr explicit operator bool() const noexcept { return has_value(); }
 
     template<class P>
