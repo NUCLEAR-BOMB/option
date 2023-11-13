@@ -26,6 +26,22 @@
         #endif
 #endif
 
+#ifdef __has_builtin
+    #if __has_builtin(__builtin_bit_cast)
+        #define OPTION_BIT_CAST(type, arg) __builtin_bit_cast(type, arg)
+    #endif
+#endif
+#ifndef OPTION_BIT_CAST
+    #ifdef _MSC_VER
+        #define OPTION_BIT_CAST(type, arg) __builtin_bit_cast(type, arg)
+    #endif
+#endif
+#ifdef __has_builtin
+    #if __has_builtin(__builtin_constant_p)
+        #define OPTION_CONSTANT_P(expression) __builtin_constant_p(expression)
+    #endif
+#endif
+
 #ifndef OPTION_VERIFY
     #ifdef __clang__
         #define OPTION_DEBUG_BREAK __builtin_debugtrap()
@@ -88,64 +104,45 @@ namespace impl {
     template<class T, class...>
     using first_type = T;
 
-    template<class T>
-    inline constexpr bool is_bit_representable = std::is_unsigned_v<T> && !std::is_same_v<T, bool>;
-
-    template<class Left, class Right>
-    constexpr bool bit_equal(const Left& left, const Right& right) noexcept {
-        static_assert(sizeof(Left) == sizeof(Right));
-        if constexpr (impl::is_bit_representable<Left> && impl::is_bit_representable<Right>) {
-            return left == right;
-        } else {
-            return std::memcmp(&left, &right, sizeof(Left)) == 0;
-        }
-    }
-    template<class Dest, class Source>
-    constexpr void bit_copy(Dest& dest, const Source& src) noexcept {
-        static_assert(sizeof(Dest) == sizeof(Source));
-        if constexpr (impl::is_bit_representable<Dest> && impl::is_bit_representable<Source>) {
-            dest = src;
-        } else {
-            std::memcpy(&dest, &src, sizeof(Dest));
-        }
-    }
     template<class To, class From>
     constexpr To bit_cast(const From& from) noexcept {
+#ifdef OPTION_BIT_CAST
+        if constexpr (std::is_pointer_v<To> && std::is_same_v<From, std::uintptr_t>) {
+    #ifdef OPTION_CONSTANT_P
+            return OPTION_CONSTANT_P(reinterpret_cast<To>(from))
+                ? reinterpret_cast<To>(from)
+                : reinterpret_cast<To>(from);
+    #else
+            return reinterpret_cast<To>(from);
+    #endif
+        } else {
+            return OPTION_BIT_CAST(To, from);
+        }
+#else
         static_assert(sizeof(To) == sizeof(From));
-        To result;
-        impl::bit_copy(result, from);
+        To result{};
+        std::memcpy(&result, &from, sizeof(From));
         return result;
+#endif
     }
-
-    template<class T, auto sentinel>
-    class sentinel_option_flag {
-        static_assert(sizeof(T) == sizeof(sentinel));
-        static constexpr auto empty_value = sentinel; // for IntelliSense natvis
-    public:
-        static bool is_empty(const T& value) noexcept {
-            return impl::bit_equal(value, sentinel);
-        }
-        static void construct_empty_flag(T& value) noexcept {
-            impl::bit_copy(value, sentinel);
-        }
-    };
 }
 
+#if !(defined(__clang__) && defined(OPTION_FORCE_CONSTEXPR))
 template<>
 struct option_flag<bool> {
     static constexpr std::uint_least8_t empty_value = 0b0010;
 
-    static bool is_empty(const bool& value) noexcept {
+    static constexpr bool is_empty(const bool& value) noexcept {
         const auto uint_value = impl::bit_cast<std::uint_least8_t>(value);
         return uint_value & empty_value;
     }
-    static void construct_empty_flag(bool& value) noexcept {
-        auto uint_value = impl::bit_cast<std::uint_least8_t>(value);
-        uint_value |= empty_value;
-        impl::bit_copy(value, uint_value);
+    static constexpr void construct_empty_flag(bool& value) noexcept {
+        value |= impl::bit_cast<bool>(empty_value);
     }
 };
+#endif
 
+#if !(defined(_MSC_VER) && defined(OPTION_FORCE_CONSTEXPR))
 template<class T>
 struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
     static constexpr std::uintptr_t empty_value = [] {
@@ -170,17 +167,26 @@ struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
         }
     }();
 
-    static bool is_empty(const T& value) noexcept {
-        return impl::bit_equal(value, empty_value);
+    static constexpr bool is_empty(const T& value) noexcept {
+        return value == impl::bit_cast<T>(empty_value);
     }
-    static void construct_empty_flag(T& value) noexcept {
-        impl::bit_copy(value, empty_value);
+    static constexpr void construct_empty_flag(T& value) noexcept {
+        value = impl::bit_cast<T>(empty_value);
     }
 };
+#endif
 
 template<class T>
-struct option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>>
-    : impl::sentinel_option_flag<T, T::OPTION_EXPLOIT_UNUSED_VALUE> {};
+struct option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
+    static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
+
+    static constexpr bool is_empty(const T& value) noexcept {
+        return value == empty_value;
+    }
+    static constexpr void construct_empty_flag(T& value) noexcept {
+        value = empty_value;
+    }
+};
 
 namespace impl {
     template<class T>
@@ -347,14 +353,11 @@ namespace impl {
     };
     template<class T>
     struct option_destruct_base<T, /*store_flag=*/false, /*is_trivially_destructible=*/true> {
-        union {
-            nontrivial_dummy_t dummy;
-            T value;
-        };
+        T value;
         using flag = opt::option_flag<T>;
 
         constexpr option_destruct_base() noexcept
-            : dummy() {
+            : value{} {
             flag::construct_empty_flag(value);
             // has_value() == false
         }
@@ -386,14 +389,11 @@ namespace impl {
     };
     template<class T>
     struct option_destruct_base<T, /*store_flag=*/false, /*is_trivially_destructible=*/false> {
-        union {
-            nontrivial_dummy_t dummy;
-            T value;
-        };
+        T value;
         using flag = opt::option_flag<T>;
 
         constexpr option_destruct_base() noexcept
-            : dummy() {
+            : value{} {
             flag::construct_empty_flag(value);
             // has_value() == false
         }
@@ -1446,20 +1446,19 @@ constexpr opt::option<T> operator^(const opt::option<T>& left, const opt::option
     return opt::none;
 }
 
+#if !(defined(_MSC_VER) && defined(OPTION_FORCE_CONSTEXPR))
 template<>
 struct option_flag<opt::option<bool>> {
     static constexpr std::uint_least8_t empty_value = 0b0100;
 
-    static bool is_empty(const opt::option<bool>& value) noexcept {
-        const auto uint_value = impl::bit_cast<std::uint_least8_t>(value.get_unchecked());
-        return uint_value & empty_value;
+    static constexpr bool is_empty(const opt::option<bool>& value) noexcept {
+        return (impl::bit_cast<std::uint_least8_t>(value.get_unchecked()) & empty_value) > 0;
     }
-    static void construct_empty_flag(opt::option<bool>& value) noexcept {
-        auto uint_value = impl::bit_cast<std::uint_least8_t>(value.get_unchecked());
-        uint_value |= empty_value;
-        impl::bit_copy(value.get_unchecked(), uint_value);
+    static constexpr void construct_empty_flag(opt::option<bool>& value) noexcept {
+        value.get_unchecked() |= impl::bit_cast<bool>(empty_value);
     }
 };
+#endif
 
 namespace impl {
     template<class Op, class T1, class T2>

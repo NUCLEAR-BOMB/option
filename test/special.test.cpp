@@ -42,11 +42,13 @@ static_assert((opt::option_flag<int*>::empty_value % 2) != 0);
 using special_types = ::testing::Types<bool, int*, opt::option<bool>>;
 TYPED_TEST_SUITE(special, special_types,);
 
-TYPED_TEST(special, none) {
+TYPED_TEST(special, basic) {
     static_assert(sizeof(opt::option<T>) == sizeof(T));
 
-    const opt::option<T> a;
+    const opt::option<T> a{};
     EXPECT_FALSE(a.has_value());
+    const opt::option<T> b{this->A};
+    EXPECT_TRUE(b.has_value());
 }
 TYPED_TEST(special, reset) {
     opt::option<T> a;
@@ -289,6 +291,9 @@ TEST_F(exploit_enum, basic) {
     a = some_enum::z;
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(*a, some_enum::z);
+
+    [[maybe_unused]] constexpr opt::option<some_enum> ca{};
+    [[maybe_unused]] constexpr opt::option<some_enum> cb{some_enum::x};
 }
 
 }

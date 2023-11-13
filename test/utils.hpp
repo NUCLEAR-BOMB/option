@@ -1,6 +1,7 @@
 #pragma once
 
 #include <option.hpp>
+#include <iostream>
 
 namespace opt {
     template<class T>
