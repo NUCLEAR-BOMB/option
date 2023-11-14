@@ -109,14 +109,10 @@ namespace impl {
         static_assert(sizeof(To) == sizeof(From));
 #ifdef OPTION_BIT_CAST
         if constexpr (std::is_pointer_v<To> && std::is_same_v<From, std::uintptr_t>) {
-    #ifdef OPTION_CONSTANT_P
-        #ifndef __GNUC__
+    #if defined(OPTION_CONSTANT_P) && !(defined(__GNUC__) && !defined(__clang__))
             return OPTION_CONSTANT_P(reinterpret_cast<To>(from))
                 ? reinterpret_cast<To>(from)
                 : reinterpret_cast<To>(from);
-        #else
-            return OPTION_CONSTANT_P((To)from) ? (To)from : (To)from;
-        #endif
     #else
             return reinterpret_cast<To>(from);
     #endif
@@ -174,7 +170,7 @@ struct option_flag<opt::option<bool>> {
 };
 #endif
 
-#if !(defined(_MSC_VER) && defined(OPTION_FORCE_CONSTEXPR))
+#if !((defined(_MSC_VER) || (defined(__GNUC__) && !defined(__clang__))) && defined(OPTION_FORCE_CONSTEXPR))
 template<class T>
 struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
     static constexpr std::uintptr_t empty_value = [] {
