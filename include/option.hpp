@@ -125,7 +125,7 @@ namespace impl {
     template<class Dest, class Src>
     constexpr void bit_copy(Dest& dest, const Src& src) noexcept {
         static_assert(sizeof(Dest) == sizeof(Src));
-#if defined(_MSC_VER) && !defined(__clang__)
+#if (defined(_MSC_VER) || defined(__GNUC__)) && !defined(__clang__)
         if constexpr (std::is_same_v<Dest, bool>) {
             dest = impl::bit_cast<bool>(src);
         } else
