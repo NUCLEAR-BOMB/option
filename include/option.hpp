@@ -110,9 +110,13 @@ namespace impl {
 #ifdef OPTION_BIT_CAST
         if constexpr (std::is_pointer_v<To> && std::is_same_v<From, std::uintptr_t>) {
     #ifdef OPTION_CONSTANT_P
+        #ifndef __GNUC__
             return OPTION_CONSTANT_P(reinterpret_cast<To>(from))
                 ? reinterpret_cast<To>(from)
                 : reinterpret_cast<To>(from);
+        #else
+            return OPTION_CONSTANT_P((To)from) ? (To)from : (To)from;
+        #endif
     #else
             return reinterpret_cast<To>(from);
     #endif
