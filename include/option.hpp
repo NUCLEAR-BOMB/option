@@ -136,7 +136,7 @@ namespace impl {
     }
 }
 
-#if !((defined(__GNUC__) || defined(__clang__)) && defined(OPTION_FORCE_CONSTEXPR))
+#if !(defined(__clang__) && defined(OPTION_FORCE_CONSTEXPR)) && !(defined(__GNUC__) && !defined(__clang__))
 template<>
 struct option_flag<bool> {
     using bool_uint = std::uint_least8_t;
