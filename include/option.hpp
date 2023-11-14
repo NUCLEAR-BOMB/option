@@ -1446,7 +1446,7 @@ constexpr opt::option<T> operator^(const opt::option<T>& left, const opt::option
     return opt::none;
 }
 
-#if !(defined(_MSC_VER) && defined(OPTION_FORCE_CONSTEXPR))
+#if !defined(OPTION_FORCE_CONSTEXPR)
 template<>
 struct option_flag<opt::option<bool>> {
     static constexpr std::uint_least8_t empty_value = 0b0100;
