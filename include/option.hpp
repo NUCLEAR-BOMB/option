@@ -42,6 +42,8 @@
     #endif
 #endif
 
+// Macro `OPTION_VERIFY` is used in `opt::option<T>::get`, `opt::option<T>::operator*`.
+// You can also redefine `OPTION_VERIFY` to specify custom behavior when something goes unexpected.
 #ifndef OPTION_VERIFY
     #ifdef __clang__
         #define OPTION_DEBUG_BREAK __builtin_debugtrap()
@@ -59,6 +61,7 @@
     #endif
 
     #ifndef NDEBUG
+        // Print an error message and call a debug break if the expression is evaluated as false
         #include <cstdio>
         #define OPTION_VERIFY(expression, message) \
             ((expression) ? (void)0 : ( \
@@ -66,6 +69,7 @@
                 (void)OPTION_DEBUG_BREAK) \
             )
     #else
+        // Disable assertation on 'Release' build config
         #define OPTION_VERIFY(expression, message) \
             if (expression) {} else { OPTION_UNREACHABLE(); } ((void)0)
     #endif
@@ -80,15 +84,20 @@ namespace impl {
 struct none_t {
     constexpr explicit none_t(impl::none_tag_ctor) {}
 };
+// Used to indicate `opt::option` with an empty state.
+// Same as `std::nullptr`
 inline constexpr none_t none{impl::none_tag_ctor{}};
 
 template<class T>
 class option;
 
+// Template struct for specialization to decrease the size of `opt::option<T>` for type `T`
+// Also allows to use `std::enable_if` (second template parameter) for more flexible type specialization 
 template<class T, class = void>
 struct option_flag;
 
-template<class T>
+// Check if is a specialization of `opt::option`
+template<class>
 inline constexpr bool is_option = false;
 template<class T>
 inline constexpr bool is_option<opt::option<T>> = true;
@@ -136,6 +145,11 @@ namespace impl {
     }
 }
 
+// Optimizing `bool` value.
+// Usually the size of booleans is 1 byte, but only used a single bit.
+// Because of that, we can exploit this in `opt::option` to store an empty state.
+// This implementation uses bitwise AND (&) and OR (|) to check, reset the stored value.
+// This also allows the size of `opt::option<opt::option<bool>>` to be exactly 1 byte
 #if !(defined(__clang__) && defined(OPTION_FORCE_CONSTEXPR)) && !(defined(__GNUC__) && !defined(__clang__))
 template<>
 struct option_flag<bool> {
@@ -170,6 +184,8 @@ struct option_flag<opt::option<bool>> {
 };
 #endif
 
+// Uses (probably) unused addresses to indicate an empty value,
+// so that `sizeof(opt::option<int*>) == sizeof(int*)`
 #if !((defined(_MSC_VER) || (defined(__GNUC__) && !defined(__clang__))) && defined(OPTION_FORCE_CONSTEXPR))
 template<class T>
 struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
@@ -204,6 +220,11 @@ struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
 };
 #endif
 
+// For optimizing enumerations.
+// If enum contains a enumerator with name 'OPTION_EXPLOIT_UNUSED_VALUE',
+// this value will be threated as unused and will be used to indicate
+// an empty state and decrease the size of `opt::option`.
+// In the future, a library like 'magic_enum' can be used to automatic find unused values in enums.
 template<class T>
 struct option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
     static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
