@@ -775,6 +775,16 @@ public:
     }
 };
 
+namespace impl {
+    [[noreturn]] inline void throw_bad_access() {
+#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
+        throw bad_access{};
+#else
+        OPTION_VERIFY(false, "opt::bad_access was thrown but exceptions are disabled");
+#endif
+    }
+}
+
 namespace impl::option {
     template<class T, class U, bool is_explicit>
     using enable_constructor_5 = std::enable_if_t<
@@ -910,9 +920,7 @@ namespace impl::option {
     // implementation of opt::option<T>::value_or_throw()
     template<class Self>
     constexpr auto&& value_or_throw(Self&& self) {
-        if (!self.has_value()) {
-            throw bad_access{};
-        }
+        if (!self.has_value()) { throw_bad_access(); }
         return *std::forward<Self>(self);
     }
 
