@@ -1048,11 +1048,11 @@ public:
     // Explicit if `!std::is_convertible_v<const U&, T>`.
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/false> = 0>
-    constexpr option(const option<U>& other) {
+    constexpr option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
         construct_from_option(other);
     }
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/true> = 0>
-    constexpr explicit option(const option<U>& other) {
+    constexpr explicit option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
         construct_from_option(other);
     }
     // Converting move constructor.
@@ -1061,17 +1061,17 @@ public:
     // Explicit if `!std::is_convertible_v<U&&, T>`.
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/false> = 0>
-    constexpr option(option<U>&& other) {
+    constexpr option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
         construct_from_option(std::move(other));
     }
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/true> = 0>
-    constexpr explicit option(option<U>&& other) {
+    constexpr explicit option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
         construct_from_option(std::move(other));
     }
 
     // If this `opt::option` containes a value, the contained value is destroyed by calling `reset()`.
     // Postcondition: has_value() == false
-    constexpr option& operator=(opt::none_t) noexcept(noexcept(reset())) {
+    constexpr option& operator=(opt::none_t) noexcept(std::is_nothrow_destructible_v<T>) {
         reset();
         return *this;
     }
@@ -1153,7 +1153,7 @@ public:
     // Same as `std::optional`
     // Postcondition: has_value() == true
     template<class... Args>
-    constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && noexcept(reset())) {
+    constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>) {
         reset();
         base::construct(std::forward<Args>(args)...);
         return *(*this);
@@ -1187,12 +1187,12 @@ public:
     // otherwise return an empty `opt::option`
     // Same as Rust's `std::option::Option<T>::take`
     // Postcondition: has_value() == false
-    constexpr option<T> take() & noexcept(std::is_nothrow_copy_constructible_v<T> && noexcept(reset())) {
+    constexpr option<T> take() & {
         auto tmp = *this;
         reset();
         return tmp;
     }
-    constexpr option<T> take() && noexcept(std::is_nothrow_copy_constructible_v<T>) {
+    constexpr option<T> take() && {
         return std::move(*this);
     }
 
@@ -1341,7 +1341,7 @@ public:
     // Returns the contained value if `opt::option` contains the value;
     // otherwise return a default constructed `T` (expression `T{}`).
     // Similar to Rust's `std::option::Option<T>::value_or_default`
-    constexpr T value_or_default() const& {
+    constexpr T value_or_default() const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_default_constructible_v<T>) {
         static_assert(std::is_default_constructible_v<T>, "T must be default constructible");
         static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
         static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
@@ -1350,7 +1350,7 @@ public:
         }
         return T{};
     }
-    constexpr T value_or_default() && {
+    constexpr T value_or_default() && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_default_constructible_v<T>) {
         static_assert(std::is_default_constructible_v<T>, "T must be default constructible");
         static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
         if (has_value()) {

@@ -31,7 +31,7 @@ std::size_t hash_fn(const T& x) { return std::hash<T>{}(x); }
 
 // NOLINTBEGIN
 struct nontrivial_struct {
-    ~nontrivial_struct() {}
+    ~nontrivial_struct() noexcept(false) {}
     nontrivial_struct(const nontrivial_struct&) {}
     nontrivial_struct(nontrivial_struct&&) {}
     nontrivial_struct& operator=(const nontrivial_struct&) { return *this; }
