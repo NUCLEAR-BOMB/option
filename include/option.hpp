@@ -149,7 +149,7 @@ namespace impl {
 // Usually the size of booleans is 1 byte, but only used a single bit.
 // Because of that, we can exploit this in `opt::option` to store an empty state.
 // This implementation uses bitwise AND (&) and OR (|) to check, reset the stored value.
-// This also allows the size of `opt::option<opt::option<bool>>` to be exactly 1 byte
+// This is also allows the size of `opt::option<opt::option<bool>>` to be exactly 1 byte
 #if !(defined(__clang__) && defined(OPTION_FORCE_CONSTEXPR)) && !(defined(__GNUC__) && !defined(__clang__))
 template<>
 struct option_flag<bool> {
@@ -983,7 +983,7 @@ class option : private impl::option_move_assign_base<T>
     using base = impl::option_move_assign_base<T>;
     using raw_type = std::remove_reference_t<T>;
 
-    using natvis_opt_flag = opt::option_flag<T>; // For IntelliSense Natvis visualizations
+    using natvis_destruct_base = impl::option_destruct_base<T>; // For IntelliSense Natvis visualizations
 public:
     static_assert(!std::is_same_v<T, opt::none_t>,
         "In opt::option<T>, T cannot be opt::none_t."

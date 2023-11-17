@@ -59,6 +59,7 @@ TEST_F(option, assigment) {
     EXPECT_EQ(*a, 3);
     a = opt::option<int>(opt::none);
     EXPECT_FALSE(a.has_value());
+    EXPECT_FALSE(a.has_value());
     {
         const int tmp = 4;
         a = tmp;
