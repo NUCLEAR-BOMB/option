@@ -7,20 +7,19 @@
             <Item Name="value">base::value</Item>
         </Expand>
     </Type>
-    <Type Name="opt::option&lt;opt::option&lt;bool&gt;&gt;">
-        <DisplayString Condition="natvis_destruct_base::flag::empty_value &amp; base::value">[none]</DisplayString>
-        <DisplayString>{base::value}</DisplayString>
-        <Expand HideRawView="true">
-            <Item Name="value">base::value</Item>
-        </Expand>
-    </Type>
     <Type Name="opt::option&lt;*&gt;">
+        <Intrinsic Name="is_type_reference" Expression="
+            &quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '&amp;'
+        "></Intrinsic>
+        
         <DisplayString Condition="!base::has_value_flag" Optional="true">[none]</DisplayString>
+        <DisplayString Condition="is_type_reference() &amp;&amp; base::value == nullptr" Optional="true">[none]</DisplayString>
         <DisplayString Condition="natvis_destruct_base::flag::empty_value == base::value" Optional="true">[none]</DisplayString>
 
+        <DisplayString Condition="is_type_reference()" Optional="true">{*base::value}</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
-            <Item Name="value">base::value</Item>
+            <ExpandedItem>base::value</ExpandedItem>
         </Expand>
     </Type>
 </AutoVisualizer>
