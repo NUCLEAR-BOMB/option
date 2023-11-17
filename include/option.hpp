@@ -348,7 +348,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return has_value_flag;
         }
-        // precondition: has_value() == false
+        // Precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -392,7 +392,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return has_value_flag;
         }
-        // precondition: has_value() == false
+        // Precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -428,7 +428,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return !flag::is_empty(value);
         }
-        // precondition: has_value() == false
+        // Precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -475,7 +475,7 @@ namespace impl {
         constexpr bool has_value() const noexcept {
             return !flag::is_empty(value);
         }
-        // precondition: has_value() == false
+        // Precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
@@ -521,7 +521,7 @@ namespace impl {
                 reset();
             }
         }
-        // precondition: has_value() == false
+        // Precondition: has_value() == false
         template<class Option>
         constexpr void construct_from_option(Option&& other) {
             if (other.has_value()) {
@@ -580,12 +580,12 @@ namespace impl {
         constexpr T& get() const& noexcept { return *value; }
         constexpr T&& get() const&& noexcept { return std::move(*value); }
 
-        // precondition: has_value() == false
+        // Precondition: has_value() == false
         template<class Arg>
         constexpr void construct(Arg&& arg) noexcept {
             value = ref_to_ptr(std::forward<Arg>(arg));
         }
-        // precondition: has_value() == false
+        // Precondition: has_value() == false
         template<class Option>
         constexpr void construct_from_option(Option&& other) {
             if (other.has_value()) {
@@ -984,40 +984,61 @@ public:
 
     using value_type = T;
 
-    // 1
-    // postcondition: has_value() == false
+    // Default constructor.
+    // Constructors an object that does not contain a value.
+    // Trivial only for `opt::option<T&>`.
+    // Postcondition: has_value() == false
     option() = default;
-    // 2
-    // postcondition: has_value() == false
+
+    // Constructors an object that does not contain a value.
+    // Postcondition: has_value() == false
     constexpr option(opt::none_t) noexcept : base() {}
 
-    // 3
-    // postcondition: has_value() == other.has_value()
+    // Copy constructor.
+    // If other `opt::option` (first parameter) contains a value, initializes current contained value
+    // with other's contained value. If other does not contain a value, constructs an empty `opt::option`.
+    // Deleted if `!std::is_copy_constructible_v<T>`.
+    // Trivial if `std::is_trivially_copy_constructible_v<T>`.
+    // Postcondition: has_value() == other.has_value()
     option(const option&) = default;
-    // 4
-    // postcondition: has_value() == other.has_value()
+
+    // Move constructor.
+    // If other `opt::option` (first parameter) contains a value, initializes current contained value
+    // with other's contained value using `std::move`. If other does not contain a value, constructs an empty `opt::option`.
+    // Deleted if `!std::is_move_constructible_v<T>`.
+    // Trivial if `std::is_trivially_move_constructible_v<T>`.
+    // Postcondition: has_value() == other.has_value()
     option(option&&) = default;
-    // 5
-    // postcondition: has_value() == true
+
+    // Constructs the `opt::option` that contains a value from `val`.
+    // Explicit if `!std::is_convertible_v<U&&, T>`.
+    // Postcondition: has_value() == true
     template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/true> = 0>
     constexpr explicit option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : base(std::forward<U>(val)) {}
     template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/false> = 0>
     constexpr option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : base(std::forward<U>(val)) {}
-    // 6
-    // postcondition: has_value() == true
+
+    // Constructs the `opt::option` that contains a value,
+    // initialized from the arguments `first`, `args...`.
+    // Postcondition: has_value() == true
     template<class First, class... Args, impl::option::enable_constructor_6<T, First, Args...> = 0>
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
         : base(std::forward<First>(first), std::forward<Args>(args)...) {}
 
-    // postcondition: has_value() == true
-    // 7
+    // Constructs the `opt::option` that contains a value,
+    // direct-initialized from `f` function result.
+    // Postcondition: has_value() == true
     template<class F, class Arg>
     constexpr explicit option(impl::construct_from_invoke_tag, F&& f, Arg&& arg)
         : base(impl::construct_from_invoke_tag{}, std::forward<F>(f), std::forward<Arg>(arg)) {}
 
-    // 8
+    // Converting copy constructor.
+    // If `other` contains a value, copy constructs a contained value.
+    // If `other` does not contain a value, constructs an empty `opt::option`.
+    // Explicit if `!std::is_convertible_v<const U&, T>`.
+    // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/false> = 0>
     constexpr option(const option<U>& other) {
         construct_from_option(other);
@@ -1026,7 +1047,11 @@ public:
     constexpr explicit option(const option<U>& other) {
         construct_from_option(other);
     }
-    // 9
+    // Converting move constructor.
+    // If `other` containes a value, move constructs a contained value.
+    // If `other` does not contain a value, constructs an empty `opt::option`.
+    // Explicit if `!std::is_convertible_v<U&&, T>`.
+    // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/false> = 0>
     constexpr option(option<U>&& other) {
         construct_from_option(std::move(other));
@@ -1036,34 +1061,70 @@ public:
         construct_from_option(std::move(other));
     }
 
-    // 1
-    // postcondition: has_value() == false
+    // If this `opt::option` containes a value, the contained value is destroyed by calling `reset()`.
+    // Postcondition: has_value() == false
     constexpr option& operator=(opt::none_t) noexcept(noexcept(reset())) {
         reset();
         return *this;
     }
-    // 2
-    // postcondition: has_value() == other.has_value()
+
+    // Copy assigment operator.
+    // this | other | action
+    //  NO  |  NO   | Do nothing
+    //  NO  |  YES  | Copy construct
+    //  YES |  NO   | Destroy by calling `reset()`
+    //  YES |  YES  | Copy assign
+    // Deleted if `!(std::is_copy_constructible_v<T> || std::is_copy_assignable_v<T>)`.
+    // Trivial if `std::is_trivially_copy_constructible_v<T>
+    //          && std::is_trivially_copy_assignable_v<T>
+    //          && std::is_trivially_destructible_v<T>`.
+    // Postcondition: has_value() == other.has_value()
     option& operator=(const option&) = default;
-    // 3
-    // postcondition: has_value() == other.has_value()
+
+    // Move assigment operator.
+    // If contains a value:
+    // this | other | action
+    //  NO  |  NO   | Do nothing
+    //  NO  |  YES  | Move construct
+    //  YES |  NO   | Destroy by calling `reset()`
+    //  YES |  YES  | Move assign
+    // Deleted if `!(std::is_move_constructible_v<T> || std::is_move_assignable_v<T>)`.
+    // Trivial if `std::is_trivially_move_constructible_v<T>
+    //          && std::is_trivially_move_assignable_v<T>
+    //          && std::is_trivially_destructible_v<T>`
+    // Postcondition: has_value() == other.has_value()
     option& operator=(option&&) = default;
-    // 4
-    // postcondition: has_value() == true
+
+    // Assigns the `opt::option` from a `value`.
+    // If this `opt::option` contains a value, then assign it from the `value`; otherwise, construct it from the `value`
+    // Postcondition: has_value() == true
     template<class U = T, impl::option::enable_assigment_operator_4<T, U> = 0>
     constexpr option& operator=(U&& value) noexcept(impl::option::nothrow_assigment_operator_4<T, U>) {
         base::assign_from_value(std::forward<U>(value));
         return *this;
     }
-    // 5
-    // postcondition: has_value() == true
+
+    // Assigns the `opt::option` from an `other` `opt::option` (first parameter).
+    // If contains a value:
+    // this | other | action
+    //  NO  |  NO   | Do nothing
+    //  NO  |  YES  | Construct using `other`
+    //  YES |  NO   | Destroy by calling `reset()`
+    //  YES |  YES  | Assign using `other`
+    // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_assigment_operator_5<T, U> = 0>
     constexpr option& operator=(const option<U>& other) {
         base::assign_from_option(other);
         return *this;
     }
-    // 6
-    // postcondition: has_value() == true
+    // Assigns the `opt::option` from an moved `other` `opt::option` (first parameter).
+    // If contains a value:
+    // this | other | action
+    //  NO  |  NO   | Do nothing
+    //  NO  |  YES  | Construct using moved `other`
+    //  YES |  NO   | Destroy by calling `reset()`
+    //  YES |  YES  | Assign using moved `other`
+    // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_assigment_operator_6<T, U> = 0>
     constexpr option& operator=(option<U>&& other) {
         base::assign_from_option(std::move(other));
@@ -1073,7 +1134,7 @@ public:
     // Destroys the contained value.
     // If this `opt::option` contains a value, destroy the contained value; otherwise, do nothing
     // Same as `std::optional`
-    // postcondition: has_value() == false
+    // Postcondition: has_value() == false
     constexpr void reset() noexcept(std::is_nothrow_destructible_v<T>) {
         base::reset();
     }
@@ -1082,7 +1143,7 @@ public:
     // If this contains a value before the `emplace`, destroy that contained value.
     // Initializes the contained value with `std::forward<Args>(args)...` as constructor parameters
     // Same as `std::optional`
-    // postcondition: has_value() == true
+    // Postcondition: has_value() == true
     template<class... Args>
     constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && noexcept(reset())) {
         reset();
@@ -1117,7 +1178,7 @@ public:
     // and destroy which is left in `opt::option`;
     // otherwise return an empty `opt::option`
     // Same as Rust's `std::option::Option<T>::take`
-    // postcondition: has_value() == false
+    // Postcondition: has_value() == false
     constexpr option<T> take() & noexcept(std::is_nothrow_copy_constructible_v<T> && noexcept(reset())) {
         auto tmp = *this;
         reset();
@@ -1173,7 +1234,7 @@ public:
     // on "Release" configuration.
     // Calls the `OPTION_VERIFY` macro if this `opt::option` does not contain the value.
     // Same as `std::optional<T>::operator*`.
-    // precondition: has_value() == true
+    // Precondition: has_value() == true
     constexpr T& get() & noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return base::get();
@@ -1194,7 +1255,7 @@ public:
     // Calls the `OPTION_VERIFY` macro if this `opt::option` does not contain the value
     // Returns `std::addressof` of this `opt::option` contained value.
     // Same as `std::optional<T>::operator->`.
-    // precondition: has_value() == true
+    // Precondition: has_value() == true
     constexpr std::add_pointer_t<const T> operator->() const noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::addressof(get());
@@ -1206,7 +1267,7 @@ public:
     // Returns a reference to the contained value.
     // Calls the `OPTION_VERIFY` macro if this `opt::option` does not contain the value
     // Same as `std::optional<T>::operator*` or `opt::option<T>::get`.
-    // precondition: has_value() == true
+    // Precondition: has_value() == true
     constexpr T& operator*() & noexcept {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return get();
@@ -1290,7 +1351,7 @@ public:
         return T{};
     }
 
-    // Returns the provided `def` default value if this `opt::option` does not contains a value;
+    // Returns the provided `def` default value if this `opt::option` does not contain a value;
     // otherwise, return result of a `f` invocation with this `opt::option` contained value as an argument.
     // Use `opt::option<T>::map_or_else` to lazy evaluate the default value
     // Same as Rust's `std::option::Option<T>::map_or`
@@ -1303,7 +1364,7 @@ public:
     template<class U, class F>
     constexpr auto map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
 
-    // Returns a `def` default function result if this `opt::option` does not contains a value;
+    // Returns a `def` default function result if this `opt::option` does not contain a value;
     // otherwise, returns result of a 'f' invocation with this `opt::option` contained value as an argument
     // Same as Rust's `std::option::Option<T>::map_or_else`
     template<class D, class F>
@@ -1326,7 +1387,7 @@ public:
     constexpr void ptr_or_null() && = delete;
     constexpr void ptr_or_null() const&& = delete;
 
-    // Returns an empty `opt::option` if this `opt::option` does not contains a value;
+    // Returns an empty `opt::option` if this `opt::option` does not contain a value;
     // otherwise, invoke `f` with the contained value as an argument and return:
     //     `opt::option` that containes current contained value if `f` return `true`
     //     an empty `opt::option` if `f` returns `false`
@@ -1385,7 +1446,7 @@ public:
     constexpr option or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
 
     // Specifies that this `opt::option` will always contains value at a given point.
-    // Will cause undefined behavior if this `opt::option` does not contains a value.
+    // Will cause undefined behavior if this `opt::option` does not contain a value.
     constexpr void assume_has_value() const noexcept {
         OPTION_VERIFY(has_value(), "Assumption 'has_value()' failed");
     }
@@ -1540,7 +1601,7 @@ constexpr opt::option<T> operator|(none_t, const opt::option<T>& right) {
 }
 
 // Copy assigns the `right` `opt::option` to the `left` `opt::option`
-// if the `left` `opt::option` does not contains a value.
+// if the `left` `opt::option` does not contain a value.
 // Returns a reference to the `left`
 template<class T>
 constexpr opt::option<T>& operator|=(opt::option<T>& left, const opt::option<T>& right) {
@@ -1550,7 +1611,7 @@ constexpr opt::option<T>& operator|=(opt::option<T>& left, const opt::option<T>&
     return left;
 }
 // Move assigns the `right` `opt::option` to the `left` `opt::option`
-// if the `left` `opt::option` does not contains a value.
+// if the `left` `opt::option` does not contain a value.
 // Returns a reference to the `left` `opt::option`
 template<class T>
 constexpr opt::option<T>& operator|=(opt::option<T>& left, opt::option<T>&& right) {
@@ -1560,7 +1621,7 @@ constexpr opt::option<T>& operator|=(opt::option<T>& left, opt::option<T>&& righ
     return left;
 }
 // Copy assigns the `right` value to the `left` `opt::option`
-// if the `left` `opt::option` does not containes a value.
+// if the `left` `opt::option` does not containe a value.
 // Returns a reference to the `left` `opt::option`
 template<class T>
 constexpr opt::option<T>& operator|=(opt::option<T>& left, const T& right) {
@@ -1570,7 +1631,7 @@ constexpr opt::option<T>& operator|=(opt::option<T>& left, const T& right) {
     return left;
 }
 // Move assigns the `right` value to the `left` `opt::option`
-// if the `left` `opt::option` does not containes a value.
+// if the `left` `opt::option` does not containe a value.
 // Returns a reference to the `left` `opt::option`
 template<class T>
 constexpr opt::option<T>& operator|=(opt::option<T>& left, T&& right) {
@@ -1580,7 +1641,7 @@ constexpr opt::option<T>& operator|=(opt::option<T>& left, T&& right) {
     return left;
 }
 
-// Returns an empty `opt::option` if the `left` `opt::option` does not contains a value;
+// Returns an empty `opt::option` if the `left` `opt::option` does not contain a value;
 // otherwise return `right`
 // x = left option value
 // y = right option value
