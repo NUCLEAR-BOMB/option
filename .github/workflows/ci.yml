@@ -31,6 +31,9 @@ jobs:
     - name: Test
       run: ctest --test-dir build/ --output-on-failure --build-config ${{ matrix.type.name }} -j 2
 
+    - name: Build Examples
+      run: cmake --build build --target option-examples --config ${{ matrix.type.name }}
+
   clang-tidy:
     name: Analyze code on ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.os }}
