@@ -989,6 +989,8 @@ public:
         "In opt::option<T>, T cannot be opt::none_t."
         "If you using CTAD (Class template argument deduction),"
         "you should probably specify the type for an empty opt::option<T>");
+    static_assert(!std::is_void_v<T>,
+        "T cannot be (possibly cv-qualified) `void`");
 
     using value_type = T;
 
@@ -1447,11 +1449,12 @@ public:
     constexpr auto map(F&& f) const&& { return impl::option::map<T>(std::move(*this), std::forward<F>(f)); }
 
     // Returns a contained value if this `opt::option` contains a value;
-    // otherwise, return the result of `f`
+    // otherwise, return the result of `f`.
+    // Same as `std::optional<T>::or_else`
     template<class F>
-    constexpr option or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
+    constexpr option<T> or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
     template<class F>
-    constexpr option or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
+    constexpr option<T> or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
 
     // Specifies that this `opt::option` will always contains value at a given point.
     // Will cause undefined behavior if this `opt::option` does not contain a value.
@@ -1528,12 +1531,19 @@ template<class Fn, class... Options, std::enable_if_t<
     (opt::is_option<impl::remove_cvref<Options>> && ...)
 , int> = 0>
 constexpr auto zip_with(Fn&& fn, Options&&... options)
-    -> opt::option<std::invoke_result_t<Fn, decltype(std::forward<Options>(options).get())...>>
 {
-    if ((options.has_value() && ...)) {
-        return std::invoke(std::forward<Fn>(fn), std::forward<Options>(options).get()...);
+    using fn_result = std::invoke_result_t<Fn, decltype(std::declval<Options>().get())...>;
+    if constexpr (std::is_void_v<fn_result>) {
+        if ((options.has_value() && ...)) {
+            std::invoke(std::forward<Fn>(fn), std::forward<Options>(options).get()...);
+        }
+        return void();
     } else {
-        return {};
+        if ((options.has_value() && ...)) {
+            return opt::option<fn_result>{std::invoke(std::forward<Fn>(fn), std::forward<Options>(options).get()...)};
+        } else {
+            return opt::option<fn_result>{};
+        }
     }
 }
 

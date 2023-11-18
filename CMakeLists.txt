@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 project(option VERSION 1.0 LANGUAGES CXX)
 
 option(BUILD_TEST "Enable 'option-test' target" ${PROJECT_IS_TOP_LEVEL})
+option(BUILD_EXAMPLES "Enable 'option-examples' target" ${PROJECT_IS_TOP_LEVEL})
 option(USE_SANITIZER "Enable sanitizers for test target" TRUE)
 option(USE_CLANG_TIDY "Enable clang-tidy for test target" FALSE)
 option(INSTALL_OPTION "Enable --install for 'option' project" FALSE)
@@ -34,6 +35,10 @@ endif()
 if (BUILD_TEST)
     enable_testing()
     add_subdirectory(test)
+endif()
+
+if (BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
 
 if (INSTALL_OPTION)

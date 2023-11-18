@@ -380,6 +380,14 @@ TEST_F(option, function_zip_with) {
 
     c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
     EXPECT_FALSE(c.has_value());
+
+    const auto do_something_else = [](int x, float y) {
+        (void)x;
+        (void)y;
+    };
+    opt::zip_with(do_something_else, a, b);
+    opt::zip_with(do_something_else, opt::option<int>{}, b);
+    opt::zip_with(do_something_else, a, opt::option<float>{});
 }
 TEST_F(option, replace) {
     opt::option a{std::make_unique<int>(1)};
