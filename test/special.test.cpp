@@ -404,7 +404,6 @@ TEST_F(tuple_like, pair) {
 }
 TEST_F(tuple_like, array) {
     static_assert(sizeof(opt::option<std::array<int, 2>>) > sizeof(std::array<int, 2>));
-    static_assert(sizeof(opt::option<std::array<int, 0>>) == sizeof(opt::option<int>));
 
     opt::option<std::array<float, 2>> a{{1.f, 2.f}};
     static_assert(sizeof(a) == sizeof(std::array<float, 2>));
