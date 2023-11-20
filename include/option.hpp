@@ -313,6 +313,7 @@ namespace impl {
     template<class T, class... Ts>
     using find_option_flag_type = find_option_flag_type_impl<has_option_flag<T>, 0, T, Ts...>;
 
+    // For the std::tuple
     template<class T, class... Ts>
     struct internal_option_flag<std::tuple<T, Ts...>,
         std::void_t<typename find_option_flag_type<T, Ts...>::type>
@@ -335,6 +336,50 @@ namespace impl {
         }
     };
 
+    // For the std::pair
+    template<class T1, class T2>
+    struct internal_option_flag<std::pair<T1, T2>,
+        std::enable_if_t<has_option_flag<T1> || has_option_flag<T2>>
+    > {
+        static constexpr bool first_has_option_flag = has_option_flag<T1>;
+        using flag_type = std::conditional_t<first_has_option_flag, T1, T2>;
+        static constexpr std::size_t pair_index = first_has_option_flag ? 0 : 1;
+        using flag = opt::option_flag<flag_type>;
+        using pair_type = std::pair<T1, T2>;
+
+        static bool is_empty(const pair_type& value) noexcept {
+            return flag::is_empty(std::get<pair_index>(value));
+        }
+        static void set_empty(pair_type& value) noexcept {
+            flag::set_empty(std::get<pair_index>(value));
+        }
+        static void unset_empty(pair_type& value) noexcept {
+            if constexpr (has_unset_empty_method<flag_type, flag>) {
+                flag::unset_empty(std::get<pair_index>(value));
+            }
+        }
+    };
+
+    template<class T, std::size_t Size>
+    struct internal_option_flag<std::array<T, Size>, std::enable_if_t<(Size > 0 && has_option_flag<T>)>>
+    {
+        using flag = opt::option_flag<T>;
+        using array_type = std::array<T, Size>;
+
+        static bool is_empty(const array_type& value) noexcept {
+            return flag::is_empty(std::get<0>(value));
+        }
+        static void set_empty(array_type& value) noexcept {
+            flag::set_empty(std::get<0>(value));
+        }
+        static void unset_empty(array_type& value) noexcept {
+            if constexpr (has_unset_empty_method<T, flag>) {
+                flag::unset_empty(std::get<0>(value));
+            }
+        }
+    };
+
+    // For the empty classes (includes std::tuple<>)
     template<class T>
     struct internal_option_flag<T, std::enable_if_t<std::is_empty_v<T>>> {
         static constexpr std::uint_least8_t empty_value = 0b0101'1111u;
