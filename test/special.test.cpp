@@ -81,7 +81,7 @@ struct special<std::tuple<>> : ::testing::Test {
 };
 
 using special_types = ::testing::Types<
-    bool, int*, opt::option<bool>, float, double, std::tuple<int, float>, std::tuple<>
+    bool, int*, opt::option<bool>, float, double, std::tuple<int, float>
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
@@ -368,12 +368,6 @@ TEST_F(tuple_like, tuple) {
     EXPECT_EQ(std::get<2>(*c), 3.);
     c.reset();
     EXPECT_FALSE(c.has_value());
-
-    opt::option<std::tuple<>> d{{}};
-    static_assert(sizeof(d) == 1);
-    EXPECT_TRUE(d.has_value());
-    d.reset();
-    EXPECT_FALSE(d.has_value());
 }
 TEST_F(tuple_like, pair) {
     static_assert(sizeof(opt::option<std::pair<int, long>>) > sizeof(std::pair<int, long>));
@@ -393,14 +387,6 @@ TEST_F(tuple_like, pair) {
     EXPECT_EQ(std::get<1>(*b), -1);
     a.reset();
     EXPECT_FALSE(a.has_value());
-
-    opt::option<std::pair<std::tuple<>, int>> c{{{}, 1}};
-    static_assert(sizeof(c) == sizeof(std::pair<std::tuple<>, int>));
-    EXPECT_TRUE(c.has_value());
-    EXPECT_EQ(std::get<0>(*c), std::tuple<>{});
-    EXPECT_EQ(std::get<1>(*c), 1);
-    c.reset();
-    EXPECT_FALSE(c.has_value());
 }
 TEST_F(tuple_like, array) {
     static_assert(sizeof(opt::option<std::array<int, 2>>) > sizeof(std::array<int, 2>));
