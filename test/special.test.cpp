@@ -67,8 +67,22 @@ struct special<double> : ::testing::Test {
         std::feclearexcept(FE_ALL_EXCEPT);
     }
 };
+template<>
+struct special<std::tuple<int, float>> : ::testing::Test {
+    std::tuple<int, float> A{2, 35.58f};
+    std::tuple<int, float> B{10, 1034.124f};
+    const opt::option<std::tuple<int, float>> E{opt::none};
+};
+template<>
+struct special<std::tuple<>> : ::testing::Test {
+    std::tuple<> A{};
+    std::tuple<> B{};
+    const opt::option<std::tuple<>> E{opt::none};
+};
 
-using special_types = ::testing::Types<bool, int*, opt::option<bool>, float, double>;
+using special_types = ::testing::Types<
+    bool, int*, opt::option<bool>, float, double, std::tuple<int, float>, std::tuple<>
+>;
 TYPED_TEST_SUITE(special, special_types,);
 
 TYPED_TEST(special, basic) {
@@ -322,6 +336,44 @@ TEST_F(exploit_enum, basic) {
 
     [[maybe_unused]] constexpr opt::option<some_enum> ca{};
     [[maybe_unused]] constexpr opt::option<some_enum> cb{some_enum::x};
+}
+
+struct tuple_like : ::testing::Test {};
+
+TEST_F(tuple_like, tuple) {
+    static_assert(sizeof(opt::option<std::tuple<int, float>>) == sizeof(std::tuple<int, float>));
+    static_assert(sizeof(opt::option<std::tuple<float, int>>) == sizeof(std::tuple<float, int>));
+    static_assert(sizeof(opt::option<std::tuple<int, long>>) > sizeof(std::tuple<int, long>));
+
+    opt::option<std::tuple<int, float>> a{1, 2.5f};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(std::get<0>(*a), 1);
+    EXPECT_EQ(std::get<1>(*a), 2.5f);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    opt::option<std::tuple<float, double>> b{2.56f, 3.1415};
+    static_assert(sizeof(b) == sizeof(std::tuple<float, double>));
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(std::get<0>(*b), 2.56f);
+    EXPECT_EQ(std::get<1>(*b), 3.1415);
+    b.reset();
+    EXPECT_FALSE(b.has_value());
+
+    opt::option<std::tuple<float, int, double>> c{1.f, 2, 3.};
+    static_assert(sizeof(c) == sizeof(std::tuple<float, int, double>));
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(std::get<0>(*c), 1.f);
+    EXPECT_EQ(std::get<1>(*c), 2);
+    EXPECT_EQ(std::get<2>(*c), 3.);
+    c.reset();
+    EXPECT_FALSE(c.has_value());
+
+    opt::option<std::tuple<>> d{{}};
+    static_assert(sizeof(d) == 1);
+    EXPECT_TRUE(d.has_value());
+    d.reset();
+    EXPECT_FALSE(d.has_value());
 }
 
 }

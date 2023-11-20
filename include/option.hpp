@@ -92,6 +92,9 @@ inline constexpr none_t none{impl::none_tag_ctor{}};
 template<class T>
 class option;
 
+template<class T, class = void>
+struct option_flag;
+
 // Check if is a specialization of `opt::option`
 template<class>
 inline constexpr bool is_option = false;
@@ -152,6 +155,21 @@ namespace impl {
 
     template<class T, class = void>
     struct internal_option_flag : std::false_type {};
+
+    template<class T, class = std::size_t>
+    inline constexpr bool has_option_flag = false;
+    template<class T>
+    inline constexpr bool has_option_flag<T, decltype(sizeof(opt::option_flag<T>))> =
+        std::is_base_of_v<internal_option_flag<T>, opt::option_flag<T>>
+            ? !std::is_base_of_v<std::false_type, internal_option_flag<T>>
+            : true;
+
+    template<class T, class Flag, class = void>
+    inline constexpr bool has_unset_empty_method = false;
+    template<class T, class Flag>
+    inline constexpr bool has_unset_empty_method<T, Flag, std::void_t<
+        decltype(Flag::unset_empty(std::declval<T&>()))
+    >> = true;
 
     // Optimizing `bool` value.
     // Usually the size of booleans is 1 byte, but only used a single bit.
@@ -280,12 +298,63 @@ namespace impl {
         }
     };
 
+    template<bool, std::size_t Index, class T, class... Ts>
+    struct find_option_flag_type_impl {};
+
+    template<std::size_t Index, class T, class T2, class... Ts>
+    struct find_option_flag_type_impl<false, Index, T, T2, Ts...>
+        : find_option_flag_type_impl<has_option_flag<T2>, Index + 1, T2, Ts...> {};
+
+    template<std::size_t Index, class T, class... Ts>
+    struct find_option_flag_type_impl<true, Index, T, Ts...> {
+        static constexpr std::size_t index = Index;
+        using type = T;
+    };
+    template<class T, class... Ts>
+    using find_option_flag_type = find_option_flag_type_impl<has_option_flag<T>, 0, T, Ts...>;
+
+    template<class T, class... Ts>
+    struct internal_option_flag<std::tuple<T, Ts...>,
+        std::void_t<typename find_option_flag_type<T, Ts...>::type>
+    > {
+        using find_flag = find_option_flag_type<T, Ts...>;
+        using flag = opt::option_flag<typename find_flag::type>;
+        static constexpr std::size_t index = find_flag::index;
+        using tuple_type = std::tuple<T, Ts...>;
+
+        static bool is_empty(const tuple_type& value) noexcept {
+            return flag::is_empty(std::get<index>(value));
+        }
+        static void set_empty(tuple_type& value) noexcept {
+            flag::set_empty(std::get<index>(value));
+        }
+        static void unset_empty(tuple_type& value) noexcept {
+            if constexpr (has_unset_empty_method<typename find_flag::type, flag>) {
+                flag::unset_empty(std::get<index>(value));
+            }
+        }
+    };
+
+    template<class T>
+    struct internal_option_flag<T, std::enable_if_t<std::is_empty_v<T>>> {
+        static constexpr std::uint_least8_t empty_value = 0b0101'1111u;
+
+        static bool is_empty(const T& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(T& value) noexcept {
+            impl::bit_copy(value, empty_value);
+        }
+        static void unset_empty(T& value) noexcept {
+            impl::bit_copy(value, std::uint_least8_t(0));
+        }
+    };
 }
 
 
 // Template struct for specialization to decrease the size of `opt::option<T>` for type `T`
 // Also allows to use `std::enable_if` (second template parameter) for more flexible type specialization 
-template<class T, class = void>
+template<class T, class>
 struct option_flag : impl::internal_option_flag<T> {};
 
 namespace impl {
@@ -326,21 +395,6 @@ namespace impl {
     inline constexpr bool is_complete = false;
     template<class T>
     inline constexpr bool is_complete<T, decltype(sizeof(T))> = true;
-
-    template<class T, class = std::size_t>
-    inline constexpr bool has_option_flag = false;
-    template<class T>
-    inline constexpr bool has_option_flag<T, decltype(sizeof(opt::option_flag<T>))> =
-        std::is_base_of_v<internal_option_flag<T>, opt::option_flag<T>>
-            ? !std::is_base_of_v<std::false_type, internal_option_flag<T>>
-            : true;
-
-    template<class T, class Flag, class = void>
-    inline constexpr bool has_unset_empty_method = false;
-    template<class T, class Flag>
-    inline constexpr bool has_unset_empty_method<T, Flag, std::void_t<
-        decltype(Flag::unset_empty(std::declval<T&>()))
-    >> = true;
 
     template<class T>
     struct is_tuple_like_impl : std::false_type {};
