@@ -1,6 +1,18 @@
 #include <gtest/gtest.h>
+#include <cfenv>
 
 #include "utils.hpp"
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif
+
+#ifdef _MSC_VER
+#pragma fenv_access (on)
+#elif defined(__GNUC__)
+#pragma STDC FENV_ACCESS ON
+#endif
 
 #define TypeParam T
 
@@ -41,12 +53,24 @@ struct special<float> : ::testing::Test {
     float A = 1.1f;
     float B = 2.3f;
     const opt::option<float> E{opt::none};
+
+    void TearDown() override {
+        const int n = std::fetestexcept(FE_ALL_EXCEPT);
+        OPTION_VERIFY(n == 0, "Floating point exception was thrown");
+        std::feclearexcept(FE_ALL_EXCEPT);
+    }
 };
 template<>
 struct special<double> : ::testing::Test {
     double A = 1.234;
     double B = 12.334243;
     const opt::option<double> E{opt::none};
+
+    void TearDown() override {
+        const int n = std::fetestexcept(FE_ALL_EXCEPT);
+        OPTION_VERIFY(n == 0, "Floating point exception was thrown");
+        std::feclearexcept(FE_ALL_EXCEPT);
+    }
 };
 
 using special_types = ::testing::Types<bool, int*, opt::option<bool>, float, double>;
@@ -306,3 +330,7 @@ TEST_F(exploit_enum, basic) {
 }
 
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
