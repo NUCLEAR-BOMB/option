@@ -402,6 +402,21 @@ namespace impl {
         }
     };
 #endif
+
+    template<class T>
+    struct internal_option_flag<std::unique_ptr<T>> {
+        using ptr_flag = opt::option_flag<T*>;
+        static constexpr std::uintptr_t empty_value = ptr_flag::empty_value;
+
+        static bool is_empty(const std::unique_ptr<T>& value) noexcept {
+            return impl::bit_equal(value.get(), empty_value);
+        }
+        static void set_empty(std::unique_ptr<T>& value) noexcept {
+            T* ptr{};
+            impl::bit_copy(ptr, empty_value);
+            impl::construct_at(std::addressof(value), std::unique_ptr<T>{ptr});
+        }
+    };
 }
 
 
@@ -566,7 +581,10 @@ namespace impl {
     };
     template<class T>
     struct option_destruct_base<T, /*store_flag=*/false, /*is_trivially_destructible=*/true> {
-        T value;
+        union {
+            nontrivial_dummy_t dummy;
+            T value;
+        };
         using flag = opt::option_flag<T>;
 
         constexpr option_destruct_base() noexcept
@@ -605,11 +623,14 @@ namespace impl {
     };
     template<class T>
     struct option_destruct_base<T, /*store_flag=*/false, /*is_trivially_destructible=*/false> {
-        T value;
+        union {
+            nontrivial_dummy_t dummy;
+            T value;
+        };
         using flag = opt::option_flag<T>;
 
         constexpr option_destruct_base() noexcept
-            : value{} {
+            : dummy{} {
             flag::set_empty(value);
             // has_value() == false
         }
@@ -651,7 +672,7 @@ namespace impl {
             if constexpr (has_unset_empty_method<T, flag>) {
                 flag::unset_empty(value);
             }
-            impl::construct_at(value, std::forward<Args>(args)...);
+            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             // has_value() == true
         }
     };

@@ -407,4 +407,22 @@ TEST_F(tuple_like, array) {
     EXPECT_FALSE(b.has_value());
 }
 
+struct fancy_pointer : ::testing::Test {};
+
+TEST_F(fancy_pointer, unique_ptr) {
+    static_assert(sizeof(opt::option<std::unique_ptr<int>>) == sizeof(std::unique_ptr<int>));
+
+    opt::option<std::unique_ptr<int>> a = std::make_unique<int>(1);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(**a, 1);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a.emplace(std::make_unique<int>(2));
+    EXPECT_EQ(**a, 2);
+    a.emplace(std::make_unique<int>(3));
+    EXPECT_EQ(**a, 3);
+}
+
 }
