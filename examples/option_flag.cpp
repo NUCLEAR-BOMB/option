@@ -20,9 +20,10 @@ struct opt::option_flag<some_struct> {
     static bool is_empty(const some_struct& value) noexcept {
         return value.val == -1;
     }
-    static void construct_empty_flag(some_struct& value) noexcept {
+    static void set_empty(some_struct& value) noexcept {
         value = {-1};
     }
+
 };
 
 void custom() {

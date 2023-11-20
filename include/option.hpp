@@ -160,7 +160,6 @@ namespace impl {
             uint |= empty_value;
             impl::bit_copy(value, uint);
         }
-        static void unset_empty(bool&) noexcept {}
     };
 
     template<>
@@ -181,8 +180,6 @@ namespace impl {
             uint |= empty_value;
             impl::bit_copy(value, uint);
         }
-        template<class OptionBool>
-        static void unset_empty(OptionBool&) noexcept {}
     };
 
     // Uses (probably) unused addresses to indicate an empty value,
@@ -208,7 +205,6 @@ namespace impl {
         static void set_empty(T& value) noexcept {
             impl::bit_copy(value, empty_value);
         }
-        static void unset_empty(T&) noexcept {}
     };
 
     // For optimizing enumerations.
@@ -226,7 +222,6 @@ namespace impl {
         static constexpr void set_empty(T& value) noexcept {
             value = empty_value;
         }
-        static constexpr void unset_emoty(T&) noexcept {}
     };
 }
 
@@ -282,6 +277,13 @@ namespace impl {
         std::is_base_of_v<internal_option_flag<T>, opt::option_flag<T>>
             ? !std::is_base_of_v<std::false_type, internal_option_flag<T>>
             : true;
+
+    template<class T, class Flag, class = void>
+    inline constexpr bool has_unset_empty_method = false;
+    template<class T, class Flag>
+    inline constexpr bool has_unset_empty_method<T, Flag, std::void_t<
+        decltype(Flag::unset_empty(std::declval<T&>()))
+    >> = true;
 
     template<class T>
     struct is_tuple_like_impl : std::false_type {};
@@ -430,7 +432,9 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
-            flag::unset_empty(value);
+            if constexpr (has_unset_empty_method<T, flag>) {
+                flag::unset_empty(value);
+            }
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             // has_value() == true
         }
@@ -460,7 +464,9 @@ namespace impl {
             if (has_value()) {
                 value.~T();
             } else {
-                flag::unset_empty(value);
+                if constexpr (has_unset_empty_method<T, flag>) {
+                    flag::unset_empty(value);
+                }
             }
         }
 
@@ -478,7 +484,9 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
-            flag::unset_empty(value);
+            if constexpr (has_unset_empty_method<T, flag>) {
+                flag::unset_empty(value);
+            }
             impl::construct_at(value, std::forward<Args>(args)...);
             // has_value() == true
         }
