@@ -91,11 +91,6 @@ inline constexpr none_t none{impl::none_tag_ctor{}};
 template<class T>
 class option;
 
-// Template struct for specialization to decrease the size of `opt::option<T>` for type `T`
-// Also allows to use `std::enable_if` (second template parameter) for more flexible type specialization 
-template<class T, class = void>
-struct option_flag;
-
 // Check if is a specialization of `opt::option`
 template<class>
 inline constexpr bool is_option = false;
@@ -113,129 +108,133 @@ namespace impl {
     template<class T, class...>
     using first_type = T;
 
+    template<class T>
+    struct type_identity { using type = T; };
+
+    template<class Left, class Right>
+    constexpr bool bit_equal(const Left& left, const Right& right) noexcept {
+        static_assert(sizeof(Left) == sizeof(Right));
+        return std::memcmp(&left, &right, sizeof(Left)) == 0;
+    }
     template<class To, class From>
-    constexpr To bit_cast(const From& from) noexcept {
+    constexpr void bit_copy(To& to, const From& from) noexcept {
         static_assert(sizeof(To) == sizeof(From));
-#ifdef OPTION_BIT_CAST
-        if constexpr (std::is_pointer_v<To> && std::is_same_v<From, std::uintptr_t>) {
-    #if defined(OPTION_CONSTANT_P) && !(defined(__GNUC__) && !defined(__clang__))
-            return OPTION_CONSTANT_P(reinterpret_cast<To>(from))
-                ? reinterpret_cast<To>(from)
-                : reinterpret_cast<To>(from);
-    #else
-            return reinterpret_cast<To>(from);
-    #endif
-        } else {
-            return OPTION_BIT_CAST(To, from);
-        }
-#endif
+        std::memcpy(&to, &from, sizeof(To));
     }
 
-    template<class Dest, class Src>
-    constexpr void bit_copy(Dest& dest, const Src& src) noexcept {
-        static_assert(sizeof(Dest) == sizeof(Src));
-#if defined(_MSC_VER) && !defined(__clang__)
-        if constexpr (std::is_same_v<Dest, bool>) {
-            dest = impl::bit_cast<bool>(src);
-        } else
-#endif
-        {
-        std::memcpy(&dest, &src, sizeof(Src));
+    template<class T, class... Args>
+    constexpr void construct_at(T* ptr, Args&&... args) {
+        if constexpr (std::is_trivially_copy_assignable_v<T>) {
+            *ptr = T(std::forward<Args>(args)...);
+        } else {
+            ::new(static_cast<void*>(ptr)) T(std::forward<Args>(args)...);
         }
     }
+
+    template<class T>
+    constexpr void destroy_at(T* ptr) {
+        ptr->~T();
+    }
+
+    template<class T, class = void>
+    struct internal_option_flag : std::false_type {};
+
+    // Optimizing `bool` value.
+    // Usually the size of booleans is 1 byte, but only used a single bit.
+    // Because of that, we can exploit this in `opt::option` to store an empty state.
+    // This implementation uses bitwise AND (&) and OR (|) to check, reset the stored value.
+    // This is also allows the size of `opt::option<opt::option<bool>>` to be exactly 1 byte
+    template<>
+    struct internal_option_flag<bool> {
+        using bool_uint = std::uint_least8_t;
+        static constexpr bool_uint empty_value = 0b0010;
+
+        static bool is_empty(const bool& value) noexcept {
+            bool_uint uint{};
+            impl::bit_copy(uint, value);
+            return uint & empty_value;
+        }
+        static void set_empty(bool& value) noexcept {
+            bool_uint uint{};
+            impl::bit_copy(uint, value);
+            uint |= empty_value;
+            impl::bit_copy(value, uint);
+        }
+        static void unset_empty(bool&) noexcept {}
+    };
+
+    template<>
+    struct internal_option_flag<opt::option<bool>> {
+        using bool_uint = std::uint_least8_t;
+        static constexpr bool_uint empty_value = 0b0100;
+
+        template<class OptionBool>
+        static bool is_empty(const OptionBool& value) noexcept {
+            bool_uint uint{};
+            impl::bit_copy(uint, value);
+            return uint & empty_value;
+        }
+        template<class OptionBool>
+        static void set_empty(OptionBool& value) noexcept {
+            bool_uint uint{};
+            impl::bit_copy(uint, value);
+            uint |= empty_value;
+            impl::bit_copy(value, uint);
+        }
+        template<class OptionBool>
+        static void unset_empty(OptionBool&) noexcept {}
+    };
+
+    // Uses (probably) unused addresses to indicate an empty value,
+    // so that `sizeof(opt::option<int*>) == sizeof(int*)`
+    template<class T>
+    struct internal_option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
+        static constexpr std::uintptr_t empty_value = []() -> std::uintptr_t {
+            if constexpr        (sizeof(void*) == 8) {
+                return 0x7FFFFFFFFFFFFFFFu;
+            } else if constexpr (sizeof(void*) == 4) {
+                return 0xFFFFFFF3u;
+            } else if constexpr (sizeof(void*) == 2) {
+                return 0xFFFFu;
+            } else if constexpr (sizeof(void*) == 1) {
+                return 0xFFu;
+            } else {
+                static_assert(!sizeof(T), "Unknown architecture");
+            }
+        }();
+        static bool is_empty(const T& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(T& value) noexcept {
+            impl::bit_copy(value, empty_value);
+        }
+        static void unset_empty(T&) noexcept {}
+    };
+
+    // For optimizing enumerations.
+    // If enum contains a enumerator with name 'OPTION_EXPLOIT_UNUSED_VALUE',
+    // this value will be threated as unused and will be used to indicate
+    // an empty state and decrease the size of `opt::option`.
+    // In the future, a library like 'magic_enum' can be used to automatic find unused values in enums.
+    template<class T>
+    struct internal_option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
+        static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
+
+        static constexpr bool is_empty(const T& value) noexcept {
+            return value == empty_value;
+        }
+        static constexpr void set_empty(T& value) noexcept {
+            value = empty_value;
+        }
+        static constexpr void unset_emoty(T&) noexcept {}
+    };
 }
 
-// Optimizing `bool` value.
-// Usually the size of booleans is 1 byte, but only used a single bit.
-// Because of that, we can exploit this in `opt::option` to store an empty state.
-// This implementation uses bitwise AND (&) and OR (|) to check, reset the stored value.
-// This is also allows the size of `opt::option<opt::option<bool>>` to be exactly 1 byte
-#if !(defined(__clang__) && defined(OPTION_FORCE_CONSTEXPR)) && !(defined(__GNUC__) && !defined(__clang__))
-template<>
-struct option_flag<bool> {
-    using bool_uint = std::uint_least8_t;
-    static constexpr bool_uint empty_value = 0b0010;
 
-    static constexpr bool is_empty(const bool& value) noexcept {
-        return impl::bit_cast<bool_uint>(value) & empty_value;
-    }
-    static constexpr void construct_empty_flag(bool& value) noexcept {
-        impl::bit_copy(value,
-            bool_uint(impl::bit_cast<bool_uint>(value) | empty_value)
-        );
-    }
-};
-
-template<>
-struct option_flag<opt::option<bool>> {
-    using bool_uint = std::uint_least8_t;
-    static constexpr bool_uint empty_value = 0b0100;
-
-    template<class OptionBool>
-    static constexpr bool is_empty(const OptionBool& value) noexcept {
-        return (impl::bit_cast<bool_uint>(value.get_unchecked()) & empty_value) > 0;
-    }
-    template<class OptionBool>
-    static constexpr void construct_empty_flag(OptionBool& value) noexcept {
-        impl::bit_copy(value.get_unchecked(), 
-            bool_uint(impl::bit_cast<bool_uint>(value.get_unchecked()) | empty_value)
-        );
-    }
-};
-#endif
-
-// Uses (probably) unused addresses to indicate an empty value,
-// so that `sizeof(opt::option<int*>) == sizeof(int*)`
-#if !((defined(_MSC_VER) || (defined(__GNUC__) && !defined(__clang__))) && defined(OPTION_FORCE_CONSTEXPR))
-template<class T>
-struct option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
-    static constexpr std::uintptr_t empty_value = [] {
-        if constexpr (sizeof(void*) == 8) {
-            // Uses 48-bit virtual address space implementation
-            // 0x00007FFFFFFFFFFF = Canonical lower half
-            // 0xFFFF800000000000 = Canonical higher half
-            // 0x7FFFFFFFFFFFFFFF = Noncanonical middle address
-            // (0x00007FFFFFFFFFFF + 0xFFFF800000000000) / 2
-            return 0x7FFFFFFFFFFFFFFFu;
-        } else if constexpr (sizeof(void*) == 4) {
-            // For x86 architecture
-            return 0xFFFFFFF3u;
-        } else if constexpr (sizeof(void*) == 2) {
-            // For 16-bit architecture
-            return 0xFFFFu;
-        } else if constexpr (sizeof(void*) == 1) {
-            // For 8-bit architecture
-            return 0xFFu;
-        } else {
-            static_assert(!sizeof(T*), "Unknown architecture");
-        }
-    }();
-
-    static constexpr bool is_empty(const T& value) noexcept {
-        return value == impl::bit_cast<T>(empty_value);
-    }
-    static constexpr void construct_empty_flag(T& value) noexcept {
-        value = impl::bit_cast<T>(empty_value);
-    }
-};
-#endif
-
-// For optimizing enumerations.
-// If enum contains a enumerator with name 'OPTION_EXPLOIT_UNUSED_VALUE',
-// this value will be threated as unused and will be used to indicate
-// an empty state and decrease the size of `opt::option`.
-// In the future, a library like 'magic_enum' can be used to automatic find unused values in enums.
-template<class T>
-struct option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
-    static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
-
-    static constexpr bool is_empty(const T& value) noexcept {
-        return value == empty_value;
-    }
-    static constexpr void construct_empty_flag(T& value) noexcept {
-        value = empty_value;
-    }
-};
+// Template struct for specialization to decrease the size of `opt::option<T>` for type `T`
+// Also allows to use `std::enable_if` (second template parameter) for more flexible type specialization 
+template<class T, class = void>
+struct option_flag : impl::internal_option_flag<T> {};
 
 namespace impl {
     template<class T>
@@ -272,9 +271,17 @@ namespace impl {
     using copy_cvref = typename copy_cvref_t<T, U>::type;
 
     template<class T, class = std::size_t>
+    inline constexpr bool is_complete = false;
+    template<class T>
+    inline constexpr bool is_complete<T, decltype(sizeof(T))> = true;
+
+    template<class T, class = std::size_t>
     inline constexpr bool has_option_flag = false;
     template<class T>
-    inline constexpr bool has_option_flag<T, decltype(sizeof(opt::option_flag<T>))> = true;
+    inline constexpr bool has_option_flag<T, decltype(sizeof(opt::option_flag<T>))> =
+        std::is_base_of_v<internal_option_flag<T>, opt::option_flag<T>>
+            ? !std::is_base_of_v<std::false_type, internal_option_flag<T>>
+            : true;
 
     template<class T>
     struct is_tuple_like_impl : std::false_type {};
@@ -305,15 +312,6 @@ namespace impl {
     };
     template<class Tuple>
     using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
-
-    template<class T, class... Args>
-    constexpr void construct_at(T& obj, Args&&... args) {
-        if constexpr (std::is_trivially_copy_assignable_v<T>) {
-            obj = T(std::forward<Args>(args)...);
-        } else {
-            ::new(static_cast<void*>(std::addressof(obj))) T(std::forward<Args>(args)...);
-        }
-    }
 
     template<class T,
         bool store_flag = !has_option_flag<T>,
@@ -352,7 +350,7 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
-            impl::construct_at(value, std::forward<Args>(args)...);
+            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
     };
@@ -396,7 +394,7 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
-            impl::construct_at(value, std::forward<Args>(args)...);
+            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
     };
@@ -407,7 +405,7 @@ namespace impl {
 
         constexpr option_destruct_base() noexcept
             : value{} {
-            flag::construct_empty_flag(value);
+            flag::set_empty(value);
             // has_value() == false
         }
         template<class... Args>
@@ -422,7 +420,7 @@ namespace impl {
         }
 
         constexpr void reset() noexcept {
-            flag::construct_empty_flag(value);
+            flag::set_empty(value);
             // has_value() == false
         }
         constexpr bool has_value() const noexcept {
@@ -432,7 +430,8 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
-            impl::construct_at(value, std::forward<Args>(args)...);
+            flag::unset_empty(value);
+            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             // has_value() == true
         }
     };
@@ -443,32 +442,32 @@ namespace impl {
 
         constexpr option_destruct_base() noexcept
             : value{} {
-            flag::construct_empty_flag(value);
+            flag::set_empty(value);
             // has_value() == false
         }
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...) {
-            flag::destroy_empty_flag(value);
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
-            flag::destroy_empty_flag(value);
             // has_value() == true
         }
 
         ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
             if (has_value()) {
                 value.~T();
+            } else {
+                flag::unset_empty(value);
             }
         }
 
         constexpr void reset() noexcept {
             if (has_value()) {
                 value.~T();
-                flag::construct_empty_flag(value);
+                flag::set_empty(value);
             }
             // has_value() == false
         }
@@ -479,8 +478,8 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
+            flag::unset_empty(value);
             impl::construct_at(value, std::forward<Args>(args)...);
-            flag::destroy_empty_flag(value);
             // has_value() == true
         }
     };

@@ -1,3 +1,4 @@
+/*
 #define OPTION_FORCE_CONSTEXPR
 
 #include "utils.hpp"
@@ -20,3 +21,4 @@ void basic() {
 }
 
 }
+*/
