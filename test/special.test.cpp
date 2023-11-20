@@ -14,11 +14,6 @@ struct some_struct {
 
 template<class T>
 struct special : public ::testing::Test {
-#if !(defined(__GNUC__) && !defined(__clang__))
-    static_assert(sizeof(opt::option<T>) == sizeof(T));
-#endif
-    static_assert(is_trivial_compatible<opt::option<T>>);
-
     const T A = false;
     const T B = true;
     const opt::option<T> E{opt::none};
@@ -41,11 +36,24 @@ struct special<int*> : public ::testing::Test {
 };
 static_assert((opt::option_flag<int*>::empty_value % 2) != 0);
 
-using special_types = ::testing::Types<bool, int*, opt::option<bool>>;
+template<>
+struct special<float> : ::testing::Test {
+    float A = 1.1f;
+    float B = 2.3f;
+    const opt::option<float> E{opt::none};
+};
+template<>
+struct special<double> : ::testing::Test {
+    double A = 1.234;
+    double B = 12.334243;
+    const opt::option<double> E{opt::none};
+};
+
+using special_types = ::testing::Types<bool, int*, opt::option<bool>, float, double>;
 TYPED_TEST_SUITE(special, special_types,);
 
 TYPED_TEST(special, basic) {
-
+    static_assert(sizeof(opt::option<T>) == sizeof(T));
     const opt::option<T> a{};
     EXPECT_FALSE(a.has_value());
     const opt::option<T> b{this->A};

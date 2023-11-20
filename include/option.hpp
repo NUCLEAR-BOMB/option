@@ -10,6 +10,7 @@
 #include <cstring>
 #include <tuple>
 #include <array>
+#include <limits>
 
 #ifdef __has_builtin
     #if __has_builtin(__builtin_unreachable)
@@ -110,6 +111,19 @@ namespace impl {
 
     template<class T>
     struct type_identity { using type = T; };
+
+    template<std::size_t Size>
+    constexpr auto size_to_uint_type_impl() noexcept {
+        if constexpr (Size <= 1) { return std::uint_least8_t{}; }
+        else if constexpr (Size <= 2) { return std::uint_least16_t{}; }
+        else if constexpr (Size <= 4) { return std::uint_least32_t{}; }
+        else if constexpr (Size <= 8) { return std::uint_least64_t{}; }
+        else {
+            static_assert(Size <= 8);
+        }
+    }
+    template<std::size_t N>
+    using size_to_uint_type = decltype(size_to_uint_type_impl<N>());
 
     template<class Left, class Right>
     constexpr bool bit_equal(const Left& left, const Right& right) noexcept {
@@ -223,6 +237,49 @@ namespace impl {
             value = empty_value;
         }
     };
+
+    template<class T>
+    inline constexpr bool has_quiet_or_signaling_NaN =
+        std::numeric_limits<T>::has_quiet_NaN || std::numeric_limits<T>::has_signaling_NaN;
+
+    template<class T> // for float
+    struct internal_option_flag<T, std::enable_if_t<std::is_same_v<T, float> && has_quiet_or_signaling_NaN<float>>> {
+        using uint_type = size_to_uint_type<sizeof(float)>;
+        static constexpr uint_type empty_value = [] {
+            if constexpr (std::numeric_limits<float>::has_signaling_NaN) {
+                return 0b0'11111111'01111110110100110101111u;
+            } else { // std::numeric_limits<float>::has_quiet_NaN
+                return 0b0'11111111'10000111110111110110101u;
+            }
+        }(); 
+
+        static bool is_empty(const float& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(float& value) noexcept {
+            impl::bit_copy(value, empty_value);
+        }
+    };
+
+    template<class T> // for double
+    struct internal_option_flag<T, std::enable_if_t<std::is_same_v<T, double> && has_quiet_or_signaling_NaN<double>>> {
+        using uint_type = size_to_uint_type<sizeof(double)>;
+        static constexpr uint_type empty_value = [] {
+            if constexpr (std::numeric_limits<double>::has_signaling_NaN) {
+                return 0b0'11111111111'0110110001111001111101010101101100001000100110001111u;
+            } else { // std::numeric_limits<double>::has_quiet_NaN
+                return 0b0'11111111111'1011111100100110010000110000101110110011010101010111u;
+            }
+        }();
+
+        static bool is_empty(const double& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(double& value) noexcept {
+            impl::bit_copy(value, empty_value);
+        }
+    };
+
 }
 
 
