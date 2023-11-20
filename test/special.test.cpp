@@ -3,15 +3,10 @@
 
 #include "utils.hpp"
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfloat-equal"
-#endif
-
 #ifdef _MSC_VER
 #pragma fenv_access (on)
 #elif defined(__GNUC__)
-#pragma STDC FENV_ACCESS ON
+#pragma STDC_FENV_ACCESS ON
 #endif
 
 #define TypeParam T
@@ -330,7 +325,3 @@ TEST_F(exploit_enum, basic) {
 }
 
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif

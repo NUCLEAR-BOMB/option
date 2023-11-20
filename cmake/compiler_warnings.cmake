@@ -30,6 +30,7 @@ function(target_add_warnings target)
                 -Wno-pre-c++14-compat
                 -Wno-pre-c++17-compat
                 -Wno-c++98-compat
+                -Wno-float-equal # Disable floating-point comparison warnings
             )
         endif()
         target_compile_options(${target} PRIVATE
