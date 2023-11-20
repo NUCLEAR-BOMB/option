@@ -5,8 +5,8 @@
 
 #ifdef _MSC_VER
 #pragma fenv_access (on)
-#elif defined(__GNUC__)
-#pragma STDC_FENV_ACCESS ON
+#elif defined(__clang__)
+#pragma STDC FENV_ACCESS ON
 #endif
 
 #define TypeParam T
