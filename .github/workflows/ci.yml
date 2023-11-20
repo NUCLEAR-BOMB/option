@@ -12,7 +12,7 @@ jobs:
         platform:
         - { name: Linux Clang,        os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ }
         - { name: Linux GCC,          os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++ }
-        - { name: Windows Clang,      os: windows-2022,  flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -G "Unix Makefiles" }
+        - { name: Windows Clang,      os: windows-2022,  flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE -G "Unix Makefiles" }
         - { name: Windows VS,         os: windows-2022,  flags: -DUSE_SANITIZER=NO }
         - { name: Windows VS ClangCL, os: windows-2022,  flags: -T ClangCL -DUSE_SANITIZER=NO }
         type:
