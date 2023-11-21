@@ -22,6 +22,16 @@ FetchContent_MakeAvailable(googletest)
 
 target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
 
+FetchContent_Declare(
+    magic_enum
+    URL https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.5.zip
+    URL_HASH SHA256=6259fe6629a6d865081ad2911a5bce8b687f8d086ae04560e2d7ce3883e9ea8d
+    FIND_PACKAGE_ARGS NAMES magic_enum
+)
+FetchContent_MakeAvailable(magic_enum)
+
+target_link_libraries(option-test PRIVATE magic_enum::magic_enum)
+
 if (USE_SANITIZER)
     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
     target_add_sanitizer(option-test)

@@ -50,6 +50,21 @@
     #define OPTION_USE_QUIET_NAN 0
 #endif
 
+#ifndef OPTION_MAGIC_ENUM_FILE
+    #define OPTION_MAGIC_ENUM_FILE <magic_enum.hpp>
+#endif
+
+#if !(defined(OPTION_USE_MAGIC_ENUM) && !(OPTION_USE_MAGIC_ENUM))
+    #if __has_include(OPTION_MAGIC_ENUM_FILE)
+        #include OPTION_MAGIC_ENUM_FILE
+        #ifdef MAGIC_ENUM_SUPPORTED 
+            #define OPTION_HAS_MAGIC_ENUM
+        #endif
+    #elif defined(OPTION_USE_MAGIC_ENUM) && (OPTION_USE_MAGIC_ENUM)
+        #error "Cannot found the 'magic_enum' library. Define the 'OPTION_MAGIC_ENUM_FILE' macro to specify a custom path to the 'magic_enum' header"
+    #endif
+#endif
+
 // Macro `OPTION_VERIFY` is used in `opt::option<T>::get`, `opt::option<T>::operator*`.
 // You can also redefine `OPTION_VERIFY` to specify custom behavior when something goes unexpected.
 #ifndef OPTION_VERIFY
@@ -109,13 +124,6 @@ template<class T>
 inline constexpr bool is_option<opt::option<T>> = true;
 
 namespace impl {
-    template<class T, bool is_enum = std::is_enum_v<T>, class = void>
-    struct has_exploit_unused_value : std::false_type {};
-    template<class T>
-    struct has_exploit_unused_value<T, true, std::void_t<
-        decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)
-    >> : std::true_type {};
-
     template<class T, class...>
     using first_type = T;
 
@@ -246,11 +254,18 @@ namespace impl {
         }
     };
 
+#ifndef OPTION_HAS_MAGIC_ENUM
+    template<class T, bool is_enum = std::is_enum_v<T>, class = void>
+    struct has_exploit_unused_value : std::false_type {};
+    template<class T>
+    struct has_exploit_unused_value<T, true, std::void_t<
+        decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)
+    >> : std::true_type {};
+
     // For optimizing enumerations.
     // If enum contains a enumerator with name 'OPTION_EXPLOIT_UNUSED_VALUE',
     // this value will be threated as unused and will be used to indicate
     // an empty state and decrease the size of `opt::option`.
-    // In the future, a library like 'magic_enum' can be used to automatic find unused values in enums.
     template<class T>
     struct internal_option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
         static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
@@ -262,6 +277,47 @@ namespace impl {
             value = empty_value;
         }
     };
+#else
+    // Try to find unused enumeration value that do not contains in enumeration
+    template<class E>
+    constexpr E find_unused_value() noexcept {
+        using value_t = magic_enum::underlying_type_t<E>;
+        using value_limits = std::numeric_limits<value_t>;
+        const std::array<value_t, 2> unused_values_list{
+            value_limits::max(),
+            value_limits::min(),
+        };
+        for (const auto& val : unused_values_list) {
+            if (!magic_enum::enum_contains<E>(val)) {
+                return static_cast<E>(val);
+            }
+        }
+        return static_cast<E>(0);
+    }
+    template<class E, class = void>
+    inline constexpr bool enum_has_unused_value = false;
+    template<class E>
+    inline constexpr bool enum_has_unused_value<E, std::enable_if_t<std::is_enum_v<E>>>
+        = (find_unused_value<E>() != static_cast<E>(0));
+
+    // Uses the 'magic_enum' library to find and use enumerator (enumeration value)
+    // that do not defined in enumeration as sentinel value ('is empty' flag).
+    // The `opt::option` can still contain enumerators that do not defined in enumeration,
+    // but it is not recommended because it may lead to setting the 'is empty' flag.
+    // The sentinel value is selected as a maximum or minimum value of a underlying type.
+    // Perhaps this specialization should be active only if `sizeof(E) > 1`.
+    template<class E>
+    struct internal_option_flag<E, std::enable_if_t<enum_has_unused_value<E>>> {
+        static constexpr E empty_value = find_unused_value<E>();
+
+        static constexpr bool is_empty(const E& value) noexcept {
+            return value == empty_value;
+        }
+        static constexpr void set_empty(E& value) noexcept {
+            value = empty_value;
+        }
+    };
+#endif
 
     template<class T>
     inline constexpr bool has_quiet_or_signaling_NaN =

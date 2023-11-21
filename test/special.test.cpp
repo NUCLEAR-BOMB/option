@@ -304,14 +304,21 @@ enum class some_enum {
     x, y, z,
     OPTION_EXPLOIT_UNUSED_VALUE
 };
-enum class simple_enum {
-    a, b, c
-};
 
 struct exploit_enum : ::testing::Test {};
 
 static_assert(sizeof(opt::option<some_enum>) == sizeof(some_enum));
-static_assert(sizeof(opt::option<simple_enum>) > sizeof(some_enum));
+
+#ifdef OPTION_HAS_MAGIC_ENUM
+enum classic_enum {
+    a, b, c, d
+};
+static_assert(sizeof(opt::option<classic_enum>) == sizeof(classic_enum));
+enum class classic_enum_class {
+    n, m, k, l
+};
+static_assert(sizeof(opt::option<classic_enum_class>) == sizeof(classic_enum_class));
+#endif
 
 TEST_F(exploit_enum, basic) {
     opt::option<some_enum> a{some_enum::x};
