@@ -29,6 +29,7 @@ FetchContent_Declare(
     FIND_PACKAGE_ARGS NAMES magic_enum
 )
 FetchContent_MakeAvailable(magic_enum)
+set_target_properties(magic_enum PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:magic_enum,INTERFACE_INCLUDE_DIRECTORIES>)
 
 target_link_libraries(option-test PRIVATE magic_enum::magic_enum)
 
