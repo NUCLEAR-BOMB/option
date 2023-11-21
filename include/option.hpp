@@ -43,6 +43,10 @@
     #endif
 #endif
 
+#ifndef OPTION_USE_QUIET_NAN
+    #define OPTION_USE_QUIET_NAN 0
+#endif
+
 // Macro `OPTION_VERIFY` is used in `opt::option<T>::get`, `opt::option<T>::operator*`.
 // You can also redefine `OPTION_VERIFY` to specify custom behavior when something goes unexpected.
 #ifndef OPTION_VERIFY
@@ -264,11 +268,15 @@ namespace impl {
     struct internal_option_flag<T, std::enable_if_t<std::is_same_v<T, float> && has_quiet_or_signaling_NaN<float>>> {
         using uint_type = size_to_uint_type<sizeof(float)>;
         static constexpr uint_type empty_value = [] {
+#if OPTION_USE_QUIET_NAN
+            return 0b0'11111111'10000111110111110110101u;
+#else
             if constexpr (std::numeric_limits<float>::has_signaling_NaN) {
                 return 0b0'11111111'01111110110100110101111u;
             } else { // std::numeric_limits<float>::has_quiet_NaN
                 return 0b0'11111111'10000111110111110110101u;
             }
+#endif
         }(); 
 
         static bool is_empty(const float& value) noexcept {
@@ -283,11 +291,15 @@ namespace impl {
     struct internal_option_flag<T, std::enable_if_t<std::is_same_v<T, double> && has_quiet_or_signaling_NaN<double>>> {
         using uint_type = size_to_uint_type<sizeof(double)>;
         static constexpr uint_type empty_value = [] {
+#if OPTION_USE_QUIET_NAN
+            return 0b0'11111111111'1011111100100110010000110000101110110011010101010111u;
+#else
             if constexpr (std::numeric_limits<double>::has_signaling_NaN) {
                 return 0b0'11111111111'0110110001111001111101010101101100001000100110001111u;
             } else { // std::numeric_limits<double>::has_quiet_NaN
                 return 0b0'11111111111'1011111100100110010000110000101110110011010101010111u;
             }
+#endif
         }();
 
         static bool is_empty(const double& value) noexcept {
