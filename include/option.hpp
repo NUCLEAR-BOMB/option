@@ -43,6 +43,9 @@
     #endif
 #endif
 
+// Define to 1 to use only quiet NaN in `opt::option<T>`, where T is floating point type.
+// Define to 0 to use signaling NaN if available, or use quiet NaN instead.
+// Default is 0.
 #ifndef OPTION_USE_QUIET_NAN
     #define OPTION_USE_QUIET_NAN 0
 #endif
