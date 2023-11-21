@@ -280,7 +280,7 @@ namespace impl {
 #else
     // Try to find unused enumeration value that do not contains in enumeration
     template<class E>
-    constexpr E find_unused_value() noexcept {
+    constexpr magic_enum::underlying_type_t<E> find_unused_value() noexcept {
         using value_t = magic_enum::underlying_type_t<E>;
         using value_limits = std::numeric_limits<value_t>;
         const std::array<value_t, 2> unused_values_list{
@@ -289,16 +289,16 @@ namespace impl {
         };
         for (const auto& val : unused_values_list) {
             if (!magic_enum::enum_contains<E>(val)) {
-                return static_cast<E>(val);
+                return val;
             }
         }
-        return static_cast<E>(0);
+        return value_t(0);
     }
     template<class E, class = void>
     inline constexpr bool enum_has_unused_value = false;
     template<class E>
     inline constexpr bool enum_has_unused_value<E, std::enable_if_t<std::is_enum_v<E>>>
-        = (find_unused_value<E>() != static_cast<E>(0));
+        = (find_unused_value<E>() != magic_enum::underlying_type_t<E>(0));
 
     // Uses the 'magic_enum' library to find and use enumerator (enumeration value)
     // that do not defined in enumeration as sentinel value ('is empty' flag).
@@ -308,13 +308,13 @@ namespace impl {
     // Perhaps this specialization should be active only if `sizeof(E) > 1`.
     template<class E>
     struct internal_option_flag<E, std::enable_if_t<enum_has_unused_value<E>>> {
-        static constexpr E empty_value = find_unused_value<E>();
+        static constexpr auto empty_value = find_unused_value<E>();
 
-        static constexpr bool is_empty(const E& value) noexcept {
-            return value == empty_value;
+        static bool is_empty(const E& value) noexcept {
+            return impl::bit_equal(value, empty_value);
         }
-        static constexpr void set_empty(E& value) noexcept {
-            value = empty_value;
+        static void set_empty(E& value) noexcept {
+            impl::bit_copy(value, empty_value);
         }
     };
 #endif

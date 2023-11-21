@@ -340,9 +340,6 @@ TEST_F(exploit_enum, basic) {
     a = some_enum::z;
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(*a, some_enum::z);
-
-    [[maybe_unused]] constexpr opt::option<some_enum> ca{};
-    [[maybe_unused]] constexpr opt::option<some_enum> cb{some_enum::x};
 }
 
 struct tuple_like : ::testing::Test {};
