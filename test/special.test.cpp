@@ -376,21 +376,21 @@ TEST_F(tuple_like, tuple) {
     c.reset();
     EXPECT_FALSE(c.has_value());
 
-    opt::option<std::tuple<std::tuple<float, int>, long>> d{{{1.f, 2}, 3l}};
+    opt::option<std::tuple<std::tuple<float, int>, long>> d{{{1.f, 2}, 3L}};
     static_assert(sizeof(d) == sizeof(std::tuple<std::tuple<float, int>, long>));
     EXPECT_TRUE(d.has_value());
     EXPECT_EQ(std::get<0>(std::get<0>(*d)), 1.f);
     EXPECT_EQ(std::get<1>(std::get<0>(*d)), 2);
-    EXPECT_EQ(std::get<1>(*d), 3l);
+    EXPECT_EQ(std::get<1>(*d), 3L);
     d.reset();
     EXPECT_FALSE(c.has_value());
 
-    opt::option<std::tuple<int, std::tuple<float, long>>> e{{1, {2.5f, 100l}}};
+    opt::option<std::tuple<int, std::tuple<float, long>>> e{{1, {2.5f, 100L}}};
     static_assert(sizeof(e) == sizeof(std::tuple<int, std::tuple<float, long>>));
     EXPECT_TRUE(e.has_value());
     EXPECT_EQ(std::get<0>(*e), 1);
     EXPECT_EQ(std::get<0>(std::get<1>(*e)), 2.5f);
-    EXPECT_EQ(std::get<1>(std::get<1>(*e)), 100l);
+    EXPECT_EQ(std::get<1>(std::get<1>(*e)), 100L);
     e.reset();
     EXPECT_FALSE(e.has_value());
 }
