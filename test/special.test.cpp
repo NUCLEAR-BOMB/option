@@ -368,6 +368,24 @@ TEST_F(tuple_like, tuple) {
     EXPECT_EQ(std::get<2>(*c), 3.);
     c.reset();
     EXPECT_FALSE(c.has_value());
+
+    opt::option<std::tuple<std::tuple<float, int>, long>> d{{{1.f, 2}, 3l}};
+    static_assert(sizeof(d) == sizeof(std::tuple<std::tuple<float, int>, long>));
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(std::get<0>(std::get<0>(*d)), 1.f);
+    EXPECT_EQ(std::get<1>(std::get<0>(*d)), 2);
+    EXPECT_EQ(std::get<1>(*d), 3l);
+    d.reset();
+    EXPECT_FALSE(c.has_value());
+
+    opt::option<std::tuple<int, std::tuple<float, long>>> e{{1, {2.5f, 100l}}};
+    static_assert(sizeof(e) == sizeof(std::tuple<int, std::tuple<float, long>>));
+    EXPECT_TRUE(e.has_value());
+    EXPECT_EQ(std::get<0>(*e), 1);
+    EXPECT_EQ(std::get<0>(std::get<1>(*e)), 2.5f);
+    EXPECT_EQ(std::get<1>(std::get<1>(*e)), 100l);
+    e.reset();
+    EXPECT_FALSE(e.has_value());
 }
 TEST_F(tuple_like, pair) {
     static_assert(sizeof(opt::option<std::pair<int, long>>) > sizeof(std::pair<int, long>));
@@ -387,6 +405,24 @@ TEST_F(tuple_like, pair) {
     EXPECT_EQ(std::get<1>(*b), -1);
     a.reset();
     EXPECT_FALSE(a.has_value());
+
+    opt::option<std::pair<std::pair<float, int>, unsigned>> c{{{100.f, 250}, 194u}};
+    static_assert(sizeof(c) == sizeof(std::pair<std::pair<float, int>, unsigned>));
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->first.first, 100.f);
+    EXPECT_EQ(c->first.second, 250);
+    EXPECT_EQ(c->second, 194u);
+    c.reset();
+    EXPECT_FALSE(c.has_value());
+
+    opt::option<std::pair<unsigned, std::pair<float, int>>> d{{2u, {3.f, -1}}};
+    static_assert(sizeof(d) == sizeof(std::pair<unsigned, std::pair<float, int>>));
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d->first, 2u);
+    EXPECT_EQ(d->second.first, 3.f);
+    EXPECT_EQ(d->second.second, -1);
+    d.reset();
+    EXPECT_FALSE(d.has_value());
 }
 TEST_F(tuple_like, array) {
     static_assert(sizeof(opt::option<std::array<int, 2>>) > sizeof(std::array<int, 2>));
