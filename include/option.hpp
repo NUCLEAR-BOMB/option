@@ -666,11 +666,13 @@ namespace impl {
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...) {
+            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
 
@@ -689,6 +691,7 @@ namespace impl {
                 flag::unset_empty(value);
             }
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
     };
@@ -708,11 +711,13 @@ namespace impl {
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...) {
+            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
 
@@ -744,6 +749,7 @@ namespace impl {
                 flag::unset_empty(value);
             }
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
     };
