@@ -31,9 +31,9 @@ Stores the unused enumerator as the sentinel value.
 - If the **magic_enum** library is not available try to use enumerator with name "`OPTION_EXPLOIT_UNUSED_VALUE`"
 as the sentinel value.
 
-### `float`, `double`
+### Floating point
 Stores the quiet/signaling NaN payload as the sentinel value. \
-Quiet NaN (qNaN) and signaling NaN (sNaN) have a wide range of typically unused values that we can use to store sentinel value. For example, [single precision floating point][] (`float`) sNaN can have [payload][NaN floating point] in 23 bits non-zero number (the value zero encodes infinities).
+Quiet NaN (qNaN) and signaling NaN (sNaN) have a wide range of typically unused values that we can use to store sentinel value. For example, [single precision floating point][] sNaN can have [payload][NaN floating point] in 23 bits non-zero number (the value zero encodes infinities).
 
 See also macro [`OPTION_USE_QUIET_NAN`](macros.md#option_use_quiet_nan)
 

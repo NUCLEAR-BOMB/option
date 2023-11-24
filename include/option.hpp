@@ -330,48 +330,53 @@ namespace impl {
     inline constexpr bool has_quiet_or_signaling_NaN =
         std::numeric_limits<T>::has_quiet_NaN || std::numeric_limits<T>::has_signaling_NaN;
 
-    template<class T> // for float
-    struct internal_option_traits<T, std::enable_if_t<std::is_same_v<T, float> && has_quiet_or_signaling_NaN<float>>> {
-        using uint_type = size_to_uint_type<sizeof(float)>;
-        static constexpr uint_type empty_value = [] {
+    template<class T>
+    inline constexpr bool is_float32 = (sizeof(T) == 4 && std::is_floating_point_v<T>);
+    template<class T>
+    inline constexpr bool is_float64 = (sizeof(T) == 8 && std::is_floating_point_v<T>);
+
+    template<class T>
+    struct internal_option_traits<T, std::enable_if_t<is_float32<T> && has_quiet_or_signaling_NaN<T>>> {
+
+        static constexpr std::uint32_t empty_value = [] {
 #if OPTION_USE_QUIET_NAN
             return 0b0'11111111'10000111110111110110101u;
 #else
-            if constexpr (std::numeric_limits<float>::has_signaling_NaN) {
+            if constexpr (std::numeric_limits<T>::has_signaling_NaN) {
                 return 0b0'11111111'01111110110100110101111u;
-            } else { // std::numeric_limits<float>::has_quiet_NaN
+            } else { // std::numeric_limits<T>::has_quiet_NaN
                 return 0b0'11111111'10000111110111110110101u;
             }
 #endif
         }(); 
 
-        static bool is_empty(const float& value) noexcept {
+        static bool is_empty(const T& value) noexcept {
             return impl::bit_equal(value, empty_value);
         }
-        static void set_empty(float& value) noexcept {
+        static void set_empty(T& value) noexcept {
             impl::bit_copy(value, empty_value);
         }
     };
 
-    template<class T> // for double
-    struct internal_option_traits<T, std::enable_if_t<std::is_same_v<T, double> && has_quiet_or_signaling_NaN<double>>> {
-        using uint_type = size_to_uint_type<sizeof(double)>;
-        static constexpr uint_type empty_value = [] {
+    template<class T>
+    struct internal_option_traits<T, std::enable_if_t<is_float64<T> && has_quiet_or_signaling_NaN<T>>> {
+
+        static constexpr std::uint64_t empty_value = [] {
 #if OPTION_USE_QUIET_NAN
             return 0b0'11111111111'1011111100100110010000110000101110110011010101010111u;
 #else
-            if constexpr (std::numeric_limits<double>::has_signaling_NaN) {
+            if constexpr (std::numeric_limits<T>::has_signaling_NaN) {
                 return 0b0'11111111111'0110110001111001111101010101101100001000100110001111u;
-            } else { // std::numeric_limits<double>::has_quiet_NaN
+            } else { // std::numeric_limits<T>::has_quiet_NaN
                 return 0b0'11111111111'1011111100100110010000110000101110110011010101010111u;
             }
 #endif
         }();
 
-        static bool is_empty(const double& value) noexcept {
+        static bool is_empty(const T& value) noexcept {
             return impl::bit_equal(value, empty_value);
         }
-        static void set_empty(double& value) noexcept {
+        static void set_empty(T& value) noexcept {
             impl::bit_copy(value, empty_value);
         }
     };
