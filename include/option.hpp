@@ -488,6 +488,18 @@ namespace impl {
             impl::construct_at(std::addressof(value), std::unique_ptr<T>{ptr});
         }
     };
+
+    template<class T>
+    struct internal_option_flag<std::reference_wrapper<T>> {
+        static constexpr std::uintptr_t empty_value = 0;
+
+        static bool is_empty(const std::reference_wrapper<T>& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(std::reference_wrapper<T>& value) noexcept {
+            impl::bit_copy(value, empty_value);
+        }
+    };
 }
 
 
@@ -659,7 +671,7 @@ namespace impl {
         using flag = opt::option_flag<T>;
 
         constexpr option_destruct_base() noexcept
-            : value{} {
+            : dummy{} {
             flag::set_empty(value);
             // has_value() == false
         }

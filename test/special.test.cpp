@@ -79,9 +79,19 @@ struct special<std::tuple<>> : ::testing::Test {
     std::tuple<> B{};
     const opt::option<std::tuple<>> E{opt::none};
 };
+template<>
+struct special<std::reference_wrapper<int>> : ::testing::Test {
+    static inline int a = 1;
+    static inline int b = 2;
+
+    std::reference_wrapper<int> A{a};
+    std::reference_wrapper<int> B{b};
+    const opt::option<std::reference_wrapper<int>> E{opt::none};
+};
 
 using special_types = ::testing::Types<
-    bool, int*, opt::option<bool>, float, double, std::tuple<int, float>
+    bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
+    std::reference_wrapper<int>
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
