@@ -153,7 +153,7 @@ namespace impl {
         static_assert(sizeof(To) == sizeof(From));
 #if defined(__GNUC__) || defined(__GNUG__)
     #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Werror=class-memaccess"
+    #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
         std::memcpy(&to, &from, sizeof(To));
 #if defined(__GNUC__) || defined(__GNUG__)
