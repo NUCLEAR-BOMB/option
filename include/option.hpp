@@ -146,7 +146,7 @@ namespace impl {
     template<class Left, class Right>
     constexpr bool bit_equal(const Left& left, const Right& right) noexcept {
         static_assert(sizeof(Left) == sizeof(Right));
-        return std::memcmp(&left, &right, sizeof(Left)) == 0;
+        return std::memcmp(std::addressof(left), std::addressof(right), sizeof(Left)) == 0;
     }
     template<class To, class From>
     constexpr void bit_copy(To& to, const From& from) noexcept {
@@ -155,7 +155,7 @@ namespace impl {
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
-        std::memcpy(&to, &from, sizeof(To));
+        std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
 #if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic pop
 #endif
