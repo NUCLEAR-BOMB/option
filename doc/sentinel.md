@@ -46,11 +46,11 @@ See also macro [`OPTION_USE_QUIET_NAN`](macros.md#option_use_quiet_nan)
 
 ### `std::tuple`
 Stores the sentinel value in one of its members. \
-Recursive search the `std::tuple` for types that satisfying `has_option_flag<T>`. If one of its elements that satisfying `has_option_flag<T>` was found, use this element to manipulate the "is empty" flag. The search begins from left to right in the `std::tuple` template parameters. If function member `unset_empty(T&)` does not exists in the selected type, `unset_empty(T&)` will be replaced with an empty function.
+Recursive search the `std::tuple` for types that satisfying `has_option_traits<T>`. If one of its elements that satisfying `has_option_traits<T>` was found, use this element to manipulate the "is empty" flag. The search begins from left to right in the `std::tuple` template parameters. If function member `unset_empty(T&)` does not exists in the selected type, `unset_empty(T&)` will be replaced with an empty function.
 
 ### `std::pair`
 Stores the sentinel value in `T1` (first) or `T2` (second) type. \
-If the `T1` type satisfies `has_option_flag<T>`, then it is selected as a flag manipulator type; otherwise, the `T2` type is selected.
+If the `T1` type satisfies `has_option_traits<T>`, then it is selected as a flag manipulator type; otherwise, the `T2` type is selected.
 
 ### `std::array`
 Stores the sentinel value in first element of the array. \
@@ -58,7 +58,7 @@ The `std::array` size must be at least be 1. Uses the first element of the `std:
 
 ### `std::unique_ptr`
 Stores an unused address as the sentinel value. \
-Uses a `opt::option_flag<T*>` type to manipulate the pointer inside `std::unique_ptr`.
+Uses a `opt::option_traits<T*>` type to manipulate the pointer inside `std::unique_ptr`.
 
 See [Pointers](#pointers) section.
 

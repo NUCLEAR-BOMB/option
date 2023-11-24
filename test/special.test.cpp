@@ -41,7 +41,7 @@ struct special<int*> : public ::testing::Test {
         delete B;
     }
 };
-static_assert((opt::option_flag<int*>::empty_value % 2) != 0);
+static_assert((opt::option_traits<int*>::empty_value % 2) != 0);
 
 template<>
 struct special<float> : ::testing::Test {

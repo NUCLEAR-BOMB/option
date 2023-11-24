@@ -7,7 +7,7 @@
 ### OPTION_USE_QUIET_NAN
 *expects:* `boolean`, *default:* `false`
 
-If `true` use [quiet NaN][] as the sentinel value instead of [signaling NaN][] in `opt::option_flag` for floating point numbers (`float`, `double`); otherwise, use [signaling NaN][] as the sentinel in `opt::option_flag`. We using the [signaling NaN][] as default sentinel value for minimizing the chance of a collision between the contained value and the sentinel value. If on your platform the `opt::option` raises the invalid operation exception when using [signaling NaN][] recommended to define this macro to `true`.
+If `true` use [quiet NaN][] as the sentinel value instead of [signaling NaN][] in `opt::option_traits` for floating point numbers (`float`, `double`); otherwise, use [signaling NaN][] as the sentinel in `opt::option_traits`. We using the [signaling NaN][] as default sentinel value for minimizing the chance of a collision between the contained value and the sentinel value. If on your platform the `opt::option` raises the invalid operation exception when using [signaling NaN][] recommended to define this macro to `true`.
 
 ### OPTION_VERIFY
 *parameters:* `expression`, `message`

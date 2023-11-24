@@ -115,7 +115,7 @@ template<class T>
 class option;
 
 template<class T, class = void>
-struct option_flag;
+struct option_traits;
 
 // Check if is a specialization of `opt::option`
 template<class>
@@ -169,14 +169,14 @@ namespace impl {
     }
 
     template<class T, class = void>
-    struct internal_option_flag : std::false_type {};
+    struct internal_option_traits : std::false_type {};
 
     template<class T, class = std::size_t>
-    inline constexpr bool has_option_flag = false;
+    inline constexpr bool has_option_traits = false;
     template<class T>
-    inline constexpr bool has_option_flag<T, decltype(sizeof(opt::option_flag<T>))> =
-        std::is_base_of_v<internal_option_flag<T>, opt::option_flag<T>>
-            ? !std::is_base_of_v<std::false_type, internal_option_flag<T>>
+    inline constexpr bool has_option_traits<T, decltype(sizeof(opt::option_traits<T>))> =
+        std::is_base_of_v<internal_option_traits<T>, opt::option_traits<T>>
+            ? !std::is_base_of_v<std::false_type, internal_option_traits<T>>
             : true;
 
     template<class T, class Flag, class = void>
@@ -192,7 +192,7 @@ namespace impl {
     // This implementation uses bitwise AND (&) and OR (|) to check, reset the stored value.
     // This is also allows the size of `opt::option<opt::option<bool>>` to be exactly 1 byte
     template<>
-    struct internal_option_flag<bool> {
+    struct internal_option_traits<bool> {
         using bool_uint = std::uint_least8_t;
         static constexpr bool_uint empty_value = 0b0010;
 
@@ -210,7 +210,7 @@ namespace impl {
     };
 
     template<>
-    struct internal_option_flag<opt::option<bool>> {
+    struct internal_option_traits<opt::option<bool>> {
         using bool_uint = std::uint_least8_t;
         static constexpr bool_uint empty_value = 0b0100;
 
@@ -232,7 +232,7 @@ namespace impl {
     // Uses (probably) unused addresses to indicate an empty value,
     // so that `sizeof(opt::option<int*>) == sizeof(int*)`
     template<class T>
-    struct internal_option_flag<T, std::enable_if_t<std::is_pointer_v<T>>> {
+    struct internal_option_traits<T, std::enable_if_t<std::is_pointer_v<T>>> {
         static constexpr std::uintptr_t empty_value = []() -> std::uintptr_t {
             if constexpr        (sizeof(void*) == 8) {
                 return 0x7FFFFFFFFFFFFFFFu;
@@ -267,7 +267,7 @@ namespace impl {
     // this value will be threated as unused and will be used to indicate
     // an empty state and decrease the size of `opt::option`.
     template<class T>
-    struct internal_option_flag<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
+    struct internal_option_traits<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
         static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
 
         static constexpr bool is_empty(const T& value) noexcept {
@@ -307,7 +307,7 @@ namespace impl {
     // The sentinel value is selected as a maximum or minimum value of a underlying type.
     // Perhaps this specialization should be active only if `sizeof(E) > 1`.
     template<class E>
-    struct internal_option_flag<E, std::enable_if_t<enum_has_unused_value<E>>> {
+    struct internal_option_traits<E, std::enable_if_t<enum_has_unused_value<E>>> {
         static constexpr auto empty_value = find_unused_value<E>();
 
         static bool is_empty(const E& value) noexcept {
@@ -324,7 +324,7 @@ namespace impl {
         std::numeric_limits<T>::has_quiet_NaN || std::numeric_limits<T>::has_signaling_NaN;
 
     template<class T> // for float
-    struct internal_option_flag<T, std::enable_if_t<std::is_same_v<T, float> && has_quiet_or_signaling_NaN<float>>> {
+    struct internal_option_traits<T, std::enable_if_t<std::is_same_v<T, float> && has_quiet_or_signaling_NaN<float>>> {
         using uint_type = size_to_uint_type<sizeof(float)>;
         static constexpr uint_type empty_value = [] {
 #if OPTION_USE_QUIET_NAN
@@ -347,7 +347,7 @@ namespace impl {
     };
 
     template<class T> // for double
-    struct internal_option_flag<T, std::enable_if_t<std::is_same_v<T, double> && has_quiet_or_signaling_NaN<double>>> {
+    struct internal_option_traits<T, std::enable_if_t<std::is_same_v<T, double> && has_quiet_or_signaling_NaN<double>>> {
         using uint_type = size_to_uint_type<sizeof(double)>;
         static constexpr uint_type empty_value = [] {
 #if OPTION_USE_QUIET_NAN
@@ -370,82 +370,82 @@ namespace impl {
     };
 
     template<bool, std::size_t Index, class T, class... Ts>
-    struct find_option_flag_type_impl {};
+    struct find_option_traits_type_impl {};
 
     template<std::size_t Index, class T, class T2, class... Ts>
-    struct find_option_flag_type_impl<false, Index, T, T2, Ts...>
-        : find_option_flag_type_impl<has_option_flag<T2>, Index + 1, T2, Ts...> {};
+    struct find_option_traits_type_impl<false, Index, T, T2, Ts...>
+        : find_option_traits_type_impl<has_option_traits<T2>, Index + 1, T2, Ts...> {};
 
     template<std::size_t Index, class T, class... Ts>
-    struct find_option_flag_type_impl<true, Index, T, Ts...> {
+    struct find_option_traits_type_impl<true, Index, T, Ts...> {
         static constexpr std::size_t index = Index;
         using type = T;
     };
     template<class T, class... Ts>
-    using find_option_flag_type = find_option_flag_type_impl<has_option_flag<T>, 0, T, Ts...>;
+    using find_option_traits_type = find_option_traits_type_impl<has_option_traits<T>, 0, T, Ts...>;
 
     // For the std::tuple
     template<class T, class... Ts>
-    struct internal_option_flag<std::tuple<T, Ts...>,
-        std::void_t<typename find_option_flag_type<T, Ts...>::type>
+    struct internal_option_traits<std::tuple<T, Ts...>,
+        std::void_t<typename find_option_traits_type<T, Ts...>::type>
     > {
-        using find_flag = find_option_flag_type<T, Ts...>;
-        using flag = opt::option_flag<typename find_flag::type>;
-        static constexpr std::size_t index = find_flag::index;
+        using find_traits = find_option_traits_type<T, Ts...>;
+        using traits = opt::option_traits<typename find_traits::type>;
+        static constexpr std::size_t index = find_traits::index;
         using tuple_type = std::tuple<T, Ts...>;
 
         static bool is_empty(const tuple_type& value) noexcept {
-            return flag::is_empty(std::get<index>(value));
+            return traits::is_empty(std::get<index>(value));
         }
         static void set_empty(tuple_type& value) noexcept {
-            flag::set_empty(std::get<index>(value));
+            traits::set_empty(std::get<index>(value));
         }
         static void unset_empty(tuple_type& value) noexcept {
-            if constexpr (has_unset_empty_method<typename find_flag::type, flag>) {
-                flag::unset_empty(std::get<index>(value));
+            if constexpr (has_unset_empty_method<typename find_traits::type, traits>) {
+                traits::unset_empty(std::get<index>(value));
             }
         }
     };
 
     // For the std::pair
     template<class T1, class T2>
-    struct internal_option_flag<std::pair<T1, T2>,
-        std::enable_if_t<has_option_flag<T1> || has_option_flag<T2>>
+    struct internal_option_traits<std::pair<T1, T2>,
+        std::enable_if_t<has_option_traits<T1> || has_option_traits<T2>>
     > {
-        static constexpr bool first_has_option_flag = has_option_flag<T1>;
-        using flag_type = std::conditional_t<first_has_option_flag, T1, T2>;
-        static constexpr std::size_t pair_index = first_has_option_flag ? 0 : 1;
-        using flag = opt::option_flag<flag_type>;
+        static constexpr bool first_has_option_traits = has_option_traits<T1>;
+        using traits_type = std::conditional_t<first_has_option_traits, T1, T2>;
+        static constexpr std::size_t pair_index = first_has_option_traits ? 0 : 1;
+        using traits = opt::option_traits<traits_type>;
         using pair_type = std::pair<T1, T2>;
 
         static bool is_empty(const pair_type& value) noexcept {
-            return flag::is_empty(std::get<pair_index>(value));
+            return traits::is_empty(std::get<pair_index>(value));
         }
         static void set_empty(pair_type& value) noexcept {
-            flag::set_empty(std::get<pair_index>(value));
+            traits::set_empty(std::get<pair_index>(value));
         }
         static void unset_empty(pair_type& value) noexcept {
-            if constexpr (has_unset_empty_method<flag_type, flag>) {
-                flag::unset_empty(std::get<pair_index>(value));
+            if constexpr (has_unset_empty_method<traits_type, traits>) {
+                traits::unset_empty(std::get<pair_index>(value));
             }
         }
     };
 
     template<class T, std::size_t Size>
-    struct internal_option_flag<std::array<T, Size>, std::enable_if_t<(Size > 0 && has_option_flag<T>)>>
+    struct internal_option_traits<std::array<T, Size>, std::enable_if_t<(Size > 0 && has_option_traits<T>)>>
     {
-        using flag = opt::option_flag<T>;
+        using traits = opt::option_traits<T>;
         using array_type = std::array<T, Size>;
 
         static bool is_empty(const array_type& value) noexcept {
-            return flag::is_empty(std::get<0>(value));
+            return traits::is_empty(std::get<0>(value));
         }
         static void set_empty(array_type& value) noexcept {
-            flag::set_empty(std::get<0>(value));
+            traits::set_empty(std::get<0>(value));
         }
         static void unset_empty(array_type& value) noexcept {
-            if constexpr (has_unset_empty_method<T, flag>) {
-                flag::unset_empty(std::get<0>(value));
+            if constexpr (has_unset_empty_method<T, traits>) {
+                traits::unset_empty(std::get<0>(value));
             }
         }
     };
@@ -459,7 +459,7 @@ namespace impl {
     // Also we should use `unset_empty` to manually reset 'is empty' flag,
     // because for some reason default constructor do not reset value.
     template<class T>
-    struct internal_option_flag<T, std::enable_if_t<std::is_empty_v<T>>> {
+    struct internal_option_traits<T, std::enable_if_t<std::is_empty_v<T>>> {
         static constexpr std::uint_least8_t empty_value = 0b0101'1111u;
 
         static bool is_empty(const T& value) noexcept {
@@ -475,9 +475,9 @@ namespace impl {
 #endif
 
     template<class T>
-    struct internal_option_flag<std::unique_ptr<T>> {
-        using ptr_flag = opt::option_flag<T*>;
-        static constexpr std::uintptr_t empty_value = ptr_flag::empty_value;
+    struct internal_option_traits<std::unique_ptr<T>> {
+        using ptr_traits = opt::option_traits<T*>;
+        static constexpr std::uintptr_t empty_value = ptr_traits::empty_value;
 
         static bool is_empty(const std::unique_ptr<T>& value) noexcept {
             return impl::bit_equal(value.get(), empty_value);
@@ -490,7 +490,7 @@ namespace impl {
     };
 
     template<class T>
-    struct internal_option_flag<std::reference_wrapper<T>> {
+    struct internal_option_traits<std::reference_wrapper<T>> {
         static constexpr std::uintptr_t empty_value = 0;
 
         static bool is_empty(const std::reference_wrapper<T>& value) noexcept {
@@ -506,7 +506,7 @@ namespace impl {
 // Template struct for specialization to decrease the size of `opt::option<T>` for type `T`
 // Also allows to use `std::enable_if` (second template parameter) for more flexible type specialization 
 template<class T, class>
-struct option_flag : impl::internal_option_flag<T> {};
+struct option_traits : impl::internal_option_traits<T> {};
 
 namespace impl {
     template<class T>
@@ -578,7 +578,7 @@ namespace impl {
     using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
 
     template<class T,
-        bool store_flag = !has_option_flag<T>,
+        bool store_flag = !has_option_traits<T>,
         bool is_trivially_destructible = std::is_trivially_destructible_v<T>
     >
     struct option_destruct_base;
@@ -668,42 +668,42 @@ namespace impl {
             nontrivial_dummy_t dummy;
             T value;
         };
-        using flag = opt::option_flag<T>;
+        using traits = opt::option_traits<T>;
 
         constexpr option_destruct_base() noexcept
             : dummy{} {
-            flag::set_empty(value);
+            traits::set_empty(value);
             // has_value() == false
         }
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...) {
-            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+            OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
-            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+            OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
 
         constexpr void reset() noexcept {
-            flag::set_empty(value);
+            traits::set_empty(value);
             // has_value() == false
         }
         constexpr bool has_value() const noexcept {
-            return !flag::is_empty(value);
+            return !traits::is_empty(value);
         }
         // Precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
-            if constexpr (has_unset_empty_method<T, flag>) {
-                flag::unset_empty(value);
+            if constexpr (has_unset_empty_method<T, traits>) {
+                traits::unset_empty(value);
             }
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+            OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
     };
@@ -713,23 +713,23 @@ namespace impl {
             nontrivial_dummy_t dummy;
             T value;
         };
-        using flag = opt::option_flag<T>;
+        using traits = opt::option_traits<T>;
 
         constexpr option_destruct_base() noexcept
             : dummy{} {
-            flag::set_empty(value);
+            traits::set_empty(value);
             // has_value() == false
         }
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value(std::forward<Args>(args)...) {
-            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+            OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
-            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+            OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
 
@@ -737,8 +737,8 @@ namespace impl {
             if (has_value()) {
                 value.~T();
             } else {
-                if constexpr (has_unset_empty_method<T, flag>) {
-                    flag::unset_empty(value);
+                if constexpr (has_unset_empty_method<T, traits>) {
+                    traits::unset_empty(value);
                 }
             }
         }
@@ -746,22 +746,22 @@ namespace impl {
         constexpr void reset() noexcept {
             if (has_value()) {
                 value.~T();
-                flag::set_empty(value);
+                traits::set_empty(value);
             }
             // has_value() == false
         }
         constexpr bool has_value() const noexcept {
-            return !flag::is_empty(value);
+            return !traits::is_empty(value);
         }
         // Precondition: has_value() == false
         template<class... Args>
         constexpr void construct(Args&&... args) {
             // has_value() == false
-            if constexpr (has_unset_empty_method<T, flag>) {
-                flag::unset_empty(value);
+            if constexpr (has_unset_empty_method<T, traits>) {
+                traits::unset_empty(value);
             }
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            OPTION_VERIFY(!flag::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+            OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
     };
