@@ -151,12 +151,12 @@ namespace impl {
     template<class To, class From>
     constexpr void bit_copy(To& to, const From& from) noexcept {
         static_assert(sizeof(To) == sizeof(From));
-#if defined(__GNUC__) || defined(__GNUG__)
+#if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
         std::memcpy(&to, &from, sizeof(To));
-#if defined(__GNUC__) || defined(__GNUG__)
+#if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic pop
 #endif
     }
