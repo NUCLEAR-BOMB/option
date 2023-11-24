@@ -81,11 +81,11 @@ struct special<std::tuple<>> : ::testing::Test {
 };
 template<>
 struct special<std::reference_wrapper<int>> : ::testing::Test {
-    static inline int a = 1;
-    static inline int b = 2;
+    static inline int Aa = 1;
+    static inline int Bb = 2;
 
-    std::reference_wrapper<int> A{a};
-    std::reference_wrapper<int> B{b};
+    std::reference_wrapper<int> A{Aa};
+    std::reference_wrapper<int> B{Bb};
     const opt::option<std::reference_wrapper<int>> E{opt::none};
 };
 
