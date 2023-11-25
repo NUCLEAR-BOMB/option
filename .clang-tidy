@@ -35,3 +35,4 @@ CheckOptions:
   - { key: readability-identifier-naming.EnumCase, value: lower_case }
   - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
   - { key: readability-identifier-naming.MacroDefinitionIgnoredRegexp, value: TypeParam }
+  - { key: clang-analyzer-core.CallAndMessage, value: false }
