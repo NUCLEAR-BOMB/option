@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <utility>
 #include <cstdint>
+#include <cstddef>
 #include <memory>
 #include <new>
 #include <functional>
@@ -12,6 +13,7 @@
 #include <array>
 #include <limits>
 #include <string_view>
+#include <string>
 
 #ifdef __has_builtin
     #if __has_builtin(__builtin_unreachable)
@@ -593,6 +595,22 @@ namespace impl {
         }
         static void set_empty(value_t& value) noexcept {
             impl::construct_at(std::addressof(value), impl::bit_cast<const CharT*>(ptr_traits::empty_value), 0U);
+        }
+    };
+    template<class CharT, class Traits, class Allocator>
+    struct internal_option_traits<std::basic_string<CharT, Traits, Allocator>> {
+        using value_t = std::basic_string<CharT, Traits, Allocator>;
+
+        // Possibly std::string cannot be represented in a state, that it filled with zeros only.
+        // This assumption is made because the std::string::data() method cannot return nullptr,
+        // so if std::string stores a pointer to the beginning of the string, it cannot nullptr.
+        static constexpr std::array<std::byte, sizeof(value_t)> empty_value{}; // filled with zeros
+
+        static bool is_empty(const value_t& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(value_t& value) noexcept {
+            impl::bit_copy(value, empty_value);
         }
     };
 }

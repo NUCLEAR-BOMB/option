@@ -126,10 +126,15 @@ struct special<std::string_view> : Test {
     const std::string_view A{"a"};
     const std::string_view B{"b"};
 };
+template<>
+struct special<std::string> : Test {
+    const std::string A{"a"};
+    const std::string B{"b"};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
-    std::reference_wrapper<int>, struct2, std::string_view
+    std::reference_wrapper<int>, struct2, std::string_view, std::string
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
