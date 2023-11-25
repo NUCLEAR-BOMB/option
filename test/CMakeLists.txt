@@ -51,7 +51,6 @@ if (USE_CLANG_TIDY)
     set_target_properties(option-test PROPERTIES EXPORT_COMPILE_COMMANDS TRUE)
     add_clang_tidy_target(NAME clang-tidy
         CONFIG "${PROJECT_SOURCE_DIR}/.clang-tidy"
-        LINE_FILTER [{"name":"boost/pfr/detail/sequence_tuple.hpp","lines":[[78,78]]}]
         USE_COLOR QUIET SHOW_TIME
     )
 endif()

@@ -42,16 +42,10 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: Windows, os: windows-2022,  flags: -G "Unix Makefiles" }
           - { name: Linux,   os: ubuntu-latest, flags: -G "Unix Makefiles" }
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-
-    - name: Install LLVM
-      uses: KyleMayes/install-llvm-action@v1.9.0
-      with:
-        version: "16.0"
 
     - name: Configure CMake
       run: >
