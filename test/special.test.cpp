@@ -22,7 +22,7 @@ struct some_struct {
 struct struct2 {
     unsigned long long num;
 
-    struct2(const unsigned long long num) : num(num) {}
+    struct2(const unsigned long long num_) : num(num_) {}
 
     bool operator==(const struct2& value) const { return num == value.num; }
 private:
