@@ -45,18 +45,25 @@ struct opt::option_traits<struct2> {
 
 namespace {
 
+using ::testing::Test;
+
 template<class T>
-struct special : public ::testing::Test {
-    const T A = false;
-    const T B = true;
-    const opt::option<T> E{opt::none};
-};
+struct special;
 
 template<>
-struct special<int*> : public ::testing::Test {
+struct special<bool> : Test {
+    const bool A{false};
+    const bool B{true};
+};
+template<>
+struct special<opt::option<bool>> : Test {
+    const opt::option<bool> A{false};
+    const opt::option<bool> B{true};
+};
+template<>
+struct special<int*> : Test {
     int* A = nullptr;
     int* B = nullptr;
-    const opt::option<int*> E{opt::none};
 
     void SetUp() override {
         A = new int{0};
@@ -70,10 +77,9 @@ struct special<int*> : public ::testing::Test {
 static_assert((opt::option_traits<int*>::empty_value % 2) != 0);
 
 template<>
-struct special<float> : ::testing::Test {
+struct special<float> : Test {
     float A = 1.1f;
     float B = 2.3f;
-    const opt::option<float> E{opt::none};
 
     void TearDown() override {
         const int n = std::fetestexcept(FE_ALL_EXCEPT);
@@ -82,10 +88,9 @@ struct special<float> : ::testing::Test {
     }
 };
 template<>
-struct special<double> : ::testing::Test {
+struct special<double> : Test {
     double A = 1.234;
     double B = 12.334243;
-    const opt::option<double> E{opt::none};
 
     void TearDown() override {
         const int n = std::fetestexcept(FE_ALL_EXCEPT);
@@ -94,37 +99,32 @@ struct special<double> : ::testing::Test {
     }
 };
 template<>
-struct special<std::tuple<int, float>> : ::testing::Test {
+struct special<std::tuple<int, float>> : Test {
     std::tuple<int, float> A{2, 35.58f};
     std::tuple<int, float> B{10, 1034.124f};
-    const opt::option<std::tuple<int, float>> E{opt::none};
 };
 template<>
-struct special<std::tuple<>> : ::testing::Test {
+struct special<std::tuple<>> : Test {
     std::tuple<> A{};
     std::tuple<> B{};
-    const opt::option<std::tuple<>> E{opt::none};
 };
 template<>
-struct special<std::reference_wrapper<int>> : ::testing::Test {
+struct special<std::reference_wrapper<int>> : Test {
     static inline int Aa = 1;
     static inline int Bb = 2;
 
     std::reference_wrapper<int> A{Aa};
     std::reference_wrapper<int> B{Bb};
-    const opt::option<std::reference_wrapper<int>> E{opt::none};
 };
 template<>
-struct special<struct2> : ::testing::Test {
+struct special<struct2> : Test {
     const struct2 A{1ULL};
     const struct2 B{2ULL};
-    const opt::option<struct2> E{opt::none};
 };
 template<>
-struct special<std::string_view> : ::testing::Test {
+struct special<std::string_view> : Test {
     const std::string_view A{"a"};
     const std::string_view B{"b"};
-    const opt::option<std::string_view> E{opt::none};
 };
 
 using special_types = ::testing::Types<
@@ -170,9 +170,9 @@ TYPED_TEST(special, assigment) {
     a = this->B;
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(a, this->B);
-    a = this->E;
+    a = opt::option<T>{};
     EXPECT_FALSE(a.has_value());
-    a = this->E;
+    a = opt::option<T>{};
     EXPECT_FALSE(a.has_value());
     a = opt::option<T>{this->A};
     EXPECT_TRUE(a.has_value());
