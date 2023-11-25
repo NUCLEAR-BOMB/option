@@ -30,8 +30,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(magic_enum)
 set_target_properties(magic_enum PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:magic_enum,INTERFACE_INCLUDE_DIRECTORIES>)
-
 target_link_libraries(option-test PRIVATE magic_enum::magic_enum)
+
+FetchContent_Declare(
+    boost_pfr
+    URL https://github.com/boostorg/pfr/archive/refs/tags/2.2.0.zip
+    URL_HASH SHA256=becb093245149209b0442e88737495c99114c639dc2121d0e4c08157c034ed03
+)
+FetchContent_MakeAvailable(boost_pfr)
+target_link_libraries(option-test PRIVATE Boost::pfr)
 
 if (USE_SANITIZER)
     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")

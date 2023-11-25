@@ -475,4 +475,54 @@ TEST_F(fancy_pointer, unique_ptr) {
     EXPECT_EQ(**a, 3);
 }
 
+#ifdef OPTION_HAS_BOOST_PFR
+
+struct structures : ::testing::Test {};
+
+TEST_F(structures, basic) {
+    struct s1 { int x; float y; };
+
+    opt::option<s1> a{1, 2.f};
+    static_assert(sizeof(a) == sizeof(s1));
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, 1);
+    EXPECT_EQ(a->y, 2.f);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    struct s2 { float x; int y; };
+    opt::option<s2> b{10.5f, -1};
+    static_assert(sizeof(b) == sizeof(s2));
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b->x, 10.5f);
+    EXPECT_EQ(b->y, -1);
+    b.reset();
+    EXPECT_FALSE(b.has_value());
+
+    struct s3 { int x; long y; };
+    opt::option<s3> c{5, 10L};
+    static_assert(sizeof(c) > sizeof(s3));
+
+    struct s4 { float x; double y; };
+    opt::option<s4> d{10.5f, 100.};
+    static_assert(sizeof(d) == sizeof(s4));
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d->x, 10.5f);
+    EXPECT_EQ(d->y, 100.);
+    d.reset();
+    EXPECT_FALSE(d.has_value());
+
+    struct s5 { int x; long y; float z; };
+    opt::option<s5> e{10, 15L, 0.f};
+    static_assert(sizeof(e) == sizeof(s5));
+    EXPECT_TRUE(e.has_value());
+    EXPECT_EQ(e->x, 10);
+    EXPECT_EQ(e->y, 15L);
+    EXPECT_EQ(e->z, 0.f);
+    e.reset();
+    EXPECT_FALSE(e.has_value());
+}
+
+#endif
+
 }

@@ -65,6 +65,18 @@
     #endif
 #endif
 
+#ifndef OPTION_BOOST_PFR_FILE
+    #define OPTION_BOOST_PFR_FILE <boost/pfr.hpp>
+#endif
+#if !(defined(OPTION_USE_BOOST_PFR) && !(OPTION_USE_BOOST_PFR))
+    #if __has_include(OPTION_BOOST_PFR_FILE)
+        #include OPTION_BOOST_PFR_FILE
+        #ifndef BOOST_PFR_NOT_SUPPORTED
+            #define OPTION_HAS_BOOST_PFR
+        #endif
+    #endif
+#endif
+
 // Macro `OPTION_VERIFY` is used in `opt::option<T>::get`, `opt::option<T>::operator*`.
 // You can also redefine `OPTION_VERIFY` to specify custom behavior when something goes unexpected.
 #ifndef OPTION_VERIFY
@@ -164,9 +176,9 @@ namespace impl {
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
         if constexpr (std::is_trivially_copy_assignable_v<T>) {
-            *ptr = T(std::forward<Args>(args)...);
+            *ptr = T{std::forward<Args>(args)...};
         } else {
-            ::new(static_cast<void*>(ptr)) T(std::forward<Args>(args)...);
+            ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
         }
     }
 
@@ -192,6 +204,9 @@ namespace impl {
     inline constexpr bool has_unset_empty_method<T, Flag, std::void_t<
         decltype(Flag::unset_empty(std::declval<T&>()))
     >> = true;
+
+    template<class> struct is_std_array : std::false_type {};
+    template<class T, std::size_t N> struct is_std_array<std::array<T, N>> : std::true_type {};
 
     // Optimizing `bool` value.
     // Usually the size of booleans is 1 byte, but only used a single bit.
@@ -512,6 +527,53 @@ namespace impl {
             impl::bit_copy(value, empty_value);
         }
     };
+
+#ifdef OPTION_HAS_BOOST_PFR
+    template<class Tuple>
+    struct pfr_find_option_traits_type_impl;
+    template<class T, class... Ts>
+    struct pfr_find_option_traits_type_impl<std::tuple<T, Ts...>> {
+        using type = find_option_traits_type<T, Ts...>;
+    };
+    template<class Struct>
+    using pfr_find_option_traits_type = typename pfr_find_option_traits_type_impl<
+        decltype(boost::pfr::structure_to_tuple(std::declval<Struct&>()))
+    >::type;
+
+    template<class Struct, class = void>
+    inline constexpr bool is_pfr_reflectable_impl = false;
+    template<class Struct>
+    inline constexpr bool is_pfr_reflectable_impl<Struct, std::void_t<
+        typename pfr_find_option_traits_type<Struct>::type
+    >> = true;
+
+    template<class Struct, bool =
+        std::is_aggregate_v<Struct> && !is_std_array<Struct>() && !std::is_polymorphic_v<Struct>
+    >
+    inline constexpr bool is_pfr_reflectable = false;
+    template<class Struct>
+    inline constexpr bool is_pfr_reflectable<Struct, true> = is_pfr_reflectable_impl<Struct>;
+
+
+    template<class Struct>
+    struct internal_option_traits<Struct, std::enable_if_t<is_pfr_reflectable<Struct>>> {
+        using find_result = pfr_find_option_traits_type<Struct>;
+        using traits = opt::option_traits<typename find_result::type>;
+        static constexpr std::size_t index = find_result::index;
+
+        static constexpr bool is_empty(const Struct& value) noexcept {
+            return traits::is_empty(boost::pfr::get<index>(value));
+        }
+        static constexpr void set_empty(Struct& value) noexcept {
+            traits::set_empty(boost::pfr::get<index>(value));
+        }
+        static constexpr void unset_empty(Struct& value) noexcept {
+            if constexpr (has_unset_empty_method<typename find_result::type, traits>) {
+                traits::unset_empty(boost::pfr::get<index>(value));
+            }
+        }
+    };
+#endif
 }
 
 
@@ -589,6 +651,14 @@ namespace impl {
     template<class Tuple>
     using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
 
+    template<class T, class, class... Args>
+    struct is_direct_list_initializable_impl : std::false_type {};
+    template<class T, class... Args>
+    struct is_direct_list_initializable_impl<T, std::void_t<decltype(T{std::declval<Args>()...})>, Args...> : std::true_type {};
+
+    template<class T, class... Args>
+    inline constexpr bool is_direct_list_initializable = is_direct_list_initializable_impl<T, void, Args...>::value;
+
     template<class T,
         bool store_flag = !has_option_traits<T>,
         bool is_trivially_destructible = std::is_trivially_destructible_v<T>
@@ -610,11 +680,11 @@ namespace impl {
 
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
-            : value(std::forward<Args>(args)...), has_value_flag(true) {}
+            : value{std::forward<Args>(args)...}, has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
+            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
 
         constexpr void reset() noexcept {
             has_value_flag = false;
@@ -645,11 +715,11 @@ namespace impl {
 
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
-            : value(std::forward<Args>(args)...), has_value_flag(true) {}
+            : value{std::forward<Args>(args)...}, has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
+            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
 
         ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
             if (has_value_flag) {
@@ -689,13 +759,13 @@ namespace impl {
         }
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
-            : value(std::forward<Args>(args)...) {
+            : value{std::forward<Args>(args)...} {
             OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
             OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
@@ -734,13 +804,13 @@ namespace impl {
         }
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
-            : value(std::forward<Args>(args)...) {
+            : value{std::forward<Args>(args)...} {
             OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
             OPTION_VERIFY(!traits::is_empty(value), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
             // has_value() == true
         }
@@ -857,11 +927,11 @@ namespace impl {
 
         template<class Arg>
         constexpr option_storage_base(Arg&& arg) noexcept
-            : value(ref_to_ptr(std::forward<Arg>(arg))) {}
+            : value{ref_to_ptr(std::forward<Arg>(arg))} {}
 
         template<class F, class Arg>
         constexpr option_storage_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value(ref_to_ptr(std::invoke(std::forward<F>(f), std::forward<Arg>(arg)))) {}
+            : value{ref_to_ptr(std::invoke(std::forward<F>(f), std::forward<Arg>(arg)))} {}
 
         constexpr bool has_value() const noexcept {
             return value != nullptr;
@@ -1088,7 +1158,8 @@ namespace impl::option {
 
     template<class T, class First, class... Args>
     using enable_constructor_6 = std::enable_if_t<
-        std::is_constructible_v<T, First, Args...> && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
+        (std::is_constructible_v<T, First, Args...> || is_direct_list_initializable<T, First, Args...>)
+        && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
     , int>;
 
     template<class T, class U>
