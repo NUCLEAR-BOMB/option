@@ -38,6 +38,7 @@ FetchContent_Declare(
     URL_HASH SHA256=becb093245149209b0442e88737495c99114c639dc2121d0e4c08157c034ed03
 )
 FetchContent_MakeAvailable(boost_pfr)
+set_target_properties(boost_pfr PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:boost_pfr,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(option-test PRIVATE Boost::pfr)
 
 if (USE_SANITIZER)
