@@ -49,7 +49,11 @@ endif()
 if (USE_CLANG_TIDY)
     include("${PROJECT_SOURCE_DIR}/cmake/clang_tidy.cmake")
     set_target_properties(option-test PROPERTIES EXPORT_COMPILE_COMMANDS TRUE)
-    add_clang_tidy_target(clang-tidy)
+    add_clang_tidy_target(NAME clang-tidy
+        CONFIG "${PROJECT_SOURCE_DIR}/.clang-tidy"
+        LINE_FILTER [{"name":"boost/pfr/detail/sequence_tuple.hpp","lines":[[78,78]]}]
+        USE_COLOR QUIET SHOW_TIME
+    )
 endif()
 
 include(GoogleTest)

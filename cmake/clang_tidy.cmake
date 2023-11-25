@@ -1,9 +1,10 @@
 include_guard(GLOBAL)
 
-function(add_clang_tidy_target name)
+function(add_clang_tidy_target)
     if (NOT CMAKE_GENERATOR MATCHES "Unix Makefiles|Ninja")
         return()
     endif()
+    cmake_parse_arguments(ARG "USE_COLOR;QUIET;SHOW_TIME" "NAME;CONFIG;LINE_FILTER;HEADER_FILTER" "" ${ARGN})
 
     set(run_clang_tidy "${PROJECT_BINARY_DIR}/run-clang-tidy.py")
 
@@ -27,13 +28,23 @@ function(add_clang_tidy_target name)
         return()
     endif()
 
-    set(clang_tidy_config "${PROJECT_SOURCE_DIR}/.clang-tidy")
-    add_custom_target(${name}
-        COMMAND "python" "${run_clang_tidy}" -quiet -p "${PROJECT_BINARY_DIR}" -use-color
-        -clang-tidy-binary "${clang_tidy_binary}" -config-file "${clang_tidy_config}"
+    if (ARG_LINE_FILTER)
+        set(line_filter_arg "-line-filter=${ARG_LINE_FILTER}")
+    endif()
+    if (ARG_HEADER_FILTER)
+        set(header_filer_arg "-header-filter=${ARG_HEADER_FILTER}")
+    endif()
+
+    add_custom_target(${ARG_NAME}
+        COMMAND "python" "${run_clang_tidy}" -p "${PROJECT_BINARY_DIR}"
+        -clang-tidy-binary "${clang_tidy_binary}" -config-file "${ARG_CONFIG}"
+        $<$<BOOL:${ARG_USE_COLOR}>:-use-color> $<$<BOOL:${ARG_QUIET}>:-quiet>
+        ${line_filter_arg} ${header_filer_arg}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}" VERBATIM
         DEPENDS "${run_clang_tidy}"
         SOURCES "${clang_tidy_config}"
     )
-    set_target_properties(${name} PROPERTIES RULE_LAUNCH_CUSTOM "\"${CMAKE_COMMAND}\" -E time")
+    if (SHOW_TIME)
+        set_target_properties(${ARG_NAME} PROPERTIES RULE_LAUNCH_CUSTOM "\"${CMAKE_COMMAND}\" -E time")
+    endif()
 endfunction()
