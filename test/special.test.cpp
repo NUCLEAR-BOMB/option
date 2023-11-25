@@ -120,10 +120,16 @@ struct special<struct2> : ::testing::Test {
     const struct2 B{2ULL};
     const opt::option<struct2> E{opt::none};
 };
+template<>
+struct special<std::string_view> : ::testing::Test {
+    const std::string_view A{"a"};
+    const std::string_view B{"b"};
+    const opt::option<std::string_view> E{opt::none};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
-    std::reference_wrapper<int>, struct2
+    std::reference_wrapper<int>, struct2, std::string_view
 >;
 TYPED_TEST_SUITE(special, special_types,);
 

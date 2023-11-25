@@ -11,6 +11,7 @@
 #include <tuple>
 #include <array>
 #include <limits>
+#include <string_view>
 
 #ifdef __has_builtin
     #if __has_builtin(__builtin_unreachable)
@@ -70,9 +71,7 @@
 #endif
 #if !(defined(OPTION_USE_BOOST_PFR) && !(OPTION_USE_BOOST_PFR))
     #if __has_include(OPTION_BOOST_PFR_FILE)
-// NOLINTBEGIN
         #include OPTION_BOOST_PFR_FILE
-// NOLINTEND
         #ifndef BOOST_PFR_NOT_SUPPORTED
             #define OPTION_HAS_BOOST_PFR
         #endif
@@ -158,12 +157,12 @@ namespace impl {
     using size_to_uint_type = decltype(size_to_uint_type_impl<N>());
 
     template<class Left, class Right>
-    constexpr bool bit_equal(const Left& left, const Right& right) noexcept {
+    inline bool bit_equal(const Left& left, const Right& right) noexcept {
         static_assert(sizeof(Left) == sizeof(Right));
         return std::memcmp(std::addressof(left), std::addressof(right), sizeof(Left)) == 0;
     }
     template<class To, class From>
-    constexpr void bit_copy(To& to, const From& from) noexcept {
+    inline void bit_copy(To& to, const From& from) noexcept {
         static_assert(sizeof(To) == sizeof(From));
 #if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic push
@@ -173,6 +172,13 @@ namespace impl {
 #if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic pop
 #endif
+    }
+    template<class To, class From>
+    inline To bit_cast(const From& from) noexcept {
+        static_assert(sizeof(To) == sizeof(From));
+        To result{};
+        impl::bit_copy(result, from);
+        return result;
     }
 
     template<class T, class... Args>
@@ -576,6 +582,19 @@ namespace impl {
         }
     };
 #endif
+
+    template<class CharT, class Traits>
+    struct internal_option_traits<std::basic_string_view<CharT, Traits>> {
+        using value_t = std::basic_string_view<CharT, Traits>;
+        using ptr_traits = opt::option_traits<const CharT*>;
+
+        static bool is_empty(const value_t& value) noexcept {
+            return ptr_traits::is_empty(value.data());
+        }
+        static void set_empty(value_t& value) noexcept {
+            impl::construct_at(std::addressof(value), impl::bit_cast<const CharT*>(ptr_traits::empty_value), 0U);
+        }
+    };
 }
 
 
