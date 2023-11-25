@@ -502,6 +502,7 @@ TEST_F(structures, basic) {
     struct s3 { int x; long y; };
     opt::option<s3> c{5, 10L};
     static_assert(sizeof(c) > sizeof(s3));
+    EXPECT_TRUE(c.has_value());
 
     struct s4 { float x; double y; };
     opt::option<s4> d{10.5f, 100.};
