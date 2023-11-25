@@ -4,6 +4,12 @@
 > [!WARNING]
 > Defining macro that not listed in the following list will possible result code break between different versions.
 
+- [OPTION_USE_QUIET_NAN](#option_use_quiet_nan)
+- [OPTION_VERIFY](#option_verify)
+- [magic_enum library related](#magic_enum-library-related)
+    - [OPTION_MAGIC_ENUM_FILE](#option_magic_enum_file)
+    - [OPTION_USE_MAGIC_ENUM](#option_use_magic_enum)
+
 ### OPTION_USE_QUIET_NAN
 *expects:* `boolean`, *default:* `false`
 

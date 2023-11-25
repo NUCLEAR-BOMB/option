@@ -1,6 +1,17 @@
 
 # Optimizations
 
+- [`bool`](#bool)
+- [`opt::option<bool>`](#optoptionbool)
+- [Pointers](#pointers)
+- [Enumerations](#enumerations)
+- [Floating point](#floating-point)
+- [`std::tuple`](#stdtuple)
+- [`std::pair`](#stdpair)
+- [`std::array`](#stdarray)
+- [`std::unique_ptr`](#stdunique_ptr)
+- [`std::reference_wrapper`](#stdreference_wrapper)
+
 ### `bool`
 Stores the sentinel value in a second unused bit. \
 On most platforms size of `bool` is 1 byte, but used only single bit to store value.
@@ -63,4 +74,4 @@ Uses a `opt::option_traits<T*>` type to manipulate the pointer inside `std::uniq
 See [Pointers](#pointers) section.
 
 ### `std::reference_wrapper`
-Stores the `nullptr` (`0`) as the sentinel value. \
+Stores the `nullptr` (`0`) as the sentinel value.
