@@ -70,7 +70,9 @@
 #endif
 #if !(defined(OPTION_USE_BOOST_PFR) && !(OPTION_USE_BOOST_PFR))
     #if __has_include(OPTION_BOOST_PFR_FILE)
+// NOLINTBEGIN
         #include OPTION_BOOST_PFR_FILE
+// NOLINTEND
         #ifndef BOOST_PFR_NOT_SUPPORTED
             #define OPTION_HAS_BOOST_PFR
         #endif
