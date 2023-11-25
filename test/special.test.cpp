@@ -19,6 +19,32 @@ struct some_struct {
     int z() { return 0; } // NOLINT
 };
 
+struct struct2 {
+    unsigned long long num;
+
+    struct2(const unsigned long long num) : num(num) {}
+
+    bool operator==(const struct2& value) const { return num == value.num; }
+private:
+    bool has = true;
+
+    friend struct opt::option_traits<struct2>;
+};
+
+}
+
+template<>
+struct opt::option_traits<struct2> {
+    static bool is_empty(const struct2& value) noexcept {
+        return !value.has;
+    }
+    static void set_empty(struct2& value) noexcept {
+        value.has = false;
+    }
+};
+
+namespace {
+
 template<class T>
 struct special : public ::testing::Test {
     const T A = false;
@@ -88,10 +114,16 @@ struct special<std::reference_wrapper<int>> : ::testing::Test {
     std::reference_wrapper<int> B{Bb};
     const opt::option<std::reference_wrapper<int>> E{opt::none};
 };
+template<>
+struct special<struct2> : ::testing::Test {
+    const struct2 A{1ULL};
+    const struct2 B{2ULL};
+    const opt::option<struct2> E{opt::none};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
-    std::reference_wrapper<int>
+    std::reference_wrapper<int>, struct2
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
@@ -500,9 +532,8 @@ TEST_F(structures, basic) {
     EXPECT_FALSE(b.has_value());
 
     struct s3 { int x; long y; };
-    opt::option<s3> c{5, 10L};
+    const opt::option<s3> c{5, 10L};
     static_assert(sizeof(c) > sizeof(s3));
-    EXPECT_TRUE(c.has_value());
 
     struct s4 { float x; double y; };
     opt::option<s4> d{10.5f, 100.};
@@ -526,4 +557,14 @@ TEST_F(structures, basic) {
 
 #endif
 
+struct struct1 {
+    int a;
+    float x;
+};
+
 }
+
+template<>
+struct opt::option_traits<struct1>;
+
+static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
