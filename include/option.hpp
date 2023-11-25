@@ -14,6 +14,7 @@
 #include <limits>
 #include <string_view>
 #include <string>
+#include <vector>
 
 #ifdef __has_builtin
     #if __has_builtin(__builtin_unreachable)
@@ -603,7 +604,23 @@ namespace impl {
 
         // Possibly std::string cannot be represented in a state, that it filled with zeros only.
         // This assumption is made because the std::string::data() method cannot return nullptr,
-        // so if std::string stores a pointer to the beginning of the string, it cannot nullptr.
+        // so if std::string stores a pointer to the beginning of the string, it cannot be nullptr.
+        static constexpr std::array<std::byte, sizeof(value_t)> empty_value{}; // filled with zeros
+
+        static bool is_empty(const value_t& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(value_t& value) noexcept {
+            impl::bit_copy(value, empty_value);
+        }
+    };
+    template<class T, class Allocator>
+    struct internal_option_traits<std::vector<T, Allocator>> {
+        using value_t = std::vector<T, Allocator>;
+
+        // Possibly std::vector cannot be represented in a state, that it filled with zeros only.
+        // This assumption is made because the std::vector::data() method cannot return nullptr,
+        // so if std::vector stores a pointer to the beginning of the allocated array, it cannot be nullptr.
         static constexpr std::array<std::byte, sizeof(value_t)> empty_value{}; // filled with zeros
 
         static bool is_empty(const value_t& value) noexcept {
