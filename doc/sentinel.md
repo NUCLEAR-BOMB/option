@@ -1,11 +1,11 @@
 
 # Optimizations
 
-- [`bool`](#bool)
-- [`opt::option<bool>`](#optoptionbool)
 - [Pointers](#pointers)
 - [Enumerations](#enumerations)
 - [Floating point](#floating-point)
+- [`bool`](#bool)
+- [`opt::option<bool>`](#optoptionbool)
 - [`std::tuple`](#stdtuple)
 - [`std::pair`](#stdpair)
 - [`std::array`](#stdarray)
@@ -15,22 +15,10 @@
 - [`std::string_view`](#stdstring_view)
 - [`std::vector`](#stdvector)
 
-### `bool`
-Stores the sentinel value in a second unused bit. \
-On most platforms size of `bool` is 1 byte, but used only single bit to store value. So we can exploit this flow to indicate an empty state in `opt::option`. This implementation uses bitwise AND `&` and bitwise OR `|` to manipulate an empty flag inside and does not default construct the `bool` value inside it, so the contained value of the empty constructed `opt::option<bool>` is in an indeterminate state. \
-We using `&` and `|` to also implement [`opt::option<bool>`](#optoptionbool).
-> [!NOTE]
-> The sentinel value is `2`.
-
-### `opt::option<bool>`
-Stores the sentinel value in a second third bit.
-> [!NOTE]
-> The sentinel value is `4`.
-
 ### Pointers
 Stores a (probably) unused addresses as the sentinel value.
 - On x64 instruction set (`sizeof(void*) == 8`) uses a [noncanonical address][] to indicate an empty state.
-- On x32 instruction set (`sizeof(void*) == 4`) uses a sligtly decreased 32-bit unsigned integer max to avoid Windows pseudo-handles collision.
+- On x32 instruction set (`sizeof(void*) == 4`) uses a slightly decreased 32-bit unsigned integer max to avoid Windows pseudo-handles collision.
 - On 16-bit and 8-bit instruction set (`sizeof(void*) == 2` or `sizeof(void*) == 1`) uses a 16-bit or 8-bit unsigned integer max.
 > [!NOTE]
 > The sentinel value on x64 is `0x7FFFFFFFFFFFFFFF`, on x32 is `0xFFFFFFF3`, on 16-bit instruction set is `0xFFFF`, on 8-bit instruction set is `0xFF`.
@@ -56,9 +44,25 @@ See also macro [`OPTION_USE_QUIET_NAN`](macros.md#option_use_quiet_nan)
 [Single precision floating point]: https://en.wikipedia.org/wiki/Single-precision_floating-point_format
 [NaN floating point]: https://en.wikipedia.org/wiki/NaN#Floating_point
 
+### Aggregate
+Stores the sentinel value in one of its members. \
+If the **boost.pfr** library is available, will recursive search the aggregate type for types that satisfying `has_option_traits<T>`. If that member was found, use the `opt::option_traits<T>` for found member to manipulate the "is empty" flag. The search begins from first to last declared member in the aggregate type. If the static member function `unset_empty(T&)` does not exists in the `opt::option_traits<T>` for found type, the `unset_empty(T&)` will be replaced with an empty function.
+
+### `bool`
+Stores the sentinel value in a second unused bit. \
+On most platforms size of `bool` is 1 byte, but used only single bit to store value. So we can exploit this flow to indicate an empty state in `opt::option`. This implementation uses bitwise AND `&` and bitwise OR `|` to manipulate an empty flag inside and does not default construct the `bool` value inside it, so the contained value of the empty constructed `opt::option<bool>` is in an indeterminate state. \
+We using `&` and `|` to also implement [`opt::option<bool>`](#optoptionbool).
+> [!NOTE]
+> The sentinel value is `2`.
+
+### `opt::option<bool>`
+Stores the sentinel value in a second third bit.
+> [!NOTE]
+> The sentinel value is `4`.
+
 ### `std::tuple`
 Stores the sentinel value in one of its members. \
-Recursive search the `std::tuple` for types that satisfying `has_option_traits<T>`. If one of its elements that satisfying `has_option_traits<T>` was found, use this element to manipulate the "is empty" flag. The search begins from left to right in the `std::tuple` template parameters. If function member `unset_empty(T&)` does not exists in the selected type, `unset_empty(T&)` will be replaced with an empty function.
+Recursive search the `std::tuple` for types that satisfying `has_option_traits<T>`. If one of its elements that satisfying `has_option_traits<T>` was found, use this element to manipulate the "is empty" flag. The search begins from left to right in the `std::tuple` template parameters. If the static member function `unset_empty(T&)` does not exists in the selected type, `unset_empty(T&)` will be replaced with an empty function.
 
 ### `std::pair`
 Stores the sentinel value in `T1` (first) or `T2` (second) type. \

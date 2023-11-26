@@ -89,6 +89,8 @@
         #ifndef BOOST_PFR_NOT_SUPPORTED
             #define OPTION_HAS_BOOST_PFR
         #endif
+    #elif defined(OPTION_USE_BOOST_PFR) && (OPTION_USE_BOOST_PFR)
+        #error "Cannot found the 'boost.pfr' library. Define the 'OPTION_BOOST_PFR_FILE' macro to specify a custom path to the 'boost.pfr' library header"
     #endif
 #endif
 

@@ -30,7 +30,19 @@ Optionally specifies the `#include` path for **magic_enum** library. You can def
 ### OPTION_USE_MAGIC_ENUM
 *expects:* `boolean`, *default:* `true`
 
-Will make `#error` if this macro is defined by the user and it is evaluates to `true`, but found with `__has_include(OPTION_MAGIC_ENUM_FILE)`. If the **magic_enum** library is not supported by the compiler (not defined `MAGIC_ENUM_SUPPORTED`) will silently continue without actually using the library features.
+Will make `#error` if this macro is defined by the user and it is evaluates to `true`, but `__has_include(OPTION_MAGIC_ENUM_FILE)` is `false`. If the **magic_enum** library is not supported by the compiler (not defined `MAGIC_ENUM_SUPPORTED`) will silently continue without actually using the library features.
 
 [quiet NaN]: https://en.wikipedia.org/wiki/NaN#Quiet_NaN
 [signaling NaN]: https://en.wikipedia.org/wiki/NaN#Signaling_NaN
+
+## **boost.pfr** library related
+
+### OPTION_BOOST_PFR_FILE
+*expects:* `"path"` or `<path>`, *default:* `<boost/pfr.hpp>`
+
+Optionally specifies the `#include` path for the **boost.pfr** library. You can define this macro to specify a path to the **boost.pfr** library. If the **boost.pfr** library was not found with `__has_include(OPTION_BOOST_PFR_FILE)`, will silently continue without using the library features.
+
+### OPTION_USE_BOOST_PFR
+*expects:* `boolean`, *default:* `true`
+
+Will make `#error` if this macro is defined by the user and it is evaluates to `true`, but `__has_include(OPTION_BOOST_PFR_FILE)` is `false`. If the **boost.pfr** library is not supported by the compiler (defined `BOOST_PFR_NOT_SUPPORTED`), will silently continue without actually using the library features.
