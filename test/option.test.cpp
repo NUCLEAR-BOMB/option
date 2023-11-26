@@ -131,7 +131,7 @@ TEST_F(option, map) {
     EXPECT_EQ(opt::option<int>{10}.map(func).map(func), 8);
 }
 TEST_F(option, or_else) {
-    const auto func = []() { return 1 << 10; };
+    const auto func = []() { return opt::option{1 << 10}; };
     EXPECT_EQ(opt::option<int>{1}.or_else(func), 1);
     EXPECT_EQ(opt::option<int>{}.or_else(func), 1 << 10);
     EXPECT_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);

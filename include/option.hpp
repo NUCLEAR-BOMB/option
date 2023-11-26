@@ -1346,13 +1346,16 @@ namespace impl::option {
     // implementation of opt::option<T>::or_else(F&&)
     template<class T, class Self, class F>
     constexpr opt::option<T> or_else(Self&& self, F&& f) {
+        using f_result = std::invoke_result_t<F>;
+        static_assert(std::is_same_v<impl::remove_cvref<f_result>, opt::option<T>>,
+            "The function F must return an opt::option<T>");
         if (self.has_value()) {
             return std::forward<Self>(self);
         }
         return std::invoke(std::forward<F>(f));
     }
-    template<class RT, class Fn>
-    using enable_or_else = std::enable_if_t<std::is_invocable_r_v<RT, Fn>, int>;
+    template<class Fn>
+    using enable_or_else = std::enable_if_t<std::is_invocable_v<Fn>, int>;
 
     // implementation of opt::option<T>::value_or_throw()
     template<class Self>
@@ -1894,9 +1897,9 @@ public:
     // Returns a contained value if this `opt::option` contains a value;
     // otherwise, return the result of `f`.
     // Same as `std::optional<T>::or_else`
-    template<class F, impl::option::enable_or_else<T, F> = 0>
+    template<class F, impl::option::enable_or_else<F> = 0>
     constexpr option<T> or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_or_else<T, F> = 0>
+    template<class F, impl::option::enable_or_else<F> = 0>
     constexpr option<T> or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
 
     // Specifies that this `opt::option` will always contains value at a given point.
