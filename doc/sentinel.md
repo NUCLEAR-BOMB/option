@@ -79,21 +79,21 @@ Stores the `nullptr` (`0`) as the sentinel value.
 
 ### `std::string`
 Sets each bit in the `std::string` object to `0` to indicate an empty state. \
-This assumption is made because the `std::string::data()` method cannot return `nullptr` (`0`), so if the `std::string` stores a pointer to the beginning of a string, it cannot be `nullptr` (`0`). This optimization works with any `std::basic_string<Diagram, features, allocator>` specialization.
+This assumption is made because the `std::string::data()` method cannot return `nullptr` (`0`), so if the `std::string` stores a pointer to the beginning of the string, and `std::string::data()` returns this pointer, it cannot be `nullptr` (`0`). This optimization works with any `std::basic_string<Diagram, features, allocator>` specialization.
 
 > [!NOTE]
 > The sentinel value is a byte array filled with zeros.
 
 ### `std::string_view`
 Sets each bit in the `std::string_view` object to `0` to indicate an empty state.
-This assumption is made because the `std::string_view::data()` method cannot return `nullptr` (`0`), so if the `std::string_view` stores a pointer to the beginning of a string, it cannot be `nullptr` (`0`). This optimization works with any `std::basic_string_view<CharT, Traits>` specialization.
+This assumption is made because the `std::string_view::data()` method cannot return `nullptr` (`0`), so if the `std::string_view` stores a pointer to the beginning of the string, and `std::string_view::data()` returns this pointer, it cannot be `nullptr` (`0`). This optimization works with any `std::basic_string_view<CharT, Traits>` specialization.
 
 > [!NOTE]
 > The sentinel value is a byte array filled with zeros.
 
 ### `std::vector`
 Sets each bit in the `std::vector` object to `0` to indicate an empty state.
-This assumption is made because the `std::vector::data()` method cannot return `nullptr` (`0`), so if the `std::vector` stores a pointer to the beginning of an allocated array, it cannot be `nullptr` (`0`). This optimization works with any `std::vector<T, Allocator>` specialization.
+This assumption is made because the `std::vector::data()` method cannot return `nullptr` (`0`), so if the `std::vector` stores a pointer to the beginning of the allocated array, and `std::vector::data()` returns this pointer, it cannot be `nullptr` (`0`). This optimization works with any `std::vector<T, Allocator>` specialization.
 
 > [!NOTE]
 > The sentinel value is a byte array filled with zeros.
