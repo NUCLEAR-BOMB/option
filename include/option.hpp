@@ -589,13 +589,17 @@ namespace impl {
     template<class CharT, class Traits>
     struct internal_option_traits<std::basic_string_view<CharT, Traits>> {
         using value_t = std::basic_string_view<CharT, Traits>;
-        using ptr_traits = opt::option_traits<const CharT*>;
+
+        // Possibly the std::string_view cannot be represented in a state, that it filled with zeros only.
+        // This assumption is made because the std::string_view::data() method cannot return nullptr,
+        // so if the std::string_view stores a pointer to the beginning of the string, it cannot be nullptr.
+        static constexpr std::array<std::byte, sizeof(value_t)> empty_value{}; // filled with zeros
 
         static bool is_empty(const value_t& value) noexcept {
-            return ptr_traits::is_empty(value.data());
+            return impl::bit_equal(value, empty_value);
         }
         static void set_empty(value_t& value) noexcept {
-            impl::construct_at(std::addressof(value), impl::bit_cast<const CharT*>(ptr_traits::empty_value), 0U);
+            impl::bit_copy(value, empty_value);
         }
     };
     template<class CharT, class Traits, class Allocator>
