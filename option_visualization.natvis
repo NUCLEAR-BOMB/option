@@ -14,8 +14,7 @@
         
         <DisplayString Condition="!base::has_value_flag" Optional="true">[none]</DisplayString>
         <DisplayString Condition="is_type_reference() &amp;&amp; base::value == nullptr" Optional="true">[none]</DisplayString>
-        <DisplayString Condition="natvis_destruct_base::flag::empty_value == base::value" Optional="true">[none]</DisplayString>
-
+        <DisplayString Condition="natvis_destruct_base::traits::empty_value == base::value" Optional="true">[none]</DisplayString>
         <DisplayString Condition="is_type_reference()" Optional="true">{*base::value}</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
