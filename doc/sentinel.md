@@ -4,6 +4,7 @@
 - [Pointers](#pointers)
 - [Enumerations](#enumerations)
 - [Floating point](#floating-point)
+- [Aggregate](#aggregate)
 - [`bool`](#bool)
 - [`opt::option<bool>`](#optoptionbool)
 - [`std::tuple`](#stdtuple)

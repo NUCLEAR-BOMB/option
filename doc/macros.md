@@ -6,9 +6,12 @@
 
 - [OPTION_USE_QUIET_NAN](#option_use_quiet_nan)
 - [OPTION_VERIFY](#option_verify)
-- [magic_enum library related](#magic_enum-library-related)
+- [**magic_enum** library related](#magic_enum-library-related)
     - [OPTION_MAGIC_ENUM_FILE](#option_magic_enum_file)
     - [OPTION_USE_MAGIC_ENUM](#option_use_magic_enum)
+- [**boost.pfr** library related](#boostpfr-library-related)
+    - [OPTION_BOOST_PFR_FILE](#option_boost_pfr_file)
+    - [OPTION_USE_BOOST_PFR](#option_use_boost_pfr)
 
 ### OPTION_USE_QUIET_NAN
 *expects:* `boolean`, *default:* `false`
