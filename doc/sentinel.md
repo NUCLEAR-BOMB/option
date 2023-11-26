@@ -14,9 +14,7 @@
 
 ### `bool`
 Stores the sentinel value in a second unused bit. \
-On most platforms size of `bool` is 1 byte, but used only single bit to store value.
-So we can exploit this flow to indicate an empty state in `opt::option`.
-This implementation uses bitwise AND `&` and bitwise OR `|` to manipulate an empty flag inside.
+On most platforms size of `bool` is 1 byte, but used only single bit to store value. So we can exploit this flow to indicate an empty state in `opt::option`. This implementation uses bitwise AND `&` and bitwise OR `|` to manipulate an empty flag inside and does not default construct the `bool` value inside it, so the contained value of the empty constructed `opt::option<bool>` is in an indeterminate state. \
 We using `&` and `|` to also implement [`opt::option<bool>`](#optoptionbool).
 > [!NOTE]
 > The sentinel value is `2`.
