@@ -4,7 +4,7 @@
 - [Pointers](#pointers)
 - [Enumerations](#enumerations)
 - [Floating point](#floating-point)
-- [Aggregate](#aggregate)
+- [Aggregates](#aggregates)
 - [`bool`](#bool)
 - [`opt::option<bool>`](#optoptionbool)
 - [`std::tuple`](#stdtuple)
@@ -45,8 +45,8 @@ See also macro [`OPTION_USE_QUIET_NAN`](macros.md#option_use_quiet_nan)
 [Single precision floating point]: https://en.wikipedia.org/wiki/Single-precision_floating-point_format
 [NaN floating point]: https://en.wikipedia.org/wiki/NaN#Floating_point
 
-### Aggregate
-Stores the sentinel value in one of its members. \
+### Aggregates
+Stores the sentinel value in one of the aggregates members. \
 If the **boost.pfr** library is available, will recursive search the aggregate type for types that satisfying `has_option_traits<T>`. If that member was found, use the `opt::option_traits<T>` for found member to manipulate the "is empty" flag. The search begins from first to last declared member in the aggregate type. If the static member function `unset_empty(T&)` does not exists in the `opt::option_traits<T>` for found type, the `unset_empty(T&)` will be replaced with an empty function.
 
 ### `bool`
