@@ -57,7 +57,7 @@ We using `&` and `|` to also implement [`opt::option<bool>`](#optoptionbool).
 > The sentinel value is `2`.
 
 ### `opt::option<bool>`
-Stores the sentinel value in a second third bit.
+Stores the sentinel value in the third bit.
 > [!NOTE]
 > The sentinel value is `4`.
 
