@@ -516,6 +516,12 @@ constexpr void ptr_or_null() const&& = delete;
 Returns a pointer to the contained value (`std::addressof(get())`) if `opt::option` contains one. If it does not, returns `nullptr` instead.
 
 ### `filter`
+```cpp
+template<class Fn>
+constexpr option filter(Fn&& function) const;
+```
+Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, returns the contained value if `function` returns `true`, and an empty `opt::option` if `function` returns `false`.
+- *Enabled* when `std::is_invocable_r_v<bool, Fn, const T&>` is `true`.
 
 ### `flatten`
 
