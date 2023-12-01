@@ -507,6 +507,13 @@ Returns the result of `default` function with no arguments if `opt::option` does
 - *Requirements:* the return type of `default` function must be the same as the return type of `function` function.
 
 ### `ptr_or_null`
+```cpp
+constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept /*lifetimebound*/;
+constexpr const std::remove_reference_t<T>* ptr_or_null() const& noexcept /*lifetimebound*/;
+constexpr void ptr_or_null() && = delete;
+constexpr void ptr_or_null() const&& = delete;
+```
+Returns a pointer to the contained value (`std::addressof(get())`) if `opt::option` contains one. If it does not, returns `nullptr` instead.
 
 ### `filter`
 
