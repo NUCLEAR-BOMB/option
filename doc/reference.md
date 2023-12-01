@@ -429,6 +429,20 @@ Returns a reference to the contained value. *Does not* calls the [`OPTION_VERIFY
 > Using this method on an empty `opt::option` will cause [Undefined Behavior][UB].
 
 ### `value`, `value_or_throw`
+```cpp
+constexpr T& value_or_throw() & /*lifetimebound*/;
+constexpr const T& value_or_throw() const& /*lifetimebound*/;
+constexpr std::remove_reference_t<T>&& value_or_throw() const& /*lifetimebound*/;
+constexpr const std::remove_reference_t<T>&& value_or_throw() const&& /*lifetimebound*/;
+
+constexpr T& value() & /*lifetimebound*/;
+constexpr const T& value() const& /*lifetimebound*/;
+constexpr std::remove_reference_t<T>&& value() && /*lifetimebound*/;
+constexpr const std::remove_reference_t<T>&& value() const&& /*lifetimebound*/;
+```
+Returns a reference to the contained value. \
+Throws a `opt::bad_access` exception if `opt::option` does not contain the value. \
+The `value_or_throw()` method is a more explicit version of the `value()` method.
 
 ### `value_or`
 
