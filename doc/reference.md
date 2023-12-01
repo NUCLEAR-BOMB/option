@@ -533,16 +533,78 @@ If this `opt::option` contains a value and the contained `opt::option` contains 
 - *Requirements:* the `opt::option` must contain a value of specialization of `opt::option`.
 
 ### `and_then`
+```cpp
+template<class Fn>
+constexpr option<U> and_then(Fn&& function) &;
+template<class Fn>
+constexpr option<U> and_then(Fn&& function) const&;
+template<class Fn>
+constexpr option<U> and_then(Fn&& function) &&;
+template<class Fn>
+constexpr option<U> and_then(Fn&& function) const&&;
+```
+Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, invokes `function` function with the contained value as an first argument, and then returns the result of that invocation. \
+This operation is also sometimes called *flatmap*.
+- *Enabled* when `std::is_invocable_v<Fn, T>`.
+- *Requirements:* the result type of `function` must be a specialization of `opt::option`.
 
 ### `map`
+```cpp
+template<class Fn>
+constexpr option<U> map(Fn&& function) &;
+template<class Fn>
+constexpr option<U> map(Fn&& function) const&;
+template<class Fn>
+constexpr option<U> map(Fn&& function) &&;
+template<class Fn>
+constexpr option<U> map(Fn&& function) const&&;
+```
+Maps the `opt::option` to `opt::option<U>` by applying a function to a contained value, or if `opt::option` does not contain the value, returns an empty `opt::option` otherwise. \
+If `opt::option` contains a value, invokes `function` function with the contained value as an first argument, then wraps the function result into `opt::option<U>` and returns it. If `opt::option` does not contain the value, returns an empty `opt::option<U>`. \
+Similar to [`std::optional<T>::transform`](https://en.cppreference.com/w/cpp/utility/optional/transform).
+- *Enabled* when `std::is_invocable_v<Fn, T>` is `true`.
 
 ### `or_else`
+```cpp
+template<class Fn>
+constexpr option or_else(Fn&& function) const&;
+template<class Fn>
+constexpr option or_else(Fn&& function) &&;
+```
+If `opt::option` contains a value, returns it. If does not, returns the result of `function` function with *no arguments*. \
+Similar to [`std::optional<T>::or_else`](https://en.cppreference.com/w/cpp/utility/optional/or_else).
+- *Enabled* when `std::is_invocable_v<Fn>`.
+- *Requirements:* the result type of `function` (without any cv-qualifiers) must be the same as `opt::option<T>`.
 
 ### `assume_has_value`
+```cpp
+constexpr void assume_has_value() const noexcept;
+```
+Specifies that `opt::option` will always contain a value at a given point.
+
+> [!CAUTION]
+> Will cause [Undefined Behavior][UB] if `opt::option` does not contain a value.
 
 ### `unzip`
+```cpp
+constexpr auto unzip() &;
+constexpr auto unzip() const&;
+constexpr auto unzip() &&;
+constexpr auto unzip() const&&;
+```
+Unzips `opt::option` that contains a *tuple like *type, into the *tuple like* object that contains values that wrapped into `opt::option`. \
+If `opt::option` contains the value, return *tuple like* object that contains `opt::option`s of the *tuple like* object contained types. If `opt::option` does not contain the value, return *tuple like* object that contains empty `opt::option`s.
+- *Requirements:* the contained value (without cv-qualifiers) must be a specialization of *tuple like* object.
+
+Where *tuple like* object is a type of specialization of `std::array`, `std::pair` or `std::tuple`
 
 ### `replace`
+```cpp
+template<class U>
+constexpr option<T> replace(U&& value) &;
+```
+Replaces the contained value by a provided `value` and returns the old `opt::option` contained value.
+- *Enabled* when `std::is_constructible_v<T, U&&>` is `true`.
 
 ## Non-member functions
 
