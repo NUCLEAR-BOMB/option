@@ -374,10 +374,59 @@ If the `opt::option` contains a value, the contained value is destroyed, and mov
 - *Postcondition:* `has_value() == true`.
 
 ### `inspect`
+```cpp
+template<class F>
+constexpr option& inspect(F&& fn) &;
+template<class F>
+constexpr const option& inspect(F&& fn) const&;
+template<class F>
+constexpr option&& inspect(F&& fn) &&;
+template<class F>
+constexpr const option&& inspect(F&& fn) const&&;
+```
+Invokes `fn` with a reference (possible `const`) to the contained value if the `opt::option` contains one. If it does not, there are no effects. Returns a reference to the this `opt::option`.
 
 ### `get`, `operator*`, `operator->`
+```cpp
+constexpr T& get() & noexcept /*lifetimebound*/;
+constexpr const T& get() const& noexcept /*lifetimebound*/;
+constexpr std::remove_reference_t<T>&& get() && noexcept /*lifetimebound*/;
+constexpr const std::remove_reference_t<T>&& get() const&& noexcept /*lifetimebound*/;
+```
+Access the contained value. \
+Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value. Same as `operator*`.
+- *Precondition:* `has_value() == true`
+
+```cpp
+constexpr std::add_pointer_t<const T> operator->() const noexcept /*lifetimebound*/;
+constexpr std::add_pointer_t<T> operator->() noexcept /*lifetimebound*/;
+```
+Access the contained value members. \ 
+Returns a pointer to the contained value (`std::addressof(get())`) of the `opt::option`. Calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value.
+- *Precondition:* `has_value() == true`
+
+```cpp
+constexpr T& operator*() & noexcept /*lifetimebound*/;
+constexpr const T& operator*() const& noexcept /*lifetimebound*/;
+constexpr std::remove_reference_t<T>&& operator*() && noexcept /*lifetimebound*/;
+constexpr const std::remove_reference_t<T>&& operator*() const&& /*lifetimebound*/;
+```
+Access the contained value. \
+Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value. Same as `get()`.
+- *Precondition:* `has_value() == true`
 
 ### `get_unchecked`
+```cpp
+constexpr T& get_unchecked() & noexcept;
+constexpr const T& get_unchecked() const& noexcept;
+constexpr std::remove_reference_t<T>&& get_unchecked() && noexcept;
+constexpr const std::remove_reference_t<T>&& get_unchecked() const&& noexcept;
+```
+Access the contained value, without checking for it existence. \
+Returns a reference to the contained value. *Does not* calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value. Note that this method does not have the `lifetimebound` attribute. Considered for accessing type, that specified in user defined `opt::option_traits`.
+
+> [!CAUTION]
+> Using this method on an empty `opt::option` will cause [Undefined Behavior][UB].
 
 ### `value`, `value_or_throw`
 
@@ -444,3 +493,5 @@ If the `opt::option` contains a value, the contained value is destroyed, and mov
 ### `none`
 
 ### `bad_access`
+
+[UB]: https://en.cppreference.com/w/cpp/language/ub
