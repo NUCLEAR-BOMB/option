@@ -492,6 +492,19 @@ Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type 
 - *Enabled* when `std::is_invocable_r_v<remove_cvref<U>, Fn, T>` is `true`.
 
 ### `map_or_else`
+```cpp
+template<class D, class Fn>
+constexpr auto map_or_else(D&& default, Fn&& function) &;
+template<class D, class Fn>
+constexpr auto map_or_else(D&& default, Fn&& function) const&;
+template<class D, class Fn>
+constexpr auto map_or_else(D&& default, Fn&& function) &&;
+template<class D, class Fn>
+constexpr auto map_or_else(D&& default, Fn&& function) const&&;
+```
+Returns the result of `default` function with no arguments if `opt::option` does not contain a value; otherwise, returns the result of `function` function with the contained value as an first argument.
+- *Enabled* when `std::is_invocable_v<D>` and `std::is_invocable_v<Fn, T>` are `true`.
+- *Requirements:* the return type of `default` function must be the same as the return type of `function` function.
 
 ### `ptr_or_null`
 
