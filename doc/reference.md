@@ -477,6 +477,19 @@ Returns the contained value if `opt::option` contains one, otherwise returns a d
 - *Requirements:* `std::is_default_constructible_v<T>` and `std::is_move_constructible_v<T>`.
 
 ### `map_or`
+```cpp
+template<class U, class Fn>
+constexpr remove_cvref<U> map_or(U&& default, Fn&& function) &;
+template<class U, class Fn>
+constexpr remove_cvref<U> map_or(U&& default, Fn&& function) const&;
+template<class U, class Fn>
+constexpr remove_cvref<U> map_or(U&& default, Fn&& function) &&;
+template<class U, class Fn>
+constexpr remove_cvref<U> map_or(U&& default, Fn&& function) const&&;
+```
+Returns the provided `default` value if `opt::option` does not contain a value, or invokes the `function` with the contained value as an argument. \
+Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
+- *Enabled* when `std::is_invocable_r_v<remove_cvref<U>, Fn, T>` is `true`.
 
 ### `map_or_else`
 
