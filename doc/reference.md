@@ -462,6 +462,19 @@ Returns the contained value if `opt::option` contains one or returns a provided 
 - *Requirements:* `std::is_move_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
 
 ### `value_or_default`
+```cpp
+constexpr T value_or_default() const& noexcept(/*see below*/);
+```
+Returns the contained value if `opt::option` contains one, otherwise returns a default constructed of type `T` (expression `T{}`).
+- *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>` and `std::is_nothrow_default_constructible_v<T>`.
+- *Requirements:* `std::is_default_constructible_v<T>`, `std::is_copy_constructible_v<T>` and `std::is_move_constructible_v<T>`.
+
+```cpp
+constexpr T value_or_default() const& noexcept(/*see below*/);
+```
+Returns the contained value if `opt::option` contains one, otherwise returns a default constructed of type `T` (expression `T{}`).
+- *`noexcept`* when `std::is_nothrow_move_constructible_v<T>` and `std::is_nothrow_default_constructible_v<T>`.
+- *Requirements:* `std::is_default_constructible_v<T>` and `std::is_move_constructible_v<T>`.
 
 ### `map_or`
 
