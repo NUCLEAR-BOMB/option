@@ -609,30 +609,299 @@ Replaces the contained value by a provided `value` and returns the old `opt::opt
 ## Non-member functions
 
 ### `zip`
+```cpp
+template<class Options>
+constexpr /*see below*/ zip(Options&&... options);
+```
+Zips `options...` into `opt::option<std::tuple<...>>`. \
+If every `options...` contains the values, returns the `std::tuple` wrapped in `opt::option` with the forwarded containing value from `options...`. If any `options...` does not contain the value, return an empty `opt::option`.
+- *Enabled* when every `Options...` (without cv-qualifiers) is the specializations of `opt::option`.
+
+The return type of `zip` is `opt::option<std::tuple<typename remove_cvref<Options>::value_type...>>`. \
+Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
 
 ### `zip_with`
+```cpp
+template<class Fn, class... Options>
+constexpr auto zip_with(Fn&& fn, Options&&... options);
+```
+If every `options...` contains the values, returns the result of `fn` function with every `options...` containing values as the `fn` arguments. If any of `options...` does not contain a value, returns an empty `opt::option`.
+- *Enabled* when every `Options...` (without cv-qualifiers) is the specializations of `opt::option`.
 
 ### `option_cast`
+```cpp
+template<class To, class From>
+constexpr option<To> option_cast(const option<From>& value);
+template<class To, class From>
+constexpr option<To> option_cast(option<From>&& value);
+```
+Casts `opt::option<From>` to `opt::option<To>`. \
+If `opt::option<From>` contains a value, `static_cast`s it to the type `To` and wraps it into `opt::option<To>`. If `opt::option<From>` does not contain a value, returns an empty `opt::option<To>`.
 
 ### `operator|`
+```cpp
+template<class T>
+constexpr T operator|(const option<T>& left, const T& right);
+```
+If `left` does not contain a value, returns `right` value instead. If `left` does, just returns `left`. \
+Same as [`opt::option<T>::value_or`](#value_or).
+
+```cpp
+template<class T>
+constexpr option<T> operator|(const option<T>& left, const option<T>& right);
+```
+Returns `left` if it does contains a value, or returns `right` if `left` does not.
+
+```cpp
+template<class T>
+constexpr option<T> operator|(const option<T>& left, none_t);
+```
+Returns `left`.
+
+```cpp
+template<class T>
+constexpr option<T> operator|(none_t, const option<T>& right);
+```
+Returns `right`.
 
 ### `operator|=`
+```cpp
+template<class T>
+constexpr option<T>& operator|=(option<T>& left, const option<T>& right);
+
+template<class T>
+constexpr option<T>& operator|=(option<T>& left, const T& right);
+```
+Copy assigns `right` to `left` if the `left` does not contain a value. \
+Returns a reference to `left`.
+
+```cpp
+template<class T>
+constexpr option<T>& operator|=(option<T>& left, option<T>&& right);
+
+template<class T>
+constexpr option<T>& operator|=(option<T>& left, T&& right);
+```
+Move assigns `right` to `left` if the `left` does not contain a value, \
+Returns a reference to `left`.
 
 ### `operator&`
+```cpp
+template<class T, class U>
+constexpr option<U> operator&(const option<T>& left, const option<U>& right);
+```
+Returns an empty `opt::option` if `left` does not contain a value, or if `left` does, returns `right`.
 
 ### `operator^`
+```cpp
+template<class T>
+constexpr option<T> operator^(const option<T>& left, const option<T>& right);
+```
+Returns `opt::option` that contains a value if exactly one of `left` and `right` contains a value, otherwise, returns an empty `opt::option`.
 
 ### `operator==`
+```cpp
+template<class T1, class T2>
+constexpr bool operator==(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `left` and `right` contains the values, then compare values using operator `==`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `==`.
+- *`noexcept`* when `noexcept(*left == *right)` is `true`.
+
+```cpp
+template<class T>
+constexpr bool operator==(const option<T>& left, none_t) noexcept;
+```
+Returns `!left.has_value()`.
+
+```cpp
+template<class T>
+constexpr bool operator==(none_t, const option<T>& right) noexcept;
+```
+Returns `!right.has_value()`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator==(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+```
+If `left` contains a value, then compare it with `right` using operator `==`; otherwise, return `false`.
+- *`noexcept`* when `noexcept(*left == right)` is `true`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator==(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `right` contains a value, then compare it with `left` using operator `==`; otherwise, return `false`.
+- *`noexcept`* when `noexcept(left == *right)` is `true`.
 
 ### `operator!=`
+```cpp
+template<class T1, class T2>
+constexpr bool operator!=(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `left` and `right` contains the values, then compare values using operator `!=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `!=`.
+- *`noexcept`* when `noexcept(*left != *right)` is `true`.
+
+```cpp
+template<class T>
+constexpr bool operator!=(const option<T>& left, none_t) noexcept;
+```
+Returns `left.has_value()`.
+
+```cpp
+template<class T>
+constexpr bool operator!=(none_t, const option<T>& right) noexcept;
+```
+Returns `right.has_value()`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator!=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+```
+If `left` contains a value, then compare it with `right` using operator `!=`; otherwise, return `true`.
+- *`noexcept`* when `noexcept(*left != right)` is `true`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator!=(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `right` contains a value, then compare it with `left` using operator `!=`; otherwise, return `true`.
+- *`noexcept`* when `noexcept(left != *right)` is `true`.
 
 ### `operator<`
+```cpp
+template<class T1, class T2>
+constexpr bool operator<(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `left` and `right` contains the values, then compare values using operator `<`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<`.
+- *`noexcept`* when `noexcept(*left < *right)` is `true`.
+
+```cpp
+template<class T>
+constexpr bool operator<(const option<T>& left, none_t) noexcept;
+```
+Returns `false`.
+
+```cpp
+template<class T>
+constexpr bool operator<(none_t, const option<T>& right) noexcept;
+```
+Returns `right.has_value()`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator<(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+```
+If `left` contains a value, then compare it with `right` using operator `<`; otherwise, return `true`.
+- *`noexcept`* when `noexcept(*left < right)` is `true`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator<(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `right` contains a value, then compare it with `left` using operator `<`; otherwise, return `false`.
+- *`noexcept`* when `noexcept(left < *right)` is `true`.
 
 ### `operator<=`
+```cpp
+template<class T1, class T2>
+constexpr bool operator<=(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `left` and `right` contains the values, then compare values using operator `<=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<=`.
+- *`noexcept`* when `noexcept(*left <= *right)` is `true`.
+
+```cpp
+template<class T>
+constexpr bool operator<=(const option<T>& left, none_t) noexcept;
+```
+Returns `!left.has_value()`.
+
+```cpp
+template<class T>
+constexpr bool operator<=(none_t, const option<T>& right) noexcept;
+```
+Returns `true`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator<=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+```
+If `left` contains a value, then compare it with `right` using operator `<=`; otherwise, return `true`.
+- *`noexcept`* when `noexcept(*left <= right)` is `true`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator<=(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `right` contains a value, then compare it with `left` using operator `<=`; otherwise, return `false`.
+- *`noexcept`* when `noexcept(left <= *right)` is `true`.
 
 ### `operator>`
+```cpp
+template<class T1, class T2>
+constexpr bool operator>(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `left` and `right` contains the values, then compare values using operator `>`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>`.
+- *`noexcept`* when `noexcept(*left > *right)` is `true`.
+
+```cpp
+template<class T>
+constexpr bool operator>(const option<T>& left, none_t) noexcept;
+```
+Returns `left.has_value()`.
+
+```cpp
+template<class T>
+constexpr bool operator>(none_t, const option<T>& right) noexcept;
+```
+Returns `false`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator>(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+```
+If `left` contains a value, then compare it with `right` using operator `>`; otherwise, return `false`.
+- *`noexcept`* when `noexcept(*left < right)` is `true`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator>(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `right` contains a value, then compare it with `left` using operator `>`; otherwise, return `true`.
+- *`noexcept`* when `noexcept(left < *right)` is `true`.
 
 ### `operator>=`
+```cpp
+template<class T1, class T2>
+constexpr bool operator>=(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `left` and `right` contains the values, then compare values using operator `>=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>=`.
+- *`noexcept`* when `noexcept(*left >= *right)` is `true`.
+
+```cpp
+template<class T>
+constexpr bool operator>=(const option<T>& left, none_t) noexcept;
+```
+Returns `true`.
+
+```cpp
+template<class T>
+constexpr bool operator>=(none_t, const option<T>& right) noexcept;
+```
+Returns `!right.has_value()`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator>=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+```
+If `left` contains a value, then compare it with `right` using operator `=>`; otherwise, return `false`.
+- *`noexcept`* when `noexcept(*left >= right)` is `true`.
+
+```cpp
+template<class T1, class T2>
+constexpr bool operator>=(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+```
+If `right` contains a value, then compare it with `left` using operator `=>`; otherwise, return `true`.
+- *`noexcept`* when `noexcept(left >= *right)` is `true`.
 
 ## Helpers
 
