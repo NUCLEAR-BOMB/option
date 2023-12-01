@@ -17,14 +17,14 @@ function(add_clang_tidy_target)
         message(WARNING "[clang-tidy] Error with code '${status_code}' occurred during downloading 'run-clang-tidy.py': ${error_msg}")
         return()
     endif()
-    #find_package(Python 3 QUIET)
-    #if (NOT Python_FOUND)
-    #    message(WARNING "[clang-tidy] Python3 not found")
-    #    return()
-    #endif()
+    find_package(Python3 QUIET COMPONENTS Interpreter)
+    if (NOT Python3_Interpreter_FOUND)
+        message(WARNING "[clang-tidy] Python3 Interpreter is not found")
+        return()
+    endif()
     find_program(clang_tidy_binary clang-tidy)
     if (clang_tidy_binary STREQUAL "clang_tidy_binary-NOTFOUND")
-        message(WARNING "[clang-tidy] clang-tidy not found")
+        message(WARNING "[clang-tidy] clang-tidy is not found")
         return()
     endif()
 
@@ -36,7 +36,7 @@ function(add_clang_tidy_target)
     endif()
 
     add_custom_target(${ARG_NAME}
-        COMMAND "python" "${run_clang_tidy}" -p "${PROJECT_BINARY_DIR}"
+        COMMAND "${Python3_EXECUTABLE}" "${run_clang_tidy}" -p "${PROJECT_BINARY_DIR}"
         -clang-tidy-binary "${clang_tidy_binary}" -config-file "${ARG_CONFIG}"
         $<$<BOOL:${ARG_USE_COLOR}>:-use-color> $<$<BOOL:${ARG_QUIET}>:-quiet>
         ${line_filter_arg} ${header_filer_arg}
