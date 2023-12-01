@@ -524,6 +524,13 @@ Returns an empty `opt::option` if this `opt::option` does not contain a value. I
 - *Enabled* when `std::is_invocable_r_v<bool, Fn, const T&>` is `true`.
 
 ### `flatten`
+```cpp
+constexpr typename T::value_type flatten() const&;
+constexpr typename T::value_type flatten() &&;
+```
+Converts `opt::option<opt::option<X>>` to `opt::option<X>`. \
+If this `opt::option` contains a value and the contained `opt::option` contains the values, return the underlying `opt::option` that contains a value. If they does not, returns an empty `opt::option`.
+- *Requirements:* the `opt::option` must contain a value of specialization of `opt::option`.
 
 ### `and_then`
 
