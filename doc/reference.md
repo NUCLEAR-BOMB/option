@@ -445,6 +445,21 @@ Throws a `opt::bad_access` exception if `opt::option` does not contain the value
 The `value_or_throw()` method is a more explicit version of the `value()` method.
 
 ### `value_or`
+```cpp
+template<class U>
+constexpr T value_or(U&& default) const& noexcept(/*see below*/) /*lifetimebound*/;
+```
+Returns the contained value if `opt::option` contains one or returns a provided `default` instead. \
+- *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>` and ` std::is_nothrow_constructible_v<T, U&&>`.
+- *Requirements:* `std::is_copy_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
+
+```cpp
+template<class U>
+constexpr T value_or(U&& default) && noexcept(/*see below*/) /*lifetimebound*/;
+```
+Returns the contained value if `opt::option` contains one or returns a provided `default` instead. \
+- *`noexcept`* when `std::is_nothrow_move_constructible_v<T>` and ` std::is_nothrow_constructible_v<T, U&&>`.
+- *Requirements:* `std::is_move_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
 
 ### `value_or_default`
 
