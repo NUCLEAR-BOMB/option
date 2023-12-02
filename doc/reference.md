@@ -48,6 +48,7 @@
     - [`none_t`](#none_t)
     - [`none`](#none)
     - [`bad_access`](#bad_access)
+    - [`option_traits`](#option_traits)
 
 ## Member functions
 
@@ -933,5 +934,42 @@ The `opt::none` variable is a `constexpr` value of type [`opt::none_t`](#none_t)
 class bad_access;
 ```
 The exception type of an object to be thrown by [`opt::option<T>::value`, `opt::option<T>::value_or_throw`](#value-value_or_throw) methods, if `opt::option` does not contain a value inside it.
+
+### `option_traits`
+```cpp
+template<class T, class = void>
+struct option_traits;
+```
+A template class type used for decreasing the size of `opt::option` for type `T`. \
+You can also use a metafunction like `std::enable_if` in second template argument to leverage SFINAE. This allows to utilize `opt::option_traits` for more flexible specializations.
+
+The `opt::option` uses `opt::option_traits` to not store separate `bool` variable to indicate an empty state, but instead use the contained value itself to store that flag. \
+See [builtin `opt::option_traits` specializations](./sentinel.md).
+
+You can declare without defining `opt::option_traits` to disable using the builtin `opt::option_traits` specializations if something goes wrong.
+
+To define a custom specialization for `opt::option_traits`, user must specify the following 2 required static methods and 1 optional static method.
+
+```cpp
+static /*constexpr*/ bool is_empty(const T& value) noexcept;
+```
+Required. The `opt::option` uses the `is_empty` function to determine if the contained value is empty. Can be optionally marked `constexpr`.
+
+> [!IMPORTANT]  
+> After the contained value is constructed, the `is_empty` function must return `false`; otherwise, the `OPTION_VERIFY` macro is called.
+
+```cpp
+static /*constexpr*/ void set_empty(T& value) noexcept;
+```
+Required. The `opt::option` uses the `set_empty` function to set the contained value to an empty state. Called in default constructor and in [`reset`](#reset) method *after* the contained value is destroyed. Can be optionally marked `constexpr`.
+
+```cpp
+static /*constexpr*/ void unset_empty() noexcept;
+```
+Optional. The `opt::option` uses the `unset_empty` function to unset the contained value empty state. Called *before* the contained value is constructed, but not constructed in `opt::option` constructors. It is always called after the `set_empty` function. If user does not define the `unset_empty` function, it will be replaced with function that has no effect. Can be optionally marked `constexpr`.
+
+If the above requirements are not met, the program will be ill-formed.
+
+You can also optionally define `static constexpr` variable named `empty_value` to help Visual Studio debugger understand `opt::option` state.
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub
