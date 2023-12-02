@@ -23,11 +23,10 @@ struct opt::option_traits<some_struct> {
     static void set_empty(some_struct& value) noexcept {
         value = {-1};
     }
-
 };
 
 void custom() {
-    opt::option<some_struct> a{{5}};
+    opt::option<some_struct> a{5};
 
     std::cout << (sizeof(a) == sizeof(some_struct)) << '\n'; // true
     std::cout << a->val << '\n'; // 5

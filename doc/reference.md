@@ -336,6 +336,19 @@ Returns `true` if this `opt::option` contains a value, and the contained value m
 If this `opt::option` contains a value, return the result of invocation of `predicate` with the contained value as an argument. If this `opt::option` does not contain a value, return `false`.
 - *Enabled* when `std::is_invocable_r_v<bool, P, T>`.
 
+Example:
+```cpp
+opt::option<int> a = 3;
+
+std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // true
+
+a = 0;
+std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // false
+
+a = opt::none;
+std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // false
+```
+
 ### `take`
 ```cpp
 constexpr option take() &;
@@ -350,6 +363,23 @@ constexpr option take() &&;
 Takes the value out of the `opt::option`. \
 Returns this `opt::option` with the expression `std::move(*this)`, but *do not destroys the contained value*.
 
+Example:
+```cpp
+opt::option<int> a = 1;
+
+std::cout << a.has_value() << '\n'; // true
+
+auto b = a.take();
+
+std::cout << a.has_value() << '\n'; // false
+std::cout << *b << '\n'; // 1
+
+a = opt::none;
+b = a.take();
+std::cout << a.has_value() << '\n'; // false
+std::cout << b.has_value() << '\n'; // false
+```
+
 ### `take_if`
 ```cpp
 template<class P>
@@ -358,6 +388,25 @@ constexpr option take_if(P&& predicate);
 Takes the value out of the `opt::option`, but only if the `predicate` evaluates to `true` with a non-const contained value as an argument. \
 Returns an empty `opt::option` if this `opt::option` does not contain a value or `predicate` evaluates to `false` with the non-const contained value as an argument; otherwise, return the expression `take()`.
 - *Enabled* when `std::is_invocable_r_v<bool, P, T&>`.
+
+Example:
+```cpp
+opt::option<int> a = 1;
+
+auto b = a.take_if([](int& x) {
+    x += 1;
+    return x >= 3;
+});
+std::cout << *a << '\n'; // 2
+std::cout << b.has_value() << '\n'; // false
+
+b = a.take_if([](int& x) {
+    x += 1;
+    return x >= 3;
+});
+std::cout << a.has_value() << '\n'; // false
+std::cout << *b << '\n'; // 3
+```
 
 ### `insert`
 ```cpp
@@ -386,6 +435,20 @@ template<class F>
 constexpr const option&& inspect(F&& fn) const&&;
 ```
 Invokes `fn` with a reference (possible `const`) to the contained value if the `opt::option` contains one. If it does not, there are no effects. Returns a reference to the this `opt::option`.
+
+Example:
+```cpp
+opt::option<int> a = 1;
+
+a.inspect([](int x) { std::cout << x << '\n'; }); // 1
+
+a.map([](int x) { return x * 2; })
+ .inspect([](int x) { std::cout << x << '\n'; }) // 2
+ .map([](int x) { return float(x * 2) + 0.5f; })
+ .inspect([](float x) { std::cout << x << '\n'; }) // 4.5
+ .and_then([](float x) { return x > 5.f ? opt::option<double>{x} : opt::none; })
+ .inspect([](double x) { std::cout << x << '\n'; }); // will not print `x`
+```
 
 ### `get`, `operator*`, `operator->`
 ```cpp
@@ -492,6 +555,16 @@ Returns the provided `default` value if `opt::option` does not contain a value, 
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
 - *Enabled* when `std::is_invocable_r_v<remove_cvref<U>, Fn, T>` is `true`.
 
+Example:
+```cpp
+opt::option<int> a = 2;
+
+std::cout << a.map_or(0, [](int x) { return x * 200; }) << '\n'; // 400
+
+a = opt::none;
+std::cout << a.map_or(0, [](int x) { return x * 2; }) << '\n'; // 0
+```
+
 ### `map_or_else`
 ```cpp
 template<class D, class Fn>
@@ -507,6 +580,22 @@ Returns the result of `default` function with no arguments if `opt::option` does
 - *Enabled* when `std::is_invocable_v<D>` and `std::is_invocable_v<Fn, T>` are `true`.
 - *Requirements:* the return type of `default` function must be the same as the return type of `function` function.
 
+Example:
+```cpp
+opt::option<int> a = 3;
+
+std::cout << a.map_or_else(
+    [] { std::cout << "will not print"; return 0; },
+    [](int x) { return x + 1; }
+) << '\n'; // 4
+
+a = opt::none;
+std::cout << a.map_or_else(
+    [] { std::cout << "will print "; return -100; },
+    [](int x) { return x - 2; }
+) << '\n'; // will print -100
+```
+
 ### `ptr_or_null`
 ```cpp
 constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept /*lifetimebound*/;
@@ -516,6 +605,18 @@ constexpr void ptr_or_null() const&& = delete;
 ```
 Returns a pointer to the contained value (`std::addressof(get())`) if `opt::option` contains one. If it does not, returns `nullptr` instead.
 
+Example:
+```cpp
+int a = 2;
+
+opt::option<int&> b = a;
+
+std::cout << (b.ptr_or_null() == &a) << '\n'; // true
+
+b = opt::none;
+std::cout << b.ptr_or_null() << '\n'; // 0000000000000000 (nullptr)
+```
+
 ### `filter`
 ```cpp
 template<class Fn>
@@ -523,6 +624,22 @@ constexpr option filter(Fn&& function) const;
 ```
 Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, returns the contained value if `function` returns `true`, and an empty `opt::option` if `function` returns `false`.
 - *Enabled* when `std::is_invocable_r_v<bool, Fn, const T&>` is `true`.
+
+Example:
+```cpp
+const auto is_odd = [](auto x) {
+    return x % 2 != 0;
+};
+opt::option<int> a = 1;
+
+std::cout << *a.filter(is_odd) << '\n'; // 1
+
+a = 2;
+std::cout << a.filter(is_odd).has_value() << '\n'; // false
+
+a = opt::none;
+std::cout << a.filter(is_odd).has_value() << '\n'; // false
+```
 
 ### `flatten`
 ```cpp
@@ -532,6 +649,19 @@ constexpr typename T::value_type flatten() &&;
 Converts `opt::option<opt::option<X>>` to `opt::option<X>`. \
 If this `opt::option` contains a value and the contained `opt::option` contains the values, return the underlying `opt::option` that contains a value. If they does not, returns an empty `opt::option`.
 - *Requirements:* the `opt::option` must contain a value of specialization of `opt::option`.
+
+```cpp
+opt::option<opt::option<int>> a = 1;
+
+opt::option<int> b = a.flatten();
+std::cout << *b << '\n'; // 1
+
+*a = opt::none;
+std::cout << a.flatten().has_value() << '\n'; // false
+
+a = opt::none;
+std::cout << a.flatten().has_value() << '\n'; // false
+```
 
 ### `and_then`
 ```cpp
@@ -549,6 +679,23 @@ This operation is also sometimes called *flatmap*.
 - *Enabled* when `std::is_invocable_v<Fn, T>`.
 - *Requirements:* the result type of `function` must be a specialization of `opt::option`.
 
+Example:
+```cpp
+const auto do_something = [](int x) {
+    return x == 0 ? opt::option<float>{1.5f} : opt::none;
+};
+
+opt::option<int> a = 0;
+
+std::cout << a.and_then(do_something).get() << '\n'; // 1.5
+
+a = 1;
+std::cout << a.and_then(do_something).has_value() << '\n'; // false
+
+a = opt::none;
+std::cout << a.and_then(do_something).has_value() << '\n'; // false
+```
+
 ### `map`
 ```cpp
 template<class Fn>
@@ -565,6 +712,20 @@ If `opt::option` contains a value, invokes `function` function with the containe
 Similar to [`std::optional<T>::transform`](https://en.cppreference.com/w/cpp/utility/optional/transform).
 - *Enabled* when `std::is_invocable_v<Fn, T>` is `true`.
 
+Example:
+```cpp
+const auto to_float = [](int x) {
+    return float(x) / 2.f;
+};
+
+opt::option<int> a = 1;
+
+std::cout << a.map(to_float).get() << '\n'; // 0.5
+
+a = opt::none;
+std::cout << a.map(to_float).has_value() << '\n'; // false
+```
+
 ### `or_else`
 ```cpp
 template<class Fn>
@@ -576,6 +737,24 @@ If `opt::option` contains a value, returns it. If does not, returns the result o
 Similar to [`std::optional<T>::or_else`](https://en.cppreference.com/w/cpp/utility/optional/or_else).
 - *Enabled* when `std::is_invocable_v<Fn>`.
 - *Requirements:* the result type of `function` (without any cv-qualifiers) must be the same as `opt::option<T>`.
+
+Example:
+```cpp
+opt::option<int> a = 2;
+
+std::cout << a.or_else(
+    [] { std::cout << "will not print"; return opt::option{3}; }
+).get() << '\n'; // 2
+
+a = opt::none;
+std::cout << a.or_else(
+    [] { std::cout << "will print "; return opt::option{10}; }
+).get() << '\n'; // will print 10
+
+std::cout << a.or_else(
+    [] { std::cout << "will print "; return opt::option<int>{}; }
+).has_value() << '\n'; // will print false
+```
 
 ### `assume_has_value`
 ```cpp
@@ -597,7 +776,25 @@ Unzips `opt::option` that contains a *tuple like *type, into the *tuple like* ob
 If `opt::option` contains the value, return *tuple like* object that contains `opt::option`s of the *tuple like* object contained types. If `opt::option` does not contain the value, return *tuple like* object that contains empty `opt::option`s.
 - *Requirements:* the contained value (without cv-qualifiers) must be a specialization of *tuple like* object.
 
-Where *tuple like* object is a type of specialization of `std::array`, `std::pair` or `std::tuple`
+Where *tuple like* object is a type of specialization of `std::array`, `std::pair` or `std::tuple`.
+
+Example:
+```cpp
+opt::option<std::tuple<int, float>> a{1, 2.5f};
+
+std::tuple<opt::option<int>, opt::option<float>> unzipped_a;
+unzipped_a = a.unzip();
+
+std::cout << std::get<0>(unzipped_a).get() << '\n'; // 1
+std::cout << std::get<1>(unzipped_a).get() << '\n'; // 2.5
+
+opt::option<std::array<int, 3>> b = opt::none;
+
+std::array<opt::option<int>, 3> unzipped_b;
+unzipped_b = b.unzip();
+
+std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // true
+```
 
 ### `replace`
 ```cpp
@@ -606,6 +803,22 @@ constexpr option<T> replace(U&& value) &;
 ```
 Replaces the contained value by a provided `value` and returns the old `opt::option` contained value.
 - *Enabled* when `std::is_constructible_v<T, U&&>` is `true`.
+
+Example:
+```cpp
+opt::option<int> a = 1;
+
+opt::option<int> b = a.replace(2);
+
+std::cout << *a << '\n'; // 2
+std::cout << *b << '\n'; // 1
+
+a = opt::none;
+b = a.replace(3);
+
+std::cout << *a << '\n'; // 3
+std::cout << b.has_value() << '\n'; // false
+```
 
 ## Non-member functions
 
@@ -621,6 +834,21 @@ If every `options...` contains the values, returns the `std::tuple` wrapped in `
 The return type of `zip` is `opt::option<std::tuple<typename remove_cvref<Options>::value_type...>>`. \
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
 
+Example:
+```cpp
+opt::option<int> a{1};
+opt::option<float> b{2.f};
+opt::option<double> c{3.};
+
+opt::option<std::tuple<int, float, double>> abc;
+abc = opt::zip(a, b, c);
+std::cout << abc.has_value() << '\n'; // true
+
+a = opt::none;
+abc = opt::zip(a, b, c);
+std::cout << abc.has_value() << '\n'; // false
+```
+
 ### `zip_with`
 ```cpp
 template<class Fn, class... Options>
@@ -628,6 +856,21 @@ constexpr auto zip_with(Fn&& fn, Options&&... options);
 ```
 If every `options...` contains the values, returns the result of `fn` function with every `options...` containing values as the `fn` arguments. If any of `options...` does not contain a value, returns an empty `opt::option`.
 - *Enabled* when every `Options...` (without cv-qualifiers) is the specializations of `opt::option`.
+
+Example:
+```cpp
+opt::option<int> a{10};
+opt::option<float> b{5.f};
+
+const auto add_and_print = [](int x, float y) {
+    std::cout << (x + y) << '\n';
+};
+
+opt::zip_with(add_and_print, a, b); // 15
+
+a = opt::none;
+opt::zip_with(add_and_print, a, b); // will not call `add_and_print`
+```
 
 ### `option_cast`
 ```cpp
@@ -638,6 +881,19 @@ constexpr option<To> option_cast(option<From>&& value);
 ```
 Casts `opt::option<From>` to `opt::option<To>`. \
 If `opt::option<From>` contains a value, `static_cast`s it to the type `To` and wraps it into `opt::option<To>`. If `opt::option<From>` does not contain a value, returns an empty `opt::option<To>`.
+
+Example:
+```cpp
+opt::option<float> a{2.5f};
+opt::option<int> b;
+
+b = opt::option_cast<int>(a);
+std::cout << *b << '\n'; // 2
+
+a = opt::none;
+b = opt::option_cast<int>(a);
+std::cout << b.has_value() << '\n'; // false
+```
 
 ### `operator|`
 ```cpp
@@ -664,6 +920,31 @@ template<class T>
 constexpr option<T> operator|(none_t, const option<T>& right);
 ```
 Returns `right`.
+
+Example:
+```cpp
+opt::option<int> a = 1;
+opt::option<int> b = 2;
+
+std::cout << (a | b).get() << '\n'; // 1
+
+a = opt::none;
+std::cout << (a | b).get() << '\n'; // 2
+
+b = opt::none;
+std::cout << (a | b).has_value() << '\n'; // false
+
+// same as value_or(10)
+std::cout << (a | 10) << '\n'; // 10
+
+a |= 5;
+std::cout << *a << '\n'; // 5
+a |= 25;
+std::cout << *a << '\n'; // 5
+
+b |= a;
+std::cout << *b << '\n'; // 5
+```
 
 ### `operator|=`
 ```cpp
@@ -693,12 +974,46 @@ constexpr option<U> operator&(const option<T>& left, const option<U>& right);
 ```
 Returns an empty `opt::option` if `left` does not contain a value, or if `left` does, returns `right`.
 
+Example:
+```cpp
+opt::option<int> a = 1;
+opt::option<float> b = 2.5f;
+
+std::cout << (a & b).get() << '\n'; // 2.5
+
+a = opt::none;
+std::cout << (a & b).has_value() << '\n'; // false
+
+a = 1;
+b = opt::none;
+std::cout << (a & b).has_value() << '\n'; // false
+```
+
 ### `operator^`
 ```cpp
 template<class T>
 constexpr option<T> operator^(const option<T>& left, const option<T>& right);
 ```
 Returns `opt::option` that contains a value if exactly one of `left` and `right` contains a value, otherwise, returns an empty `opt::option`.
+
+Example:
+```cpp
+opt::option<int> a = 2;
+opt::option<int> b = 10;
+
+std::cout << (a ^ b).has_value() << '\n'; // false
+
+a = opt::none;
+std::cout << (a ^ b).get() << '\n'; // 10
+
+a = 5;
+b = opt::none;
+std::cout << (a ^ b).get() << '\n'; // 5
+
+a = opt::none;
+b = opt::none;
+std::cout << (a ^ b).has_value() << '\n'; // false
+```
 
 ### `operator==`
 ```cpp
@@ -916,6 +1231,16 @@ If `opt::option` contains the value, returns hash of that value. If `opt::option
 - *Enabled* when `std::is_default_constructible_v<std::hash<std::remove_const_t<T>>>` is `true`.
 - *`noexcept`* when the expression `noexcept(std::hash<std::remove_const_t<T>>{}(std::declval<const T&>()))` is `true`.
 
+Example:
+```cpp
+opt::option<int> a{12345};
+
+std::cout << std::hash<opt::option<int>>{}(a) << '\n'; // [some hash]
+
+a = opt::none;
+std::cout << std::hash<opt::option<int>>{}(a) << '\n'; // [some empty option hash]
+```
+
 ### `none_t`
 ```cpp
 struct none_t;
@@ -971,5 +1296,31 @@ Optional. The `opt::option` uses the `unset_empty` function to unset the contain
 If the above requirements are not met, the program will be ill-formed.
 
 You can also optionally define `static constexpr` variable named `empty_value` to help Visual Studio debugger understand `opt::option` state.
+
+Example:
+```cpp
+struct some_struct {
+    int val;
+};
+
+template<>
+struct opt::option_traits<some_struct> {
+    static bool is_empty(const some_struct& value) noexcept {
+        return value.val == -1;
+    }
+    static void set_empty(some_struct& value) noexcept {
+        value = {-1};
+    }
+};
+
+opt::option<some_struct> a{5};
+
+std::cout << (sizeof(a) == sizeof(some_struct)) << '\n'; // true
+std::cout << a->val << '\n'; // 5
+
+a = opt::none;
+std::cout << a.has_value() << '\n'; // false
+std::cout << a.get_unchecked().val << '\n'; // -1
+```
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub
