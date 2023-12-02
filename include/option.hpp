@@ -241,6 +241,11 @@ namespace impl {
     template<class T, class Traits>
     inline constexpr bool has_is_empty_method<T, Traits, decltype(Traits::is_empty(std::declval<const T&>()))> = true;
 
+    template<class Traits, class = void>
+    inline constexpr bool option_traits_use_bitwise_copy = false;
+    template<class Traits>
+    inline constexpr bool option_traits_use_bitwise_copy<Traits, std::void_t<decltype(Traits::use_bitwise_copy)>> = Traits::use_bitwise_copy;
+
     template<class> struct is_std_array : std::false_type {};
     template<class T, std::size_t N> struct is_std_array<std::array<T, N>> : std::true_type {};
 
@@ -469,7 +474,7 @@ namespace impl {
 
     // Does not work in release mode for major compilers.
     // Perhaps because they do not trivially copy "unused" byte that we use
-#if 0
+#if 1
     // In C++ any type must be at least 1 byte, even the empty object that does not contains any members.
     // We can use this 1 byte to store 'is empty' flag.
     // So we using operations like memcpy, memcmp to store and check 'is empty' flag.
@@ -478,6 +483,8 @@ namespace impl {
     template<class T>
     struct internal_option_traits<T, std::enable_if_t<std::is_empty_v<T>>> {
         static constexpr std::uint_least8_t empty_value = 0b0101'1111u;
+
+        static constexpr bool use_bitwise_copy = true;
 
         static bool is_empty(const T& value) noexcept {
             return impl::bit_equal(value, empty_value);
@@ -895,6 +902,8 @@ namespace impl {
     template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
     class option_storage_base : private option_destruct_base<T> {
         using base = option_destruct_base<T>;
+
+        static constexpr bool bitwise_copy = option_traits_use_bitwise_copy<opt::option_traits<T>>;
     public:
         using base::base;
         using base::has_value;
@@ -906,7 +915,6 @@ namespace impl {
         constexpr T&& get() && noexcept { return std::move(base::value); }
         constexpr const T&& get() const&& noexcept { return std::move(base::value); }
 
-        // logic of assigning opt::option<T&> from a value
         template<class U>
         constexpr void assign_from_value(U&& other) {
             if (has_value()) {
@@ -915,7 +923,6 @@ namespace impl {
                 construct(std::forward<U>(other));
             }
         }
-        // logic of assigning opt::option<T&> from another opt::option<U&>
         template<class Option>
         constexpr void assign_from_option(Option&& other) {
             if (other.has_value()) {
@@ -1166,6 +1173,45 @@ namespace impl {
         option_move_assign_base& operator=(option_move_assign_base&&) = delete;
     };
 
+    template<class T, bool = option_traits_use_bitwise_copy<opt::option_traits<T>>>
+    struct option_base : option_move_assign_base<T> {
+        using option_move_assign_base<T>::option_move_assign_base;
+    };
+    template<class T>
+    struct option_base<T, true> : option_move_assign_base<T> {
+        using option_move_assign_base<T>::option_move_assign_base;
+
+        option_base() = default;
+        constexpr option_base(const option_base& other) noexcept {
+            impl::bit_copy(*this, other);
+        }
+        constexpr option_base(option_base&& other) noexcept {
+            impl::bit_copy(*this, other);
+        }
+        constexpr option_base& operator=(const option_base& other) noexcept {
+            impl::bit_copy(*this, other);
+            return *this;
+        }
+        constexpr option_base& operator=(option_base&& other) noexcept {
+            impl::bit_copy(*this, other);
+            return *this;
+        }
+
+        constexpr void construct(const T& arg) noexcept {
+            impl::bit_copy(this->get(), arg);
+        }
+        constexpr void construct_from_option(const opt::option<T> other) {
+            impl::bit_copy(*this, other);
+        }
+        constexpr void assign_from_value(const T arg) {
+            impl::bit_copy(this->get(), arg);
+        }
+        constexpr void assign_from_option(const opt::option<T> other) {
+            impl::bit_copy(*this, other);
+        }
+    };
+
+
     template<class T>
     inline constexpr bool is_cv_bool = std::is_same_v<std::remove_cv_t<T>, bool>;
 
@@ -1408,9 +1454,9 @@ namespace impl::option {
 }
 
 template<class T>
-class option : private impl::option_move_assign_base<T>
+class option : private impl::option_base<T>
 {
-    using base = impl::option_move_assign_base<T>;
+    using base = impl::option_base<T>;
     using raw_type = std::remove_reference_t<T>;
 
     using natvis_destruct_base = impl::option_destruct_base<T>; // For IntelliSense Natvis visualizations
@@ -1481,11 +1527,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/false> = 0>
     constexpr option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        construct_from_option(other);
+        base::construct_from_option(other);
     }
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/true> = 0>
     constexpr explicit option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        construct_from_option(other);
+        base::construct_from_option(other);
     }
     // Converting move constructor.
     // If `other` containes a value, move constructs a contained value.
@@ -1494,11 +1540,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/false> = 0>
     constexpr option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        construct_from_option(std::move(other));
+        base::construct_from_option(std::move(other));
     }
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/true> = 0>
     constexpr explicit option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        construct_from_option(std::move(other));
+        base::construct_from_option(std::move(other));
     }
 
     // If this `opt::option` containes a value, the contained value is destroyed by calling `reset()`.
@@ -1918,14 +1964,6 @@ public:
         base::reset();
         base::construct(std::forward<U>(val));
         return tmp;
-    }
-
-private:
-    template<class Option>
-    constexpr void construct_from_option(Option&& other) {
-        if (other.has_value()) {
-            base::construct(std::forward<Option>(other).get());
-        }
     }
 };
 

@@ -47,6 +47,9 @@ namespace {
 
 using ::testing::Test;
 
+struct empty_struct {};
+bool operator==(empty_struct, empty_struct) noexcept { return true; }
+
 template<class T>
 struct special;
 
@@ -136,10 +139,15 @@ struct special<std::vector<int>> : Test {
     const std::vector<int> A{{1, 2, 3}};
     const std::vector<int> B{{4, 5, 6}};
 };
+template<>
+struct special<empty_struct> : Test {
+    const empty_struct A{};
+    const empty_struct B{};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
-    std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>
+    std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>, empty_struct
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
