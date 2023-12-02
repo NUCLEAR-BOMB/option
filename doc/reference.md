@@ -441,7 +441,7 @@ constexpr std::remove_reference_t<T>&& value() && /*lifetimebound*/;
 constexpr const std::remove_reference_t<T>&& value() const&& /*lifetimebound*/;
 ```
 Returns a reference to the contained value. \
-Throws a `opt::bad_access` exception if `opt::option` does not contain the value. \
+Throws a [`opt::bad_access`](#bad_access) exception if `opt::option` does not contain the value. \
 The `value_or_throw()` method is a more explicit version of the `value()` method.
 
 ### `value_or`
@@ -906,11 +906,32 @@ If `right` contains a value, then compare it with `left` using operator `=>`; ot
 ## Helpers
 
 ### `std::hash<opt::option>`
+```cpp
+template<class T>
+struct std::hash<opt::option<T>>;
+```
+The template specialization of `std::hash` for the `opt::option` gives users a ability to calculate hash of the contained value. \
+If `opt::option` contains the value, returns hash of that value. If `opt::option` does not, returns the expression `static_cast<std::size_t>(-96391)` as an empty value hash.
+- *Enabled* when `std::is_default_constructible_v<std::hash<std::remove_const_t<T>>>` is `true`.
+- *`noexcept`* when the expression `noexcept(std::hash<std::remove_const_t<T>>{}(std::declval<const T&>()))` is `true`.
 
 ### `none_t`
+```cpp
+struct none_t;
+```
+The tag type used to indicate `opt::option` with the contained value in uninitialized state. \
+`opt::none_t` do not have a default constructor.
 
 ### `none`
+```cpp
+inline constexpr none_t none{/*special value*/};
+```
+The `opt::none` variable is a `constexpr` value of type [`opt::none_t`](#none_t) that is used to indicate `opt::option` with the contained value in uninitialized state.
 
 ### `bad_access`
+```cpp
+class bad_access;
+```
+The exception type of an object to be thrown by [`opt::option<T>::value`, `opt::option<T>::value_or_throw`](#value-value_or_throw) methods, if `opt::option` does not contain a value inside it.
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub
