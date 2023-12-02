@@ -26,6 +26,7 @@ endif()
 
 target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
 
+#[=[
 FetchContent_Declare(
     magic_enum
     URL https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.5.zip
@@ -35,6 +36,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(magic_enum)
 set_target_properties(magic_enum PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:magic_enum,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(option-test PRIVATE magic_enum::magic_enum)
+#]=]
 
 FetchContent_Declare(
     boost_pfr

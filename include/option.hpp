@@ -69,6 +69,7 @@
     #define OPTION_MAGIC_ENUM_FILE <magic_enum.hpp>
 #endif
 
+/*
 #if !(defined(OPTION_USE_MAGIC_ENUM) && !(OPTION_USE_MAGIC_ENUM))
     #if __has_include(OPTION_MAGIC_ENUM_FILE)
         #include OPTION_MAGIC_ENUM_FILE
@@ -79,6 +80,7 @@
         #error "Cannot found the 'magic_enum' library. Define the 'OPTION_MAGIC_ENUM_FILE' macro to specify a custom path to the 'magic_enum' header"
     #endif
 #endif
+*/
 
 #ifndef OPTION_BOOST_PFR_FILE
     #define OPTION_BOOST_PFR_FILE <boost/pfr.hpp>
@@ -211,15 +213,17 @@ namespace impl {
         ptr->~T();
     }
 
+    struct no_option_traits_tag {};
+
     template<class T, class = void>
-    struct internal_option_traits : std::false_type {};
+    struct internal_option_traits : no_option_traits_tag {};
 
     template<class T, class = std::size_t>
     inline constexpr bool has_option_traits = false;
     template<class T>
     inline constexpr bool has_option_traits<T, decltype(sizeof(opt::option_traits<T>))> =
         std::is_base_of_v<internal_option_traits<T>, opt::option_traits<T>>
-            ? !std::is_base_of_v<std::false_type, internal_option_traits<T>>
+            ? !std::is_base_of_v<no_option_traits_tag, internal_option_traits<T>>
             : true;
 
     template<class T, class Traits, class = void>
@@ -308,70 +312,30 @@ namespace impl {
         }
     };
 
-#ifndef OPTION_HAS_MAGIC_ENUM
-    template<class T, bool is_enum = std::is_enum_v<T>, class = void>
-    struct has_exploit_unused_value : std::false_type {};
+    template<class T, class = T>
+    inline constexpr bool enum_has_exploit_unused_value = false;
     template<class T>
-    struct has_exploit_unused_value<T, true, std::void_t<
-        decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)
-    >> : std::true_type {};
+    inline constexpr bool enum_has_exploit_unused_value<T, decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)> = true;
 
     // For optimizing enumerations.
     // If enum contains a enumerator with name 'OPTION_EXPLOIT_UNUSED_VALUE',
     // this value will be threated as unused and will be used to indicate
     // an empty state and decrease the size of `opt::option`.
-    template<class T>
-    struct internal_option_traits<T, std::enable_if_t<impl::has_exploit_unused_value<T>::value>> {
-        static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
-
-        static constexpr bool is_empty(const T& value) noexcept {
+    template<class E>
+    struct enumeration_option_traits1 {
+        static constexpr E empty_value = E::OPTION_EXPLOIT_UNUSED_VALUE;
+        static constexpr bool is_empty(const E& value) noexcept {
             return value == empty_value;
         }
-        static constexpr void set_empty(T& value) noexcept {
+        static constexpr void set_empty(E& value) noexcept {
             value = empty_value;
         }
     };
-#else
-    // Try to find unused enumeration value that do not contains in enumeration
-    template<class E>
-    constexpr magic_enum::underlying_type_t<E> find_unused_value() noexcept {
-        using value_t = magic_enum::underlying_type_t<E>;
-        using value_limits = std::numeric_limits<value_t>;
-        const std::array<value_t, 2> unused_values_list{
-            value_limits::max(),
-            value_limits::min(),
-        };
-        for (const auto& val : unused_values_list) {
-            if (!magic_enum::enum_contains<E>(val)) {
-                return val;
-            }
-        }
-        return value_t(0);
-    }
-    template<class E, class = void>
-    inline constexpr bool enum_has_unused_value = false;
-    template<class E>
-    inline constexpr bool enum_has_unused_value<E, std::enable_if_t<std::is_enum_v<E>>>
-        = (find_unused_value<E>() != magic_enum::underlying_type_t<E>(0));
 
-    // Uses the 'magic_enum' library to find and use enumerator (enumeration value)
-    // that do not defined in enumeration as sentinel value ('is empty' flag).
-    // The `opt::option` can still contain enumerators that do not defined in enumeration,
-    // but it is not recommended because it may lead to setting the 'is empty' flag.
-    // The sentinel value is selected as a maximum or minimum value of a underlying type.
-    // Perhaps this specialization should be active only if `sizeof(E) > 1`.
-    template<class E>
-    struct internal_option_traits<E, std::enable_if_t<enum_has_unused_value<E>>> {
-        static constexpr auto empty_value = find_unused_value<E>();
+    template<class T>
+    struct internal_option_traits<T, std::enable_if_t<std::is_enum_v<T>>>
+        : std::conditional_t<enum_has_exploit_unused_value<T>, enumeration_option_traits1<T>, no_option_traits_tag> {};
 
-        static bool is_empty(const E& value) noexcept {
-            return impl::bit_equal(value, empty_value);
-        }
-        static void set_empty(E& value) noexcept {
-            impl::bit_copy(value, empty_value);
-        }
-    };
-#endif
 
     template<class T>
     inline constexpr bool has_quiet_or_signaling_NaN =
