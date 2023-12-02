@@ -290,19 +290,13 @@ namespace impl {
     // Uses (probably) unused addresses to indicate an empty value,
     // so that `sizeof(opt::option<int*>) == sizeof(int*)`
     template<class T>
-    struct internal_option_traits<T, std::enable_if_t<std::is_pointer_v<T>>> {
+    struct internal_option_traits<T, std::enable_if_t<std::is_pointer_v<T> && (sizeof(T) == 8 || sizeof(T) == 4)>> {
         static constexpr std::uintptr_t empty_value = []() -> std::uintptr_t {
-            if constexpr        (sizeof(void*) == 8) {
+            if constexpr (sizeof(T) == 8) {
                 return 0x7FFFFFFFFFFFFFFFu;
-            } else if constexpr (sizeof(void*) == 4) {
-                return 0xFFFFFFF3u;
-            } else if constexpr (sizeof(void*) == 2) {
-                return 0xFFFFu;
-            } else if constexpr (sizeof(void*) == 1) {
-                return 0xFFu;
             } else {
-                static_assert(!sizeof(T), "Unknown architecture");
-            }
+                return 0xFFFFFFF3u;
+            } 
         }();
         static bool is_empty(const T& value) noexcept {
             return impl::bit_equal(value, empty_value);
@@ -499,8 +493,7 @@ namespace impl {
 
     template<class T>
     struct internal_option_traits<std::unique_ptr<T>> {
-        using ptr_traits = opt::option_traits<T*>;
-        static constexpr std::uintptr_t empty_value = ptr_traits::empty_value;
+        static constexpr std::uintptr_t empty_value = static_cast<std::uintptr_t>(-1) - 10;
 
         static bool is_empty(const std::unique_ptr<T>& value) noexcept {
             return impl::bit_equal(value.get(), empty_value);
