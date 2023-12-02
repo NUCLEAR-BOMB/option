@@ -47,7 +47,7 @@ target_link_libraries(option-test PRIVATE Boost::pfr)
 
 if (USE_SANITIZER)
     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
-    target_add_sanitizer(option-test)
+    target_add_sanitizer(option-test SANITIZERS Address UndefinedBehavior)
 endif()
 
 if (USE_CLANG_TIDY)
