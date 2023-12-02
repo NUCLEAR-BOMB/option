@@ -222,12 +222,20 @@ namespace impl {
             ? !std::is_base_of_v<std::false_type, internal_option_traits<T>>
             : true;
 
-    template<class T, class Flag, class = void>
+    template<class T, class Traits, class = void>
     inline constexpr bool has_unset_empty_method = false;
-    template<class T, class Flag>
-    inline constexpr bool has_unset_empty_method<T, Flag, std::void_t<
-        decltype(Flag::unset_empty(std::declval<T&>()))
-    >> = true;
+    template<class T, class Traits>
+    inline constexpr bool has_unset_empty_method<T, Traits, decltype(Traits::unset_empty(std::declval<T&>()))> = true;
+
+    template<class T, class Traits, class = void>
+    inline constexpr bool has_set_empty_method = false;
+    template<class T, class Traits>
+    inline constexpr bool has_set_empty_method<T, Traits, decltype(Traits::set_empty(std::declval<T&>()))> = true;
+
+    template<class T, class Traits, class = bool>
+    inline constexpr bool has_is_empty_method = false;
+    template<class T, class Traits>
+    inline constexpr bool has_is_empty_method<T, Traits, decltype(Traits::is_empty(std::declval<const T&>()))> = true;
 
     template<class> struct is_std_array : std::false_type {};
     template<class T, std::size_t N> struct is_std_array<std::array<T, N>> : std::true_type {};
@@ -825,6 +833,9 @@ namespace impl {
         };
         using traits = opt::option_traits<T>;
 
+        static_assert(impl::has_set_empty_method<T, traits>, "The static method 'set_empty' in 'opt::option_traits' does not exist or has an invalid function signature");
+        static_assert(impl::has_is_empty_method<T, traits>, "The static method 'is_empty' in 'opt::option_traits' does not exist or has an invalid function signature");
+
         constexpr option_destruct_base() noexcept
             : dummy{} {
             traits::set_empty(value);
@@ -869,6 +880,9 @@ namespace impl {
             T value;
         };
         using traits = opt::option_traits<T>;
+
+        static_assert(impl::has_set_empty_method<T, traits>, "The static method 'set_empty' in 'opt::option_traits' does not exist or has an invalid function signature");
+        static_assert(impl::has_is_empty_method<T, traits>, "The static method 'is_empty' in 'opt::option_traits' does not exist or has an invalid function signature");
 
         constexpr option_destruct_base() noexcept
             : dummy{} {

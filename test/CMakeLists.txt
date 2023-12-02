@@ -20,6 +20,10 @@ set(CMAKE_DISABLE_FIND_PACKAGE_Python TRUE)
 set(gtest_disable_pthreads TRUE)
 FetchContent_MakeAvailable(googletest)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    set_target_properties(gtest gtest_main PROPERTIES COMPILE_OPTIONS "-w")
+endif()
+
 target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
 
 FetchContent_Declare(
