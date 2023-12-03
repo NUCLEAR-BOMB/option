@@ -182,14 +182,19 @@ namespace impl {
     template<class To, class From>
     inline void bit_copy(To& to, const From& from) noexcept {
         static_assert(sizeof(To) == sizeof(From));
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
+#elif defined(__GNUC__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
     #pragma GCC diagnostic ignored "-Wuninitialized"
     #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
         std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#elif defined(__GNUC__)
     #pragma GCC diagnostic pop
 #endif
     }
