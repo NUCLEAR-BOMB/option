@@ -726,10 +726,10 @@ namespace impl {
         static constexpr std::uintptr_t vtable_empty_value = static_cast<std::uintptr_t>(-1) - 14;
 
         static bool is_empty(const T& value) noexcept {
-            return std::memcmp(&value, &vtable_empty_value, sizeof(std::uintptr_t)) == 0;
+            return std::memcmp(reinterpret_cast<const void*>(std::addressof(value)), &vtable_empty_value, sizeof(std::uintptr_t)) == 0;
         }
         static void set_empty(T& value) noexcept {
-            std::memcpy(&value, &vtable_empty_value, sizeof(std::uintptr_t));
+            std::memcpy(reinterpret_cast<void*>(std::addressof(value)), &vtable_empty_value, sizeof(std::uintptr_t));
         }
     };
 }
