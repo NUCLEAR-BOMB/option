@@ -215,16 +215,11 @@ namespace impl {
 
     struct no_option_traits_tag {};
 
-    template<class T, class = void>
-    struct internal_option_traits : no_option_traits_tag {};
-
     template<class T, class = std::size_t>
     inline constexpr bool has_option_traits = false;
     template<class T>
     inline constexpr bool has_option_traits<T, decltype(sizeof(opt::option_traits<T>))> =
-        std::is_base_of_v<internal_option_traits<T>, opt::option_traits<T>>
-            ? !std::is_base_of_v<no_option_traits_tag, internal_option_traits<T>>
-            : true;
+        !std::is_base_of_v<no_option_traits_tag, opt::option_traits<T>>;
 
     template<class T, class Traits, class = void>
     inline constexpr bool has_unset_empty_method = false;
@@ -244,13 +239,159 @@ namespace impl {
     template<class> struct is_std_array : std::false_type {};
     template<class T, std::size_t N> struct is_std_array<std::array<T, N>> : std::true_type {};
 
+    template<class T, class = T>
+    inline constexpr bool enum_has_exploit_unused_value = false;
+    template<class T>
+    inline constexpr bool enum_has_exploit_unused_value<T, decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)> = true;
+
+    template<class T, template<class...> class Template>
+    inline constexpr bool is_specialization = false;
+    template<template<class...> class Template, class... Ts>
+    inline constexpr bool is_specialization<Template<Ts...>, Template> = true;
+
+    template<bool, std::size_t Index, class T, class... Ts>
+    struct find_option_traits_type_impl {};
+
+    template<std::size_t Index, class T, class T2, class... Ts>
+    struct find_option_traits_type_impl<false, Index, T, T2, Ts...>
+        : find_option_traits_type_impl<has_option_traits<T2>, Index + 1, T2, Ts...> {};
+
+    template<std::size_t Index, class T, class... Ts>
+    struct find_option_traits_type_impl<true, Index, T, Ts...> {
+        static constexpr std::size_t index = Index;
+        using type = T;
+    };
+    template<class T, class... Ts>
+    using find_option_traits_type = find_option_traits_type_impl<has_option_traits<T>, 0, T, Ts...>;
+
+    template<class Tuple, class = void>
+    inline constexpr bool tuple_has_find_option_traits = false;
+    template<class T, class... Ts>
+    inline constexpr bool tuple_has_find_option_traits<std::tuple<T, Ts...>,
+        std::void_t<typename find_option_traits_type<T, Ts...>::type>
+    > = true;
+
+#ifdef OPTION_HAS_BOOST_PFR
+    template<class Tuple>
+    struct pfr_find_option_traits_type_impl;
+    template<class T, class... Ts>
+    struct pfr_find_option_traits_type_impl<std::tuple<T, Ts...>> {
+        using type = find_option_traits_type<T, Ts...>;
+    };
+    template<class Struct>
+    using pfr_find_option_traits_type = typename pfr_find_option_traits_type_impl<
+        decltype(boost::pfr::structure_to_tuple(std::declval<Struct&>()))
+    >::type;
+
+    template<class Struct, class = void>
+    inline constexpr bool is_pfr_reflectable_impl = false;
+    template<class Struct>
+    inline constexpr bool is_pfr_reflectable_impl<Struct, std::void_t<
+        typename pfr_find_option_traits_type<Struct>::type
+    >> = true;
+
+    template<class Struct, bool =
+        std::is_aggregate_v<Struct> && !is_std_array<Struct>() && !std::is_polymorphic_v<Struct>
+    >
+    inline constexpr bool is_pfr_reflectable = false;
+    template<class Struct>
+    inline constexpr bool is_pfr_reflectable<Struct, true> = is_pfr_reflectable_impl<Struct>;
+#endif
+
+    enum class option_traits_strategy {
+        none, // fallback strategy
+        bool_, // option<bool>
+        option_bool, // option<option<bool>>
+        pointer, // option<T*>
+        enumeration, // option<T>, T = enumeration
+        float32, // floating point and sizeof == 4
+        float64, // floating point and sizeof == 8
+        tuple, // option<std::tuple<...>>
+        pair, // option<std::pair<T1, T2>>
+        array, // option<std::array<T, N>>
+        unique_ptr, // option<std::unique_ptr<T>>
+        reference_wrapper, // option<std::reference_wrapper<T>>
+        aggregate, // option<T>, T = aggregate
+        string_view, // option<std::basic_string_view<...>>
+        string, // option<std::basic_string<...>>
+        vector, // option<std::vector<...>>
+    };
+
+    template<class T>
+    constexpr option_traits_strategy detemine_option_strategy() noexcept {
+        using st = option_traits_strategy;
+        if constexpr (std::is_same_v<T, bool>) {
+            return st::bool_;
+        }
+        if constexpr (std::is_same_v<T, opt::option<bool>>) {
+            return st::option_bool;
+        }
+        if constexpr (std::is_pointer_v<T>) {
+            return sizeof(T) == 8 || sizeof(T) == 4 ? st::pointer : st::none;
+        }
+        if constexpr (std::is_enum_v<T>) {
+            return enum_has_exploit_unused_value<T> ? st::enumeration : st::none;
+        }
+        if constexpr (std::is_floating_point_v<T>) {
+            using limits = std::numeric_limits<T>;
+            if constexpr (!limits::has_quiet_NaN || !limits::has_signaling_NaN || !limits::is_iec559) {
+                return st::none;
+            }
+            if constexpr (sizeof(T) == 8) {
+                return st::float64;
+            }
+            if constexpr (sizeof(T) == 4) {
+                return st::float32;
+            }
+            return st::none;
+        }
+        if constexpr (is_specialization<T, std::tuple>) {
+            return tuple_has_find_option_traits<T> ? st::tuple : st::none;
+        }
+        if constexpr (is_specialization<T, std::pair>) {
+            using first = typename T::first_type;
+            using second = typename T::second_type;
+            return has_option_traits<first> || has_option_traits<second> ? st::pair : st::none;
+        }
+        if constexpr (is_std_array<T>::value) {
+            constexpr std::size_t array_size = std::tuple_size_v<T>;
+            return has_option_traits<typename T::value_type> && array_size > 0 ? st::array : st::none;
+        }
+        if constexpr (is_specialization<T, std::unique_ptr>) {
+            using deleter = typename T::deleter_type;
+            using element = typename T::element_type;
+            return std::is_same_v<deleter, std::default_delete<element>> ? st::unique_ptr : st::none;
+        }
+        if constexpr (is_specialization<T, std::reference_wrapper>) {
+            return st::reference_wrapper;
+        }
+        if constexpr (is_specialization<T, std::basic_string_view>) {
+            return st::string_view;
+        }
+        if constexpr (is_specialization<T, std::basic_string>) {
+            return st::string;
+        }
+        if constexpr (is_specialization<T, std::vector>) {
+            return st::vector;
+        }
+#ifdef OPTION_HAS_BOOST_PFR
+        if constexpr (is_pfr_reflectable<T>) {
+            return st::aggregate;
+        }
+#endif
+        return st::none;
+    }
+
+    template<class T, option_traits_strategy Strategy = detemine_option_strategy<T>()>
+    struct internal_option_traits : no_option_traits_tag {};
+
     // Optimizing `bool` value.
     // Usually the size of booleans is 1 byte, but only used a single bit.
     // Because of that, we can exploit this in `opt::option` to store an empty state.
     // This implementation uses bitwise AND (&) and OR (|) to check, reset the stored value.
     // This is also allows the size of `opt::option<opt::option<bool>>` to be exactly 1 byte
     template<>
-    struct internal_option_traits<bool> {
+    struct internal_option_traits<bool, option_traits_strategy::bool_> {
         using bool_uint = std::uint_least8_t;
         static constexpr bool_uint empty_value = 0b0010;
 
@@ -268,7 +409,7 @@ namespace impl {
     };
 
     template<>
-    struct internal_option_traits<opt::option<bool>> {
+    struct internal_option_traits<opt::option<bool>, option_traits_strategy::option_bool> {
         using bool_uint = std::uint_least8_t;
         static constexpr bool_uint empty_value = 0b0100;
 
@@ -290,7 +431,7 @@ namespace impl {
     // Uses (probably) unused addresses to indicate an empty value,
     // so that `sizeof(opt::option<int*>) == sizeof(int*)`
     template<class T>
-    struct internal_option_traits<T, std::enable_if_t<std::is_pointer_v<T> && (sizeof(T) == 8 || sizeof(T) == 4)>> {
+    struct internal_option_traits<T, option_traits_strategy::pointer> {
         static constexpr std::uintptr_t empty_value = []() -> std::uintptr_t {
             if constexpr (sizeof(T) == 8) {
                 return 0x7FFFFFFFFFFFFFFFu;
@@ -306,42 +447,23 @@ namespace impl {
         }
     };
 
-    template<class T, class = T>
-    inline constexpr bool enum_has_exploit_unused_value = false;
-    template<class T>
-    inline constexpr bool enum_has_exploit_unused_value<T, decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)> = true;
-
     // For optimizing enumerations.
     // If enum contains a enumerator with name 'OPTION_EXPLOIT_UNUSED_VALUE',
     // this value will be threated as unused and will be used to indicate
     // an empty state and decrease the size of `opt::option`.
-    template<class E>
-    struct enumeration_option_traits1 {
-        static constexpr E empty_value = E::OPTION_EXPLOIT_UNUSED_VALUE;
-        static constexpr bool is_empty(const E& value) noexcept {
+    template<class T>
+    struct internal_option_traits<T, option_traits_strategy::enumeration> {
+        static constexpr T empty_value = T::OPTION_EXPLOIT_UNUSED_VALUE;
+        static constexpr bool is_empty(const T& value) noexcept {
             return value == empty_value;
         }
-        static constexpr void set_empty(E& value) noexcept {
+        static constexpr void set_empty(T& value) noexcept {
             value = empty_value;
         }
     };
 
     template<class T>
-    struct internal_option_traits<T, std::enable_if_t<std::is_enum_v<T>>>
-        : std::conditional_t<enum_has_exploit_unused_value<T>, enumeration_option_traits1<T>, no_option_traits_tag> {};
-
-
-    template<class T>
-    inline constexpr bool has_quiet_or_signaling_NaN =
-        std::numeric_limits<T>::has_quiet_NaN || std::numeric_limits<T>::has_signaling_NaN;
-
-    template<class T>
-    inline constexpr bool is_float32 = (sizeof(T) == 4 && std::is_floating_point_v<T>);
-    template<class T>
-    inline constexpr bool is_float64 = (sizeof(T) == 8 && std::is_floating_point_v<T>);
-
-    template<class T>
-    struct internal_option_traits<T, std::enable_if_t<is_float32<T> && has_quiet_or_signaling_NaN<T>>> {
+    struct internal_option_traits<T, option_traits_strategy::float32> {
 
         static constexpr std::uint32_t empty_value = [] {
 #if OPTION_USE_QUIET_NAN
@@ -364,7 +486,7 @@ namespace impl {
     };
 
     template<class T>
-    struct internal_option_traits<T, std::enable_if_t<is_float64<T> && has_quiet_or_signaling_NaN<T>>> {
+    struct internal_option_traits<T, option_traits_strategy::float64> {
 
         static constexpr std::uint64_t empty_value = [] {
 #if OPTION_USE_QUIET_NAN
@@ -386,26 +508,9 @@ namespace impl {
         }
     };
 
-    template<bool, std::size_t Index, class T, class... Ts>
-    struct find_option_traits_type_impl {};
-
-    template<std::size_t Index, class T, class T2, class... Ts>
-    struct find_option_traits_type_impl<false, Index, T, T2, Ts...>
-        : find_option_traits_type_impl<has_option_traits<T2>, Index + 1, T2, Ts...> {};
-
-    template<std::size_t Index, class T, class... Ts>
-    struct find_option_traits_type_impl<true, Index, T, Ts...> {
-        static constexpr std::size_t index = Index;
-        using type = T;
-    };
-    template<class T, class... Ts>
-    using find_option_traits_type = find_option_traits_type_impl<has_option_traits<T>, 0, T, Ts...>;
-
     // For the std::tuple
     template<class T, class... Ts>
-    struct internal_option_traits<std::tuple<T, Ts...>,
-        std::void_t<typename find_option_traits_type<T, Ts...>::type>
-    > {
+    struct internal_option_traits<std::tuple<T, Ts...>, option_traits_strategy::tuple> {
         using find_traits = find_option_traits_type<T, Ts...>;
         using traits = opt::option_traits<typename find_traits::type>;
         static constexpr std::size_t index = find_traits::index;
@@ -426,9 +531,7 @@ namespace impl {
 
     // For the std::pair
     template<class T1, class T2>
-    struct internal_option_traits<std::pair<T1, T2>,
-        std::enable_if_t<has_option_traits<T1> || has_option_traits<T2>>
-    > {
+    struct internal_option_traits<std::pair<T1, T2>, option_traits_strategy::pair> {
         static constexpr bool first_has_option_traits = has_option_traits<T1>;
         using traits_type = std::conditional_t<first_has_option_traits, T1, T2>;
         static constexpr std::size_t pair_index = first_has_option_traits ? 0 : 1;
@@ -449,8 +552,7 @@ namespace impl {
     };
 
     template<class T, std::size_t Size>
-    struct internal_option_traits<std::array<T, Size>, std::enable_if_t<(Size > 0 && has_option_traits<T>)>>
-    {
+    struct internal_option_traits<std::array<T, Size>, option_traits_strategy::array> {
         using traits = opt::option_traits<T>;
         using array_type = std::array<T, Size>;
 
@@ -492,7 +594,7 @@ namespace impl {
 #endif
 
     template<class T>
-    struct internal_option_traits<std::unique_ptr<T>> {
+    struct internal_option_traits<std::unique_ptr<T>, option_traits_strategy::unique_ptr> {
         static constexpr std::uintptr_t empty_value = static_cast<std::uintptr_t>(-1) - 10;
 
         static bool is_empty(const std::unique_ptr<T>& value) noexcept {
@@ -506,7 +608,7 @@ namespace impl {
     };
 
     template<class T>
-    struct internal_option_traits<std::reference_wrapper<T>> {
+    struct internal_option_traits<std::reference_wrapper<T>, option_traits_strategy::reference_wrapper> {
         static constexpr std::uintptr_t empty_value = 0;
 
         static bool is_empty(const std::reference_wrapper<T>& value) noexcept {
@@ -518,34 +620,8 @@ namespace impl {
     };
 
 #ifdef OPTION_HAS_BOOST_PFR
-    template<class Tuple>
-    struct pfr_find_option_traits_type_impl;
-    template<class T, class... Ts>
-    struct pfr_find_option_traits_type_impl<std::tuple<T, Ts...>> {
-        using type = find_option_traits_type<T, Ts...>;
-    };
     template<class Struct>
-    using pfr_find_option_traits_type = typename pfr_find_option_traits_type_impl<
-        decltype(boost::pfr::structure_to_tuple(std::declval<Struct&>()))
-    >::type;
-
-    template<class Struct, class = void>
-    inline constexpr bool is_pfr_reflectable_impl = false;
-    template<class Struct>
-    inline constexpr bool is_pfr_reflectable_impl<Struct, std::void_t<
-        typename pfr_find_option_traits_type<Struct>::type
-    >> = true;
-
-    template<class Struct, bool =
-        std::is_aggregate_v<Struct> && !is_std_array<Struct>() && !std::is_polymorphic_v<Struct>
-    >
-    inline constexpr bool is_pfr_reflectable = false;
-    template<class Struct>
-    inline constexpr bool is_pfr_reflectable<Struct, true> = is_pfr_reflectable_impl<Struct>;
-
-
-    template<class Struct>
-    struct internal_option_traits<Struct, std::enable_if_t<is_pfr_reflectable<Struct>>> {
+    struct internal_option_traits<Struct, option_traits_strategy::aggregate> {
         using find_result = pfr_find_option_traits_type<Struct>;
         using traits = opt::option_traits<typename find_result::type>;
         static constexpr std::size_t index = find_result::index;
@@ -565,7 +641,7 @@ namespace impl {
 #endif
 
     template<class CharT, class Traits>
-    struct internal_option_traits<std::basic_string_view<CharT, Traits>> {
+    struct internal_option_traits<std::basic_string_view<CharT, Traits>, option_traits_strategy::string_view> {
         using value_t = std::basic_string_view<CharT, Traits>;
 
         // Possibly the std::string_view cannot be represented in a state, that it filled with zeros only.
@@ -581,7 +657,7 @@ namespace impl {
         }
     };
     template<class CharT, class Traits, class Allocator>
-    struct internal_option_traits<std::basic_string<CharT, Traits, Allocator>> {
+    struct internal_option_traits<std::basic_string<CharT, Traits, Allocator>, option_traits_strategy::string> {
         using value_t = std::basic_string<CharT, Traits, Allocator>;
 
         // Possibly std::string cannot be represented in a state, that it filled with zeros only.
@@ -597,7 +673,7 @@ namespace impl {
         }
     };
     template<class T, class Allocator>
-    struct internal_option_traits<std::vector<T, Allocator>> {
+    struct internal_option_traits<std::vector<T, Allocator>, option_traits_strategy::vector> {
         using value_t = std::vector<T, Allocator>;
 
         // Possibly std::vector cannot be represented in a state, that it filled with zeros only.
@@ -612,6 +688,48 @@ namespace impl {
             impl::bit_copy(value, empty_value);
         }
     };
+
+#if 0
+    template<class T>
+    inline constexpr bool has_padding = std::is_class_v<T> && !std::has_unique_object_representations_v<T>;
+
+    template<class T>
+    struct internal_option_traits<T, std::enable_if_t<has_padding<T>>> {
+
+        static constexpr auto empty_value = [] {
+            std::array<std::byte, sizeof(T)> result{};
+            for (auto& elem : result) {
+                elem = std::byte{1};
+            }
+            return result;
+        };
+
+        static bool is_empty(const T& value) noexcept {
+            return impl::bit_equal(value, empty_value);
+        }
+        static void set_empty(T& value) noexcept {
+            impl::bit_copy(value, empty_value);
+        }
+        static void unset_empty(T& value) noexcept {
+            impl::bit_copy(value, std::array<std::byte, sizeof(T)>{});
+        }
+    };
+#endif
+
+#if 0
+    template<class T>
+    struct internal_option_traits<T, std::enable_if_t<std::is_polymorphic_v<T>>> {
+        static_assert(sizeof(T) >= sizeof(std::uintptr_t));
+        static constexpr std::uintptr_t vtable_empty_value = static_cast<std::uintptr_t>(-1) - 14;
+
+        static bool is_empty(const T& value) noexcept {
+            return std::memcmp(&value, &vtable_empty_value, sizeof(std::uintptr_t)) == 0;
+        }
+        static void set_empty(T& value) noexcept {
+            std::memcpy(&value, &vtable_empty_value, sizeof(std::uintptr_t));
+        }
+    };
+#endif
 }
 
 
