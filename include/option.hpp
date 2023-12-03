@@ -315,6 +315,7 @@ namespace impl {
         string_view, // option<std::basic_string_view<...>>
         string, // option<std::basic_string<...>>
         vector, // option<std::vector<...>>
+        polymorphic, // option<T>, T = polymorphic
     };
 
     template<class T>
@@ -379,6 +380,9 @@ namespace impl {
             return st::aggregate;
         }
 #endif
+        if constexpr (std::is_polymorphic_v<T>) {
+            return st::polymorphic;
+        }
         return st::none;
     }
 
@@ -716,9 +720,8 @@ namespace impl {
     };
 #endif
 
-#if 0
     template<class T>
-    struct internal_option_traits<T, std::enable_if_t<std::is_polymorphic_v<T>>> {
+    struct internal_option_traits<T, option_traits_strategy::polymorphic> {
         static_assert(sizeof(T) >= sizeof(std::uintptr_t));
         static constexpr std::uintptr_t vtable_empty_value = static_cast<std::uintptr_t>(-1) - 14;
 
@@ -729,7 +732,6 @@ namespace impl {
             std::memcpy(&value, &vtable_empty_value, sizeof(std::uintptr_t));
         }
     };
-#endif
 }
 
 

@@ -136,10 +136,30 @@ struct special<std::vector<int>> : Test {
     const std::vector<int> A{{1, 2, 3}};
     const std::vector<int> B{{4, 5, 6}};
 };
+struct polymorphic {
+    int x1;
+    virtual int do_something() { return x1; }
+    virtual unsigned do_something_else() { return x2; }
+
+    virtual ~polymorphic() = default;
+    polymorphic& operator=(const polymorphic&) = default;
+    polymorphic(const polymorphic&) = default;
+
+    polymorphic(int x1_, unsigned x2_) : x1(x1_), x2(x2_) {}
+    bool operator==(const polymorphic& other) const { return x1 == other.x1 && x2 == other.x2; }
+
+    unsigned x2;
+};
+template<>
+struct special<polymorphic> : Test {
+    const polymorphic A{1, 2};
+    const polymorphic B{3, 4};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
-    std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>
+    std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
+    polymorphic
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
