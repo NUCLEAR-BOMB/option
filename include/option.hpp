@@ -185,6 +185,8 @@ namespace impl {
 #if defined(__GNUC__) && !defined(__clang__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
+    #pragma GCC diagnostic ignored "-Wuninitialized"
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
         std::memcpy(std::addressof(to), std::addressof(from), sizeof(To));
 #if defined(__GNUC__) && !defined(__clang__)
@@ -729,6 +731,7 @@ namespace impl {
             return std::memcmp(reinterpret_cast<const void*>(std::addressof(value)), &vtable_empty_value, sizeof(std::uintptr_t)) == 0;
         }
         static void set_empty(T& value) noexcept {
+            impl::bit_copy(value, std::array<std::byte, sizeof(T)>{});
             std::memcpy(reinterpret_cast<void*>(std::addressof(value)), &vtable_empty_value, sizeof(std::uintptr_t));
         }
     };
