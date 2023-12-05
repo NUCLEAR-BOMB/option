@@ -1549,6 +1549,8 @@ public:
         "you should probably specify the type for an empty opt::option<T>");
     static_assert(!std::is_void_v<T>,
         "T cannot be (possibly cv-qualified) `void`");
+    static_assert(std::is_destructible_v<T>,
+        "T must be destructible");
 
     using value_type = T;
 
