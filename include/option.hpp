@@ -1617,11 +1617,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/false> = 0>
     constexpr option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        construct_from_option(other);
+        base::construct_from_option(other);
     }
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/true> = 0>
     constexpr explicit option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        construct_from_option(other);
+        base::construct_from_option(other);
     }
     // Converting move constructor.
     // If `other` containes a value, move constructs a contained value.
@@ -1630,11 +1630,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/false> = 0>
     constexpr option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        construct_from_option(std::move(other));
+        base::construct_from_option(std::move(other));
     }
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/true> = 0>
     constexpr explicit option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        construct_from_option(std::move(other));
+        base::construct_from_option(std::move(other));
     }
 
     // If this `opt::option` containes a value, the contained value is destroyed by calling `reset()`.
@@ -1771,10 +1771,8 @@ public:
     // Same as Rust's `std::option::Option<T>::take_if`
     template<class P, std::enable_if_t<std::is_invocable_r_v<bool, P, T&>, int> = 0>
     constexpr option<T> take_if(P&& predicate) {
-        if (has_value()) {
-            if (std::invoke(std::forward<P>(predicate), get())) {
-                return take();
-            }
+        if (has_value() && bool(std::invoke(std::forward<P>(predicate), get()))) {
+            return take();
         }
         return opt::none;
     }
@@ -1974,11 +1972,8 @@ public:
     // Same as Rust's `std::option::Option<T>::filter`
     template<class F, std::enable_if_t<std::is_invocable_r_v<bool, F, const T&>, int> = 0>
     constexpr option<T> filter(F&& f) const {
-        if (has_value()) {
-            // f(*this) can return an object that can be explicitly converted to bool
-            if (std::invoke(std::forward<F>(f), get())) {
-                return get();
-            }
+        if (has_value() && bool(std::invoke(std::forward<F>(f), get()))) {
+            return get();
         }
         return {};
     }
@@ -2054,14 +2049,6 @@ public:
         base::reset();
         base::construct(std::forward<U>(val));
         return tmp;
-    }
-
-private:
-    template<class Option>
-    constexpr void construct_from_option(Option&& other) {
-        if (other.has_value()) {
-            base::construct(std::forward<Option>(other).get());
-        }
     }
 };
 
