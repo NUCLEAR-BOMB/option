@@ -5,6 +5,7 @@
 - [Enumerations](#enumerations)
 - [Floating point](#floating-point)
 - [Aggregates](#aggregates)
+- [Polymorphic](#polymorphic)
 - [`bool`](#bool)
 - [`opt::option<bool>`](#optoptionbool)
 - [`std::tuple`](#stdtuple)
@@ -48,6 +49,12 @@ See also macro [`OPTION_USE_QUIET_NAN`](macros.md#option_use_quiet_nan)
 ### Aggregates
 Stores the sentinel value in one of the aggregates members. \
 If the **boost.pfr** library is available, will recursive search the aggregate type for types that satisfying `has_option_traits<T>`. If that member was found, use the `opt::option_traits<T>` for found member to manipulate the "is empty" flag. The search begins from first to last declared member in the aggregate type. If the static member function `unset_empty(T&)` does not exists in the `opt::option_traits<T>` for found type, the `unset_empty(T&)` will be replaced with an empty function.
+
+### Polymorphic
+Stores the sentinel value in virtual method table (VMT). \
+Assumes that the first `sizeof(void*)` bytes (sizeof pointer) are VMT, and stores/checks the sentinel value in them.
+> [!NOTE]
+> The sentinel value in first `sizeof(void*)` bytes is `uintptr_t(-1) - 14`.
 
 ### `bool`
 Stores the sentinel value in a second unused bit. \
