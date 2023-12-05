@@ -1020,9 +1020,15 @@ namespace impl {
         }
     };
 
+    template<class T, bool use_traits>
+    using select_option_destruct_base = std::conditional_t<use_traits,
+        option_destruct_base<T>,
+        option_destruct_base<T, /*store_flag=*/true>
+    >;
+
     template<class T, bool use_traits, bool is_reference /*false*/ = std::is_reference_v<T>>
-    class option_storage_base : private option_destruct_base<T> {
-        using base = option_destruct_base<T>;
+    class option_storage_base : private select_option_destruct_base<T, use_traits> {
+        using base = select_option_destruct_base<T, use_traits>;
     public:
         using base::base;
         using base::has_value;
