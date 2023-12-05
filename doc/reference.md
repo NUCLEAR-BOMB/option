@@ -51,6 +51,7 @@
     - [`none`](#none)
     - [`bad_access`](#bad_access)
     - [`option_traits`](#option_traits)
+- [Deduction guides](#deduction-guides)
 
 ## Template parameters
 `T` - the type of the value to manage initialization state for. \
@@ -1332,6 +1333,36 @@ std::cout << a->val << '\n'; // 5
 a = opt::none;
 std::cout << a.has_value() << '\n'; // false
 std::cout << a.get_unchecked().val << '\n'; // -1
+```
+
+## Deduction guides
+```cpp
+template<class T>
+option(T) -> option<T>;
+```
+
+Example:
+```cpp
+opt::option a{1};
+static_assert(std::is_same_v<decltype(a), opt::option<int>>);
+
+opt::option b{2.f};
+static_assert(std::is_same_v<decltype(b), opt::option<float>>);
+```
+
+```cpp
+template<class T>
+option(option<T>) -> option<option<T>>;
+```
+This deduction guide is provided to allow nesting `opt::option`s.
+
+Example:
+```cpp
+auto a = opt::option{opt::option{1}};
+static_assert(std::is_same_v<decltype(a), opt::option<opt::option<int>>>);
+
+auto b = opt::option{opt::option{opt::option{2.f}}};
+static_assert(std::is_same_v<decltype(b), opt::option<opt::option<opt::option<float>>>>)
 ```
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub

@@ -154,6 +154,12 @@ TEST_F(option, deduction_guides) {
     static_assert(std::is_same_v<decltype(a), opt::option<int>>);
     opt::option b{1u}; // NOLINT(misc-const-correctness)
     static_assert(std::is_same_v<decltype(b), opt::option<unsigned>>);
+
+    auto c = opt::option{opt::option{1}};
+    static_assert(std::is_same_v<decltype(c), opt::option<opt::option<int>>>);
+
+    auto d = opt::option{opt::option{opt::option{2.f}}};
+    static_assert(std::is_same_v<decltype(d), opt::option<opt::option<opt::option<float>>>>);
 }
 TEST_F(option, value_or_default) {
     opt::option a{1};
