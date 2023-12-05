@@ -1,6 +1,8 @@
 
 # Reference
 
+- [Template parameters](#template-parameters)
+- [Member types](#member-types)
 - [Member functions](#member-functions)
     - [Constructor](#constructor)
     - [Destructor](#destructor)
@@ -49,6 +51,15 @@
     - [`none`](#none)
     - [`bad_access`](#bad_access)
     - [`option_traits`](#option_traits)
+
+## Template parameters
+`T` - the type of the value to manage initialization state for. \
+The type must be not `opt::none_t`, not `void`, and be destructible.
+
+## Member types
+| Member type | Definition |
+| ----------- | ---------- |
+| value_type  | T          |
 
 ## Member functions
 
