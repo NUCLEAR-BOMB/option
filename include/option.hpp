@@ -31,23 +31,6 @@
         #endif
 #endif
 
-#ifdef __has_builtin
-    #if __has_builtin(__builtin_bit_cast)
-        #define OPTION_BIT_CAST(type, arg) __builtin_bit_cast(type, arg)
-    #endif
-#endif
-#ifndef OPTION_BIT_CAST
-    #ifdef _MSC_VER
-        #define OPTION_BIT_CAST(type, arg) __builtin_bit_cast(type, arg)
-    #endif
-#endif
-#ifdef __has_builtin
-    #if __has_builtin(__builtin_constant_p)
-        #define OPTION_CONSTANT_P(expression) __builtin_constant_p(expression)
-    #endif
-#endif
-
-
 #ifndef __has_cpp_attribute
     #define OPTION_LIFETIMEBOUND
 #elif __has_cpp_attribute(msvc::lifetimebound)
@@ -65,34 +48,27 @@
     #define OPTION_USE_QUIET_NAN 0
 #endif
 
-#ifndef OPTION_MAGIC_ENUM_FILE
-    #define OPTION_MAGIC_ENUM_FILE <magic_enum.hpp>
-#endif
-
-/*
-#if !(defined(OPTION_USE_MAGIC_ENUM) && !(OPTION_USE_MAGIC_ENUM))
-    #if __has_include(OPTION_MAGIC_ENUM_FILE)
-        #include OPTION_MAGIC_ENUM_FILE
-        #ifdef MAGIC_ENUM_SUPPORTED 
-            #define OPTION_HAS_MAGIC_ENUM
-        #endif
-    #elif defined(OPTION_USE_MAGIC_ENUM) && (OPTION_USE_MAGIC_ENUM)
-        #error "Cannot found the 'magic_enum' library. Define the 'OPTION_MAGIC_ENUM_FILE' macro to specify a custom path to the 'magic_enum' header"
-    #endif
-#endif
-*/
-
 #ifndef OPTION_BOOST_PFR_FILE
     #define OPTION_BOOST_PFR_FILE <boost/pfr.hpp>
 #endif
-#if !(defined(OPTION_USE_BOOST_PFR) && !(OPTION_USE_BOOST_PFR))
+
+#ifdef OPTION_USE_BOOST_PFR
+    #if OPTION_USE_BOOST_PFR
+        #if __has_include(OPTION_BOOST_PFR_FILE)
+            #include OPTION_BOOST_PFR_FILE
+            #ifndef BOOST_PFR_NOT_SUPPORTED
+                #define OPTION_HAS_BOOST_PFR
+            #endif
+        #else // !__has_include(OPTION_BOOST_PFR_FILE)
+            #error "Cannot found the 'boost.pfr' library. Define the 'OPTION_BOOST_PFR_FILE' macro to specify a custom path to the 'boost.pfr' library header"
+        #endif
+    #endif
+#else // !defined(OPTION_USE_BOOST_PFR)
     #if __has_include(OPTION_BOOST_PFR_FILE)
         #include OPTION_BOOST_PFR_FILE
         #ifndef BOOST_PFR_NOT_SUPPORTED
             #define OPTION_HAS_BOOST_PFR
         #endif
-    #elif defined(OPTION_USE_BOOST_PFR) && (OPTION_USE_BOOST_PFR)
-        #error "Cannot found the 'boost.pfr' library. Define the 'OPTION_BOOST_PFR_FILE' macro to specify a custom path to the 'boost.pfr' library header"
     #endif
 #endif
 
