@@ -3,6 +3,8 @@
 
 #include "utils.hpp"
 
+#if OPTION_USE_BUILTIN_TRAITS
+
 #ifdef _MSC_VER
 #pragma fenv_access (on)
 #elif defined(__clang__)
@@ -605,3 +607,5 @@ template<>
 struct opt::option_traits<struct1>;
 
 static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
+
+#endif // OPTION_USE_BUILTIN_TRAITS

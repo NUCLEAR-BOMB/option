@@ -72,6 +72,10 @@
     #endif
 #endif
 
+#ifndef OPTION_USE_BUILTIN_TRAITS
+    #define OPTION_USE_BUILTIN_TRAITS 1
+#endif
+
 // Macro `OPTION_VERIFY` is used in `opt::option<T>::get`, `opt::option<T>::operator*`.
 // You can also redefine `OPTION_VERIFY` to specify custom behavior when something goes unexpected.
 #ifndef OPTION_VERIFY
@@ -196,6 +200,7 @@ namespace impl {
         ptr->~T();
     }
 
+
     struct no_option_traits_tag {};
 
     template<class T, class = std::size_t>
@@ -219,6 +224,7 @@ namespace impl {
     template<class T, class Traits>
     inline constexpr bool has_is_empty_method<T, Traits, decltype(Traits::is_empty(std::declval<const T&>()))> = true;
 
+#if OPTION_USE_BUILTIN_TRAITS
     template<class> struct is_std_array : std::false_type {};
     template<class T, std::size_t N> struct is_std_array<std::array<T, N>> : std::true_type {};
 
@@ -279,10 +285,12 @@ namespace impl {
     inline constexpr bool is_pfr_reflectable = false;
     template<class Struct>
     inline constexpr bool is_pfr_reflectable<Struct, true> = is_pfr_reflectable_impl<Struct>;
-#endif
+#endif // OPTION_HAS_BOOST_PFR
+#endif // OPTION_USE_BUILTIN_TRAITS
 
     enum class option_traits_strategy {
         none, // fallback strategy
+#if OPTION_USE_BUILTIN_TRAITS
         bool_, // option<bool>
         option_bool, // option<option<bool>>
         pointer, // option<T*>
@@ -299,11 +307,13 @@ namespace impl {
         string, // option<std::basic_string<...>>
         vector, // option<std::vector<...>>
         polymorphic, // option<T>, T = polymorphic
+#endif // OPTION_USE_BUILTIN_TRAITS
     };
 
     template<class T>
     constexpr option_traits_strategy detemine_option_strategy() noexcept {
         using st = option_traits_strategy;
+#if OPTION_USE_BUILTIN_TRAITS
         if constexpr (std::is_same_v<T, bool>) {
             return st::bool_;
         }
@@ -366,12 +376,14 @@ namespace impl {
         if constexpr (std::is_polymorphic_v<T>) {
             return st::polymorphic;
         }
+#endif // OPTION_USE_BUILTIN_TRAITS
         return st::none;
     }
 
     template<class T, option_traits_strategy Strategy = detemine_option_strategy<T>()>
     struct internal_option_traits : no_option_traits_tag {};
 
+#if OPTION_USE_BUILTIN_TRAITS
     // Optimizing `bool` value.
     // Usually the size of booleans is 1 byte, but only used a single bit.
     // Because of that, we can exploit this in `opt::option` to store an empty state.
@@ -716,6 +728,7 @@ namespace impl {
             std::memcpy(reinterpret_cast<void*>(std::addressof(value)), &vtable_empty_value, sizeof(std::uintptr_t));
         }
     };
+#endif // OPTION_USE_BUILTIN_TRAITS
 }
 
 
