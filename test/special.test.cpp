@@ -262,7 +262,7 @@ TEST_F(reference, basic) {
 
     static_assert(std::is_same_v<decltype(*ref), int&>);
     static_assert(std::is_same_v<decltype(*as_const(ref)), int&>);
-    static_assert(std::is_same_v<decltype(*as_rvalue(ref)), int&&>);
+    static_assert(std::is_same_v<decltype(*as_rvalue(ref)), int&>);
 
     EXPECT_TRUE(ref.has_value());
     EXPECT_EQ(&(ref.get()), &a);
@@ -318,7 +318,7 @@ TEST_F(reference, const_basic) {
 
     static_assert(std::is_same_v<decltype(*ref), const int&>);
     static_assert(std::is_same_v<decltype(*as_const(ref)), const int&>);
-    static_assert(std::is_same_v<decltype(*as_rvalue(ref)), const int&&>);
+    static_assert(std::is_same_v<decltype(*as_rvalue(ref)), const int&>);
 
     EXPECT_TRUE(ref.has_value());
     EXPECT_EQ(&(ref.get()), &a);

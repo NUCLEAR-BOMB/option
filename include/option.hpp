@@ -1490,7 +1490,6 @@ template<class T>
 class option : private impl::option_move_assign_base<T>
 {
     using base = impl::option_move_assign_base<T>;
-    using raw_type = std::remove_reference_t<T>;
 
     using natvis_destruct_base = impl::option_destruct_base<T>; // For IntelliSense Natvis visualizations
 public:
@@ -1702,11 +1701,13 @@ public:
     // Same as Rust's `std::option::Option<T>::take`
     // Postcondition: has_value() == false
     constexpr option<T> take() & {
+        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
         auto tmp = *this;
         reset();
         return tmp;
     }
     constexpr option<T> take() && {
+        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
         return std::move(*this);
     }
 
@@ -1716,6 +1717,7 @@ public:
     // Same as Rust's `std::option::Option<T>::take_if`
     template<class P, std::enable_if_t<std::is_invocable_r_v<bool, P, T&>, int> = 0>
     constexpr option<T> take_if(P&& predicate) {
+        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
         if (has_value() && bool(std::invoke(std::forward<P>(predicate), get()))) {
             return take();
         }
@@ -1725,11 +1727,11 @@ public:
     // Inserts `val` into the `opt::option` and returns a reference to it
     // If the `opt::option` contains a value, the contained value is destroyed
     // Same as Rust's `std::option::Option<T>::insert`
-    constexpr T& insert(const raw_type& val) OPTION_LIFETIMEBOUND {
+    constexpr T& insert(const std::remove_reference_t<T>& val) OPTION_LIFETIMEBOUND {
         this->emplace(val);
         return get();
     }
-    constexpr T& insert(raw_type&& val) OPTION_LIFETIMEBOUND {
+    constexpr T& insert(std::remove_reference_t<T>&& val) OPTION_LIFETIMEBOUND {
         this->emplace(std::move(val));
         return get();
     }
@@ -1763,11 +1765,11 @@ public:
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return base::get();
     }
-    constexpr raw_type&& get() && noexcept OPTION_LIFETIMEBOUND {
+    constexpr T&& get() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(base::get());
     }
-    constexpr const raw_type&& get() const&& noexcept OPTION_LIFETIMEBOUND {
+    constexpr const T&& get() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(base::get());
     }
@@ -1796,11 +1798,11 @@ public:
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return get();
     }
-    constexpr raw_type&& operator*() && noexcept OPTION_LIFETIMEBOUND {
+    constexpr T&& operator*() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(get());
     }
-    constexpr const raw_type&& operator*() const&& noexcept OPTION_LIFETIMEBOUND {
+    constexpr const T&& operator*() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(get());
     }
@@ -1810,24 +1812,24 @@ public:
     // No OPTION_LIFETIMEBOUND
     constexpr T& get_unchecked() & noexcept { return base::get(); }
     constexpr const T& get_unchecked() const& noexcept { return base::get(); }
-    constexpr raw_type&& get_unchecked() && noexcept { return std::move(base::get()); }
-    constexpr const raw_type&& get_unchecked() const&& noexcept { return std::move(base::get()); }
+    constexpr T&& get_unchecked() && noexcept { return std::move(base::get()); }
+    constexpr const T&& get_unchecked() const&& noexcept { return std::move(base::get()); }
 
     // Returns a reference to the contained value.
     // Throws a `opt::bad_access` if this `opt::option` does not contain the value.
     // More verbose version of `opt::option<T>::value`.
     constexpr T& value_or_throw() & OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(*this); }
     constexpr const T& value_or_throw() const& OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(*this); }
-    constexpr raw_type&& value_or_throw() && OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(std::move(*this)); }
-    constexpr const raw_type&& value_or_throw() const&& OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(std::move(*this)); }
+    constexpr T&& value_or_throw() && OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(std::move(*this)); }
+    constexpr const T&& value_or_throw() const&& OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(std::move(*this)); }
 
     // Returns a reference to the contained value.
     // Throws a `opt::bad_access` if this `opt::option` does not contain the value.
     // Similar to `std::optional<T>::value`.
     constexpr T& value() & OPTION_LIFETIMEBOUND { return value_or_throw(); }
     constexpr const T& value() const& OPTION_LIFETIMEBOUND { return value_or_throw(); }
-    constexpr raw_type&& value() && OPTION_LIFETIMEBOUND { return std::move(value_or_throw()); }
-    constexpr const raw_type&& value() const&& OPTION_LIFETIMEBOUND { return std::move(value_or_throw()); }
+    constexpr T&& value() && OPTION_LIFETIMEBOUND { return std::move(value_or_throw()); }
+    constexpr const T&& value() const&& OPTION_LIFETIMEBOUND { return std::move(value_or_throw()); }
 
     // Returns the contained value if this `opt::option` contains the value;
     // otherwise returns a forwarded `default_value`.
@@ -1917,6 +1919,7 @@ public:
     // Same as Rust's `std::option::Option<T>::filter`
     template<class F, std::enable_if_t<std::is_invocable_r_v<bool, F, const T&>, int> = 0>
     constexpr option<T> filter(F&& f) const {
+        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
         if (has_value() && bool(std::invoke(std::forward<F>(f), get()))) {
             return get();
         }
@@ -1969,7 +1972,13 @@ public:
     // Specifies that this `opt::option` will always contains value at a given point.
     // Will cause undefined behavior if this `opt::option` does not contain a value.
     constexpr void assume_has_value() const noexcept {
+#ifdef NDEBUG
+        if (!has_value()) {
+            OPTION_UNREACHABLE();
+        }
+#else
         OPTION_VERIFY(has_value(), "Assumption 'has_value()' failed");
+#endif
     }
 
     // Unzips this `opt::option` containing a tuple like object to the tuple like object of `opt::option`s
