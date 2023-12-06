@@ -138,22 +138,6 @@ namespace impl {
     template<class T, class...>
     using first_type = T;
 
-    template<class T>
-    struct type_identity { using type = T; };
-
-    template<std::size_t Size>
-    constexpr auto size_to_uint_type_impl() noexcept {
-        if constexpr (Size <= 1) { return std::uint_least8_t{}; }
-        else if constexpr (Size <= 2) { return std::uint_least16_t{}; }
-        else if constexpr (Size <= 4) { return std::uint_least32_t{}; }
-        else if constexpr (Size <= 8) { return std::uint_least64_t{}; }
-        else {
-            static_assert(Size <= 8);
-        }
-    }
-    template<std::size_t N>
-    using size_to_uint_type = decltype(size_to_uint_type_impl<N>());
-
     template<class Left, class Right>
     inline bool bit_equal(const Left& left, const Right& right) noexcept {
         static_assert(sizeof(Left) == sizeof(Right));
@@ -753,28 +737,6 @@ namespace impl {
     inline constexpr bool is_reference_wrapper = false;
     template<class T>
     inline constexpr bool is_reference_wrapper<std::reference_wrapper<T>> = true;
-
-    template<class T>
-    struct unwrap_reference_t { using type = T; };
-    template<class T>
-    struct unwrap_reference_t<std::reference_wrapper<T>> { using type = T&; };
-    template<class T>
-    using unwrap_reference = typename unwrap_reference_t<T>::type;
-
-    template<class T, class U>
-    struct copy_cvref_t {
-        using U1 = std::conditional_t<std::is_const_v<T>, std::add_const_t<U>, U>;
-        using U2 = std::conditional_t<std::is_volatile_v<T>, std::add_volatile_t<U1>, U1>;
-        using U3 = std::conditional_t<std::is_lvalue_reference_v<T>, std::add_lvalue_reference_t<U2>, U2>;
-        using type = std::conditional_t<std::is_rvalue_reference_v<T>, std::add_rvalue_reference_t<U3>, U3>;
-    };
-    template<class T, class U>
-    using copy_cvref = typename copy_cvref_t<T, U>::type;
-
-    template<class T, class = std::size_t>
-    inline constexpr bool is_complete = false;
-    template<class T>
-    inline constexpr bool is_complete<T, decltype(sizeof(T))> = true;
 
     template<class T>
     struct is_tuple_like_impl : std::false_type {};
@@ -1410,7 +1372,7 @@ namespace impl::option {
     // map(F&&) -> option<U> : F(T&&) -> U
     template<class T, class Self, class F>
     constexpr auto map(Self&& self, F&& f) {
-        using f_result = std::remove_cv_t<std::invoke_result_t<F, impl::copy_cvref<Self, T>>>;
+        using f_result = std::remove_cv_t<std::invoke_result_t<F, decltype(std::forward<Self>(self).get())>>;
         if (self.has_value()) {
             return opt::option<f_result>{construct_from_invoke_tag{}, std::forward<F>(f), *std::forward<Self>(self)};
         }
@@ -1433,7 +1395,7 @@ namespace impl::option {
     template<class T, class Self, class D, class F>
     constexpr auto map_or_else(Self&& self, D&& d, F&& f) {
         using d_result = std::invoke_result_t<D>;
-        using f_result = std::invoke_result_t<F, impl::copy_cvref<Self, T>>;
+        using f_result = std::invoke_result_t<F, decltype(std::forward<Self>(self).get())>;
         static_assert(std::is_same_v<d_result, f_result>,
             "The type of the invoke result functions D and F must be the same");
         if (self.has_value()) {
