@@ -1020,15 +1020,9 @@ namespace impl {
         }
     };
 
-    template<class T, bool use_traits>
-    using select_option_destruct_base = std::conditional_t<use_traits,
-        option_destruct_base<T>,
-        option_destruct_base<T, /*store_flag=*/true>
-    >;
-
-    template<class T, bool use_traits, bool is_reference /*false*/ = std::is_reference_v<T>>
-    class option_storage_base : private select_option_destruct_base<T, use_traits> {
-        using base = select_option_destruct_base<T, use_traits>;
+    template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
+    class option_storage_base : private option_destruct_base<T> {
+        using base = option_destruct_base<T>;
     public:
         using base::base;
         using base::has_value;
@@ -1073,8 +1067,8 @@ namespace impl {
 
     // "specialization" of opt::option<T&>
     // std::option<T&> is currently ill-formed, but opt::option<T&> allows it
-    template<class T, bool use_traits>
-    class option_storage_base<T, use_traits, /*is_reference=*/true> {
+    template<class T>
+    class option_storage_base<T, /*is_reference=*/true> {
         using raw_type = std::remove_reference_t<T>;
 
         raw_type* value;
@@ -1156,16 +1150,16 @@ namespace impl {
         }
     };
 
-    template<class T, bool use_traits,
+    template<class T,
         bool /*true*/ = std::is_trivially_copy_constructible_v<T>,
         bool = std::is_copy_constructible_v<T>
     >
-    struct option_copy_base : option_storage_base<T, use_traits> {
-        using option_storage_base<T, use_traits>::option_storage_base;
+    struct option_copy_base : option_storage_base<T> {
+        using option_storage_base<T>::option_storage_base;
     };
-    template<class T, bool use_traits>
-    struct option_copy_base<T, use_traits, false, true> : option_storage_base<T, use_traits> {
-        using option_storage_base<T, use_traits>::option_storage_base;
+    template<class T>
+    struct option_copy_base<T, false, true> : option_storage_base<T> {
+        using option_storage_base<T>::option_storage_base;
         using value_type = T;
 
         option_copy_base() = default;
@@ -1177,9 +1171,9 @@ namespace impl {
             this->construct_from_option(other);
         }
     };
-    template<class T, bool use_traits, bool ignore>
-    struct option_copy_base<T, use_traits, ignore, false> : option_storage_base<T, use_traits> {
-        using option_storage_base<T, use_traits>::option_storage_base;
+    template<class T, bool ignore>
+    struct option_copy_base<T, ignore, false> : option_storage_base<T> {
+        using option_storage_base<T>::option_storage_base;
 
         option_copy_base() = default;
         option_copy_base(option_copy_base&&) = default;
@@ -1189,16 +1183,16 @@ namespace impl {
         option_copy_base(const option_copy_base&) = delete;
     };
 
-    template<class T, bool use_traits,
+    template<class T,
         bool /*true*/ = std::is_trivially_move_constructible_v<T>,
         bool = std::is_move_constructible_v<T>
     >
-    struct option_move_base : option_copy_base<T, use_traits> {
-        using option_copy_base<T, use_traits>::option_copy_base;
+    struct option_move_base : option_copy_base<T> {
+        using option_copy_base<T>::option_copy_base;
     };
-    template<class T, bool use_traits>
-    struct option_move_base<T, use_traits, false, true> : option_copy_base<T, use_traits> {
-        using option_copy_base<T, use_traits>::option_copy_base;
+    template<class T>
+    struct option_move_base<T, false, true> : option_copy_base<T> {
+        using option_copy_base<T>::option_copy_base;
         using value_type = T;
 
         option_move_base() = default;
@@ -1210,9 +1204,9 @@ namespace impl {
             this->construct_from_option(std::move(other));
         }
     };
-    template<class T, bool use_traits, bool ignore>
-    struct option_move_base<T, use_traits, ignore, false> : option_copy_base<T, use_traits> {
-        using option_copy_base<T, use_traits>::option_copy_base;
+    template<class T, bool ignore>
+    struct option_move_base<T, ignore, false> : option_copy_base<T> {
+        using option_copy_base<T>::option_copy_base;
 
         option_move_base() = default;
         option_move_base(const option_move_base&) = default;
@@ -1222,7 +1216,7 @@ namespace impl {
         option_move_base(option_move_base&&) = delete;
     };
 
-    template<class T, bool use_traits,
+    template<class T,
         bool /*true*/ = (
             std::is_trivially_copy_assignable_v<T> &&
             std::is_trivially_copy_constructible_v<T> &&
@@ -1230,12 +1224,12 @@ namespace impl {
             ) || std::is_reference_v<T>,
         bool = (std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>) || std::is_reference_v<T>
     >
-    struct option_copy_assign_base : option_move_base<T, use_traits> {
-        using option_move_base<T, use_traits>::option_move_base;
+    struct option_copy_assign_base : option_move_base<T> {
+        using option_move_base<T>::option_move_base;
     };
-    template<class T, bool use_traits>
-    struct option_copy_assign_base<T, use_traits, false, true> : option_move_base<T, use_traits> {
-        using option_move_base<T, use_traits>::option_move_base;
+    template<class T>
+    struct option_copy_assign_base<T, false, true> : option_move_base<T> {
+        using option_move_base<T>::option_move_base;
         using value_type = T;
 
         option_copy_assign_base() = default;
@@ -1249,9 +1243,9 @@ namespace impl {
             return *this;
         }
     };
-    template<class T, bool use_traits, bool ignore>
-    struct option_copy_assign_base<T, use_traits, ignore, false> : option_move_base<T, use_traits> {
-        using option_move_base<T, use_traits>::option_move_base;
+    template<class T, bool ignore>
+    struct option_copy_assign_base<T, ignore, false> : option_move_base<T> {
+        using option_move_base<T>::option_move_base;
 
         option_copy_assign_base() = default;
         option_copy_assign_base(const option_copy_assign_base&) = default;
@@ -1261,7 +1255,7 @@ namespace impl {
         option_copy_assign_base& operator=(const option_copy_assign_base&) = delete;
     };
 
-    template<class T, bool use_traits,
+    template<class T,
         bool /*true*/ = (
             std::is_trivially_move_assignable_v<T> &&
             std::is_trivially_move_constructible_v<T> &&
@@ -1269,12 +1263,12 @@ namespace impl {
             ) || std::is_reference_v<T>,
         bool = (std::is_move_constructible_v<T> && std::is_move_assignable_v<T>) || std::is_reference_v<T>
     >
-    struct option_move_assign_base : option_copy_assign_base<T, use_traits> {
-        using option_copy_assign_base<T, use_traits>::option_copy_assign_base;
+    struct option_move_assign_base : option_copy_assign_base<T> {
+        using option_copy_assign_base<T>::option_copy_assign_base;
     };
-    template<class T, bool use_traits>
-    struct option_move_assign_base<T, use_traits, false, true> : option_copy_assign_base<T, use_traits> {
-        using option_copy_assign_base<T, use_traits>::option_copy_assign_base;
+    template<class T>
+    struct option_move_assign_base<T, false, true> : option_copy_assign_base<T> {
+        using option_copy_assign_base<T>::option_copy_assign_base;
         using value_type = T;
 
         option_move_assign_base() = default;
@@ -1288,9 +1282,9 @@ namespace impl {
             return *this;
         }
     };
-    template<class T, bool use_traits, bool ignore>
-    struct option_move_assign_base<T, use_traits, ignore, false> : option_copy_assign_base<T, use_traits> {
-        using option_copy_assign_base<T, use_traits>::option_copy_assign_base;
+    template<class T, bool ignore>
+    struct option_move_assign_base<T, ignore, false> : option_copy_assign_base<T> {
+        using option_copy_assign_base<T>::option_copy_assign_base;
 
         option_move_assign_base() = default;
         option_move_assign_base(const option_move_assign_base&) = default;
@@ -1542,9 +1536,9 @@ namespace impl::option {
 }
 
 template<class T>
-class option : private impl::option_move_assign_base<T, /*use_traits=*/true>
+class option : private impl::option_move_assign_base<T>
 {
-    using base = impl::option_move_assign_base<T, /*use_traits=*/true>;
+    using base = impl::option_move_assign_base<T>;
     using raw_type = std::remove_reference_t<T>;
 
     using natvis_destruct_base = impl::option_destruct_base<T>; // For IntelliSense Natvis visualizations
