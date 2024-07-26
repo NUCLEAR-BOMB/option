@@ -2088,6 +2088,14 @@ constexpr opt::option<To> option_cast(opt::option<From>&& value) {
     return std::move(value).map(impl::static_cast_functor<To, From&&>{});
 }
 
+// Constructs 'opt::option<T>' from dereferenced value of proveded pointer if it is not equal to 'nullptr';
+// otherwise, returns 'opt::none'
+template<class T>
+constexpr opt::option<T> from_nullable(T* const nullable_ptr) {
+    if (nullable_ptr == nullptr) { return {}; }
+    return {*nullable_ptr};
+}
+
 // Returns the `left` `opt::option` if it contains a value, otherwise return `right` value
 // x = left option value
 // y = right value

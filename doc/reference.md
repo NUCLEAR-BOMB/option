@@ -907,6 +907,13 @@ b = opt::option_cast<int>(a);
 std::cout << b.has_value() << '\n'; // false
 ```
 
+### `from_nullable`
+```cpp
+template<class T>
+constexpr option<T> from_nullable(T* const nullable_ptr);
+```
+Constructs `opt::option<T>` from dereferenced value of proveded pointer if it is not equal to 'nullptr'; otherwise, returns empty `opt::option<T>`.
+
 ### `operator|`
 ```cpp
 template<class T>

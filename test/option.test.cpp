@@ -404,5 +404,16 @@ TEST_F(option, replace) {
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(**a, 2);
 }
+TEST_F(option, from_nullable) {
+    int a = 10;
+    int* ptr = &a;
+
+    opt::option<int> b = opt::from_nullable(ptr);
+    EXPECT_EQ(b, 10);
+
+    ptr = nullptr;
+    opt::option<int> c = opt::from_nullable(ptr);
+    EXPECT_FALSE(c.has_value());
+}
 
 }
