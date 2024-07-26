@@ -49,7 +49,9 @@ target_link_libraries(option-test PRIVATE Boost::pfr)
 
 if (USE_SANITIZER)
     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
-    target_add_sanitizer(option-test SANITIZERS Address UndefinedBehavior)
+    target_add_sanitizer(option-test SANITIZERS Address Undefined
+        LIBRARIES GTest::gtest GTest::gtest_main
+    )
 endif()
 
 if (USE_CLANG_TIDY)
@@ -61,5 +63,9 @@ if (USE_CLANG_TIDY)
     )
 endif()
 
-include(GoogleTest)
-gtest_discover_tests(option-test)
+set_target_properties(option-test PROPERTIES
+    VS_DEBUGGER_ENVIRONMENT "UBSAN_OPTIONS=print_stacktrace=1"
+)
+add_custom_target(run-option-test VERBATIM
+    COMMAND "${CMAKE_COMMAND}" -E env "UBSAN_OPTIONS=print_stacktrace=1" "$<TARGET_FILE:option-test>"
+)

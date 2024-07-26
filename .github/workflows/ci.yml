@@ -13,15 +13,22 @@ jobs:
         - { name: Linux Clang,        os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ }
         - { name: Linux GCC,          os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++ }
         - { name: Windows Clang,      os: windows-2022,  flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE -G "Unix Makefiles" }
-        - { name: Windows VS,         os: windows-2022,  flags: -DUSE_SANITIZER=NO }
-        - { name: Windows VS ClangCL, os: windows-2022,  flags: -T ClangCL -DUSE_SANITIZER=NO }
+        - { name: Windows VS,         os: windows-2022,  install-llvm: 'true' }
+        - { name: Windows VS ClangCL, os: windows-2022,  flags: -T ClangCL }
         type:
         - { name: Release, flags: -DCMAKE_BUILD_TYPE=Release }
         - { name: Debug,   flags: -DCMAKE_BUILD_TYPE=Debug }
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4.1.7
 
+    - name: Install LLVM
+      if: matrix.platform.install-llvm == 'true'
+      uses: KyleMayes/install-llvm-action@v2.0.3
+      with:
+        version: "18.1.2"
+        force-url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.2/clang+llvm-18.1.2-x86_64-pc-windows-msvc.tar.xz"
+    
     - name: Configure CMake
       run: cmake -B build ${{ matrix.platform.flags }} ${{ matrix.type.flags }}
 
@@ -29,28 +36,37 @@ jobs:
       run: cmake --build build --config ${{ matrix.type.name }}
 
     - name: Test
-      run: ctest --test-dir build/ --output-on-failure --build-config ${{ matrix.type.name }} -j 2
+      run: cmake --build build --config ${{ matrix.type.name }} --target run-option-test
 
     - name: Build Examples
       run: cmake --build build --target option-examples --config ${{ matrix.type.name }}
 
   clang-tidy:
-    name: Analyze code on ${{ matrix.platform.name }}
+    name: Analyze code on ${{ matrix.platform.name }} [${{ matrix.type.name }}]
     runs-on: ${{ matrix.platform.os }}
 
     strategy:
       fail-fast: false
       matrix:
         platform:
-          - { name: Linux,   os: ubuntu-latest, flags: -G "Unix Makefiles" }
+          - { name: Linux,   os: ubuntu-latest, flags: -G "Ninja" }
+        type:
+          - { name: Debug, flags: -DCMAKE_BUILD_TYPE=Debug }
+          - { name: Release, flags: -DCMAKE_BUILD_TYPE=Release }
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4.1.7
+
+    - name: Install CMake and Ninja
+      uses: lukka/get-cmake@latest
+      with:
+        cmakeVersion: "3.24.0"
+        ninjaVersion: "latest"
 
     - name: Configure CMake
       run: >
         cmake -B build ${{ matrix.platform.flags }} -DUSE_CLANG_TIDY=TRUE
-        -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE -DCMAKE_BUILD_TYPE=Debug
+        -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE ${{ matrix.type.flags }}
 
     - name: Analyze Code
-      run: cmake --build build --target clang-tidy
+      run: cmake --build build --target clang-tidy --config ${{ matrix.type.name }}

@@ -33,7 +33,6 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
 endif()
 
 if (BUILD_TEST)
-    enable_testing()
     add_subdirectory(test)
 endif()
 
