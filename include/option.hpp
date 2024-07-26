@@ -552,30 +552,6 @@ namespace impl {
         }
     };
 
-    // Does not work in release mode for major compilers.
-    // Perhaps because they do not trivially copy "unused" byte that we use
-#if 0
-    // In C++ any type must be at least 1 byte, even the empty object that does not contains any members.
-    // We can use this 1 byte to store 'is empty' flag.
-    // So we using operations like memcpy, memcmp to store and check 'is empty' flag.
-    // Also we should use `unset_empty` to manually reset 'is empty' flag,
-    // because for some reason default constructor do not reset value.
-    template<class T>
-    struct internal_option_traits<T, std::enable_if_t<std::is_empty_v<T>>> {
-        static constexpr std::uint_least8_t empty_value = 0b0101'1111u;
-
-        static bool is_empty(const T& value) noexcept {
-            return impl::bit_equal(value, empty_value);
-        }
-        static void set_empty(T& value) noexcept {
-            impl::bit_copy(value, empty_value);
-        }
-        static void unset_empty(T& value) noexcept {
-            impl::bit_copy(value, std::uint_least8_t(0));
-        }
-    };
-#endif
-
     template<class T>
     struct internal_option_traits<std::unique_ptr<T>, option_traits_strategy::unique_ptr> {
         static constexpr std::uintptr_t empty_value = static_cast<std::uintptr_t>(-1) - 10;
