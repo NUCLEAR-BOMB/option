@@ -627,10 +627,15 @@ namespace impl {
     struct internal_option_traits<std::basic_string_view<CharT, Traits>, option_traits_strategy::string_view> {
         using value_t = std::basic_string_view<CharT, Traits>;
 
-        // Possibly the std::string_view cannot be represented in a state, that it filled with zeros only.
-        // This assumption is made because the std::string_view::data() method cannot return nullptr,
-        // so if the std::string_view stores a pointer to the beginning of the string, it cannot be nullptr.
-        static constexpr std::array<std::byte, sizeof(value_t)> empty_value{}; // filled with zeros
+        // Fill with 0xFF bytes.
+        // This is very unlikely state that std::string_view will ever be.
+        static constexpr auto empty_value = []() {
+            std::array<std::byte, sizeof(value_t)> result{};
+            for (std::byte& x : result) {
+                x = std::byte{0xFF};
+            }
+            return result;
+        }();
 
         static bool is_empty(const value_t& value) noexcept {
             return impl::bit_equal(value, empty_value);
@@ -643,10 +648,15 @@ namespace impl {
     struct internal_option_traits<std::basic_string<CharT, Traits, Allocator>, option_traits_strategy::string> {
         using value_t = std::basic_string<CharT, Traits, Allocator>;
 
-        // Possibly std::string cannot be represented in a state, that it filled with zeros only.
-        // This assumption is made because the std::string::data() method cannot return nullptr,
-        // so if std::string stores a pointer to the beginning of the string, it cannot be nullptr.
-        static constexpr std::array<std::byte, sizeof(value_t)> empty_value{}; // filled with zeros
+        // Fill with 0xFF bytes.
+        // This is very unlikely state that std::string will ever be.
+        static constexpr auto empty_value = []() {
+            std::array<std::byte, sizeof(value_t)> result{};
+            for (std::byte& x : result) {
+                x = std::byte{0xFF};
+            }
+            return result;
+        }();
 
         static bool is_empty(const value_t& value) noexcept {
             return impl::bit_equal(value, empty_value);
