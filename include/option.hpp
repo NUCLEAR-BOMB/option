@@ -1712,7 +1712,7 @@ public:
     // Postcondition: has_value() == false
     constexpr option<T> take() & {
         static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
-        auto tmp = *this;
+        option<T> tmp{std::move(*this)};
         reset();
         return tmp;
     }
