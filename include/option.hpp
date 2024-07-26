@@ -656,33 +656,6 @@ namespace impl {
         }
     };
 
-#if 0
-    template<class T>
-    inline constexpr bool has_padding = std::is_class_v<T> && !std::has_unique_object_representations_v<T>;
-
-    template<class T>
-    struct internal_option_traits<T, std::enable_if_t<has_padding<T>>> {
-
-        static constexpr auto empty_value = [] {
-            std::array<std::byte, sizeof(T)> result{};
-            for (auto& elem : result) {
-                elem = std::byte{1};
-            }
-            return result;
-        };
-
-        static bool is_empty(const T& value) noexcept {
-            return impl::bit_equal(value, empty_value);
-        }
-        static void set_empty(T& value) noexcept {
-            impl::bit_copy(value, empty_value);
-        }
-        static void unset_empty(T& value) noexcept {
-            impl::bit_copy(value, std::array<std::byte, sizeof(T)>{});
-        }
-    };
-#endif
-
     template<class T>
     struct internal_option_traits<T, option_traits_strategy::polymorphic> {
         static_assert(sizeof(T) >= sizeof(std::uintptr_t));
@@ -780,6 +753,9 @@ namespace impl {
         constexpr bool is_empty = std::is_empty_v<T>;
         if constexpr (is_empty && trivially_destructible) {
             return st::empty_object | st::trivially_destructible;
+        }
+        if constexpr (is_empty && !trivially_destructible) {
+            return st::empty_object;
         }
         constexpr bool has_traits = has_option_traits<T>;
 
@@ -1028,7 +1004,55 @@ namespace impl {
             dummy_flag = in_use_value; // force compiler to not optimize away initialization
         }
     };
+    template<class T>
+    struct option_destruct_base<T, base_strategy::empty_object> {
+        union {
+            std::uint_least8_t dummy_flag;
+            T value;
+        };
+        struct traits {
+            static constexpr std::uint_least8_t empty_value = 0b1111'0101;
+        };
+        static constexpr std::uint_least8_t in_use_value = 0;
+        
+        constexpr option_destruct_base() noexcept
+            : dummy_flag(traits::empty_value) {}
 
+        template<class... Args>
+        constexpr option_destruct_base(Args&&... args)
+            : value{std::forward<Args>(args)...} {
+            dummy_flag = in_use_value; // force compiler to not optimize away initialization
+        }
+
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            dummy_flag = in_use_value; // force compiler to not optimize away initialization
+        }
+
+        ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
+            if (has_value()) {
+                value.~T();
+            }
+        }
+
+        constexpr void reset() noexcept {
+            if (dummy_flag != traits::empty_value) {
+                value.~T();
+            }
+            dummy_flag = traits::empty_value;
+        }
+        constexpr bool has_value() const noexcept {
+            return dummy_flag != traits::empty_value;
+        }
+        // Precondition: has_value() == false
+        template<class... Args>
+        constexpr void construct(Args&&... args) {
+            // has_value() == false
+            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            dummy_flag = in_use_value; // force compiler to not optimize away initialization
+        }
+    };
 
     template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
     class option_storage_base : private option_destruct_base<T> {

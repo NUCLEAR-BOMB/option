@@ -48,6 +48,14 @@ struct opt::option_traits<struct2> {
 struct empty_struct {
     bool operator==(const empty_struct) const { return true; }
 };
+struct non_trivially_destructible_empty_struct {
+    non_trivially_destructible_empty_struct() = default;
+    non_trivially_destructible_empty_struct(const non_trivially_destructible_empty_struct&) = default;
+    non_trivially_destructible_empty_struct& operator=(const non_trivially_destructible_empty_struct&) = default;
+
+    ~non_trivially_destructible_empty_struct() {} // NOLINT(modernize-use-equals-default)
+    bool operator==(const non_trivially_destructible_empty_struct&) const { return true; }
+};
 
 namespace {
 
@@ -166,11 +174,16 @@ struct special<empty_struct> : Test {
     const empty_struct A{};
     const empty_struct B{};
 };
+template<>
+struct special<non_trivially_destructible_empty_struct> : Test {
+    const non_trivially_destructible_empty_struct A{};
+    const non_trivially_destructible_empty_struct B{};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
     std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
-    polymorphic, empty_struct
+    polymorphic, empty_struct, non_trivially_destructible_empty_struct
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
