@@ -217,6 +217,11 @@ namespace impl {
     template<class T>
     inline constexpr bool enum_has_exploit_unused_value<T, decltype(T::OPTION_EXPLOIT_UNUSED_VALUE)> = true;
 
+    template<class T, class = void>
+    inline constexpr bool has_sentinel_member = false;
+    template<class T>
+    inline constexpr bool has_sentinel_member<T, decltype(std::declval<T&>().OPTION_SENTINEL, void())> = true;
+
     template<class T, template<class...> class Template>
     inline constexpr bool is_specialization = false;
     template<template<class...> class Template, class... Ts>
@@ -291,6 +296,7 @@ namespace impl {
         string, // option<std::basic_string<...>>
         vector, // option<std::vector<...>>
         polymorphic, // option<T>, T = polymorphic
+        sentinel_member, // option<T>, T = type with sentinel member
 #endif // OPTION_USE_BUILTIN_TRAITS
     };
 
@@ -322,6 +328,9 @@ namespace impl {
                 return st::float32;
             }
             return st::none;
+        }
+        if constexpr (has_sentinel_member<T>) {
+            return st::sentinel_member;
         }
         if constexpr (is_specialization<T, std::tuple>) {
             return tuple_has_find_option_traits<T> ? st::tuple : st::none;
@@ -486,6 +495,18 @@ namespace impl {
         }
         static void set_empty(T& value) noexcept {
             impl::bit_copy(value, empty_value);
+        }
+    };
+
+    template<class T>
+    struct internal_option_traits<T, option_traits_strategy::sentinel_member> {
+        // .OPTION_SENTINEL must be always zero initialized
+
+        static constexpr bool is_empty(const T& value) noexcept {
+            return value.OPTION_SENTINEL != 0;
+        }
+        static constexpr void set_empty(T& value) noexcept {
+            value.OPTION_SENTINEL = 1;
         }
     };
 

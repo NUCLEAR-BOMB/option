@@ -57,6 +57,14 @@ struct non_trivially_destructible_empty_struct {
     bool operator==(const non_trivially_destructible_empty_struct&) const { return true; }
 };
 
+struct struct_with_sentinel {
+    int data1;
+    unsigned int data2;
+    char OPTION_SENTINEL{};
+
+    bool operator==(const struct_with_sentinel& a) const { return data1 == a.data1 && data2 == a.data2; }
+};
+
 namespace {
 
 using ::testing::Test;
@@ -179,11 +187,16 @@ struct special<non_trivially_destructible_empty_struct> : Test {
     const non_trivially_destructible_empty_struct A{};
     const non_trivially_destructible_empty_struct B{};
 };
+template<>
+struct special<struct_with_sentinel> : Test {
+    const struct_with_sentinel A{1, 2};
+    const struct_with_sentinel B{3, 4};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
     std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
-    polymorphic, empty_struct, non_trivially_destructible_empty_struct
+    polymorphic, empty_struct, non_trivially_destructible_empty_struct, struct_with_sentinel
 >;
 TYPED_TEST_SUITE(special, special_types,);
 

@@ -7,6 +7,7 @@
 - [Aggregates](#aggregates)
 - [Polymorphic](#polymorphic)
 - [Empty object](#empty-object)
+- [Sentinel member](#sentinel-member)
 - [`bool`](#bool)
 - [`opt::option<bool>`](#optoptionbool)
 - [`std::tuple`](#stdtuple)
@@ -23,8 +24,6 @@
 |------|-------|
 | 64-bit pointer | `0x7FFFFFFFFFFFFFFF` |
 | 32-bit pointer | `0xFFFFFFF3` |
-| 16-bit pointer | `0xFFFF` |
-| 8-bit pointer | `0xFF` |
 | 32-bit floating point signaling NaN | `7fBF69AF` |
 | 32-bit floating point quiet NaN | `7FC3EFB5` |
 | 64-bit floating point signaling NaN | `7FF6C79F55B0898F` | 
@@ -47,7 +46,6 @@ Unlike `std::optional`, allows to store reference types.
 Stores a (probably) unused addresses as the sentinel value.
 - On x64 instruction set (`sizeof(void*) == 8`) uses a [noncanonical address][] to indicate an empty state.
 - On x32 instruction set (`sizeof(void*) == 4`) uses a slightly decreased 32-bit unsigned integer max to avoid Windows pseudo-handles collision.
-- On 16-bit and 8-bit instruction set (`sizeof(void*) == 2` or `sizeof(void*) == 1`) uses a 16-bit or 8-bit unsigned integer max.
 
 [noncanonical address]: https://read.seas.harvard.edu/cs161/2023/doc/memory-layout/
 
@@ -75,6 +73,13 @@ Assumes that the first `sizeof(void*)` bytes (sizeof pointer) are VMT, and store
 The C++ standard does not allow objects of size 0.
 We're using this property to store sentinel value in that unused space. \
 If an object doesn't have any members, we can freely manipulate its underlying representation, since its methods can't possible read/modify its state.
+
+### Sentinel member
+If any object contains non-static member with name `OPTION_SENTINEL` (e.g. `some_object.OPTION_SENTINEL`), it will be used to store 'has_value' flag. \
+The `OPTION_SENTINEL` member must always be zero-initialized, as it is will be used as flag variable. \
+The type of the `OPTION_SENTINEL` member should be an integer.
+> [!TIP]
+> You can take advantage of the object padding with this member.
 
 ### `bool`
 Stores the sentinel value in a second unused bit. \
