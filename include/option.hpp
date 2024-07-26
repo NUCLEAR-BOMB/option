@@ -786,14 +786,46 @@ namespace impl {
     template<class T, class... Args>
     inline constexpr bool is_direct_list_initializable = is_direct_list_initializable_impl<T, void, Args...>::value;
 
+    enum class base_strategy {
+        has_traits             = 1,
+        trivially_destructible = 2,
+        empty_object           = 4,
+    };
+
+    constexpr base_strategy operator|(const base_strategy left, const base_strategy right) {
+        using type = std::underlying_type_t<base_strategy>;
+        return base_strategy(type(left) | type(right));
+    }
+
+    template<class T>
+    constexpr base_strategy detemine_base_strategy() noexcept {
+        constexpr bool has_traits = has_option_traits<T>;
+        constexpr bool trivially_destructible = std::is_trivially_destructible_v<T>;
+        // constexpr bool is_empty = std::is_empty_v<T>;
+        using st = base_strategy;
+
+        if constexpr (has_traits && trivially_destructible) {
+            return st::has_traits | st::trivially_destructible;
+        }
+        if constexpr (has_traits && !trivially_destructible) {
+            return st::has_traits;
+        }
+        if constexpr (trivially_destructible) {
+            return st::trivially_destructible;
+        }
+        // if constexpr (is_empty) {
+        //     return st::empty_object;
+        // }
+        return st{};
+    }
+
     template<class T,
-        bool store_flag = !has_option_traits<T>,
-        bool is_trivially_destructible = std::is_trivially_destructible_v<T>
+        base_strategy strategy = detemine_base_strategy<T>()
     >
     struct option_destruct_base;
 
     template<class T>
-    struct option_destruct_base<T, /*store_flag=*/true, /*is_trivially_destructible=*/true> {
+    struct option_destruct_base<T, base_strategy::trivially_destructible> {
         union {
             nontrivial_dummy_t dummy;
             T value;
@@ -828,7 +860,7 @@ namespace impl {
         }
     };
     template<class T>
-    struct option_destruct_base<T, /*store_flag=*/true, /*is_trivially_destructible=*/false> {
+    struct option_destruct_base<T, base_strategy{}> {
         union {
             nontrivial_dummy_t dummy;
             T value;
@@ -872,7 +904,7 @@ namespace impl {
         }
     };
     template<class T>
-    struct option_destruct_base<T, /*store_flag=*/false, /*is_trivially_destructible=*/true> {
+    struct option_destruct_base<T, base_strategy::has_traits | base_strategy::trivially_destructible> {
         union {
             nontrivial_dummy_t dummy;
             T value;
@@ -920,7 +952,7 @@ namespace impl {
         }
     };
     template<class T>
-    struct option_destruct_base<T, /*store_flag=*/false, /*is_trivially_destructible=*/false> {
+    struct option_destruct_base<T, base_strategy::has_traits> {
         union {
             nontrivial_dummy_t dummy;
             T value;
