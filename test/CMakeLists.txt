@@ -2,7 +2,13 @@
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
 
 add_executable(option-test
-    "option.test.cpp" "operators.test.cpp" "special.test.cpp" "utils.hpp" "constexpr.test.cpp"
+    "option.test.cpp"
+    "operators.test.cpp"
+    "special.test.cpp"
+    "constexpr.test.cpp"
+    "lifetime.test.cpp"
+
+    "utils.hpp"
 )
 target_add_warnings(option-test)
 target_link_libraries(option-test PRIVATE option)
