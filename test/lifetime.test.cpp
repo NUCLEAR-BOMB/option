@@ -9,13 +9,13 @@ namespace {
 struct lifetime : ::testing::Test {};
 
 namespace counters {
-    static inline std::uint64_t default_ctor = 0;
-    static inline std::uint64_t value_ctor = 0;
-    static inline std::uint64_t destructor = 0;
-    static inline std::uint64_t copy_ctor = 0;
-    static inline std::uint64_t move_ctor = 0;
-    static inline std::uint64_t copy_oper = 0;
-    static inline std::uint64_t move_oper = 0;
+    inline std::uint64_t default_ctor = 0;
+    inline std::uint64_t value_ctor = 0;
+    inline std::uint64_t destructor = 0;
+    inline std::uint64_t copy_ctor = 0;
+    inline std::uint64_t move_ctor = 0;
+    inline std::uint64_t copy_oper = 0;
+    inline std::uint64_t move_oper = 0;
 
     void reset() {
         default_ctor = 0;
@@ -29,13 +29,13 @@ namespace counters {
 }
 
 namespace expected_counters {
-    static inline std::uint64_t default_ctor = 0;
-    static inline std::uint64_t value_ctor = 0;
-    static inline std::uint64_t destructor = 0;
-    static inline std::uint64_t copy_ctor = 0;
-    static inline std::uint64_t move_ctor = 0;
-    static inline std::uint64_t copy_oper = 0;
-    static inline std::uint64_t move_oper = 0;
+    inline std::uint64_t default_ctor = 0;
+    inline std::uint64_t value_ctor = 0;
+    inline std::uint64_t destructor = 0;
+    inline std::uint64_t copy_ctor = 0;
+    inline std::uint64_t move_ctor = 0;
+    inline std::uint64_t copy_oper = 0;
+    inline std::uint64_t move_oper = 0;
 
     void test() {
         EXPECT_EQ(counters::default_ctor, default_ctor);
