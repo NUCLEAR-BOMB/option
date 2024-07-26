@@ -1257,8 +1257,6 @@ namespace impl {
 
     template<class T>
     inline constexpr bool is_cv_bool = std::is_same_v<std::remove_cv_t<T>, bool>;
-
-    struct secret_type {};
 }
 
 class bad_access : public std::exception {
