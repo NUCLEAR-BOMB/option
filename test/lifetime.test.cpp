@@ -58,6 +58,7 @@ namespace expected_counters {
 }
 
 struct lifetime_tester {
+    // NOLINTBEGIN(cert-oop54-cpp, performance-noexcept-move-constructor)
     lifetime_tester() { counters::default_ctor += 1; }
     lifetime_tester(int) { counters::value_ctor += 1; }
     lifetime_tester(const lifetime_tester&) { counters::copy_ctor += 1; }
@@ -73,6 +74,7 @@ struct lifetime_tester {
         counters::move_oper += 1;
         return *this;
     }
+    // NOLINTEND(cert-oop54-cpp, performance-noexcept-move-constructor)
 };
 
 TEST_F(lifetime, default_ctor) {
