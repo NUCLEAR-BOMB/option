@@ -1031,13 +1031,13 @@ namespace impl {
         template<class... Args>
         constexpr option_destruct_base(Args&&... args)
             : value{std::forward<Args>(args)...} {
-            dummy_flag = in_use_value;
+            dummy_flag = in_use_value; // force compiler to not optimize away initialization
         }
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
-            dummy_flag = in_use_value;
+            dummy_flag = in_use_value; // force compiler to not optimize away initialization
         }
 
         constexpr void reset() noexcept {
@@ -1051,7 +1051,7 @@ namespace impl {
         constexpr void construct(Args&&... args) {
             // has_value() == false
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            dummy_flag = in_use_value;
+            dummy_flag = in_use_value; // force compiler to not optimize away initialization
         }
     };
 
