@@ -336,9 +336,7 @@ namespace impl {
             return has_option_traits<typename T::value_type> && array_size > 0 ? st::array : st::none;
         }
         if constexpr (is_specialization<T, std::unique_ptr>) {
-            using deleter = typename T::deleter_type;
-            using element = typename T::element_type;
-            return std::is_same_v<deleter, std::default_delete<element>> ? st::unique_ptr : st::none;
+            return st::unique_ptr;
         }
         if constexpr (is_specialization<T, std::reference_wrapper>) {
             return st::reference_wrapper;
