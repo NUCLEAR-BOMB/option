@@ -45,6 +45,10 @@ struct opt::option_traits<struct2> {
     }
 };
 
+struct empty_struct {
+    bool operator==(const empty_struct) const { return true; }
+};
+
 namespace {
 
 using ::testing::Test;
@@ -157,11 +161,16 @@ struct special<polymorphic> : Test {
     const polymorphic A{1, 2};
     const polymorphic B{3, 4};
 };
+template<>
+struct special<empty_struct> : Test {
+    const empty_struct A{};
+    const empty_struct B{};
+};
 
 using special_types = ::testing::Types<
     bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
     std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
-    polymorphic
+    polymorphic, empty_struct
 >;
 TYPED_TEST_SUITE(special, special_types,);
 

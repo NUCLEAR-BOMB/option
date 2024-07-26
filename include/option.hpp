@@ -735,6 +735,7 @@ namespace impl {
     template<class T>
     using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
 
+    // See https://github.com/microsoft/STL/pull/878#issuecomment-639696118
     struct nontrivial_dummy_t {
         constexpr nontrivial_dummy_t() noexcept {}
     };
@@ -799,10 +800,14 @@ namespace impl {
 
     template<class T>
     constexpr base_strategy detemine_base_strategy() noexcept {
-        constexpr bool has_traits = has_option_traits<T>;
-        constexpr bool trivially_destructible = std::is_trivially_destructible_v<T>;
-        // constexpr bool is_empty = std::is_empty_v<T>;
         using st = base_strategy;
+
+        constexpr bool trivially_destructible = std::is_trivially_destructible_v<T>;
+        constexpr bool is_empty = std::is_empty_v<T>;
+        if constexpr (is_empty && trivially_destructible) {
+            return st::empty_object | st::trivially_destructible;
+        }
+        constexpr bool has_traits = has_option_traits<T>;
 
         if constexpr (has_traits && trivially_destructible) {
             return st::has_traits | st::trivially_destructible;
@@ -813,9 +818,6 @@ namespace impl {
         if constexpr (trivially_destructible) {
             return st::trivially_destructible;
         }
-        // if constexpr (is_empty) {
-        //     return st::empty_object;
-        // }
         return st{};
     }
 
@@ -1012,6 +1014,47 @@ namespace impl {
             // has_value() == true
         }
     };
+    template<class T>
+    struct option_destruct_base<T, base_strategy::empty_object | base_strategy::trivially_destructible> {
+        union {
+            std::uint_least8_t dummy_flag;
+            T value;
+        };
+        struct traits {
+            static constexpr std::uint_least8_t empty_value = 0b1111'0101;
+        };
+        static constexpr std::uint_least8_t in_use_value = 0;
+        
+        constexpr option_destruct_base() noexcept
+            : dummy_flag(traits::empty_value) {}
+
+        template<class... Args>
+        constexpr option_destruct_base(Args&&... args)
+            : value{std::forward<Args>(args)...} {
+            dummy_flag = in_use_value;
+        }
+
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            dummy_flag = in_use_value;
+        }
+
+        constexpr void reset() noexcept {
+            dummy_flag = traits::empty_value;
+        }
+        constexpr bool has_value() const noexcept {
+            return dummy_flag != traits::empty_value;
+        }
+        // Precondition: has_value() == false
+        template<class... Args>
+        constexpr void construct(Args&&... args) {
+            // has_value() == false
+            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            dummy_flag = in_use_value;
+        }
+    };
+
 
     template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
     class option_storage_base : private option_destruct_base<T> {
