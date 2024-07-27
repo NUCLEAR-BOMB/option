@@ -1285,10 +1285,11 @@ The exception type of an object to be thrown by [`opt::option<T>::value`, `opt::
 template<class T, class = void>
 struct option_traits;
 ```
-A template class type used for decreasing the size of `opt::option` for type `T`. \
-You can also use a metafunction like `std::enable_if` in second template argument to leverage SFINAE. This allows to utilize `opt::option_traits` for more flexible specializations.
+A template class type used to remove size overhead of `opt::option` for type `T`. \
+You can also use a metafunction like `std::enable_if` in second template argument to apply SFINAE. This allows to utilize `opt::option_traits` for more flexible specializations.
 
-The `opt::option` uses `opt::option_traits` to not store separate `bool` variable to indicate an empty state, but instead use the contained value itself to store that flag. \
+The `opt::option` uses `opt::option_traits` to not store separate `bool` variable to indicate an empty state, but instead use the contained value itself to store that flag.
+
 See [builtin `opt::option_traits` specializations](./sentinel.md).
 
 You can declare without defining `opt::option_traits` to disable using the builtin `opt::option_traits` specializations if something goes wrong.

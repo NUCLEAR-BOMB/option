@@ -12,6 +12,7 @@ See [`opt::option_traits`][option-traits] for more detailed info.
 - [SFINAE](#sfinae)
 - [Disabling specializations](#disabling-specializations)
 - [Accessing empty state](#accessing-empty-state)
+- [Builtin specialization](#builtin-specialization)
 
 ## Creaing new specialization
 
@@ -193,6 +194,10 @@ int main() {
     x.get_unchecked().a = 101;
 }
 ```
+
+## Builtin specialization
+
+See [buildin specializations](./sentinel.md)
 
 [^1]: The `opt::option` only adds `bool` member, but because of alignment requirements it's size can't be equal to 5. See [object alignment][object-alignment].
 
