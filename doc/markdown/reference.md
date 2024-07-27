@@ -35,6 +35,7 @@
     - [`zip`](#zip)
     - [`zip_with`](#zip_with)
     - [`option_cast`](#option_cast)
+    - [`from_nullable`](#from_nullable)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
