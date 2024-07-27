@@ -197,9 +197,15 @@ int main() {
 
 ## Builtin specialization
 
-See [buildin specializations](./sentinel.md)
+The library provides builtin specializations to internal option traits[^2].
+
+You can disable individual ones by declaring but not defining it, or you can disable them entirely by setting macro [`OPTION_USE_BUILTIN_TRAITS`](./macros.md#option_use_builtin_traits) to `false`.
+
+See [buildin specializations](./sentinel.md) for a list of them.
 
 [^1]: The `opt::option` only adds `bool` member, but because of alignment requirements it's size can't be equal to 5. See [object alignment][object-alignment].
+
+[^2]: This allows user to disable specific ones with specializations.
 
 [enable-if]: https://en.cppreference.com/w/cpp/types/enable_if
 [sfinae]: https://en.cppreference.com/w/cpp/language/sfinae
