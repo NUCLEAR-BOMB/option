@@ -27,8 +27,8 @@ endif()
 
 if (CMAKE_GENERATOR MATCHES "Visual Studio")
     target_sources(option INTERFACE
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/option_visualization.natvis>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/option_visualization.natvis>"
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natvis>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/debugger/option.natvis>"
     )
 endif()
 
