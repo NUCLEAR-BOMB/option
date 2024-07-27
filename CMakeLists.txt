@@ -8,6 +8,7 @@ option(USE_SANITIZER "Enable sanitizers for test target" TRUE)
 option(USE_CLANG_TIDY "Enable clang-tidy for test target" FALSE)
 option(INSTALL_OPTION "Enable --install for 'option' project" FALSE)
 option(USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
+option(USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" TRUE)
 
 add_library(option INTERFACE "include/option.hpp")
 
@@ -30,6 +31,12 @@ if (USE_NATVIS)
     target_sources(option INTERFACE
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natvis>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/debugger/option.natvis>"
+    )
+endif()
+if (USE_NATSTEPFILTER)
+    target_sources(option INTERFACE
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/debugger/option.natstepfilter>"
     )
 endif()
 

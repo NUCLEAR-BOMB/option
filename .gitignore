@@ -4,7 +4,6 @@
 !.editorconfig
 !.gitattributes
 !CMakeLists.txt
-!option_visualization.natvis
 !.clang-tidy
 !.github/
 !include/
@@ -12,3 +11,4 @@
 !cmake/
 !examples/
 !doc/
+!debugger/
