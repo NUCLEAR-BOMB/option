@@ -26,16 +26,16 @@ struct opt::option_traits<my_type> {
 ```
 Next, you need to implement the `is_empty` and `set_empty` static methods inside created `opt::option_traits` specialization.
 
-The `is_empty` static method is called to check if `opt::option` contains a value.
+> The `is_empty` static method is called to check if `opt::option` contains a value.
 
-The `set_empty` static method is called to set the contained value to an empty state, e.g. in default constructor, when contained value is destroyed.
+> The `set_empty` static method is called to set the contained value to an empty state, e.g. in default constructor, when contained value is destroyed.
 
 `is_empty` and `set_empty` signatures:
 ```cpp
 static *constexpr bool is_empty(const T&) *noexcept;
 static *constexpr void set_empty(T&) *noexcept;
 ```
-\* - optional specifiers \
+> \* - optional specifiers \
 `T` - the type that corresponds to the specialization `opt::option_traits<T>` (could be a template parameter).
 
 `opt::option_traits` specialization with methods.
@@ -99,7 +99,7 @@ The debugger understands that by bitwise comparing contained value and `empty_va
 ```cpp
 static constexpr *type empty_value = ...;
 ```
-\*type - any type with the same size as `T`.
+> \*type - any type with the same size as `T`.
 
 ```cpp
 struct my_type { int* a; };
