@@ -470,7 +470,7 @@ constexpr std::remove_reference_t<T>&& get() && noexcept /*lifetimebound*/;
 constexpr const std::remove_reference_t<T>&& get() const&& noexcept /*lifetimebound*/;
 ```
 Access the contained value. \
-Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value. Same as `operator*`.
+Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value. Same as `operator*`.
 - *Precondition:* `has_value() == true`
 
 ```cpp
@@ -478,7 +478,7 @@ constexpr std::add_pointer_t<const T> operator->() const noexcept /*lifetimeboun
 constexpr std::add_pointer_t<T> operator->() noexcept /*lifetimebound*/;
 ```
 Access the contained value members. \ 
-Returns a pointer to the contained value (`std::addressof(get())`) of the `opt::option`. Calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value.
+Returns a pointer to the contained value (`std::addressof(get())`) of the `opt::option`. Calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value.
 - *Precondition:* `has_value() == true`
 
 ```cpp
@@ -488,7 +488,7 @@ constexpr std::remove_reference_t<T>&& operator*() && noexcept /*lifetimebound*/
 constexpr const std::remove_reference_t<T>&& operator*() const&& /*lifetimebound*/;
 ```
 Access the contained value. \
-Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value. Same as `get()`.
+Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value. Same as `get()`.
 - *Precondition:* `has_value() == true`
 
 ### `get_unchecked`
@@ -499,7 +499,7 @@ constexpr std::remove_reference_t<T>&& get_unchecked() && noexcept;
 constexpr const std::remove_reference_t<T>&& get_unchecked() const&& noexcept;
 ```
 Access the contained value, without checking for it existence. \
-Returns a reference to the contained value. *Does not* calls the [`OPTION_VERIFY`](./macros.md#option_verify) macro if the `opt::option` does not contain a value. Note that this method does not have the `lifetimebound` attribute. Considered for accessing type, that specified in user defined `opt::option_traits`.
+Returns a reference to the contained value. *Does not* calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value. Note that this method does not have the `lifetimebound` attribute. Considered for accessing type, that specified in user defined `opt::option_traits`.
 
 > [!CAUTION]
 > Using this method on an empty `opt::option` will cause [Undefined Behavior][UB].
@@ -1295,22 +1295,24 @@ You can declare without defining `opt::option_traits` to disable using the built
 To define a custom specialization for `opt::option_traits`, user must specify the following 2 required static methods and 1 optional static method.
 
 ```cpp
-static /*constexpr*/ bool is_empty(const T& value) noexcept;
+static *constexpr bool is_empty(const T& value) *noexcept;
 ```
-Required. The `opt::option` uses the `is_empty` function to determine if the contained value is empty. Can be optionally marked `constexpr`.
+Required. The `opt::option` uses the `is_empty` function to determine if the contained value is empty.
 
 > [!IMPORTANT]  
-> After the contained value is constructed, the `is_empty` function must return `false`; otherwise, the `OPTION_VERIFY` macro is called.
+> After the contained value is constructed, the `is_empty` function must return `false` (checked with [`OPTION_VERIFY`][option-verify] macro).
 
 ```cpp
-static /*constexpr*/ void set_empty(T& value) noexcept;
+static *constexpr void set_empty(T& value) *noexcept;
 ```
-Required. The `opt::option` uses the `set_empty` function to set the contained value to an empty state. Called in default constructor and in [`reset`](#reset) method *after* the contained value is destroyed. Can be optionally marked `constexpr`.
+Required. The `opt::option` uses the `set_empty` function to set the contained value to an empty state. Called in default constructor and in [`reset`](#reset) method *after* the contained value is destroyed.
 
 ```cpp
-static /*constexpr*/ void unset_empty() noexcept;
+static *constexpr void unset_empty() *noexcept;
 ```
-Optional. The `opt::option` uses the `unset_empty` function to unset the contained value empty state. Called *before* the contained value is constructed, but not constructed in `opt::option` constructors. It is always called after the `set_empty` function. If user does not define the `unset_empty` function, it will be replaced with function that has no effect. Can be optionally marked `constexpr`.
+Optional. The `opt::option` uses the `unset_empty` function to unset the contained value empty state. Called *before* the contained value is constructed, but not constructed in `opt::option` constructors. It is always called after the `set_empty` function. If user does not define the `unset_empty` function, it will be replaced with function that has no effect.
+
+\* - optional specifiers
 
 If the above requirements are not met, the program will be ill-formed.
 
@@ -1373,3 +1375,4 @@ static_assert(std::is_same_v<decltype(b), opt::option<opt::option<opt::option<fl
 ```
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub
+[option-verify]: ./macros.md#option_verify
