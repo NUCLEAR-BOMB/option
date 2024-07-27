@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <Type Name="opt::option&lt;bool&gt;">
-        <DisplayString Condition="natvis_destruct_base::flag::empty_value &amp; base::value">[none]</DisplayString>
+        <DisplayString Condition="(natvis_destruct_base::traits::empty_value) &amp; (*(const uint_least8_t*)&amp;(natvis_destruct_base::value))">[none]</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
             <Item Name="value">base::value</Item>
@@ -11,14 +11,21 @@
         <Intrinsic Name="is_type_reference" Expression="
             &quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '&amp;'
         "></Intrinsic>
+        <Intrinsic Name="is_bitwise_empty" Optional="true" Expression="
+            strncmp((const char*)&amp;(natvis_destruct_base::traits::empty_value), (const char*)&amp;(natvis_destruct_base::value), sizeof($T1)) == 0
+         "></Intrinsic>
+        <Intrinsic Name="has_value" Optional="true" Expression="natvis_destruct_base::has_value_flag"></Intrinsic>
         
-        <DisplayString Condition="!base::has_value_flag" Optional="true">[none]</DisplayString>
+        <DisplayString Condition="!has_value()" Optional="true">[none]</DisplayString>
         <DisplayString Condition="is_type_reference() &amp;&amp; base::value == nullptr" Optional="true">[none]</DisplayString>
-        <DisplayString Condition="natvis_destruct_base::traits::empty_value == base::value" Optional="true">[none]</DisplayString>
+        <DisplayString Condition="is_bitwise_empty()" Optional="true">[none]</DisplayString>
         <DisplayString Condition="is_type_reference()" Optional="true">{*base::value}</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
             <ExpandedItem>base::value</ExpandedItem>
         </Expand>
+    </Type>
+    <Type Name="opt::none_t">
+        <DisplayString>none</DisplayString>
     </Type>
 </AutoVisualizer>
