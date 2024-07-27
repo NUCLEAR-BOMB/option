@@ -12,7 +12,7 @@
             &quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '&amp;'
         "></Intrinsic>
         <Intrinsic Name="is_bitwise_empty" Optional="true" Expression="
-            strncmp((const char*)&amp;(natvis_destruct_base::traits::empty_value), (const char*)&amp;(natvis_destruct_base::value), sizeof($T1)) == 0
+            memcmp(&amp;(natvis_destruct_base::traits::empty_value), &amp;(natvis_destruct_base::value), sizeof($T1)) == 0
          "></Intrinsic>
         <Intrinsic Name="has_value" Optional="true" Expression="natvis_destruct_base::has_value_flag"></Intrinsic>
         
