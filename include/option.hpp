@@ -60,7 +60,7 @@
                 #define OPTION_HAS_BOOST_PFR
             #endif
         #else // !__has_include(OPTION_BOOST_PFR_FILE)
-            #error "Cannot found the 'boost.pfr' library. Define the 'OPTION_BOOST_PFR_FILE' macro to specify a custom path to the 'boost.pfr' library header"
+            #error "The 'boost.pfr' library was not found. Define the 'OPTION_BOOST_PFR_FILE' macro to specify a custom path to the 'boost.pfr' library header"
         #endif
     #endif
 #else // !defined(OPTION_USE_BOOST_PFR)
@@ -76,36 +76,59 @@
     #define OPTION_USE_BUILTIN_TRAITS 1
 #endif
 
+#ifndef OPTION_LIBASSERT_FILE
+    #define OPTION_LIBASSERT_FILE <libassert/assert.hpp>
+#endif
+
+#ifdef OPTION_USE_LIBASSERT
+    #if OPTION_USE_LIBASSERT
+        #if __has_include(OPTION_LIBASSERT_FILE)
+            #include OPTION_LIBASSERT_FILE
+            #define OPTION_HAS_LIBASSERT
+        #else
+            #error "The 'libassert' library was not found. Define the 'OPTION_LIBASSERT_FILE' macro to specify a custom path to the 'libassert' library header"
+        #endif 
+    #endif
+#else
+    #if __has_include(OPTION_LIBASSERT_FILE)
+        #include OPTION_LIBASSERT_FILE
+        #define OPTION_HAS_LIBASSERT
+    #endif
+#endif
+
 // Macro `OPTION_VERIFY` is used in `opt::option<T>::get`, `opt::option<T>::operator*`.
 // You can also redefine `OPTION_VERIFY` to specify custom behavior when something goes unexpected.
 #ifndef OPTION_VERIFY
-    #ifdef __clang__
-        #define OPTION_DEBUG_BREAK __builtin_debugtrap()
-    #elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
-        #define OPTION_DEBUG_BREAK __debugbreak()
-    #elif defined(__GNUC__) || defined(__GNUG__)
-        #define OPTION_DEBUG_BREAK __builtin_trap()
+    #ifdef OPTION_HAS_LIBASSERT
+        #define OPTION_VERIFY(expression, message) LIBASSERT_ASSUME(expression, message)
     #else
-        #include <csignal>
-        #if defined(SIGTRAP)
-            #define OPTION_DEBUG_BREAK ::std::raise(SIGTRAP)
+        #ifdef __clang__
+            #define OPTION_DEBUG_BREAK __builtin_debugtrap()
+        #elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+            #define OPTION_DEBUG_BREAK __debugbreak()
+        #elif defined(__GNUC__) || defined(__GNUG__)
+            #define OPTION_DEBUG_BREAK __builtin_trap()
         #else
-            #define OPTION_DEBUG_BREAK ::std::raise(SIGABRT)
+            #include <csignal>
+            #if defined(SIGTRAP)
+                #define OPTION_DEBUG_BREAK ::std::raise(SIGTRAP)
+            #else
+                #define OPTION_DEBUG_BREAK ::std::raise(SIGABRT)
+            #endif
         #endif
-    #endif
-
-    #ifndef NDEBUG
-        // Print an error message and call a debug break if the expression is evaluated as false
-        #include <cstdio>
-        #define OPTION_VERIFY(expression, message) \
-            ((expression) ? (void)0 : ( \
-                (void)std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
-                (void)OPTION_DEBUG_BREAK) \
-            )
-    #else
-        // Disable assertation on 'Release' build config
-        #define OPTION_VERIFY(expression, message) \
-            if (expression) {} else { OPTION_UNREACHABLE(); } ((void)0)
+        #ifndef NDEBUG
+            // Print an error message and call a debug break if the expression is evaluated as false
+            #include <cstdio>
+            #define OPTION_VERIFY(expression, message) \
+                ((expression) ? (void)0 : ( \
+                    (void)std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
+                    (void)OPTION_DEBUG_BREAK) \
+                )
+        #else
+            // Disable assertation on 'Release' build config
+            #define OPTION_VERIFY(expression, message) \
+                if (expression) {} else { OPTION_UNREACHABLE(); } ((void)0)
+        #endif
     #endif
 #endif
 

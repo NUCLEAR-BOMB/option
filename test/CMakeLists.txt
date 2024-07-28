@@ -12,13 +12,18 @@ add_executable(option-test
 )
 target_add_warnings(option-test)
 target_link_libraries(option-test PRIVATE option)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	target_compile_options(option-test PRIVATE
+		/Zc:preprocessor /Zc:gotoScope /Zc:__cplusplus
+	)
+endif()
 
 include(FetchContent)
 FetchContent_Declare(
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
     URL_HASH SHA256=ffa17fbc5953900994e2deec164bb8949879ea09b411e07f215bfbb1f87f4632
-    FIND_PACKAGE_ARGS NAMES GTest
+    FIND_PACKAGE_ARGS 1.13.0 NAMES GTest
 )
 set(BUILD_GMOCK FALSE)
 set(INSTALL_GTEST FALSE)
@@ -48,15 +53,37 @@ FetchContent_Declare(
     boost_pfr
     URL https://github.com/boostorg/pfr/archive/refs/tags/2.2.0.zip
     URL_HASH SHA256=becb093245149209b0442e88737495c99114c639dc2121d0e4c08157c034ed03
+    FIND_PACKAGE_ARGS 2.2.0
 )
 FetchContent_MakeAvailable(boost_pfr)
 set_target_properties(boost_pfr PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:boost_pfr,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(option-test PRIVATE Boost::pfr)
 
+if (USE_LIBASSERT)
+    FetchContent_Declare(
+        libassert
+        URL https://github.com/jeremy-rifkin/libassert/archive/refs/tags/v2.1.0.tar.gz
+        URL_HASH SHA256=e42405b49cde017c44c78aacac35c6e03564532838709031e73d10ab71f5363d
+        FIND_PACKAGE_ARGS 2.1.0
+    )
+    FetchContent_MakeAvailable(libassert)
+    # set_target_properties(libassert-lib PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:libassert-lib,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_link_libraries(option-test PRIVATE libassert::assert)
+    if (CMAKE_SYSTEM_NAME MATCHES "Windows")
+        add_custom_command(TARGET option-test POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy_if_different $<TARGET_FILE:libassert::assert> $<TARGET_FILE_DIR:option-test>
+        )
+    endif()
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        set_target_properties(libassert-lib cpptrace-lib PROPERTIES COMPILE_OPTIONS "-w")
+    endif()
+    set(libassert_target libassert::assert cpptrace::cpptrace)
+endif()
+
 if (USE_SANITIZER)
     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
     target_add_sanitizer(option-test SANITIZERS Address Undefined
-        LIBRARIES GTest::gtest GTest::gtest_main
+        LIBRARIES GTest::gtest GTest::gtest_main ${libassert_target}
     )
 endif()
 

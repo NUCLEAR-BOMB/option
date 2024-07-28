@@ -10,6 +10,9 @@
 - [**boost.pfr** library related](#boostpfr-library-related) ([**boost.pfr**][boost-pfr])
     - [OPTION_BOOST_PFR_FILE](#option_boost_pfr_file)
     - [OPTION_USE_BOOST_PFR](#option_use_boost_pfr)
+- [**libassert** library related](#libassert-library-related)
+    - [OPTION_LIBASSERT_FILE](#option_libassert_file)
+    - [OPTION_USE_LIBASSERT](#option_use_libassert)
 
 ### OPTION_USE_QUIET_NAN
 *expects:* `boolean`, *default:* `false`
@@ -45,6 +48,19 @@ Optionally specifies the [`#include`][cpp-include] path for the [**boost.pfr**][
 
 Will make [`#error`][cpp-error] if this macro is defined by the user and it is evaluates to `true`, but `__has_include(OPTION_BOOST_PFR_FILE)` is `false`. If the [**boost.pfr**][boost-pfr] library is not supported by the compiler (defined `BOOST_PFR_NOT_SUPPORTED`), will silently continue without actually using the library features.
 
+## **libassert** library related
+
+### OPTION_LIBASSERT_FILE
+*expects:* `"path"` or `<path>`, *default:* `<libassert/assert.hpp>`
+
+Defines [`#include`][cpp-include] path for the [**libassert**][libassert] library.
+
+### OPTION_USE_LIBASSERT
+*expects:* `boolean`, *default:* `true`
+
+Define [`OPTION_VERIFY`](#option_verify) to `LIBASSERT_ASSUME` macro and don't use default.
+
 [boost-pfr]: https://www.boost.org/doc/libs/1_83_0/doc/html/boost_pfr.html
 [cpp-include]: https://en.cppreference.com/w/cpp/preprocessor/include
 [cpp-error]: https://en.cppreference.com/w/cpp/preprocessor/error
+[libassert]: https://github.com/jeremy-rifkin/libassert

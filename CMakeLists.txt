@@ -9,6 +9,7 @@ option(USE_CLANG_TIDY "Enable clang-tidy for test target" FALSE)
 option(INSTALL_OPTION "Enable --install for 'option' project" FALSE)
 option(USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
 option(USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" TRUE)
+option(USE_LIBASSERT "Enable libassert library integration" TRUE)
 
 add_library(option INTERFACE "include/option.hpp")
 

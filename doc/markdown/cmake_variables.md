@@ -12,6 +12,7 @@ You can define these variables by providing [`-D`][cmake-d] CMake argument.
 - [`INSTALL_OPTION`](#install_option)
 - [`USE_NATVIS`](#use_natvis)
 - [`USE_NATSTEPFILTER`](#use_natstepfilter)
+- [`USE_LIBASSERT`](#use_libassert)
 
 ## `BUILD_TEST`
 
@@ -71,6 +72,15 @@ Adds the "debugger/option.natstepfilter" file to depended targets, which enables
 > [!NOTE]
 > The natstepfilter just includes everything in `opt` namespace. If you think this is redundant you can disable it by setting `USE_NATSTEPFILTER` to `FALSE`.
 
+## `USE_LIBASSERT`
+
+**default:** `TRUE`
+
+Adds dependency to [**libassert**][libassert] library to `option-test` target.
+
+> [!NOTE]
+> For Visual Studio LLVM toolset when assertation fails address sanitizer produces error. Consider setting `USE_LIBASSERT` to `FALSE` if you have this problem.
+
 [is-project-top-level]: https://cmake.org/cmake/help/latest/variable/PROJECT_IS_TOP_LEVEL.html
 [clang-tidy]: https://clang.llvm.org/extra/clang-tidy
 [cmake-export-compile-commands]: https://cmake.org/cmake/help/latest/variable/CMAKE_EXPORT_COMPILE_COMMANDS.html
@@ -82,3 +92,4 @@ Adds the "debugger/option.natstepfilter" file to depended targets, which enables
 [googletest]: https://github.com/google/googletest
 [boost-pfr]: https://github.com/boostorg/pfr
 [cmake-d]: https://cmake.org/cmake/help/latest/manual/cmake.1.html#cmdoption-cmake-D
+[libassert]: https://github.com/jeremy-rifkin/libassert
