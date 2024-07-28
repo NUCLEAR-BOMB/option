@@ -103,10 +103,14 @@ struct special<float> : Test {
     float A = 1.1f;
     float B = 2.3f;
 
+    void SetUp() override {
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+
     void TearDown() override {
         const int n = std::fetestexcept(FE_ALL_EXCEPT);
-        OPTION_VERIFY(n == 0, "Floating point exception was thrown");
-        std::feclearexcept(FE_ALL_EXCEPT);
+        ASSERT_EQ(n, 0);
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
     }
 };
 template<>
@@ -114,10 +118,14 @@ struct special<double> : Test {
     double A = 1.234;
     double B = 12.334243;
 
+    void SetUp() override {
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+
     void TearDown() override {
         const int n = std::fetestexcept(FE_ALL_EXCEPT);
-        OPTION_VERIFY(n == 0, "Floating point exception was thrown");
-        std::feclearexcept(FE_ALL_EXCEPT);
+        ASSERT_EQ(n, 0);
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
     }
 };
 template<>
@@ -194,7 +202,7 @@ struct special<struct_with_sentinel> : Test {
 };
 
 using special_types = ::testing::Types<
-    bool, int*, opt::option<bool>, float, double, std::tuple<int, float>,
+    float, bool, int*, opt::option<bool>, double, std::tuple<int, float>,
     std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
     polymorphic, empty_struct, non_trivially_destructible_empty_struct, struct_with_sentinel
 >;
