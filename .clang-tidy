@@ -15,8 +15,6 @@ Checks: >
   -readability-identifier-length,
   -modernize-use-trailing-return-type,
   -bugprone-exception-escape,
-  -readability-braces-around-statements,
-  -readability-simplify-boolean-expr,
   -readability-function-cognitive-complexity,
   -misc-non-private-member-variables-in-classes,
   -readability-named-parameter,
@@ -24,8 +22,6 @@ Checks: >
   -readability-qualified-auto,
   -readability-container-data-pointer,
   -bugprone-easily-swappable-parameters,
-  -readability-isolate-declaration,
-  -clang-analyzer-core.CallAndMessage,
 WarningsAsErrors: '*'
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: lower_case }

@@ -93,7 +93,8 @@ TEST_F(option, emplace) {
     EXPECT_EQ(*a, 1);
 }
 TEST_F(option, hash) {
-    opt::option<int> a{1}, b{1};
+    opt::option<int> a{1};
+    opt::option<int> b{1};
     EXPECT_EQ(hash_fn(a), hash_fn(b));
     a = opt::none;
     EXPECT_NE(hash_fn(a), hash_fn(b));
@@ -122,7 +123,7 @@ TEST_F(option, value_or) {
 }
 TEST_F(option, and_then) {
     const auto convert_to_uint = [](int x) -> opt::option<unsigned> {
-        if (x >= 0) return opt::option<unsigned>{unsigned(x + 1)};
+        if (x >= 0) { return opt::option<unsigned>{unsigned(x + 1)}; }
         return opt::none;
     };
     EXPECT_EQ(opt::option<int>{2}.and_then(convert_to_uint), 3u);
