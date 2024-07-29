@@ -1,5 +1,16 @@
 #include <gtest/gtest.h>
 #include <cfenv>
+#include <option.hpp>
+#include <tuple>
+#include <functional>
+#include <utility>
+#include <string>
+#include <string_view>
+#include <vector>
+#include <type_traits>
+#include <array>
+#include <memory>
+#include <cstdint>
 
 #include "utils.hpp"
 
@@ -167,18 +178,18 @@ struct special<std::vector<int>> : Test {
     const std::vector<int> B{{4, 5, 6}};
 };
 struct polymorphic {
-    int x1;
+    int x1{};
+    unsigned x2{};
+
     virtual int do_something() { return x1; }
     virtual unsigned do_something_else() { return x2; }
 
     virtual ~polymorphic() = default;
     polymorphic& operator=(const polymorphic&) = default;
-    polymorphic(const polymorphic&) = default;
+    polymorphic(const polymorphic&) = default; // NOLINT(clang-analyzer-core.uninitialized.Assign)
 
     polymorphic(int x1_, unsigned x2_) : x1(x1_), x2(x2_) {}
     bool operator==(const polymorphic& other) const { return x1 == other.x1 && x2 == other.x2; }
-
-    unsigned x2;
 };
 template<>
 struct special<polymorphic> : Test {
@@ -423,7 +434,7 @@ TEST_F(reference, const_basic) {
     EXPECT_EQ(*refc, 1);
 }
 
-enum class some_enum {
+enum class some_enum : std::uint8_t {
     x, y, z,
     OPTION_EXPLOIT_UNUSED_VALUE
 };

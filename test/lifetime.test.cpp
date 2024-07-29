@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "utils.hpp"
-
 #include <option.hpp>
+#include <cstdint>
+
 
 namespace {
 
@@ -117,14 +117,14 @@ TEST_F(lifetime, default_ctor) {
     destructor += 1;
     expected_counters::test();
 
-    [[maybe_unused]] lifetime_tester& ref = tester2.insert(lifetime_tester{1});
+    [[maybe_unused]] const lifetime_tester& ref = tester2.insert(lifetime_tester{1});
     value_ctor += 1;
     move_ctor += 1;
     destructor += 2;
     expected_counters::test();
 
     [[maybe_unused]]
-    opt::option<lifetime_tester> tester3 = tester2.replace(lifetime_tester{1});
+    const opt::option<lifetime_tester> tester3 = tester2.replace(lifetime_tester{1});
     value_ctor += 1;
     move_ctor += 2;
     destructor += 2;

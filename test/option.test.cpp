@@ -1,5 +1,10 @@
 #include <gtest/gtest.h>
 #include <memory>
+#include <type_traits>
+#include <option.hpp>
+#include <utility>
+#include <tuple>
+#include <array>
 
 #include "utils.hpp"
 
@@ -408,11 +413,11 @@ TEST_F(option, from_nullable) {
     int a = 10;
     int* ptr = &a;
 
-    opt::option<int> b = opt::from_nullable(ptr);
+    const opt::option<int> b = opt::from_nullable(ptr);
     EXPECT_EQ(b, 10);
 
     ptr = nullptr;
-    opt::option<int> c = opt::from_nullable(ptr);
+    const opt::option<int> c = opt::from_nullable(ptr);
     EXPECT_FALSE(c.has_value());
 }
 
