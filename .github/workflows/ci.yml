@@ -71,11 +71,11 @@ jobs:
         key: ubuntu-llvm-18
       
     - name: Install LLVM
-      if: steps.cache-llvm.outputs.cache-hit != 'true'
       uses: KyleMayes/install-llvm-action@v2.0.3
       with:
         version: "18.1.8"
         directory: llvm-18
+        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
         force-url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
     
     - name: Install dependencies
