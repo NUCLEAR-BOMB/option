@@ -62,11 +62,29 @@ jobs:
       with:
         cmakeVersion: "3.24.0"
         ninjaVersion: "latest"
-
+        
+    - name: Cache LLVM
+      id: cache-llvm
+      uses: actions/cache@v4.0.2
+      with:
+        path: ./llvm-18/**
+        key: ubuntu-llvm-18
+      
+    - name: Install LLVM
+      if: steps.cache-llvm.outputs.cache-hit != 'true'
+      uses: KyleMayes/install-llvm-action@v2.0.3
+      with:
+        version: "18.1.8"
+        directory: llvm-18
+        force-url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+    
+    - name: Install dependencies
+      run: |
+        sudo apt install libncurses5
+    
     - name: Configure CMake
-      run: >
-        cmake -B build ${{ matrix.platform.flags }} -DUSE_CLANG_TIDY=TRUE
-        -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE ${{ matrix.type.flags }}
+      run: |
+        cmake -B build ${{ matrix.platform.flags }} -DUSE_CLANG_TIDY=TRUE -DUSE_SANITIZER=FALSE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ${{ matrix.type.flags }}
 
     - name: Analyze Code
       run: cmake --build build --target clang-tidy --config ${{ matrix.type.name }}
