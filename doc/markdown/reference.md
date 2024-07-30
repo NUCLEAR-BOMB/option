@@ -1285,66 +1285,78 @@ The exception type of an object to be thrown by [`opt::option<T>::value`, `opt::
 template<class T, class = void>
 struct option_traits;
 ```
-A template class type used to remove size overhead of `opt::option` for type `T`. \
-You can also use a metafunction like `std::enable_if` in second template argument to apply SFINAE. This allows to utilize `opt::option_traits` for more flexible specializations.
 
-The `opt::option` uses `opt::option_traits` to not store separate `bool` variable to indicate an empty state, but instead use the contained value itself to store that flag.
+`opt::option_traits` allows `opt::option` to remove size overhead of having additional `bool` flag to indicate it's state.
 
-See [builtin `opt::option_traits` specializations](./sentinel.md).
+Each complete specialization of `opt::option_traits` must have `max_level` static constexpr variable.
 
-You can declare without defining `opt::option_traits` to disable using the builtin `opt::option_traits` specializations if something goes wrong.
+If `max_level` is equal to 0, `opt::option_traits` is disabled and `opt::option` will not use it.
+Otherwise, `opt::option_traits` specialization must have at least these two static methods: `get_level`, `set_level`.
 
-To define a custom specialization for `opt::option_traits`, user must specify the following 2 required static methods and 1 optional static method.
+See [guide](./custom_traits_guide.md) for creating custom option traits.
 
-```cpp
-static *constexpr bool is_empty(const T& value) *noexcept;
-```
-Required. The `opt::option` uses the `is_empty` function to determine if the contained value is empty.
-
-> [!IMPORTANT]  
-> After the contained value is constructed, the `is_empty` function must return `false` (checked with [`OPTION_VERIFY`][option-verify] macro).
+#### `get_level`
 
 ```cpp
-static *constexpr void set_empty(T& value) *noexcept;
+static *constexpr std::uintmax_t get_level(const T*) *noexcept;
 ```
-Required. The `opt::option` uses the `set_empty` function to set the contained value to an empty state. Called in default constructor and in [`reset`](#reset) method *after* the contained value is destroyed.
+Required. The `opt::option` uses the `get_level` to determine if the contained value is considered empty.
+
+The return value should be less than `max_level` or equal to `std::uintmax_t(-1)`.
+The passed `const T*` pointer to the underlying object must be non-`nullptr`.
+
+If `get_level` returns `std::uintmax_t(-1)`, the contained value is not empty.
+Otherwise, it's in an empty state.
+
+Other non-`std::uintmax_t(-1)` values are used for nested `opt::option`s.
+Level 0 indicates that the latest `opt::option` (the one that holds a value) is empty.
+Level 1 indicates that one after the latest `opt::option` (the one that holds `opt::option`, that holds a value) is empty and etc.
+until `max_level` is reached.
+
+This function is called when `opt::option` is needed to check if it contains a value.
+
+#### `set_level`
 
 ```cpp
-static *constexpr void unset_empty() *noexcept;
+static *constexpr void set_level(T*, std::uintmax_t) *noexcept;
 ```
-Optional. The `opt::option` uses the `unset_empty` function to unset the contained value empty state. Called *before* the contained value is constructed, but not constructed in `opt::option` constructors. It is always called after the `set_empty` function. If user does not define the `unset_empty` function, it will be replaced with function that has no effect.
 
-\* - optional specifiers
+Required. The `opt::option` uses the `set_level` to set the level depth state inside `opt::option`.
 
-If the above requirements are not met, the program will be ill-formed.
+The passed `std::uintmax_t` level argument must be strictly less than `max_level`,
+and the provided `T*` pointer to the underlying object must be non-`nullptr`.
 
-You can also optionally define `static constexpr` variable named `empty_value` to help Visual Studio debugger understand `opt::option` state.
+Usually `set_level` is called after the original object is destructed/uninitialized, but also `set_level` can be called multiple times in a row.
 
-Example:
+#### `after_constructor`
+
 ```cpp
-struct some_struct {
-    int val;
-};
-
-template<>
-struct opt::option_traits<some_struct> {
-    static bool is_empty(const some_struct& value) noexcept {
-        return value.val == -1;
-    }
-    static void set_empty(some_struct& value) noexcept {
-        value = {-1};
-    }
-};
-
-opt::option<some_struct> a{5};
-
-std::cout << (sizeof(a) == sizeof(some_struct)) << '\n'; // true
-std::cout << a->val << '\n'; // 5
-
-a = opt::none;
-std::cout << a.has_value() << '\n'; // false
-std::cout << a.get_unchecked().val << '\n'; // -1
+static *constexpr void after_constructor(T*) *noexcept;
 ```
+
+Optional. After the object is constructed (it is not empty), the `after_constructor` function is called to properly initialize contained value for later use in `opt::option`.
+
+The term "after the object is constructed" does not include `opt::option` trivially copy/move constructors.
+
+> [!TIP]
+> The compiler may be not properly initialize the contained value, use this function to do this manually.
+
+#### `after_assignment`
+
+```cpp
+static *constexpr void after_assignment(T*) *noexcept;
+```
+
+Optional. After the object is assigned (it is not empty), the `after_assignment` function is called to properly initialize contained value for later use in `opt::option`.
+
+The term "after the object is assigned" does not include `opt::option` trivially copy/move assignment operators.
+
+> [!TIP]
+> The compiler may be not properly initialize the contained value after assignment, use this function to do this manually.
+
+*`constexpr` - optional `constexpr` specifiers. Without them many operations on `opt::option` can't be executed in constant expressions.
+
+*`noexcept` - optional `noexcept` specifiers. `opt::option` doesn't support exceptions in that functions, so currently `noexcept` doesn't do anything.
 
 ## Deduction guides
 ```cpp

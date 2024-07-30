@@ -17,7 +17,7 @@ jobs:
         - { name: Linux GCC,          os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++ }
         - { name: Windows Clang,      os: windows-2022,  flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE -G "Unix Makefiles" }
         - { name: Windows VS,         os: windows-2022,  install-llvm: 'true' }
-        - { name: Windows VS ClangCL, os: windows-2022,  flags: -T ClangCL }
+        - { name: Windows VS ClangCL, os: windows-2022,  flags: -T ClangCL -DUSE_SANITIZER=FALSE }
         type:
         - { name: Release, flags: -DCMAKE_BUILD_TYPE=Release }
         - { name: Debug,   flags: -DCMAKE_BUILD_TYPE=Debug }

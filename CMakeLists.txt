@@ -2,13 +2,19 @@ cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project(option VERSION 1.0 LANGUAGES CXX)
 
+if (PROJECT_IS_TOP_LEVEL)
+    set(not_project_is_top_level FALSE)
+else()
+    set(not_project_is_top_level TRUE)
+endif()
+
 option(BUILD_TEST "Enable 'option-test' target" ${PROJECT_IS_TOP_LEVEL})
 option(BUILD_EXAMPLES "Enable 'option-examples' target" ${PROJECT_IS_TOP_LEVEL})
 option(USE_SANITIZER "Enable sanitizers for test target" TRUE)
 option(USE_CLANG_TIDY "Enable clang-tidy for test target" FALSE)
 option(INSTALL_OPTION "Enable --install for 'option' project" FALSE)
 option(USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
-option(USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" TRUE)
+option(USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" ${not_project_is_top_level})
 option(USE_LIBASSERT "Enable libassert library integration" TRUE)
 
 add_library(option INTERFACE "include/option.hpp")
