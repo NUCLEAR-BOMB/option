@@ -226,7 +226,7 @@ using special_types = ::testing::Types<
     // float, bool, int*, opt::option<bool>, double, std::tuple<int, float>,
     // std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
     // polymorphic, empty_struct, non_trivially_destructible_empty_struct, struct_with_sentinel
-    bool, std::reference_wrapper<int>, opt::option<int&>, int*
+    bool, std::reference_wrapper<int>, opt::option<int&>, int*, float, double
 >;
 TYPED_TEST_SUITE(special, special_types,);
 

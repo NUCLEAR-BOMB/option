@@ -217,6 +217,10 @@ namespace impl {
         pointer_64,
         pointer_32,
         pointer_16,
+        float64_sNaN,
+        float64_qNaN,
+        float32_sNaN,
+        float32_qNaN,
     };
 
     template<class T>
@@ -244,6 +248,19 @@ namespace impl {
                 return st::pointer_16;
             }
             return st::pointer_64;
+        }
+        if constexpr (std::is_floating_point_v<T>) {
+            using limits = std::numeric_limits<T>;
+            if constexpr (!limits::is_iec559 || (!limits::has_signaling_NaN && !limits::has_quiet_NaN)) {
+                return st::none;
+            }
+            if constexpr (sizeof(T) == 8) {
+                return limits::has_signaling_NaN ? st::float64_sNaN : st::float64_qNaN;
+            }
+            if constexpr (sizeof(T) == 4) {
+                return limits::has_signaling_NaN ? st::float32_sNaN : st::float32_qNaN;
+            }
+            return st::none;
         }
 
         return st::other;
@@ -342,6 +359,66 @@ namespace impl {
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
             impl::ptr_bit_copy(value, ptr_offset - std::uintptr_t(level));
+        }
+    };
+    template<class T>
+    struct internal_option_traits<T, option_strategy::float64_sNaN> {
+    private:
+        static constexpr std::uint64_t nan_start = 0b1'11111111111'0110110001111001111101010101101100001000100110001111;
+    public:
+        static constexpr std::uintmax_t max_level = 256;
+
+        static std::uintmax_t get_level(const T* const value) noexcept {
+            const auto uint = impl::ptr_bit_cast<std::uint64_t>(value);
+            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+        }
+        static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy(value, nan_start + std::uint64_t(level));
+        }
+    };
+    template<class T>
+    struct internal_option_traits<T, option_strategy::float64_qNaN> {
+    private:
+        static constexpr std::uint64_t nan_start = 0b1'11111111111'1011111100100110010000110000101110110011010101010111;
+    public:
+        static constexpr std::uintmax_t max_level = 256;
+
+        static std::uintmax_t get_level(const T* const value) noexcept {
+            const auto uint = impl::ptr_bit_cast<std::uint64_t>(value);
+            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+        }
+        static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy(value, nan_start + std::uint64_t(level));
+        }
+    };
+    template<class T>
+    struct internal_option_traits<T, option_strategy::float32_sNaN> {
+    private:
+        static constexpr std::uint32_t nan_start = 0b1'11111111'01111110110100110101111u;
+    public:
+        static constexpr std::uintmax_t max_level = 256;
+
+        static std::uintmax_t get_level(const T* const value) noexcept {
+            const auto uint = impl::ptr_bit_cast<std::uint32_t>(value);
+            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+        }
+        static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy(value, nan_start + std::uint32_t(level));
+        }
+    };
+    template<class T>
+    struct internal_option_traits<T, option_strategy::float32_qNaN> {
+    private:
+        static constexpr std::uint32_t nan_start = 0b1'11111111'10000111110111110110101u;
+    public:
+        static constexpr std::uintmax_t max_level = 256;
+
+        static std::uintmax_t get_level(const T* const value) noexcept {
+            const auto uint = impl::ptr_bit_cast<std::uint32_t>(value);
+            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+        }
+        static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy(value, nan_start + std::uint32_t(level));
         }
     };
 }
