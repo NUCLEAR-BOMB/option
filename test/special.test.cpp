@@ -1,3 +1,4 @@
+// NOLINTBEGIN(misc-include-cleaner)
 #include <gtest/gtest.h>
 #include <cfenv>
 #include <option.hpp>
@@ -13,6 +14,7 @@
 #include <cstdint>
 
 #include "utils.hpp"
+// NOLINTEND(misc-include-cleaner)
 
 #if OPTION_USE_BUILTIN_TRAITS
 
@@ -314,7 +316,7 @@ TYPED_TEST(special, take) {
     EXPECT_FALSE(a.has_value());
 }
 
-#if 0
+#if 0 // NOLINT(readability-avoid-unconditional-preprocessor-if)
 
 struct reference : ::testing::Test {};
 
