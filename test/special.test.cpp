@@ -221,12 +221,23 @@ struct special<opt::option<int&>> : Test {
     opt::option<int&> A{Aa};
     opt::option<int&> B{Bb};
 };
+template<>
+struct special<std::pair<int, float>> : Test {
+    std::pair<int, float> A{1, 2.f};
+    std::pair<int, float> B{3, 4.f};
+};
+template<>
+struct special<std::pair<float, int>> : Test {
+    std::pair<float, int> A{10.f, 20};
+    std::pair<float, int> B{30.f, 40};
+};
 
 using special_types = ::testing::Types<
     // float, bool, int*, opt::option<bool>, double, std::tuple<int, float>,
     // std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
     // polymorphic, empty_struct, non_trivially_destructible_empty_struct, struct_with_sentinel
-    bool, std::reference_wrapper<int>, opt::option<int&>, int*, float, double
+    bool, std::reference_wrapper<int>, opt::option<int&>, int*, float, double,
+    std::pair<int, float>, std::pair<float, int>
 >;
 TYPED_TEST_SUITE(special, special_types,);
 

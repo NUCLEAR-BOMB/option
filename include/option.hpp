@@ -178,6 +178,12 @@ namespace impl {
     inline constexpr bool has_option_traits<T, decltype(sizeof(opt::option_traits<T>))> =
         opt::option_traits<T>::max_level >= 1;
 
+    template<class T, class = std::size_t>
+    inline constexpr std::uintmax_t get_max_level = 0;
+    template<class T>
+    inline constexpr std::uintmax_t get_max_level<T, decltype(sizeof(opt::option_traits<T>))> =
+        opt::option_traits<T>::max_level;
+
     template<class To, class From>
     To ptr_bit_cast(const From* const from) noexcept {
         static_assert(sizeof(To) == sizeof(From));
@@ -419,6 +425,62 @@ namespace impl {
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
             impl::ptr_bit_copy(value, nan_start + std::uint32_t(level));
+        }
+    };
+
+    template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
+    struct select_max_level_traits_impl;
+
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4296) // 'operator' : expression is always false
+#endif
+
+    template<
+        std::uintmax_t level,
+        class Type,
+        std::size_t var_index,
+        std::size_t index,
+        class T, class... Ts
+    >
+    struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
+        : select_max_level_traits_impl<
+            (impl::get_max_level<T> > level) ? impl::get_max_level<T> : level,
+            std::conditional_t<(impl::get_max_level<T> > level), T, Type>,
+            var_index + 1,
+            (impl::get_max_level<T> > level) ? var_index : index,
+            Ts...
+        >
+    {};
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
+
+    template<std::uintmax_t level_, class Type, std::size_t var_index, std::size_t index_>
+    struct select_max_level_traits_impl<level_, Type, var_index, index_> {
+        static constexpr std::uintmax_t level = level_;
+        static constexpr std::size_t index = index_;
+        using type = ::opt::option_traits<Type>;
+    };
+
+    template<class... Ts>
+    struct select_max_level_traits
+        : select_max_level_traits_impl<0, void, 0, 0, Ts...> {};
+
+    template<class First, class Second>
+    struct internal_option_traits<std::pair<First, Second>, option_strategy::other> {
+        using select_traits = select_max_level_traits<First, Second>;
+        using traits = typename select_traits::type;
+
+        static constexpr std::uintmax_t max_level = select_traits::level;
+        static constexpr std::size_t pair_index = select_traits::index;
+
+        static std::uintmax_t get_level(const std::pair<First, Second>* const value) {
+            return traits::get_level(std::addressof(std::get<pair_index>(*value)));
+        }
+        static void set_level(std::pair<First, Second>* const value, const std::uintmax_t level) {
+            traits::set_level(std::addressof(std::get<pair_index>(*value)), level);
         }
     };
 }
