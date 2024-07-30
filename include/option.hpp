@@ -190,7 +190,21 @@ namespace impl {
     void ptr_bit_copy(Dest* const dest, const Src& src) noexcept {
         static_assert(sizeof(Src) == sizeof(Dest));
 
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
+#elif defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wclass-memaccess"
+    #pragma GCC diagnostic ignored "-Wuninitialized"
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
         std::memcpy(dest, &src, sizeof(Dest));
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+    #pragma GCC diagnostic pop
+#endif
     }
 
     enum class option_strategy {
@@ -1737,13 +1751,13 @@ option(option<T>) -> option<option<T>>;
 namespace impl {
     template<class T>
     struct internal_option_traits<opt::option<T>, option_strategy::avaliable_option> {
-        using base = impl::option_destruct_base<T>;
+        using base = impl::option_move_assign_base<T>;
         using traits = opt::option_traits<T>;
 
         static constexpr std::uintmax_t max_level = traits::max_level - 1;
 
         static std::uintmax_t get_level(const opt::option<T>* const value) noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(value->base::value));
+            const std::uintmax_t level = traits::get_level(std::addressof(static_cast<const base*>(value)->value));
             if (level == std::uintmax_t(-1) || level == 0) {
                 return std::uintmax_t(-1);
             } else {
@@ -1752,21 +1766,21 @@ namespace impl {
         }
 
         static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(std::addressof(value->base::value), level + 1);
+            traits::set_level(std::addressof(static_cast<base*>(value)->value), level + 1);
         }
     };
     template<class T>
     struct internal_option_traits<opt::option<T>, option_strategy::unavaliable_option> {
-        using base = impl::option_destruct_base<T>;
+        using base = impl::option_move_assign_base<T>;
         using bool_traits = opt::option_traits<bool>;
 
         static constexpr std::uintmax_t max_level = bool_traits::max_level;
 
         static std::uintmax_t get_level(const opt::option<T>* const value) noexcept {
-            return bool_traits::get_level(std::addressof(value->base::has_value_flag));
+            return bool_traits::get_level(std::addressof(static_cast<const base*>(value)->has_value_flag));
         }
         static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
-            bool_traits::set_level(std::addressof(value->base::has_value_flag), level);
+            bool_traits::set_level(std::addressof(static_cast<base*>(value)->has_value_flag), level);
         }
     };
 }
