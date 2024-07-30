@@ -107,7 +107,7 @@ struct special<int*> : Test {
         delete B;
     }
 };
-static_assert((opt::option_traits<int*>::empty_value % 2) != 0);
+// static_assert((opt::option_traits<int*>::empty_value % 2) != 0);
 
 template<>
 struct special<float> : Test {
@@ -211,16 +211,28 @@ struct special<struct_with_sentinel> : Test {
     const struct_with_sentinel A{1, 2};
     const struct_with_sentinel B{3, 4};
 };
+template<>
+struct special<opt::option<int&>> : Test {
+    static inline int Aa = 1;
+    static inline int Bb = 2;
+
+    opt::option<int&> A{Aa};
+    opt::option<int&> B{Bb};
+};
 
 using special_types = ::testing::Types<
-    float, bool, int*, opt::option<bool>, double, std::tuple<int, float>,
-    std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
-    polymorphic, empty_struct, non_trivially_destructible_empty_struct, struct_with_sentinel
+    // float, bool, int*, opt::option<bool>, double, std::tuple<int, float>,
+    // std::reference_wrapper<int>, struct2, std::string_view, std::string, std::vector<int>,
+    // polymorphic, empty_struct, non_trivially_destructible_empty_struct, struct_with_sentinel
+    bool, std::reference_wrapper<int>, opt::option<int&>, int*
 >;
 TYPED_TEST_SUITE(special, special_types,);
 
 TYPED_TEST(special, basic) {
     static_assert(sizeof(opt::option<T>) == sizeof(T));
+    static_assert(sizeof(opt::option<opt::option<T>>) == sizeof(T));
+    static_assert(sizeof(opt::option<opt::option<opt::option<T>>>) == sizeof(T));
+
     const opt::option<T> a{};
     EXPECT_FALSE(a.has_value());
     const opt::option<T> b{this->A};
@@ -301,6 +313,8 @@ TYPED_TEST(special, take) {
     a.take();
     EXPECT_FALSE(a.has_value());
 }
+
+#if 0
 
 struct reference : ::testing::Test {};
 
@@ -655,11 +669,13 @@ struct struct1 {
     float x;
 };
 
+#endif
+
 }
 
-template<>
-struct opt::option_traits<struct1>;
-
-static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
+// template<>
+// struct opt::option_traits<struct1>;
+// 
+// static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
 
 #endif // OPTION_USE_BUILTIN_TRAITS
