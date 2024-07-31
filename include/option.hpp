@@ -483,6 +483,21 @@ namespace impl {
             traits::set_level(std::addressof(std::get<pair_index>(*value)), level);
         }
     };
+    template<class... Ts>
+    struct internal_option_traits<std::tuple<Ts...>, option_strategy::other> {
+        using select_traits = select_max_level_traits<Ts...>;
+        using traits = typename select_traits::type;
+
+        static constexpr std::uintmax_t max_level = select_traits::level;
+        static constexpr std::size_t pair_index = select_traits::index;
+
+        static std::uintmax_t get_level(const std::tuple<Ts...>* const value) {
+            return traits::get_level(std::addressof(std::get<pair_index>(*value)));
+        }
+        static void set_level(std::tuple<Ts...>* const value, const std::uintmax_t level) {
+            traits::set_level(std::addressof(std::get<pair_index>(*value)), level);
+        }
+    };
 }
 
 template<class T, class>

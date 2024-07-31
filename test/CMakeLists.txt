@@ -5,8 +5,8 @@ add_executable(option-test
     "option.test.cpp"
     "operators.test.cpp"
     "special.test.cpp"
-    "constexpr.test.cpp"
     "lifetime.test.cpp"
+    "main.cpp"
 
     "utils.hpp"
 )
@@ -32,10 +32,10 @@ set(gtest_disable_pthreads TRUE)
 FetchContent_MakeAvailable(googletest)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    set_target_properties(gtest gtest_main PROPERTIES COMPILE_OPTIONS "-w")
+    set_target_properties(gtest PROPERTIES COMPILE_OPTIONS "-w")
 endif()
 
-target_link_libraries(option-test PRIVATE GTest::gtest GTest::gtest_main)
+target_link_libraries(option-test PRIVATE GTest::gtest)
 
 #[=[
 FetchContent_Declare(
@@ -83,7 +83,7 @@ endif()
 if (USE_SANITIZER)
     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
     target_add_sanitizer(option-test SANITIZERS Address Undefined
-        LIBRARIES GTest::gtest GTest::gtest_main ${libassert_target}
+        LIBRARIES GTest::gtest ${libassert_target}
     )
 endif()
 

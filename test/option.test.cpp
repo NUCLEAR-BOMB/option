@@ -5,8 +5,30 @@
 #include <utility>
 #include <tuple>
 #include <array>
+#include <cfenv>
+#include <functional>
 
 #include "utils.hpp"
+
+#ifdef _MSC_VER
+#pragma fenv_access (on)
+#elif defined(__clang__)
+#pragma STDC FENV_ACCESS ON
+#endif
+
+#define TypeParam T
+#define V0 this->values[0]
+#define V1 this->values[1]
+#define V2 this->values[2]
+#define V3 this->values[3]
+#define V4 this->values[4]
+
+#define TEST_SIZE_LIST \
+    double, bool, std::reference_wrapper<int>, int*, float, \
+    std::pair<int, float>, std::pair<float, int>
+
+#define TEST_MAIN_LIST \
+    int, unsigned int
 
 namespace {
 
@@ -19,91 +41,188 @@ static_assert(is_trivial_compatible<opt::option<int>>);
 static_assert(std::is_nothrow_destructible_v<opt::option<int>>);
 static_assert(!std::is_nothrow_destructible_v<opt::option<nontrivial_struct>>);
 
+template<class T>
 struct option : ::testing::Test {
+    T values[5]{1, 2, 3, 4, 5};
+};
+template<>
+struct option<float> : ::testing::Test {
+    float values[5]{1.f, 2.f, 3.f, 4.f, 5.f};
 
+    void SetUp() override {
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+    void TearDown() override {
+        const int n = std::fetestexcept(FE_ALL_EXCEPT);
+        ASSERT_EQ(n, 0);
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+};
+template<>
+struct option<double> : ::testing::Test {
+    double values[5]{1., 2., 3., 4., 5.};
+
+    void SetUp() override {
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+    void TearDown() override {
+        const int n = std::fetestexcept(FE_ALL_EXCEPT);
+        ASSERT_EQ(n, 0);
+        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
 };
 
-TEST_F(option, default_ctor) {
-    const opt::option<int> a;
+template<>
+struct option<bool> : ::testing::Test {
+    bool values[5]{false, true, false, true, false};
+};
+template<>
+struct option<std::reference_wrapper<int>> : ::testing::Test {
+    int values_orig[5]{1, 2, 3, 4, 5};
+    std::reference_wrapper<int> values[5]{values_orig[0], values_orig[1], values_orig[2], values_orig[3], values_orig[4]};
+};
+template<>
+struct option<int*> : ::testing::Test {
+    int values_orig[5]{1, 2, 3, 4, 5};
+    int* values[5]{&values_orig[0], &values_orig[1], &values_orig[2], &values_orig[3], &values_orig[4]};
+};
+template<>
+struct option<std::pair<int, float>> : ::testing::Test {
+    std::pair<int, float> values[5]{{1, 2.f}, {3, 4.f}, {5, 6.f}, {7, 8.f}, {9, 10.f}};
+};
+template<>
+struct option<std::pair<float, int>> : ::testing::Test {
+    std::pair<float, int> values[5]{{1.f, 2}, {3.f, 4}, {5.f, 6}, {7.f, 8}, {9.f, 10}};
+};
+
+using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
+
+template<class T>
+struct test_size : ::testing::Test {
+    static_assert(sizeof(T) == sizeof(opt::option<T>));
+    static_assert(sizeof(T) == sizeof(opt::option<opt::option<T>>));
+    static_assert(sizeof(T) == sizeof(opt::option<opt::option<opt::option<T>>>));
+    static_assert(sizeof(T) == sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>));
+};
+TYPED_TEST_SUITE(test_size, test_size_types);
+TYPED_TEST(test_size, instantiate) {}
+
+using test_main_types = ::testing::Types<TEST_SIZE_LIST, TEST_MAIN_LIST>;
+TYPED_TEST_SUITE(option, test_main_types);
+
+TYPED_TEST(option, default_ctor) {
+    const opt::option<T> a;
     EXPECT_FALSE(a.has_value());
 
-    const opt::option<int> b(opt::none);
+    const opt::option<T> b(opt::none);
     EXPECT_FALSE(b.has_value());
 
-    const opt::option<int> c = opt::none;
+    const opt::option<T> c = opt::none;
     EXPECT_FALSE(c.has_value());
 }
-TEST_F(option, constructors) {
-    const opt::option<int> a{{}};
-    EXPECT_EQ(a, 0);
+TYPED_TEST(option, constructors) {
+    if constexpr (std::is_default_constructible_v<T>) {
+        const opt::option<T> a{{}};
+        EXPECT_EQ(a, T{});
+    }
 }
-TEST_F(option, get) {
-    opt::option<int> a{1};
-    EXPECT_EQ(a.get(), 1);
-    EXPECT_EQ(std::as_const(a).get(), 1);
-    EXPECT_EQ(as_const_rvalue(a).get(), 1);
-    EXPECT_EQ(as_rvalue(a).get(), 1);
+TYPED_TEST(option, get) {
+    opt::option<T> a{V0};
+    EXPECT_EQ(a.get(), V0);
+    EXPECT_EQ(std::as_const(a).get(), V0);
+    EXPECT_EQ(as_const_rvalue(a).get(), V0);
+    EXPECT_EQ(as_rvalue(a).get(), V0);
 }
-TEST_F(option, assigment) {
-    opt::option<int> a = 1;
+TYPED_TEST(option, assigment) {
+    opt::option<T> a = V0;
     a = opt::none;
     EXPECT_FALSE(a.has_value());
     {
-        const opt::option tmp{2};
+        const opt::option tmp{V1};
         a = tmp;
     }
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, 2);
+    EXPECT_EQ(*a, V1);
     {
-        const opt::option<int> tmp{opt::none};
+        const opt::option<T> tmp{opt::none};
         a = tmp;
     }
     EXPECT_FALSE(a.has_value());
-    a = opt::option<int>(3);
+    a = opt::option<T>(V2);
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, 3);
-    a = opt::option<int>(opt::none);
+    EXPECT_EQ(*a, V2);
+    a = opt::option<T>(opt::none);
     EXPECT_FALSE(a.has_value());
     EXPECT_FALSE(a.has_value());
     {
-        const int tmp = 4;
+        const T tmp = V3;
         a = tmp;
     }
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, 4);
-    a = 5;
+    EXPECT_EQ(*a, V3);
+    a = V4;
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, 5);
+    EXPECT_EQ(*a, V4);
+
+    opt::option<T> b;
+    EXPECT_FALSE(b.has_value());
+    b = V0;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, V0);
+    b = V0;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, V0);
+    b = V1;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, V1);
+    b = opt::option<T>{};
+    EXPECT_FALSE(b.has_value());
+    b = opt::option<T>{};
+    EXPECT_FALSE(b.has_value());
+    b = opt::option<T>{V0};
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, V0);
+    b = opt::none;
+    EXPECT_FALSE(b.has_value());
+    b = opt::none;
+    EXPECT_FALSE(b.has_value());
 }
 
-TEST_F(option, reset) {
-    opt::option<int> a;
+TYPED_TEST(option, reset) {
+    opt::option<T> a;
     EXPECT_FALSE(a.has_value());
     a.reset();
     EXPECT_FALSE(a.has_value());
-    a = 1;
+    a = V0;
     EXPECT_TRUE(a.has_value());
     a.reset();
     EXPECT_FALSE(a.has_value());
 }
-TEST_F(option, emplace) {
-    opt::option<int> a;
-    a.emplace(1);
-    EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, 1);
+TYPED_TEST(option, emplace) {
+    opt::option<T> a{V0};
+    EXPECT_EQ(a, V0);
+    a.emplace(V0);
+    EXPECT_EQ(a, V0);
+    a.reset();
+    EXPECT_EQ(a, opt::none);
+    a.emplace(V1);
+    EXPECT_EQ(a, V1);
+    a.emplace(V0);
+    EXPECT_EQ(a, V0);
 }
-TEST_F(option, hash) {
-    opt::option<int> a{1};
-    opt::option<int> b{1};
-    EXPECT_EQ(hash_fn(a), hash_fn(b));
-    a = opt::none;
-    EXPECT_NE(hash_fn(a), hash_fn(b));
-    b = opt::none;
-    EXPECT_EQ(hash_fn(a), hash_fn(b));
-    
+TYPED_TEST(option, hash) {
+    if constexpr (is_hashable<T>) {
+        opt::option<T> a{V0};
+        opt::option<T> b{V0};
+        EXPECT_EQ(hash_fn(a), hash_fn(b));
+        a = opt::none;
+        EXPECT_NE(hash_fn(a), hash_fn(b));
+        b = opt::none;
+        EXPECT_EQ(hash_fn(a), hash_fn(b));
+    }
 }
-TEST_F(option, value_or_throw) {
-    opt::option<int> a{1};
+TYPED_TEST(option, value_or_throw) {
+    opt::option<T> a{V0};
     EXPECT_NO_THROW((void)a.value_or_throw());
     EXPECT_NO_THROW((void)a.value());
     EXPECT_NO_THROW((void)as_const(a).value());
@@ -114,197 +233,232 @@ TEST_F(option, value_or_throw) {
     EXPECT_THROW((void)as_const(a).value(), opt::bad_access);
     EXPECT_THROW((void)as_const_rvalue(a).value(), opt::bad_access);
 }
-TEST_F(option, value_or) {
-    opt::option<int> a;
-    EXPECT_EQ(a.value_or(2), 2);
-    a = 1;
-    EXPECT_EQ(a.value_or(3), 1);
-    EXPECT_EQ(as_rvalue(a).value_or(4), 1);
+TYPED_TEST(option, value_or) {
+    opt::option<T> a; // NOLINT(clang-analyzer-core.uninitialized.UndefReturn)
+    EXPECT_EQ(a.value_or(V0), V0);
+    a = V1;
+    EXPECT_EQ(a.value_or(V2), V1);
+    EXPECT_EQ(as_rvalue(a).value_or(V3), V1);
 }
-TEST_F(option, and_then) {
-    const auto convert_to_uint = [](int x) -> opt::option<unsigned> {
-        if (x >= 0) { return opt::option<unsigned>{unsigned(x + 1)}; }
-        return opt::none;
-    };
-    EXPECT_EQ(opt::option<int>{2}.and_then(convert_to_uint), 3u);
-    EXPECT_EQ(opt::option<int>{-10}.and_then(convert_to_uint), opt::none);
-    EXPECT_EQ(opt::option<int>{opt::none}.and_then(convert_to_uint), opt::none);
+TYPED_TEST(option, and_then) {
+    if constexpr (std::is_same_v<T, int>) {
+        const auto convert_to_uint = [](int x) -> opt::option<unsigned> {
+            if (x >= 0) { return opt::option<unsigned>{unsigned(x + 1)}; }
+            return opt::none;
+        };
+        EXPECT_EQ(opt::option<int>{2}.and_then(convert_to_uint), 3u);
+        EXPECT_EQ(opt::option<int>{-10}.and_then(convert_to_uint), opt::none);
+        EXPECT_EQ(opt::option<int>{opt::none}.and_then(convert_to_uint), opt::none);
+    }
 }
-TEST_F(option, map) {
-    const auto func = [](auto x) { return x - 1; };
-    EXPECT_EQ(opt::option<int>{1}.map(func), 0);
-    EXPECT_EQ(opt::option<int>{}.map(func), opt::none);
-    EXPECT_EQ(opt::option<int>{10}.map(func).map(func), 8);
+TYPED_TEST(option, map) {
+    if constexpr (std::is_same_v<T, int>) {
+        const auto func = [](auto x) { return x - 1; };
+        EXPECT_EQ(opt::option<int>{1}.map(func), 0);
+        EXPECT_EQ(opt::option<int>{}.map(func), opt::none);
+        EXPECT_EQ(opt::option<int>{10}.map(func).map(func), 8);
+    }
 }
-TEST_F(option, or_else) {
-    const auto func = []() { return opt::option{1 << 10}; };
-    EXPECT_EQ(opt::option<int>{1}.or_else(func), 1);
-    EXPECT_EQ(opt::option<int>{}.or_else(func), 1 << 10);
-    EXPECT_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);
+TYPED_TEST(option, or_else) {
+    if constexpr (std::is_same_v<T, int>) {
+        const auto func = []() { return opt::option{1 << 10}; };
+        EXPECT_EQ(opt::option<int>{1}.or_else(func), 1);
+        EXPECT_EQ(opt::option<int>{}.or_else(func), 1 << 10);
+        EXPECT_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);
+    }
 }
-TEST_F(option, take) {
-    opt::option<int> a{1};
+TYPED_TEST(option, take) {
+    opt::option<T> a;
     auto b = a.take();
-    EXPECT_EQ(a, opt::none);
-    EXPECT_EQ(b, 1);
+    EXPECT_FALSE(a.has_value());
+    EXPECT_FALSE(a.has_value());
+    a = V0;
+    EXPECT_TRUE(a.has_value());
+    b = a.take();
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, V0);
+    EXPECT_FALSE(a.has_value());
+    a = b.take();
+    EXPECT_TRUE(a.has_value());
+    EXPECT_FALSE(b.has_value());
+    EXPECT_EQ(a, V0);
+    a = V1;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(*a, V1);
+    a.take();
+    EXPECT_FALSE(a.has_value());
 }
-TEST_F(option, option_cast) {
-    opt::option<int> a{1};
-    opt::option<unsigned> b = opt::option_cast<unsigned>(a);
-    EXPECT_EQ(*b, 1u);
-    b = opt::option_cast<unsigned>(as_rvalue(a));
-    EXPECT_EQ(*b, 1u);
+TYPED_TEST(option, option_cast) {
+    if constexpr (std::is_same_v<T, int>) {
+        opt::option<int> a{1};
+        opt::option<unsigned> b = opt::option_cast<unsigned>(a);
+        EXPECT_EQ(*b, 1u);
+        b = opt::option_cast<unsigned>(as_rvalue(a));
+        EXPECT_EQ(*b, 1u);
+    }
 }
-TEST_F(option, deduction_guides) {
-    auto a = opt::option{1}; // NOLINT(misc-const-correctness)
-    static_assert(std::is_same_v<decltype(a), opt::option<int>>);
-    opt::option b{1u}; // NOLINT(misc-const-correctness)
-    static_assert(std::is_same_v<decltype(b), opt::option<unsigned>>);
+TYPED_TEST(option, deduction_guides) {
+    auto a = opt::option{V0}; // NOLINT(misc-const-correctness)
+    static_assert(std::is_same_v<decltype(a), opt::option<T>>);
+    opt::option b{V1}; // NOLINT(misc-const-correctness)
+    static_assert(std::is_same_v<decltype(b), opt::option<T>>);
 
-    auto c = opt::option{opt::option{1}};
-    static_assert(std::is_same_v<decltype(c), opt::option<opt::option<int>>>);
+    auto c = opt::option{opt::option{V0}};
+    static_assert(std::is_same_v<decltype(c), opt::option<opt::option<T>>>);
 
-    auto d = opt::option{opt::option{opt::option{2.f}}};
-    static_assert(std::is_same_v<decltype(d), opt::option<opt::option<opt::option<float>>>>);
+    auto d = opt::option{opt::option{opt::option{V1}}};
+    static_assert(std::is_same_v<decltype(d), opt::option<opt::option<opt::option<T>>>>);
 }
-TEST_F(option, value_or_default) {
-    opt::option a{1};
-    EXPECT_EQ(a.value_or_default(), 1);
-    a = opt::none;
-    EXPECT_EQ(a.value_or_default(), int{});
+TYPED_TEST(option, value_or_default) {
+    if constexpr (std::is_default_constructible_v<T>) {
+        opt::option a{V0};
+        EXPECT_EQ(a.value_or_default(), V0);
+        a = opt::none;
+        EXPECT_EQ(a.value_or_default(), T{});
+    }
 }
-TEST_F(option, ptr_or_pull) {
-    opt::option a{1};
+TYPED_TEST(option, ptr_or_pull) {
+    opt::option a{V0};
 
-    EXPECT_EQ(*(a.ptr_or_null()), 1);
+    EXPECT_EQ(*(a.ptr_or_null()), V0);
     a = opt::none;
     EXPECT_EQ(a.ptr_or_null(), nullptr);
-    a = 2;
-    EXPECT_EQ(*(as_const(a).ptr_or_null()), 2);
+    a = V1;
+    EXPECT_EQ(*(as_const(a).ptr_or_null()), V1);
 }
-TEST_F(option, filter) {
-    const auto is_even = [](int x) { return x % 2 == 0; };
+TYPED_TEST(option, filter) {
+    if constexpr (std::is_same_v<T, int>) {
+        const auto is_even = [](int x) { return x % 2 == 0; };
 
-    opt::option a{1};
-    EXPECT_EQ(a.filter(is_even), opt::none);
-    a = 2;
-    EXPECT_EQ(a.filter(is_even), 2);
-    a = opt::none;
-    EXPECT_EQ(a.filter(is_even), opt::none);
+        opt::option a{1};
+        EXPECT_EQ(a.filter(is_even), opt::none);
+        a = 2;
+        EXPECT_EQ(a.filter(is_even), 2);
+        a = opt::none;
+        EXPECT_EQ(a.filter(is_even), opt::none);
+    }
 }
-TEST_F(option, flatten) {
-    auto a = opt::option{opt::option{1}};
-    EXPECT_EQ(**a, 1);
+TYPED_TEST(option, flatten) {
+    auto a = opt::option{opt::option{V0}};
+    EXPECT_EQ(**a, V0);
     auto b = a.flatten();
-    EXPECT_EQ(*b, 1);
+    EXPECT_EQ(*b, V0);
 
-    a = opt::option{opt::option<int>{opt::none}};
+    a = opt::option{opt::option<T>{opt::none}};
     b = a.flatten();
     EXPECT_FALSE(b.has_value());
-    a = opt::option<int>{opt::none};
+    a = opt::option<T>{opt::none};
     b = a.flatten();
     EXPECT_FALSE(b.has_value());
     a = opt::none;
     b = a.flatten();
     EXPECT_FALSE(b.has_value());
 }
-TEST_F(option, map_or) {
-    const auto add_one = [](int x) { return x + 1; };
-    opt::option a{1};
-    EXPECT_EQ(a.map_or(10, add_one), 2);
-    a = opt::none;
-    EXPECT_EQ(a.map_or(11, add_one), 11);
+TYPED_TEST(option, map_or) {
+    if constexpr (std::is_same_v<T, int>) {
+        const auto add_one = [](int x) { return x + 1; };
+        opt::option a{1};
+        EXPECT_EQ(a.map_or(10, add_one), 2);
+        a = opt::none;
+        EXPECT_EQ(a.map_or(11, add_one), 11);
 
-    const auto add_two = [](int x) { return float(x) + 2.f; };
-    a = 2;
-    EXPECT_EQ(a.map_or(0.f, add_two), 4.f);
-    a = opt::none;
-    EXPECT_EQ(a.map_or(5.f, add_two), 5.f);
+        const auto add_two = [](int x) { return float(x) + 2.f; };
+        a = 2;
+        EXPECT_EQ(a.map_or(0.f, add_two), 4.f);
+        a = opt::none;
+        EXPECT_EQ(a.map_or(5.f, add_two), 5.f);
+    }
 }
-TEST_F(option, map_or_else) {
-    const auto default_fn = []() { return 2; };
-    const auto do_fn = [](int x) { return x - 1; };
+TYPED_TEST(option, map_or_else) {
+    if constexpr (std::is_same_v<T, int>) {
+        const auto default_fn = []() { return 2; };
+        const auto do_fn = [](int x) { return x - 1; };
 
-    opt::option a{1};
-    EXPECT_EQ(a.map_or_else(default_fn, do_fn), 0);
-    a = opt::none;
-    EXPECT_EQ(a.map_or_else(default_fn, do_fn), 2);
+        opt::option a{1};
+        EXPECT_EQ(a.map_or_else(default_fn, do_fn), 0);
+        a = opt::none;
+        EXPECT_EQ(a.map_or_else(default_fn, do_fn), 2);
+    }
 }
-TEST_F(option, take_if) {
-    opt::option a{1};
-    auto b = a.take_if([](int) { return false; });
-    EXPECT_FALSE(b.has_value());
-    EXPECT_TRUE(a.has_value());
+TYPED_TEST(option, take_if) {
+    if constexpr (std::is_same_v<T, int>) {
+        opt::option a{1};
+        auto b = a.take_if([](int) { return false; });
+        EXPECT_FALSE(b.has_value());
+        EXPECT_TRUE(a.has_value());
 
-    b = a.take_if([](int& x) {
-        return ++x == 2;
-    });
-    EXPECT_TRUE(b.has_value());
-    EXPECT_EQ(*b, 2);
-    EXPECT_FALSE(a.has_value());
+        b = a.take_if([](int& x) {
+            return ++x == 2;
+        });
+        EXPECT_TRUE(b.has_value());
+        EXPECT_EQ(*b, 2);
+        EXPECT_FALSE(a.has_value());
 
-    auto c = a.take_if([](int) { return false; });
-    EXPECT_FALSE(c.has_value());
-    EXPECT_FALSE(a.has_value());
+        auto c = a.take_if([](int) { return false; });
+        EXPECT_FALSE(c.has_value());
+        EXPECT_FALSE(a.has_value());
 
-    c = a.take_if([](int) { return true; });
-    EXPECT_FALSE(c.has_value());
-    EXPECT_FALSE(a.has_value());
+        c = a.take_if([](int) { return true; });
+        EXPECT_FALSE(c.has_value());
+        EXPECT_FALSE(a.has_value());
+    }
 }
-TEST_F(option, has_value_and) {
-    opt::option a{1};
-    EXPECT_TRUE(a.has_value_and([](int x) { return x == 1; }));
-    EXPECT_FALSE(a.has_value_and([](int x) { return x == 2; }));
+TYPED_TEST(option, has_value_and) {
+    opt::option a{V0};
+    EXPECT_TRUE(a.has_value_and([&](const T& x) { return x == V0; }));
+    EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V1; }));
     a.reset();
-    EXPECT_FALSE(a.has_value_and([](int x) { return x == 1; }));
-    EXPECT_FALSE(a.has_value_and([](int x) { return x == 2; }));
+    EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V0; }));
+    EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V1; }));
 }
-TEST_F(option, insert) {
-    opt::option a{1};
-    auto& x = a.insert(2);
+TYPED_TEST(option, insert) {
+    opt::option a{V0};
+    const T& x = a.insert(V1);
     EXPECT_EQ(&x, a.ptr_or_null());
-    EXPECT_EQ(*a, 2);
+    EXPECT_EQ(*a, V1);
 
-    const int tmp = 3;
-    auto& y = a.insert(tmp);
+    const T tmp = V2;
+    const T& y = a.insert(tmp);
 
     EXPECT_EQ(&y, a.ptr_or_null());
-    EXPECT_EQ(*a, 3);
+    EXPECT_EQ(*a, V2);
 }
-TEST_F(option, inspect) {
-    opt::option a{1};
-    int x = 0;
-    a.inspect([&](int y) { x += y; });
-    EXPECT_EQ(x, 1);
-    as_rvalue(a)
-        .inspect([&](const int& y) { x += y; })
-        .inspect([&](int& y) { return x += y * 2; });
-    EXPECT_EQ(x, 4);
+TYPED_TEST(option, inspect) {
+    if constexpr (std::is_same_v<T, int>) {
+        opt::option a{1};
+        int x = 0;
+        a.inspect([&](int y) { x += y; });
+        EXPECT_EQ(x, 1);
+        as_rvalue(a)
+            .inspect([&](const int& y) { x += y; })
+            .inspect([&](int& y) { return x += y * 2; });
+        EXPECT_EQ(x, 4);
+    }
 }
-TEST_F(option, assume_has_value) {
-    opt::option a{1};
+TYPED_TEST(option, assume_has_value) {
+    opt::option a{V0};
     a.assume_has_value();
-    EXPECT_EQ(*a, 1);
+    EXPECT_EQ(*a, V0);
 }
-TEST_F(option, unzip) {
+TYPED_TEST(option, unzip) {
     { // std::tuple
-        opt::option a{std::tuple{1, 2u, 3.f, 4.}};
+        opt::option a{std::tuple{V0, V1, V2, V3}};
         EXPECT_TRUE(a.has_value());
 
         auto b = a.unzip();
         static_assert(std::is_same_v<decltype(b), std::tuple<
-            opt::option<int>, opt::option<unsigned int>, opt::option<float>, opt::option<double>
+            opt::option<T>, opt::option<T>, opt::option<T>, opt::option<T>
         >>);
         auto& [b1, b2, b3, b4] = b;
 
         EXPECT_TRUE(b1.has_value());
-        EXPECT_EQ(*b1, 1);
+        EXPECT_EQ(*b1, V0);
         EXPECT_TRUE(b2.has_value());
-        EXPECT_EQ(*b2, 2u);
+        EXPECT_EQ(*b2, V1);
         EXPECT_TRUE(b3.has_value());
-        EXPECT_EQ(*b3, 3.f);
+        EXPECT_EQ(*b3, V2);
         EXPECT_TRUE(b4.has_value());
-        EXPECT_EQ(*b4, 4.);
+        EXPECT_EQ(*b4, V3);
 
         a.reset();
         auto c = a.unzip();
@@ -315,17 +469,17 @@ TEST_F(option, unzip) {
         EXPECT_FALSE(c4.has_value());
     }
     { // std::pair
-        opt::option a{std::pair{1, 2.f}};
+        opt::option a{std::pair{V0, V1}};
         EXPECT_TRUE(a.has_value());
 
         auto b = a.unzip();
-        static_assert(std::is_same_v<decltype(b), std::pair<opt::option<int>, opt::option<float>>>);
+        static_assert(std::is_same_v<decltype(b), std::pair<opt::option<T>, opt::option<T>>>);
         auto& [b1, b2] = b;
 
         EXPECT_TRUE(b1.has_value());
-        EXPECT_EQ(*b1, 1);
+        EXPECT_EQ(*b1, V0);
         EXPECT_TRUE(b2.has_value());
-        EXPECT_EQ(*b2, 2.f);
+        EXPECT_EQ(*b2, V1);
 
         a.reset();
         auto c = a.unzip();
@@ -334,19 +488,19 @@ TEST_F(option, unzip) {
         EXPECT_FALSE(c2.has_value());
     }
     { // std::array
-        opt::option a{std::array{1, 2, 3}};
+        opt::option a{std::array{V0, V1, V2}};
         EXPECT_TRUE(a.has_value());
 
         auto b = a.unzip();
-        static_assert(std::is_same_v<decltype(b), std::array<opt::option<int>, 3>>);
+        static_assert(std::is_same_v<decltype(b), std::array<opt::option<T>, 3>>);
         auto& [b1, b2, b3] = b;
 
         EXPECT_TRUE(b1.has_value());
-        EXPECT_EQ(*b1, 1);
+        EXPECT_EQ(*b1, V0);
         EXPECT_TRUE(b2.has_value());
-        EXPECT_EQ(*b2, 2);
+        EXPECT_EQ(*b2, V1);
         EXPECT_TRUE(b3.has_value());
-        EXPECT_EQ(*b3, 3);
+        EXPECT_EQ(*b3, V2);
 
         a.reset();
         auto c = a.unzip();
@@ -356,13 +510,13 @@ TEST_F(option, unzip) {
         EXPECT_FALSE(c3.has_value());
     }
 }
-TEST_F(option, function_zip) {
-    opt::option<int> a{1};
-    opt::option<float> b{2.f};
+TYPED_TEST(option, function_zip) {
+    opt::option<T> a{V0};
+    opt::option<T> b{V1};
 
     auto c = opt::zip(a, b);
     EXPECT_TRUE(c.has_value());
-    EXPECT_EQ(*c, std::tuple(1, 2.f));
+    EXPECT_EQ(*c, std::tuple(V0, V1));
 
     a.reset();
     c = opt::zip(a, b);
@@ -372,53 +526,55 @@ TEST_F(option, function_zip) {
     c = opt::zip(a, b);
     EXPECT_FALSE(c.has_value());
 }
-TEST_F(option, function_zip_with) {
-    struct point { float x, y; };
-    const auto construct_point = [](float x, float y) {
-        return point{x, y};
-    };
+TYPED_TEST(option, function_zip_with) {
+    if constexpr (std::is_same_v<T, int>) {
+        struct point { float x, y; };
+        const auto construct_point = [](float x, float y) {
+            return point{x, y};
+        };
 
-    const opt::option<int> a{1};
-    const opt::option<float> b{2.f};
+        const opt::option<int> a{1};
+        const opt::option<float> b{2.f};
 
-    auto c = opt::zip_with(construct_point, opt::option_cast<float>(a), b);
+        auto c = opt::zip_with(construct_point, opt::option_cast<float>(a), b);
 
-    EXPECT_TRUE(c.has_value());
-    EXPECT_EQ(c->x, 1.f);
-    EXPECT_EQ(c->y, 2.f);
+        EXPECT_TRUE(c.has_value());
+        EXPECT_EQ(c->x, 1.f);
+        EXPECT_EQ(c->y, 2.f);
 
-    c = opt::zip_with(construct_point, opt::option<float>{}, b);
-    EXPECT_FALSE(c.has_value());
+        c = opt::zip_with(construct_point, opt::option<float>{}, b);
+        EXPECT_FALSE(c.has_value());
 
-    c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
-    EXPECT_FALSE(c.has_value());
+        c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
+        EXPECT_FALSE(c.has_value());
 
-    const auto do_something_else = [](int x, float y) {
-        (void)x;
-        (void)y;
-    };
-    opt::zip_with(do_something_else, a, b);
-    opt::zip_with(do_something_else, opt::option<int>{}, b);
-    opt::zip_with(do_something_else, a, opt::option<float>{});
+        const auto do_something_else = [](int x, float y) {
+            (void)x;
+            (void)y;
+        };
+        opt::zip_with(do_something_else, a, b);
+        opt::zip_with(do_something_else, opt::option<int>{}, b);
+        opt::zip_with(do_something_else, a, opt::option<float>{});
+    }
 }
-TEST_F(option, replace) {
-    opt::option a{std::make_unique<int>(1)};
+TYPED_TEST(option, replace) {
+    opt::option a{std::make_unique<T>(V0)};
 
-    auto c = a.replace(std::make_unique<int>(2));
+    auto c = a.replace(std::make_unique<T>(V1));
     EXPECT_TRUE(c.has_value());
-    EXPECT_EQ(**c, 1);
+    EXPECT_EQ(**c, V0);
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(**a, 2);
+    EXPECT_EQ(**a, V1);
 }
-TEST_F(option, from_nullable) {
-    int a = 10;
-    int* ptr = &a;
+TYPED_TEST(option, from_nullable) {
+    T a = V0;
+    T* ptr = &a;
 
-    const opt::option<int> b = opt::from_nullable(ptr);
-    EXPECT_EQ(b, 10);
+    const opt::option<T> b = opt::from_nullable(ptr);
+    EXPECT_EQ(b, V0);
 
     ptr = nullptr;
-    const opt::option<int> c = opt::from_nullable(ptr);
+    const opt::option<T> c = opt::from_nullable(ptr);
     EXPECT_FALSE(c.has_value());
 }
 

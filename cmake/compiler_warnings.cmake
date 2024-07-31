@@ -3,7 +3,7 @@ include_guard(GLOBAL)
 function(target_add_warnings target)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target} PRIVATE 
-        /Wall /WX /permissive- /Za
+        /Wall /WX /permissive-
         /wd5027 # 'type': move assignment operator was implicitly defined as deleted
         /wd4626 # 'derived class': assignment operator was implicitly defined as deleted because a base class assignment operator is inaccessible or deleted
         /wd5026 # 'type': move constructor was implicitly defined as deleted
@@ -34,6 +34,13 @@ function(target_add_warnings target)
                 -Wno-gnu-zero-variadic-macro-arguments
             )
         endif()
+        if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+            set(clang_cl_opts
+                -Wno-unsafe-buffer-usage
+                -Wno-unused-macros
+            )
+        endif()
+
         target_compile_options(${target} PRIVATE
         -Wall # Enables all the warnings
         -Wextra # Enables some extra warning flags that are not enabled by -Wall
@@ -48,6 +55,7 @@ function(target_add_warnings target)
         -Wold-style-cast # Warn for C style casting
         -Wshadow # Warn whenever a local variable or type declaration shadows another variable
         ${clang_opts}
+        ${clang_cl_opts}
         )
     endif()
 endfunction()
