@@ -527,24 +527,26 @@ TEST_F(tuple_like, pair) {
     d.reset();
     EXPECT_FALSE(d.has_value());
 }
-// TEST_F(tuple_like, array) {
-//     static_assert(sizeof(opt::option<std::array<int, 2>>) > sizeof(std::array<int, 2>));
-// 
-//     opt::option<std::array<float, 2>> a{{1.f, 2.f}};
-//     static_assert(sizeof(a) == sizeof(std::array<float, 2>));
-//     EXPECT_TRUE(a.has_value());
-//     EXPECT_EQ((*a)[0], 1.f);
-//     EXPECT_EQ(std::get<1>(*a), 2.f);
-//     a.reset();
-//     EXPECT_FALSE(a.has_value());
-// 
-//     opt::option<std::array<double, 1>> b{{1000.1}};
-//     static_assert(sizeof(b) == sizeof(std::array<double, 1>));
-//     EXPECT_TRUE(b.has_value());
-//     EXPECT_EQ((*b)[0], 1000.1);
-//     b.reset();
-//     EXPECT_FALSE(b.has_value());
-// }
+TEST_F(tuple_like, array) {
+    static_assert(sizeof(opt::option<std::array<int, 2>>) > sizeof(std::array<int, 2>));
+
+    opt::option<std::array<float, 2>> a{{1.f, 2.f}};
+    static_assert(sizeof(a) == sizeof(std::array<float, 2>));
+
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ((*a)[0], 1.f);
+    EXPECT_EQ(std::get<1>(*a), 2.f);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    opt::option<std::array<double, 1>> b{{1000.1}};
+    static_assert(sizeof(b) == sizeof(std::array<double, 1>));
+
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ((*b)[0], 1000.1);
+    b.reset();
+    EXPECT_FALSE(b.has_value());
+}
 
 #if 0 // NOLINT(readability-avoid-unconditional-preprocessor-if)
 

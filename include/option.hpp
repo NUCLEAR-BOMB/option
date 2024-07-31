@@ -512,6 +512,31 @@ namespace impl {
             traits::set_level(std::addressof(std::get<pair_index>(*value)), level);
         }
     };
+
+    template<class T, bool = impl::has_option_traits<T>>
+    struct get_traits_if_avaliable {
+        using type = ::opt::option_traits<T>;
+    };
+    template<class T>
+    struct get_traits_if_avaliable<T, false> {
+        using type = dummy_option_traits;
+    };
+
+    template<class T, std::size_t N>
+    struct internal_option_traits<std::array<T, N>, option_strategy::other> {
+        static_assert(N > 0);
+
+        using traits = typename get_traits_if_avaliable<T>::type;
+
+        static constexpr std::uintmax_t max_level = traits::max_level;
+
+        static std::uintmax_t get_level(const std::array<T, N>* const value) {
+            return traits::get_level(std::addressof((*value)[0]));
+        }
+        static void set_level(std::array<T, N>* const value, const std::uintmax_t level) {
+            traits::set_level(std::addressof((*value)[0]), level);
+        }
+    };
 }
 
 template<class T, class>

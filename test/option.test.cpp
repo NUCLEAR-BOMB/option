@@ -25,7 +25,7 @@
 
 #define TEST_SIZE_LIST \
     double, bool, std::reference_wrapper<int>, int*, float, \
-    std::pair<int, float>, std::pair<float, int>
+    std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
 
 #define TEST_MAIN_LIST \
     int, unsigned int
@@ -93,6 +93,10 @@ struct option<std::pair<int, float>> : ::testing::Test {
 template<>
 struct option<std::pair<float, int>> : ::testing::Test {
     std::pair<float, int> values[5]{{1.f, 2}, {3.f, 4}, {5.f, 6}, {7.f, 8}, {9.f, 10}};
+};
+template<>
+struct option<std::array<float, 4>> : ::testing::Test {
+    std::array<float, 4> values[5]{{1.f, 2.f, 3.f, 4.f}, {5.f, 6.f, 7.f, 8.f}, {9.f, 10.f, 11.f, 12.f}, {13.f, 14.f, 15.f, 16.f}, {17.f, 18.f, 19.f, 20.f}};
 };
 
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
