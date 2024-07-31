@@ -428,6 +428,20 @@ namespace impl {
         }
     };
 
+    struct dummy_option_traits {
+        static constexpr std::uintmax_t max_level = 0;
+
+        template<class T>
+        static std::uintmax_t get_level(const T* const) {
+            OPTION_VERIFY(false, "called dummy traits");
+            return 0;
+        }
+        template<class T>
+        static void set_level(T* const, const std::uintmax_t) {
+            OPTION_VERIFY(false, "called dummy traits");
+        }
+    };
+
     template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
     struct select_max_level_traits_impl;
 
@@ -461,17 +475,17 @@ namespace impl {
     struct select_max_level_traits_impl<level_, Type, var_index, index_> {
         static constexpr std::uintmax_t level = level_;
         static constexpr std::size_t index = index_;
-        using type = ::opt::option_traits<Type>;
+        using type = Type;
     };
 
     template<class... Ts>
     struct select_max_level_traits
-        : select_max_level_traits_impl<0, void, 0, 0, Ts...> {};
+        : select_max_level_traits_impl<0, dummy_option_traits, 0, 0, Ts...> {};
 
     template<class First, class Second>
     struct internal_option_traits<std::pair<First, Second>, option_strategy::other> {
         using select_traits = select_max_level_traits<First, Second>;
-        using traits = typename select_traits::type;
+        using traits = ::opt::option_traits<typename select_traits::type>;
 
         static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t pair_index = select_traits::index;
@@ -486,7 +500,7 @@ namespace impl {
     template<class... Ts>
     struct internal_option_traits<std::tuple<Ts...>, option_strategy::other> {
         using select_traits = select_max_level_traits<Ts...>;
-        using traits = typename select_traits::type;
+        using traits = ::opt::option_traits<typename select_traits::type>;
 
         static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t pair_index = select_traits::index;
