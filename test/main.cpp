@@ -13,9 +13,8 @@ int main(int argc, char** argv) {
     if (IsDebuggerPresent()) {
         GTEST_FLAG_SET(break_on_failure, true);
     }
-#else
-    GTEST_FLAG_SET(break_on_failure, true);
 #endif
     ::testing::InitGoogleTest(&argc, argv);
+    
     return RUN_ALL_TESTS();
 }

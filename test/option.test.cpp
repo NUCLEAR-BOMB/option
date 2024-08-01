@@ -24,8 +24,9 @@
 #define V4 this->values[4]
 
 #define TEST_SIZE_LIST \
-    double, bool, std::reference_wrapper<int>, int*, float, \
+    empty_struct, double, bool, std::reference_wrapper<int>, int*, float, \
     std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
+    
 
 #define TEST_MAIN_LIST \
     int, unsigned int
@@ -99,6 +100,14 @@ struct option<std::array<float, 4>> : ::testing::Test {
     std::array<float, 4> values[5]{{1.f, 2.f, 3.f, 4.f}, {5.f, 6.f, 7.f, 8.f}, {9.f, 10.f, 11.f, 12.f}, {13.f, 14.f, 15.f, 16.f}, {17.f, 18.f, 19.f, 20.f}};
 };
 
+struct empty_struct {
+    bool operator==(const empty_struct&) const { return true; }
+};
+template<>
+struct option<empty_struct> : ::testing::Test {
+    empty_struct values[5]{{}, {}, {}, {}, {}};
+};
+
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
 
 template<class T>
@@ -137,7 +146,7 @@ TYPED_TEST(option, get) {
     EXPECT_EQ(as_const_rvalue(a).get(), V0);
     EXPECT_EQ(as_rvalue(a).get(), V0);
 }
-TYPED_TEST(option, assigment) {
+TYPED_TEST(option, assignment) {
     opt::option<T> a = V0;
     a = opt::none;
     EXPECT_FALSE(a.has_value());
@@ -146,7 +155,7 @@ TYPED_TEST(option, assigment) {
         a = tmp;
     }
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, V1);
+    EXPECT_EQ(a, V1);
     {
         const opt::option<T> tmp{opt::none};
         a = tmp;
@@ -154,7 +163,7 @@ TYPED_TEST(option, assigment) {
     EXPECT_FALSE(a.has_value());
     a = opt::option<T>(V2);
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, V2);
+    EXPECT_EQ(a, V2);
     a = opt::option<T>(opt::none);
     EXPECT_FALSE(a.has_value());
     EXPECT_FALSE(a.has_value());
@@ -163,10 +172,10 @@ TYPED_TEST(option, assigment) {
         a = tmp;
     }
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, V3);
+    EXPECT_EQ(a, V3);
     a = V4;
     EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, V4);
+    EXPECT_EQ(a, V4);
 
     opt::option<T> b;
     EXPECT_FALSE(b.has_value());
@@ -190,6 +199,67 @@ TYPED_TEST(option, assigment) {
     EXPECT_FALSE(b.has_value());
     b = opt::none;
     EXPECT_FALSE(b.has_value());
+
+    opt::option<T> c;
+    EXPECT_FALSE(c.has_value());
+    c = V0;
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c, V0);
+
+    opt::option<T> d;
+    EXPECT_FALSE(d.has_value());
+    d = c;
+    EXPECT_TRUE(c.has_value());
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d, V0);
+
+    c = opt::none;
+    EXPECT_FALSE(c.has_value());
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d, V0);
+    d = opt::none;
+
+    c = d;
+    EXPECT_FALSE(c.has_value());
+    EXPECT_FALSE(d.has_value());
+
+    c = opt::option<T>{d};
+    EXPECT_FALSE(c.has_value());
+    EXPECT_FALSE(d.has_value());
+
+    d = V0;
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d, V0);
+
+    c = opt::option<T>{d};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d, V0);
+    EXPECT_EQ(c, V0);
+
+    d = opt::option<T>{c};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_TRUE(d.has_value());
+
+    d = opt::none;
+    EXPECT_FALSE(d.has_value());
+    c = opt::option<T>{d};
+    EXPECT_FALSE(c.has_value());
+    EXPECT_FALSE(d.has_value());
+
+    c = V0;
+    EXPECT_TRUE(c.has_value());
+    d = std::move(c);
+    EXPECT_TRUE(d.has_value());
+    EXPECT_TRUE(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
+
+    d = opt::none;
+    c = V0;
+    EXPECT_FALSE(d.has_value());
+    EXPECT_TRUE(c.has_value());
+    d = opt::option<T>{std::move(c)};
+    EXPECT_TRUE(d.has_value());
+    EXPECT_TRUE(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
 }
 
 TYPED_TEST(option, reset) {
@@ -273,10 +343,11 @@ TYPED_TEST(option, or_else) {
 }
 TYPED_TEST(option, take) {
     opt::option<T> a;
-    auto b = a.take();
+    opt::option<T> b = a.take();
     EXPECT_FALSE(a.has_value());
     EXPECT_FALSE(a.has_value());
     a = V0;
+    EXPECT_FALSE(b.has_value());
     EXPECT_TRUE(a.has_value());
     b = a.take();
     EXPECT_TRUE(b.has_value());
@@ -410,7 +481,9 @@ TYPED_TEST(option, take_if) {
 TYPED_TEST(option, has_value_and) {
     opt::option a{V0};
     EXPECT_TRUE(a.has_value_and([&](const T& x) { return x == V0; }));
-    EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V1; }));
+    if (!(V0 == V1)) {
+        EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V1; }));
+    }
     a.reset();
     EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V0; }));
     EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V1; }));
