@@ -24,7 +24,8 @@
 #define V4 this->values[4]
 
 #define TEST_SIZE_LIST \
-    empty_struct, double, bool, std::reference_wrapper<int>, int*, float, \
+    std::tuple<>, std::tuple<int, float, int>, empty_struct, \
+    double, bool, std::reference_wrapper<int>, int*, float, \
     std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
     
 
@@ -106,6 +107,15 @@ struct empty_struct {
 template<>
 struct option<empty_struct> : ::testing::Test {
     empty_struct values[5]{{}, {}, {}, {}, {}};
+};
+
+template<>
+struct option<std::tuple<>> : ::testing::Test {
+    std::tuple<> values[5]{{}, {}, {}, {}, {}};
+};
+template<>
+struct option<std::tuple<int, float, int>> : ::testing::Test {
+    std::tuple<int, float, int> values[5]{{1, 2.f, 3}, {4, 5.f, 6}, {7, 8.f, 9}, {10, 11.f, 12}, {13, 14.f, 15}};
 };
 
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
