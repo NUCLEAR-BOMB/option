@@ -17,11 +17,11 @@
 #endif
 
 #define TypeParam T
-#define V0 this->values[0]
-#define V1 this->values[1]
-#define V2 this->values[2]
-#define V3 this->values[3]
-#define V4 this->values[4]
+#define V0 (this->values[0])
+#define V1 (this->values[1])
+#define V2 (this->values[2])
+#define V3 (this->values[3])
+#define V4 (this->values[4])
 
 #define TEST_SIZE_LIST \
     std::tuple<>, std::tuple<int, float, int>, empty_struct, \
@@ -99,6 +99,10 @@ struct option<std::pair<float, int>> : ::testing::Test {
 template<>
 struct option<std::array<float, 4>> : ::testing::Test {
     std::array<float, 4> values[5]{{1.f, 2.f, 3.f, 4.f}, {5.f, 6.f, 7.f, 8.f}, {9.f, 10.f, 11.f, 12.f}, {13.f, 14.f, 15.f, 16.f}, {17.f, 18.f, 19.f, 20.f}};
+};
+template<>
+struct option<std::array<int, 0>> : ::testing::Test {
+    std::array<int, 0> values[5]{{}, {}, {}, {}, {}};
 };
 
 struct empty_struct {

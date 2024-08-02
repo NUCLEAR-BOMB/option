@@ -157,6 +157,10 @@ inline constexpr bool is_option = false;
 template<class T>
 inline constexpr bool is_option<opt::option<T>> = true;
 
+#ifdef OPTION_HAS_BOOST_PFR
+struct option_tag {};
+#endif
+
 namespace impl {
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
@@ -255,10 +259,76 @@ namespace impl {
 #endif
     }
 
+    template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
+    struct select_max_level_traits_impl;
+
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable : 4296) // 'operator' : expression is always false
+#endif
+
+    template<
+        std::uintmax_t level,
+        class Type,
+        std::size_t var_index,
+        std::size_t index,
+        class T, class... Ts
+    >
+    struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
+        : select_max_level_traits_impl<
+            (impl::get_max_level<T> > level) ? impl::get_max_level<T> : level,
+            std::conditional_t<(impl::get_max_level<T> > level), T, Type>,
+            var_index + 1,
+            (impl::get_max_level<T> > level) ? var_index : index,
+            Ts...
+        >
+    {};
+
+    template<std::uintmax_t level_, class Type, std::size_t var_index, std::size_t index_>
+    struct select_max_level_traits_impl<level_, Type, var_index, index_> {
+        static constexpr std::uintmax_t level = level_;
+        static constexpr std::size_t index = index_;
+        using type = Type;
+    };
+
+    template<class... Ts>
+    struct select_max_level_traits
+        : select_max_level_traits_impl<0, void, 0, 0, Ts...> {};
+
+#ifdef OPTION_HAS_BOOST_PFR
+    template<class Struct>
+    inline constexpr bool pfr_is_option_reflectable =
+        ::boost::pfr::is_implicitly_reflectable_v<Struct, option_tag>;
+
+    template<class Struct>
+    struct unpack_tuple_select_max_level_traits;
+    template<class... Ts>
+    struct unpack_tuple_select_max_level_traits<std::tuple<Ts...>>
+        : select_max_level_traits<Ts...> {};
+
+    template<class Struct, bool = pfr_is_option_reflectable<Struct>>
+    inline constexpr bool pfr_has_available_traits = false;
+
+    template<class Struct>
+    inline constexpr bool pfr_has_available_traits<Struct, true> =
+        (unpack_tuple_select_max_level_traits<
+            decltype(::boost::pfr::structure_to_tuple(std::declval<Struct&>()))
+        >::level) > 0;
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
+
+#endif
+
     enum class option_strategy {
         none,
         other,
         bool_,
+        reference_wrapper,
+        pair,
+        tuple,
+        array,
         avaliable_option,
         unavaliable_option,
         reference,
@@ -269,12 +339,45 @@ namespace impl {
         float64_qNaN,
         float32_sNaN,
         float32_qNaN,
-        empty
+        empty,
+#ifdef OPTION_HAS_BOOST_PFR
+        reflectable,
+#endif
+    };
+
+    template<class T>
+    struct dispatch_specializations {
+        static constexpr option_strategy value = option_strategy::other;
+    };
+    template<>
+    struct dispatch_specializations<bool> {
+        static constexpr option_strategy value = option_strategy::bool_;
+    };
+    template<class T>
+    struct dispatch_specializations<std::reference_wrapper<T>> {
+        static constexpr option_strategy value = option_strategy::reference_wrapper;
+    };
+    template<class First, class Second>
+    struct dispatch_specializations<std::pair<First, Second>> {
+        static constexpr option_strategy value = option_strategy::pair;
+    };
+    template<class T0, class... Ts>
+    struct dispatch_specializations<std::tuple<T0, Ts...>> {
+        static constexpr option_strategy value = option_strategy::tuple;
+    };
+    template<class T, std::size_t N>
+    struct dispatch_specializations<std::array<T, N>> {
+        static constexpr option_strategy value = option_strategy::array;
+    };
+    template<class T>
+    struct dispatch_specializations<std::array<T, 0>> {
+        static constexpr option_strategy value = option_strategy::empty;
     };
 
     template<class T>
     constexpr option_strategy detemine_option_strategy() {
         using st = option_strategy;
+        constexpr st dispatch_st = dispatch_specializations<T>::value;
 
         if constexpr (is_option<T>) {
             if constexpr (has_option_traits<typename T::value_type>) {
@@ -282,40 +385,47 @@ namespace impl {
             } else {
                 return st::unavaliable_option;
             }
-        }
+        } else
+        if constexpr (dispatch_st != st::other) {
+            return dispatch_st;
+        } else
         if constexpr (std::is_reference_v<T>) {
             return st::reference;
-        }
+        } else
         if constexpr (std::is_pointer_v<T>) {
             if constexpr (sizeof(T) <= 1) {
                 return st::none;
-            }
+            } else
             if constexpr (sizeof(T) <= 4) {
                 return st::pointer_32;
-            }
+            } else
             if constexpr (sizeof(T) <= 2) {
                 return st::pointer_16;
-            }
+            } else
             return st::pointer_64;
-        }
+        } else
         if constexpr (std::is_floating_point_v<T>) {
             using limits = std::numeric_limits<T>;
             if constexpr (!limits::is_iec559 || (!limits::has_signaling_NaN && !limits::has_quiet_NaN)) {
                 return st::none;
-            }
+            } else
             if constexpr (sizeof(T) == 8) {
                 return limits::has_signaling_NaN ? st::float64_sNaN : st::float64_qNaN;
-            }
+            } else
             if constexpr (sizeof(T) == 4) {
                 return limits::has_signaling_NaN ? st::float32_sNaN : st::float32_qNaN;
-            }
+            } else
             return st::none;
-        }
+        } else
         if constexpr (std::is_empty_v<T>) {
             return st::empty;
-        }
-
-        return st::other;
+        } else
+#ifdef OPTION_HAS_BOOST_PFR
+        if constexpr (pfr_has_available_traits<T>) {
+            return st::reflectable;
+        } else
+#endif
+        return st::none;
     }
 
     template<class T, option_strategy strategy = detemine_option_strategy<T>()>
@@ -324,7 +434,7 @@ namespace impl {
     };
 
     template<>
-    struct internal_option_traits<bool, option_strategy::other> {
+    struct internal_option_traits<bool, option_strategy::bool_> {
         static constexpr std::uintmax_t max_level = 254;
         using uint_bool = std::uint_least8_t;
 
@@ -352,7 +462,7 @@ namespace impl {
     };
 
     template<class T>
-    struct internal_option_traits<std::reference_wrapper<T>, option_strategy::other> {
+    struct internal_option_traits<std::reference_wrapper<T>, option_strategy::reference_wrapper> {
         static_assert(sizeof(std::reference_wrapper<T>) == sizeof(T*), "Unsupported std::reference_wrapper implementation.");
 
         static constexpr std::uintmax_t max_level = 256;
@@ -474,48 +584,8 @@ namespace impl {
         }
     };
 
-    template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
-    struct select_max_level_traits_impl;
-
-#ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable : 4296) // 'operator' : expression is always false
-#endif
-
-    template<
-        std::uintmax_t level,
-        class Type,
-        std::size_t var_index,
-        std::size_t index,
-        class T, class... Ts
-    >
-    struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
-        : select_max_level_traits_impl<
-            (impl::get_max_level<T> > level) ? impl::get_max_level<T> : level,
-            std::conditional_t<(impl::get_max_level<T> > level), T, Type>,
-            var_index + 1,
-            (impl::get_max_level<T> > level) ? var_index : index,
-            Ts...
-        >
-    {};
-
-#ifdef _MSC_VER
-    #pragma warning(pop)
-#endif
-
-    template<std::uintmax_t level_, class Type, std::size_t var_index, std::size_t index_>
-    struct select_max_level_traits_impl<level_, Type, var_index, index_> {
-        static constexpr std::uintmax_t level = level_;
-        static constexpr std::size_t index = index_;
-        using type = Type;
-    };
-
-    template<class... Ts>
-    struct select_max_level_traits
-        : select_max_level_traits_impl<0, void, 0, 0, Ts...> {};
-
     template<class First, class Second>
-    struct internal_option_traits<std::pair<First, Second>, option_strategy::other> {
+    struct internal_option_traits<std::pair<First, Second>, option_strategy::pair> {
         using select_traits = select_max_level_traits<First, Second>;
         using type = typename select_traits::type;
         using traits = ::opt::option_traits<type>;
@@ -535,7 +605,7 @@ namespace impl {
         }
     };
     template<class... Ts>
-    struct internal_option_traits<std::tuple<Ts...>, option_strategy::other> {
+    struct internal_option_traits<std::tuple<Ts...>, option_strategy::tuple> {
         using select_traits = select_max_level_traits<Ts...>;
         using type = typename select_traits::type;
         using traits = ::opt::option_traits<type>;
@@ -567,7 +637,7 @@ namespace impl {
     };
 
     template<class T, std::size_t N>
-    struct internal_option_traits<std::array<T, N>, option_strategy::other> {
+    struct internal_option_traits<std::array<T, N>, option_strategy::array> {
         static_assert(N > 0);
 
         using traits = typename get_traits_if_avaliable<T>::type;
@@ -603,6 +673,30 @@ namespace impl {
             impl::ptr_bit_copy_least(value, uint_t(255));
         }
     };
+#ifdef OPTION_HAS_BOOST_PFR
+    template<class T>
+    struct internal_option_traits<T, option_strategy::reflectable> {
+        using select_traits = unpack_tuple_select_max_level_traits<
+            decltype(::boost::pfr::structure_to_tuple(std::declval<T&>()))
+        >;
+        using type = typename select_traits::type;
+        using traits = ::opt::option_traits<type>;
+
+        static constexpr std::uintmax_t max_level = select_traits::level;
+        static constexpr std::size_t index = select_traits::index;
+
+        static std::uintmax_t get_level(const T* const value) {
+            return traits::get_level(std::addressof(::boost::pfr::get<index>(*value)));
+        }
+        static void set_level(T* const value, const std::uintmax_t level) {
+            traits::set_level(std::addressof(::boost::pfr::get<index>(*value)), level);
+        }
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
+        static void after_constructor(T* const value) {
+            traits::after_constructor(std::addressof(::boost::pfr::get<index>(*value)));
+        }
+    };
+#endif
 }
 
 template<class T, class>
@@ -676,23 +770,23 @@ namespace impl {
 
         constexpr bool trivially_destructible = std::is_trivially_destructible_v<T>;
         constexpr bool has_traits = has_option_traits<T>;
-        constexpr bool is_empty = std::is_empty_v<T>;
+        constexpr option_strategy strategy = detemine_option_strategy<T>();
 
-        if constexpr (has_traits && is_empty && trivially_destructible) {
+        if constexpr (strategy == option_strategy::empty && has_traits && trivially_destructible) {
             return st::has_traits | st::trivially_destructible | st::empty;
-        }
-        if constexpr (has_traits && is_empty && !trivially_destructible) {
+        } else
+        if constexpr (strategy == option_strategy::empty && has_traits && !trivially_destructible) {
             return st::has_traits | st::empty;
-        }
+        } else
         if constexpr (has_traits && trivially_destructible) {
             return st::has_traits | st::trivially_destructible;
-        }
+        } else
         if constexpr (has_traits && !trivially_destructible) {
             return st::has_traits;
-        }
+        } else
         if constexpr (trivially_destructible) {
             return st::trivially_destructible;
-        }
+        } else
         return st{};
     }
 

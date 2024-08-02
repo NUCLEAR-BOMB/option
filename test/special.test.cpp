@@ -568,6 +568,8 @@ TEST_F(fancy_pointer, unique_ptr) {
     EXPECT_EQ(**a, 3);
 }
 
+#endif
+
 #ifdef OPTION_HAS_BOOST_PFR
 
 struct structures : ::testing::Test {};
@@ -623,13 +625,11 @@ struct struct1 {
     float x;
 };
 
-#endif
-
 }
 
-// template<>
-// struct opt::option_traits<struct1>;
-// 
-// static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
+template<>
+struct opt::option_traits<struct1>;
+
+static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
 
 #endif // OPTION_USE_BUILTIN_TRAITS
