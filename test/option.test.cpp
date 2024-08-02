@@ -24,7 +24,7 @@
 #define V4 (this->values[4])
 
 #define TEST_SIZE_LIST \
-    std::tuple<>, std::tuple<int, float, int>, empty_struct, \
+    std::array<int, 0>, empty_struct, std::tuple<>, std::tuple<int, float, int>, \
     double, bool, std::reference_wrapper<int>, int*, float, \
     std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
     

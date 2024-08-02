@@ -16,15 +16,42 @@
 #include <string>
 #include <vector>
 
+#ifdef __INTEL_COMPILER
+    #define OPTION_CLANG 0
+    #define OPTION_GCC   0
+    #define OPTION_MSVC  0
+    #define OPTION_INTEL 1
+#elif defined(_MSC_VER)
+    #define OPTION_CLANG 0
+    #define OPTION_GCC   0
+    #define OPTION_MSVC  1
+    #define OPTION_INTEL 0
+#elif defined(__clang__)
+    #define OPTION_CLANG 1
+    #define OPTION_GCC   0
+    #define OPTION_MSVC  0
+    #define OPTION_INTEL 0
+#elif defined(__GNUC__) || defined(__GNUG__)
+    #define OPTION_CLANG 0
+    #define OPTION_GCC   1
+    #define OPTION_MSVC  0
+    #define OPTION_INTEL 0
+#else
+    #define OPTION_CLANG 0
+    #define OPTION_GCC   0
+    #define OPTION_MSVC  0
+    #define OPTION_INTEL 0
+#endif
+
 #ifdef __has_builtin
     #if __has_builtin(__builtin_unreachable)
         #define OPTION_UNREACHABLE() __builtin_unreachable()
     #endif
 #endif
 #ifndef OPTION_UNREACHABLE
-        #if defined(__GNUC__) || defined(__GNUG__)
+        #if OPTION_GCC || OPTION_CLANG
             #define OPTION_UNREACHABLE() __builtin_unreachable()
-        #elif defined(_MSC_VER)
+        #elif OPTION_MSVC
             #define OPTION_UNREACHABLE() __assume(0)
         #else
             #define OPTION_UNREACHABLE() ((void)0)
@@ -102,11 +129,11 @@
     #ifdef OPTION_HAS_LIBASSERT
         #define OPTION_VERIFY(expression, message) LIBASSERT_ASSUME(expression, message)
     #else
-        #ifdef __clang__
+        #if OPTION_CLANG
             #define OPTION_DEBUG_BREAK __builtin_debugtrap()
-        #elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+        #elif OPTION_MSVC || OPTION_INTEL
             #define OPTION_DEBUG_BREAK __debugbreak()
-        #elif defined(__GNUC__) || defined(__GNUG__)
+        #elif OPTION_GCC
             #define OPTION_DEBUG_BREAK __builtin_trap()
         #else
             #include <csignal>
@@ -215,19 +242,19 @@ namespace impl {
     void ptr_bit_copy(Dest* const dest, const Src& src) noexcept {
         static_assert(sizeof(Src) == sizeof(Dest));
 
-#if defined(__clang__)
+#if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
-#elif defined(__GNUC__)
+#elif OPTION_GCC
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
     #pragma GCC diagnostic ignored "-Wuninitialized"
     #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
         std::memcpy(dest, &src, sizeof(Dest));
-#if defined(__clang__)
+#if OPTION_CLANG
     #pragma clang diagnostic pop
-#elif defined(__GNUC__)
+#elif OPTION_GCC
     #pragma GCC diagnostic pop
 #endif
     }
@@ -242,19 +269,19 @@ namespace impl {
     template<class Src, class Dest>
     void ptr_bit_copy_least(Dest* const dest, const Src& src) noexcept {
         static_assert(sizeof(Dest) >= sizeof(Src));
-#if defined(__clang__)
+#if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
-#elif defined(__GNUC__)
+#elif OPTION_GCC
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
     #pragma GCC diagnostic ignored "-Wuninitialized"
     #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
         std::memcpy(dest, &src, sizeof(Src));
-#if defined(__clang__)
+#if OPTION_CLANG
     #pragma clang diagnostic pop
-#elif defined(__GNUC__)
+#elif OPTION_GCC
     #pragma GCC diagnostic pop
 #endif
     }
@@ -262,7 +289,7 @@ namespace impl {
     template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
     struct select_max_level_traits_impl;
 
-#ifdef _MSC_VER
+#if OPTION_MSVC
     #pragma warning(push)
     #pragma warning(disable : 4296) // 'operator' : expression is always false
 #endif
@@ -314,11 +341,10 @@ namespace impl {
         (unpack_tuple_select_max_level_traits<
             decltype(::boost::pfr::structure_to_tuple(std::declval<Struct&>()))
         >::level) > 0;
-
-#ifdef _MSC_VER
-    #pragma warning(pop)
 #endif
 
+#if OPTION_MSVC
+    #pragma warning(pop)
 #endif
 
     enum class option_strategy {
@@ -329,6 +355,7 @@ namespace impl {
         pair,
         tuple,
         array,
+        array_0,
         avaliable_option,
         unavaliable_option,
         reference,
@@ -371,7 +398,7 @@ namespace impl {
     };
     template<class T>
     struct dispatch_specializations<std::array<T, 0>> {
-        static constexpr option_strategy value = option_strategy::empty;
+        static constexpr option_strategy value = option_strategy::array_0;
     };
 
     template<class T>
@@ -655,6 +682,33 @@ namespace impl {
             traits::after_constructor(std::addressof((*value)[0]));
         }
     };
+    template<class T>
+    struct internal_option_traits<std::array<T, 0>, option_strategy::array_0> {
+        using uint_t = std::uint_least8_t;
+
+        static constexpr std::uintmax_t max_level = 255;
+
+#if OPTION_CLANG
+        static constexpr uint_t engaged_value = 190;
+#elif OPTION_GCC
+        static constexpr uint_t engaged_value = 1;
+#else
+        static constexpr uint_t engaged_value = 0;
+#endif
+
+        static std::uintmax_t get_level(const std::array<T, 0>* const value) {
+            const auto uint = impl::ptr_bit_cast_least<uint_t>(value);
+            return uint != engaged_value ? uint_t(uint - (engaged_value + 1)) : std::uintmax_t(-1);
+        }
+        static void set_level(std::array<T, 0>* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy_least(value, uint_t(level + (engaged_value + 1)));
+        }
+#if OPTION_CLANG || OPTION_GCC
+        static void after_constructor(std::array<T, 0>* const value) noexcept {
+            impl::ptr_bit_copy_least(value, uint_t(engaged_value));
+        }
+#endif
+    };
 
     template<class T>
     struct internal_option_traits<T, option_strategy::empty> {
@@ -772,10 +826,14 @@ namespace impl {
         constexpr bool has_traits = has_option_traits<T>;
         constexpr option_strategy strategy = detemine_option_strategy<T>();
 
-        if constexpr (strategy == option_strategy::empty && has_traits && trivially_destructible) {
+        if constexpr (
+            (strategy == option_strategy::empty || strategy == option_strategy::array_0)
+            && has_traits && trivially_destructible) {
             return st::has_traits | st::trivially_destructible | st::empty;
         } else
-        if constexpr (strategy == option_strategy::empty && has_traits && !trivially_destructible) {
+        if constexpr (
+            (strategy == option_strategy::empty || strategy == option_strategy::array_0)
+            && has_traits && !trivially_destructible) {
             return st::has_traits | st::empty;
         } else
         if constexpr (has_traits && trivially_destructible) {
@@ -872,6 +930,10 @@ namespace impl {
             has_value_flag = true;
         }
     };
+#if OPTION_GCC
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     template<class T>
     struct option_destruct_base<T,
         base_strategy::has_traits | base_strategy::trivially_destructible
@@ -966,6 +1028,7 @@ namespace impl {
             OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
         }
         constexpr bool has_value() const noexcept {
+
             const std::uintmax_t level = traits::get_level(std::addressof(value));
             OPTION_VERIFY(level == std::uintmax_t(-1) || level <= traits::max_level, "Invalid level");
             return level == std::uintmax_t(-1);
@@ -1043,6 +1106,9 @@ namespace impl {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
     };
+#if OPTION_GCC
+    #pragma GCC diagnostic pop
+#endif
 
     template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
     class option_storage_base : public option_destruct_base<T> {
