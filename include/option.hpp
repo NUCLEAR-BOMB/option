@@ -382,7 +382,10 @@ namespace impl {
     };
     template<class T>
     struct dispatch_specializations<std::reference_wrapper<T>> {
-        static constexpr option_strategy value = option_strategy::reference_wrapper;
+        static constexpr option_strategy value =
+            sizeof(std::reference_wrapper<T>) == sizeof(T*)
+                ? option_strategy::reference_wrapper
+                : option_strategy::other;
     };
     template<class First, class Second>
     struct dispatch_specializations<std::pair<First, Second>> {
@@ -490,8 +493,6 @@ namespace impl {
 
     template<class T>
     struct internal_option_traits<std::reference_wrapper<T>, option_strategy::reference_wrapper> {
-        static_assert(sizeof(std::reference_wrapper<T>) == sizeof(T*), "Unsupported std::reference_wrapper implementation.");
-
         static constexpr std::uintmax_t max_level = 256;
 
         static std::uintmax_t get_level(const std::reference_wrapper<T>* const value) noexcept {
