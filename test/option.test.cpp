@@ -24,7 +24,8 @@
 #define V4 (this->values[4])
 
 #define TEST_SIZE_LIST \
-    std::array<int, 0>, empty_struct, std::tuple<>, std::tuple<int, float, int>, \
+    aggregate_with_empty_struct, aggregate_int_float, std::array<int, 0>, empty_struct, \
+    std::tuple<>, std::tuple<int, float, int>, \
     double, bool, std::reference_wrapper<int>, int*, float, \
     std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
     
@@ -122,17 +123,42 @@ struct option<std::tuple<int, float, int>> : ::testing::Test {
     std::tuple<int, float, int> values[5]{{1, 2.f, 3}, {4, 5.f, 6}, {7, 8.f, 9}, {10, 11.f, 12}, {13, 14.f, 15}};
 };
 
+struct aggregate_int_float {
+    int x;
+    float y;
+
+    bool operator==(const aggregate_int_float& a) const { return x == a.x && y == a.y; }
+};
+template<>
+struct option<aggregate_int_float> : ::testing::Test {
+    aggregate_int_float values[5]{{1, 2.f}, {3, 4.f}, {5, 6.f}, {7, 8.f}, {9, 10.f}};
+};
+
+struct aggregate_with_empty_struct {
+    int x;
+    empty_struct y;
+
+    bool operator==(const aggregate_with_empty_struct& a) const { return x == a.x; }
+};
+template<>
+struct option<aggregate_with_empty_struct> : ::testing::Test {
+    aggregate_with_empty_struct values[5]{
+        {1, {}}, {2, {}}, {3, {}}, {4, {}}, {5, {}}
+    };
+};
+
+
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
 
 template<class T>
-struct test_size : ::testing::Test {
-    static_assert(sizeof(T) == sizeof(opt::option<T>));
-    static_assert(sizeof(T) == sizeof(opt::option<opt::option<T>>));
-    static_assert(sizeof(T) == sizeof(opt::option<opt::option<opt::option<T>>>));
-    static_assert(sizeof(T) == sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>));
-};
+struct test_size : ::testing::Test {};
 TYPED_TEST_SUITE(test_size, test_size_types);
-TYPED_TEST(test_size, instantiate) {}
+TYPED_TEST(test_size, check) {
+    EXPECT_EQ(sizeof(T), sizeof(opt::option<T>));
+    EXPECT_EQ(sizeof(T), sizeof(opt::option<opt::option<T>>));
+    EXPECT_EQ(sizeof(T), sizeof(opt::option<opt::option<opt::option<T>>>));
+    EXPECT_EQ(sizeof(T), sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>));
+}
 
 using test_main_types = ::testing::Types<TEST_SIZE_LIST, TEST_MAIN_LIST>;
 TYPED_TEST_SUITE(option, test_main_types);
