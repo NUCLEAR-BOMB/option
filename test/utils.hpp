@@ -26,7 +26,9 @@ namespace opt {
         if (value) {
             *os << ::testing::PrintToString(*value);
         } else {
-            *os << "[empty]";
+            *os << "[empty] (";
+            ::testing::internal::PrintBytesInObjectTo(reinterpret_cast<const unsigned char*>(&value), sizeof(value), os);
+            *os << ")";
         }
     }
 }
