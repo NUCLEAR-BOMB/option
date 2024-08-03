@@ -1,6 +1,11 @@
 
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
 
+find_program(ccache_result ccache)
+if(ccache_result)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${ccache_result})
+endif()
+
 add_executable(option-test
     "option.test.cpp"
     "operators.test.cpp"
