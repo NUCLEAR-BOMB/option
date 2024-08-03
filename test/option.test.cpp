@@ -127,6 +127,7 @@ struct aggregate_int_float {
     int x;
     float y;
 
+    // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const aggregate_int_float& a) const { return x == a.x && y == a.y; }
 };
 template<>
@@ -349,7 +350,7 @@ TYPED_TEST(option, value_or_throw) {
 }
 TYPED_TEST(option, value_or) {
     opt::option<T> a; // NOLINT(clang-analyzer-core.uninitialized.UndefReturn)
-    EXPECT_EQ(a.value_or(V0), V0);
+    EXPECT_EQ(a.value_or(V0), V0); // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult)
     a = V1;
     EXPECT_EQ(a.value_or(V2), V1);
     EXPECT_EQ(as_rvalue(a).value_or(V3), V1);

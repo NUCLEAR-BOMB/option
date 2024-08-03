@@ -706,26 +706,20 @@ namespace impl {
 
         static constexpr std::uintmax_t max_level = 255;
 
-#if OPTION_CLANG
-        static constexpr uint_t engaged_value = 190;
-#elif OPTION_GCC
-        static constexpr uint_t engaged_value = 1;
-#else
-        static constexpr uint_t engaged_value = 0;
-#endif
-
         static std::uintmax_t get_level(const std::array<T, 0>* const value) {
             const auto uint = impl::ptr_bit_cast_least<uint_t>(value);
-            return uint != engaged_value ? uint_t(uint - (engaged_value + 1)) : std::uintmax_t(-1);
+            return uint != 255 ? uint_t(uint) : std::uintmax_t(-1);
         }
         static void set_level(std::array<T, 0>* const value, const std::uintmax_t level) noexcept {
-            impl::ptr_bit_copy_least(value, uint_t(level + (engaged_value + 1)));
+            impl::ptr_bit_copy_least(value, uint_t(level));
         }
-#if OPTION_CLANG || OPTION_GCC
+
         static void after_constructor(std::array<T, 0>* const value) noexcept {
-            impl::ptr_bit_copy_least(value, uint_t(engaged_value));
+            impl::ptr_bit_copy_least(value, uint_t(255));
         }
-#endif
+        static void after_assignment(std::array<T, 0>* const value) noexcept {
+            impl::ptr_bit_copy_least(value, uint_t(255));
+        }
     };
 
     template<class T>
