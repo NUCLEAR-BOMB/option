@@ -25,7 +25,7 @@
 #define V4 (this->values[4])
 
 #define TEST_SIZE_LIST \
-    std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, \
+    int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, \
     aggregate_int_float, std::array<int, 0>, \
     empty_struct, std::tuple<>, std::tuple<int, float, int>, \
     double, bool, std::reference_wrapper<int>, int*, float, \
@@ -190,6 +190,22 @@ template<>
 struct option<std::string_view> : ::testing::Test {
     std::string_view values[5]{"a1", "b2", "c3", "d4", "e5"};
 };
+
+template<>
+struct option<int(*)(int)> : ::testing::Test {
+    using t = int(*)(int);
+    t values[5]{
+        [](int x) { return x + 1; },
+        [](int x) { return x + 2; },
+        [](int x) { return x + 3; },
+        [](int x) { return x + 4; },
+        [](int x) { return x + 5; }
+    };
+};
+
+
+
+
 
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
 
