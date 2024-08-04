@@ -6,6 +6,7 @@
 #include <tuple>
 #include <array>
 #include <cfenv>
+#include <string_view>
 #include <functional>
 
 #include "utils.hpp"
@@ -24,7 +25,8 @@
 #define V4 (this->values[4])
 
 #define TEST_SIZE_LIST \
-    polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, aggregate_int_float, std::array<int, 0>, \
+    std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, \
+    aggregate_int_float, std::array<int, 0>, \
     empty_struct, std::tuple<>, std::tuple<int, float, int>, \
     double, bool, std::reference_wrapper<int>, int*, float, \
     std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
@@ -170,7 +172,7 @@ struct polymorphic_type {
     polymorphic_type(int x_) : x(x_) {}
 
     polymorphic_type() = default;
-    polymorphic_type(const polymorphic_type&) = default;
+    polymorphic_type(const polymorphic_type&) = default; // NOLINT(clang-analyzer-core.uninitialized.Assign)
     polymorphic_type& operator=(const polymorphic_type&) = default;
 
     virtual ~polymorphic_type() = default;
@@ -183,6 +185,12 @@ template<>
 struct option<polymorphic_type> : ::testing::Test {
     polymorphic_type values[5]{{1}, {2}, {3}, {4}, {5}};
 };
+
+template<>
+struct option<std::string_view> : ::testing::Test {
+    std::string_view values[5]{"a1", "b2", "c3", "d4", "e5"};
+};
+
 
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
 

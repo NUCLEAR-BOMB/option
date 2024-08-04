@@ -372,6 +372,7 @@ namespace impl {
         float32_qNaN,
         empty,
         polymorphic,
+        string_view,
 #ifdef OPTION_HAS_BOOST_PFR
         reflectable,
 #endif
@@ -407,6 +408,10 @@ namespace impl {
     template<class T>
     struct dispatch_specializations<std::array<T, 0>> {
         static constexpr option_strategy value = option_strategy::array_0;
+    };
+    template<class Elem, class Traits>
+    struct dispatch_specializations<std::basic_string_view<Elem, Traits>> {
+        static constexpr option_strategy value = option_strategy::string_view;
     };
 
     template<class T>
@@ -789,6 +794,25 @@ namespace impl {
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
             impl::ptr_bit_copy_least(value, std::uintptr_t(vtable_ptr_start + level));
+        }
+    };
+    template<class Elem, class Traits>
+    struct internal_option_traits<std::basic_string_view<Elem, Traits>, option_strategy::string_view> {
+        using str_view = std::basic_string_view<Elem, Traits>;
+
+        static constexpr std::uintptr_t sentinel_ptr = std::uintptr_t(-1) - 32185;
+
+        static constexpr std::uintmax_t max_level = 255;
+
+        static std::uintmax_t get_level(const str_view* const value) noexcept {
+            if (value->data() == reinterpret_cast<const Elem*>(sentinel_ptr)) {
+                return value->size();
+            } else {
+                return std::uintmax_t(-1);
+            }
+        }
+        static void set_level(str_view* const value, const std::uintmax_t level) noexcept {
+            impl::construct_at(value, reinterpret_cast<const Elem*>(sentinel_ptr), std::size_t(level));
         }
     };
 }
