@@ -373,6 +373,7 @@ namespace impl {
         empty,
         polymorphic,
         string_view,
+        unique_ptr,
 #ifdef OPTION_HAS_BOOST_PFR
         reflectable,
 #endif
@@ -412,6 +413,10 @@ namespace impl {
     template<class Elem, class Traits>
     struct dispatch_specializations<std::basic_string_view<Elem, Traits>> {
         static constexpr option_strategy value = option_strategy::string_view;
+    };
+    template<class Elem>
+    struct dispatch_specializations<std::unique_ptr<Elem>> {
+        static constexpr option_strategy value = option_strategy::unique_ptr;
     };
 
     template<class T>
@@ -798,21 +803,37 @@ namespace impl {
     };
     template<class Elem, class Traits>
     struct internal_option_traits<std::basic_string_view<Elem, Traits>, option_strategy::string_view> {
-        using str_view = std::basic_string_view<Elem, Traits>;
-
         static constexpr std::uintptr_t sentinel_ptr = std::uintptr_t(-1) - 32185;
 
         static constexpr std::uintmax_t max_level = 255;
 
-        static std::uintmax_t get_level(const str_view* const value) noexcept {
+        static std::uintmax_t get_level(const std::basic_string_view<Elem, Traits>* const value) noexcept {
             if (value->data() == reinterpret_cast<const Elem*>(sentinel_ptr)) {
                 return value->size();
             } else {
                 return std::uintmax_t(-1);
             }
         }
-        static void set_level(str_view* const value, const std::uintmax_t level) noexcept {
+        static void set_level(std::basic_string_view<Elem, Traits>* const value, const std::uintmax_t level) noexcept {
             impl::construct_at(value, reinterpret_cast<const Elem*>(sentinel_ptr), std::size_t(level));
+        }
+    };
+    template<class Elem>
+    struct internal_option_traits<std::unique_ptr<Elem>, option_strategy::unique_ptr> {
+        static constexpr std::uintptr_t sentinel_ptr = std::uintptr_t(-1) - 46508;
+
+        static constexpr std::uintmax_t max_level = 255;
+
+        static std::uintmax_t get_level(const std::unique_ptr<Elem>* const value) noexcept {
+            const std::uintptr_t uint = reinterpret_cast<std::uintptr_t>(value->get());
+            if (uint >= sentinel_ptr && uint < sentinel_ptr + max_level) {
+                return uint - sentinel_ptr;
+            } else {
+                return std::uintmax_t(-1);
+            }
+        }
+        static void set_level(std::unique_ptr<Elem>* const value, const std::uintmax_t level) noexcept {
+            impl::construct_at(value, reinterpret_cast<Elem*>(sentinel_ptr + level));
         }
     };
 }

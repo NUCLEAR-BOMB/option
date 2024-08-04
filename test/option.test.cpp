@@ -191,7 +191,6 @@ struct option<std::string_view> : ::testing::Test {
     std::string_view values[5]{"a1", "b2", "c3", "d4", "e5"};
 };
 
-
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
 
 template<class T>
