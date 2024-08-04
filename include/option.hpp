@@ -509,6 +509,7 @@ namespace impl {
             return u8_value >= 2 ? u8_value - 2 : std::uintmax_t(-1);
         }
         static void set_level(bool* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, uint_bool(level + 2));
         }
     };
@@ -521,9 +522,10 @@ namespace impl {
 
         static std::uintmax_t get_level(const unref* const* const value) noexcept {
             const auto uptr = impl::ptr_bit_cast<std::uintptr_t>(value);
-            return uptr <= max_level ? uptr : std::uintmax_t(-1);
+            return uptr < max_level ? uptr : std::uintmax_t(-1);
         }
         static void set_level(unref** const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, std::uintptr_t(level));
         }
     };
@@ -534,9 +536,10 @@ namespace impl {
 
         static std::uintmax_t get_level(const std::reference_wrapper<T>* const value) noexcept {
             const auto ptr = impl::ptr_bit_cast<std::uintptr_t>(value);
-            return ptr <= max_level ? ptr : std::uintmax_t(-1);
+            return ptr < max_level ? ptr : std::uintmax_t(-1);
         }
         static void set_level(std::reference_wrapper<T>* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, std::uintptr_t(level));
         }
     };
@@ -550,9 +553,10 @@ namespace impl {
         static std::uintmax_t get_level(const T* const value) noexcept {
             auto uint = impl::ptr_bit_cast<std::uintptr_t>(value);
             uint -= ptr_offset;
-            return uint <= max_level ? uint : std::uintmax_t(-1);
+            return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, ptr_offset + std::uintptr_t(level));
         }
     };
@@ -569,6 +573,7 @@ namespace impl {
             return uint <= max_level ? max_level - uint : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, ptr_offset - std::uintptr_t(level));
         }
     };
@@ -585,6 +590,7 @@ namespace impl {
             return uint <= max_level ? max_level - uint : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, ptr_offset - std::uintptr_t(level));
         }
     };
@@ -596,10 +602,12 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 256;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            const auto uint = impl::ptr_bit_cast<std::uint64_t>(value);
-            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+            std::uint64_t uint = impl::ptr_bit_cast<std::uint64_t>(value);
+            uint -= nan_start;
+            return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, nan_start + std::uint64_t(level));
         }
     };
@@ -611,10 +619,12 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 256;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            const auto uint = impl::ptr_bit_cast<std::uint64_t>(value);
-            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+            std::uint64_t uint = impl::ptr_bit_cast<std::uint64_t>(value);
+            uint -= nan_start;
+            return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, nan_start + std::uint64_t(level));
         }
     };
@@ -626,10 +636,12 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 256;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            const auto uint = impl::ptr_bit_cast<std::uint32_t>(value);
-            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+            std::uint32_t uint = impl::ptr_bit_cast<std::uint32_t>(value);
+            uint -= nan_start;
+            return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, nan_start + std::uint32_t(level));
         }
     };
@@ -641,10 +653,12 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 256;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            const auto uint = impl::ptr_bit_cast<std::uint32_t>(value);
-            return uint >= nan_start && uint <= nan_start + max_level ? uint - nan_start : std::uintmax_t(-1);
+            std::uint32_t uint = impl::ptr_bit_cast<std::uint32_t>(value);
+            uint -= nan_start;
+            return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, nan_start + std::uint32_t(level));
         }
     };
@@ -747,6 +761,7 @@ namespace impl {
             return uint != 255 ? uint_t(uint) : std::uintmax_t(-1);
         }
         static void set_level(std::array<T, 0>* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy_least(value, uint_t(level));
         }
 
@@ -770,6 +785,7 @@ namespace impl {
             return uint != 255 ? uint : std::uintmax_t(-1); 
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy_least(value, uint_t(level));
         }
 
@@ -818,14 +834,12 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 255;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            const auto vtable_ptr = impl::ptr_bit_cast_least<std::uintptr_t>(value);
-            if (vtable_ptr >= vtable_ptr_start && vtable_ptr < vtable_ptr_start + max_level) {
-                return vtable_ptr - vtable_ptr_start;
-            } else {
-                return std::uintmax_t(-1);
-            }
+            std::uintptr_t vtable_ptr = impl::ptr_bit_cast_least<std::uintptr_t>(value);
+            vtable_ptr -= vtable_ptr_start;
+            return vtable_ptr < max_level ? vtable_ptr : std::uintmax_t(-1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy_least(value, std::uintptr_t(vtable_ptr_start + level));
         }
     };
@@ -844,6 +858,7 @@ namespace impl {
             }
         }
         static void set_level(std::basic_string_view<Elem, Traits>* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::construct_at(value, reinterpret_cast<const Elem*>(sentinel_ptr), std::size_t(level));
         }
     };
@@ -855,14 +870,12 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 255;
 
         static std::uintmax_t get_level(const std::unique_ptr<Elem>* const value) noexcept {
-            const std::uintptr_t uint = reinterpret_cast<std::uintptr_t>(value->get());
-            if (uint >= sentinel_ptr && uint < sentinel_ptr + max_level) {
-                return uint - sentinel_ptr;
-            } else {
-                return std::uintmax_t(-1);
-            }
+            std::uintptr_t uint = reinterpret_cast<std::uintptr_t>(value->get());
+            uint -= sentinel_ptr;
+            return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(std::unique_ptr<Elem>* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::construct_at(value, reinterpret_cast<Elem*>(sentinel_ptr + level));
         }
     };
@@ -1085,7 +1098,7 @@ namespace impl {
         }
         constexpr bool has_value() const noexcept {
             const std::uintmax_t level = traits::get_level(std::addressof(value));
-            OPTION_VERIFY(level == std::uintmax_t(-1) || level <= traits::max_level, "Invalid level");
+            OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
             return level == std::uintmax_t(-1);
         }
         template<class... Args>
@@ -1147,7 +1160,7 @@ namespace impl {
         }
         constexpr bool has_value() const noexcept {
             const std::uintmax_t level = traits::get_level(std::addressof(value));
-            OPTION_VERIFY(level == std::uintmax_t(-1) || level <= traits::max_level, "Invalid level");
+            OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
             return level == std::uintmax_t(-1);
         }
         template<class... Args>
