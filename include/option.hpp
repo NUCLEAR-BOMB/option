@@ -2120,7 +2120,7 @@ option(option<T>) -> option<option<T>>;
 namespace impl {
     template<class T>
     struct internal_option_traits<opt::option<T>, option_strategy::avaliable_option> {
-        using base = impl::option_move_assign_base<T>;
+        using base = typename opt::option<T>::base;
         using traits = opt::option_traits<T>;
 
         static constexpr std::uintmax_t max_level = traits::max_level - 1;
@@ -2140,7 +2140,7 @@ namespace impl {
     };
     template<class T>
     struct internal_option_traits<opt::option<T>, option_strategy::unavaliable_option> {
-        using base = impl::option_move_assign_base<T>;
+        using base = typename opt::option<T>::base;
         using bool_traits = opt::option_traits<bool>;
 
         static constexpr std::uintmax_t max_level = bool_traits::max_level;
