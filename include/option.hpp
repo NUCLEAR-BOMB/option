@@ -163,6 +163,22 @@
     #endif
 #endif
 
+#ifdef _MSVC_LANG
+    #if _MSVC_LANG > __cplusplus
+        #define OPTION_CXX_VER _MSVC_LANG
+    #else
+        #define OPTION_CXX_VER __cplusplus
+    #endif
+#else
+    #define OPTION_CXX_VER __cplusplus
+#endif
+
+#if OPTION_CXX_VER >= 202002L
+    #define OPTION_CONSTEXPR_CXX20 constexpr
+#else
+    #define OPTION_CONSTEXPR_CXX20 inline
+#endif
+
 namespace opt {
 
 namespace impl {
@@ -988,7 +1004,7 @@ namespace impl {
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
 
-        ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
+        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
             if (has_value_flag) {
                 impl::destroy_at(std::addressof(value));
             }
@@ -1102,7 +1118,7 @@ namespace impl {
             }
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
-        ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
+        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
             if (has_value()) {
                 impl::destroy_at(std::addressof(value));
             }
