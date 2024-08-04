@@ -24,8 +24,8 @@
 #define V4 (this->values[4])
 
 #define TEST_SIZE_LIST \
-    aggregate_with_empty_struct, aggregate_int_float, std::array<int, 0>, empty_struct, \
-    std::tuple<>, std::tuple<int, float, int>, \
+    polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, aggregate_int_float, std::array<int, 0>, \
+    empty_struct, std::tuple<>, std::tuple<int, float, int>, \
     double, bool, std::reference_wrapper<int>, int*, float, \
     std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
     
@@ -148,6 +148,41 @@ struct option<aggregate_with_empty_struct> : ::testing::Test {
     };
 };
 
+struct empty_polymorphic_type {
+    empty_polymorphic_type() = default;
+    empty_polymorphic_type(const empty_polymorphic_type&) = default;
+    empty_polymorphic_type& operator=(const empty_polymorphic_type&) = default;
+
+    virtual ~empty_polymorphic_type() = default;
+
+    bool operator==(const empty_polymorphic_type&) const { return true; }
+};
+static_assert(std::is_polymorphic_v<empty_polymorphic_type>);
+
+template<>
+struct option<empty_polymorphic_type> : ::testing::Test {
+    empty_polymorphic_type values[5]{{}, {}, {}, {}, {}};
+};
+
+struct polymorphic_type {
+    int x;
+
+    polymorphic_type(int x_) : x(x_) {}
+
+    polymorphic_type() = default;
+    polymorphic_type(const polymorphic_type&) = default;
+    polymorphic_type& operator=(const polymorphic_type&) = default;
+
+    virtual ~polymorphic_type() = default;
+
+    bool operator==(const polymorphic_type& other) const { return x == other.x; }
+};
+static_assert(std::is_polymorphic_v<polymorphic_type>);
+
+template<>
+struct option<polymorphic_type> : ::testing::Test {
+    polymorphic_type values[5]{{1}, {2}, {3}, {4}, {5}};
+};
 
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
 
@@ -350,7 +385,7 @@ TYPED_TEST(option, value_or_throw) {
 }
 TYPED_TEST(option, value_or) {
     opt::option<T> a; // NOLINT(clang-analyzer-core.uninitialized.UndefReturn)
-    EXPECT_EQ(a.value_or(V0), V0); // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult)
+    EXPECT_EQ(a.value_or(V0), V0); // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult, clang-analyzer-core.uninitialized.Assign)
     a = V1;
     EXPECT_EQ(a.value_or(V2), V1);
     EXPECT_EQ(as_rvalue(a).value_or(V3), V1);

@@ -22,7 +22,11 @@
     #define OPTION_MSVC  0
     #define OPTION_INTEL 1
 #elif defined(_MSC_VER)
-    #define OPTION_CLANG 0
+    #ifdef __clang__
+        #define OPTION_CLANG 1
+    #else
+        #define OPTION_CLANG 0
+    #endif
     #define OPTION_GCC   0
     #define OPTION_MSVC  1
     #define OPTION_INTEL 0
@@ -235,6 +239,15 @@ namespace impl {
     template<class T, class Traits>
     inline constexpr bool has_after_assignment_method<T, Traits, decltype(Traits::after_assignment(std::declval<T*>()))> = true;
 
+#if OPTION_CLANG
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
+#elif OPTION_GCC
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wclass-memaccess"
+    #pragma GCC diagnostic ignored "-Wuninitialized"
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     template<class To, class From>
     To ptr_bit_cast(const From* const from) noexcept {
         static_assert(sizeof(To) == sizeof(From));
@@ -247,21 +260,7 @@ namespace impl {
     void ptr_bit_copy(Dest* const dest, const Src& src) noexcept {
         static_assert(sizeof(Src) == sizeof(Dest));
 
-#if OPTION_CLANG
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
-#elif OPTION_GCC
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wclass-memaccess"
-    #pragma GCC diagnostic ignored "-Wuninitialized"
-    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
         std::memcpy(dest, &src, sizeof(Dest));
-#if OPTION_CLANG
-    #pragma clang diagnostic pop
-#elif OPTION_GCC
-    #pragma GCC diagnostic pop
-#endif
     }
     template<class To, class From>
     To ptr_bit_cast_least(const From* const from) noexcept {
@@ -274,22 +273,22 @@ namespace impl {
     template<class Src, class Dest>
     void ptr_bit_copy_least(Dest* const dest, const Src& src) noexcept {
         static_assert(sizeof(Dest) >= sizeof(Src));
-#if OPTION_CLANG
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
-#elif OPTION_GCC
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wclass-memaccess"
-    #pragma GCC diagnostic ignored "-Wuninitialized"
-    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
         std::memcpy(dest, &src, sizeof(Src));
+    }
 #if OPTION_CLANG
     #pragma clang diagnostic pop
 #elif OPTION_GCC
     #pragma GCC diagnostic pop
 #endif
-    }
+
+    struct dummy_traits {
+        static constexpr std::uintmax_t max_level = 0;
+
+        template<class T>
+        static std::uintmax_t get_level(const T* const) = delete;
+        template<class T>
+        static void set_level(T* const, const std::uintmax_t) = delete;
+    };
 
     template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
     struct select_max_level_traits_impl;
@@ -325,7 +324,7 @@ namespace impl {
 
     template<class... Ts>
     struct select_max_level_traits
-        : select_max_level_traits_impl<0, void, 0, 0, Ts...> {};
+        : select_max_level_traits_impl<0, dummy_traits, 0, 0, Ts...> {};
 
 #ifdef OPTION_HAS_BOOST_PFR
     template<class Struct>
@@ -372,6 +371,7 @@ namespace impl {
         float32_sNaN,
         float32_qNaN,
         empty,
+        polymorphic,
 #ifdef OPTION_HAS_BOOST_PFR
         reflectable,
 #endif
@@ -454,6 +454,9 @@ namespace impl {
         } else
         if constexpr (std::is_empty_v<T>) {
             return st::empty;
+        } else
+        if constexpr (std::is_polymorphic_v<T> && sizeof(T) >= sizeof(std::uintptr_t)) {
+            return st::polymorphic;
         } else
 #ifdef OPTION_HAS_BOOST_PFR
         if constexpr (pfr_has_available_traits<T>) {
@@ -672,9 +675,7 @@ namespace impl {
     };
     template<class T>
     struct get_traits_if_avaliable<T, false> {
-        struct type {
-            static constexpr std::uintmax_t max_level = 0;
-        };
+        using type = dummy_traits;
     };
 
     template<class T, std::size_t N>
@@ -771,6 +772,25 @@ namespace impl {
         }
     };
 #endif
+    template<class T>
+    struct internal_option_traits<T, option_strategy::polymorphic> {
+    private:
+        static constexpr std::uintptr_t vtable_ptr_start = std::uintptr_t(-1) - 89151;
+    public:
+        static constexpr std::uintmax_t max_level = 255;
+
+        static std::uintmax_t get_level(const T* const value) noexcept {
+            const auto vtable_ptr = impl::ptr_bit_cast_least<std::uintptr_t>(value);
+            if (vtable_ptr >= vtable_ptr_start && vtable_ptr < vtable_ptr_start + max_level) {
+                return vtable_ptr - vtable_ptr_start;
+            } else {
+                return std::uintmax_t(-1);
+            }
+        }
+        static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy_least(value, std::uintptr_t(vtable_ptr_start + level));
+        }
+    };
 }
 
 template<class T, class>
