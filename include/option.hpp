@@ -499,8 +499,10 @@ namespace impl {
 
     template<>
     struct internal_option_traits<bool, option_strategy::bool_> {
-        static constexpr std::uintmax_t max_level = 254;
+    private:
         using uint_bool = std::uint_least8_t;
+    public:
+        static constexpr std::uintmax_t max_level = 254;
 
         static std::uintmax_t get_level(const bool* const value) noexcept {
             const auto u8_value = impl::ptr_bit_cast<uint_bool>(value);
@@ -512,8 +514,9 @@ namespace impl {
     };
     template<class T>
     struct internal_option_traits<T, option_strategy::reference> {
+    private:
         using unref = std::remove_reference_t<T>;
-
+    public:
         static constexpr std::uintmax_t max_level = 255;
 
         static std::uintmax_t get_level(const unref* const* const value) noexcept {
@@ -648,12 +651,14 @@ namespace impl {
 
     template<class First, class Second>
     struct internal_option_traits<std::pair<First, Second>, option_strategy::pair> {
+    private:
         using select_traits = select_max_level_traits<First, Second>;
         using type = typename select_traits::type;
         using traits = ::opt::option_traits<type>;
 
-        static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t pair_index = select_traits::index;
+    public:
+        static constexpr std::uintmax_t max_level = select_traits::level;
 
         static constexpr std::uintmax_t get_level(const std::pair<First, Second>* const value) {
             return traits::get_level(std::addressof(std::get<pair_index>(*value)));
@@ -672,12 +677,14 @@ namespace impl {
     };
     template<class... Ts>
     struct internal_option_traits<std::tuple<Ts...>, option_strategy::tuple> {
+    private:
         using select_traits = select_max_level_traits<Ts...>;
         using type = typename select_traits::type;
         using traits = ::opt::option_traits<type>;
 
-        static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t tuple_index = select_traits::index;
+    public:
+        static constexpr std::uintmax_t max_level = select_traits::level;
 
         static constexpr std::uintmax_t get_level(const std::tuple<Ts...>* const value) {
             return traits::get_level(std::addressof(std::get<tuple_index>(*value)));
@@ -706,10 +713,11 @@ namespace impl {
 
     template<class T, std::size_t N>
     struct internal_option_traits<std::array<T, N>, option_strategy::array> {
+    private:
         static_assert(N > 0);
 
         using traits = typename get_traits_if_avaliable<T>::type;
-
+    public:
         static constexpr std::uintmax_t max_level = traits::max_level;
 
         static constexpr std::uintmax_t get_level(const std::array<T, N>* const value) {
@@ -729,8 +737,9 @@ namespace impl {
     };
     template<class T>
     struct internal_option_traits<std::array<T, 0>, option_strategy::array_0> {
+    private:
         using uint_t = std::uint_least8_t;
-
+    public:
         static constexpr std::uintmax_t max_level = 255;
 
         static std::uintmax_t get_level(const std::array<T, 0>* const value) {
@@ -751,8 +760,9 @@ namespace impl {
 
     template<class T>
     struct internal_option_traits<T, option_strategy::empty> {
+    private:
         using uint_t = std::uint_least8_t;
-
+    public:
         static constexpr std::uintmax_t max_level = 255;
 
         static std::uintmax_t get_level(const T* const value) {
@@ -773,14 +783,16 @@ namespace impl {
 #ifdef OPTION_HAS_BOOST_PFR
     template<class T>
     struct internal_option_traits<T, option_strategy::reflectable> {
+    private:
         using select_traits = unpack_tuple_select_max_level_traits<
             decltype(::boost::pfr::structure_to_tuple(std::declval<T&>()))
         >;
         using type = typename select_traits::type;
         using traits = ::opt::option_traits<type>;
 
-        static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t index = select_traits::index;
+    public:
+        static constexpr std::uintmax_t max_level = select_traits::level;
 
         static constexpr std::uintmax_t get_level(const T* const value) {
             return traits::get_level(std::addressof(::boost::pfr::get<index>(*value)));
@@ -819,8 +831,9 @@ namespace impl {
     };
     template<class Elem, class Traits>
     struct internal_option_traits<std::basic_string_view<Elem, Traits>, option_strategy::string_view> {
+    private:
         static constexpr std::uintptr_t sentinel_ptr = std::uintptr_t(-1) - 32185;
-
+    public:
         static constexpr std::uintmax_t max_level = 255;
 
         static std::uintmax_t get_level(const std::basic_string_view<Elem, Traits>* const value) noexcept {
@@ -836,8 +849,9 @@ namespace impl {
     };
     template<class Elem>
     struct internal_option_traits<std::unique_ptr<Elem>, option_strategy::unique_ptr> {
+    private:
         static constexpr std::uintptr_t sentinel_ptr = std::uintptr_t(-1) - 46508;
-
+    public:
         static constexpr std::uintmax_t max_level = 255;
 
         static std::uintmax_t get_level(const std::unique_ptr<Elem>* const value) noexcept {
