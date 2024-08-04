@@ -629,18 +629,18 @@ namespace impl {
         static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t pair_index = select_traits::index;
 
-        static std::uintmax_t get_level(const std::pair<First, Second>* const value) {
+        static constexpr std::uintmax_t get_level(const std::pair<First, Second>* const value) {
             return traits::get_level(std::addressof(std::get<pair_index>(*value)));
         }
-        static void set_level(std::pair<First, Second>* const value, const std::uintmax_t level) {
+        static constexpr void set_level(std::pair<First, Second>* const value, const std::uintmax_t level) {
             traits::set_level(std::addressof(std::get<pair_index>(*value)), level);
         }
         template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
-        static void after_constructor(std::pair<First, Second>* const value) {
+        static constexpr void after_constructor(std::pair<First, Second>* const value) {
             traits::after_constructor(std::addressof(std::get<pair_index>(*value)));
         }
         template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
-        static void after_assignment(std::pair<First, Second>* const value) noexcept {
+        static constexpr void after_assignment(std::pair<First, Second>* const value) noexcept {
             traits::after_assignment(std::addressof(std::get<pair_index>(*value)));
         }
     };
@@ -653,18 +653,18 @@ namespace impl {
         static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t tuple_index = select_traits::index;
 
-        static std::uintmax_t get_level(const std::tuple<Ts...>* const value) {
+        static constexpr std::uintmax_t get_level(const std::tuple<Ts...>* const value) {
             return traits::get_level(std::addressof(std::get<tuple_index>(*value)));
         }
-        static void set_level(std::tuple<Ts...>* const value, const std::uintmax_t level) {
+        static constexpr void set_level(std::tuple<Ts...>* const value, const std::uintmax_t level) {
             traits::set_level(std::addressof(std::get<tuple_index>(*value)), level);
         }
         template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
-        static void after_constructor(std::tuple<Ts...>* const value) {
+        static constexpr void after_constructor(std::tuple<Ts...>* const value) {
             traits::after_constructor(std::addressof(std::get<tuple_index>(*value)));
         }
         template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
-        static void after_assignment(std::tuple<Ts...>* const value) noexcept {
+        static constexpr void after_assignment(std::tuple<Ts...>* const value) noexcept {
             traits::after_assignment(std::addressof(std::get<tuple_index>(*value)));
         }
     };
@@ -686,18 +686,18 @@ namespace impl {
 
         static constexpr std::uintmax_t max_level = traits::max_level;
 
-        static std::uintmax_t get_level(const std::array<T, N>* const value) {
+        static constexpr std::uintmax_t get_level(const std::array<T, N>* const value) {
             return traits::get_level(std::addressof((*value)[0]));
         }
-        static void set_level(std::array<T, N>* const value, const std::uintmax_t level) {
+        static constexpr void set_level(std::array<T, N>* const value, const std::uintmax_t level) {
             traits::set_level(std::addressof((*value)[0]), level);
         }
         template<class U = int, class = std::enable_if_t<has_after_constructor_method<T, traits>, U>>
-        static void after_constructor(std::array<T, N>* const value) {
+        static constexpr void after_constructor(std::array<T, N>* const value) {
             traits::after_constructor(std::addressof((*value)[0]));
         }
         template<class U = int, class = std::enable_if_t<has_after_assignment_method<T, traits>, U>>
-        static void after_assignment(std::array<T, N>* const value) noexcept {
+        static constexpr void after_assignment(std::array<T, N>* const value) noexcept {
             traits::after_assignment(std::addressof((*value)[0]));
         }
     };
@@ -756,18 +756,18 @@ namespace impl {
         static constexpr std::uintmax_t max_level = select_traits::level;
         static constexpr std::size_t index = select_traits::index;
 
-        static std::uintmax_t get_level(const T* const value) {
+        static constexpr std::uintmax_t get_level(const T* const value) {
             return traits::get_level(std::addressof(::boost::pfr::get<index>(*value)));
         }
-        static void set_level(T* const value, const std::uintmax_t level) {
+        static constexpr void set_level(T* const value, const std::uintmax_t level) {
             traits::set_level(std::addressof(::boost::pfr::get<index>(*value)), level);
         }
         template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
-        static void after_constructor(T* const value) {
+        static constexpr void after_constructor(T* const value) {
             traits::after_constructor(std::addressof(::boost::pfr::get<index>(*value)));
         }
         template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
-        static void after_assignment(T* const value) noexcept {
+        static constexpr void after_assignment(T* const value) noexcept {
             traits::after_assignment(std::addressof(::boost::pfr::get<index>(*value)));
         }
     };
