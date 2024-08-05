@@ -314,7 +314,6 @@ struct reference : ::testing::Test {};
 static_assert(sizeof(opt::option<int&>) == sizeof(int*));
 
 static_assert(is_trivial_compatible<opt::option<int&>>);
-static_assert(std::is_trivially_default_constructible_v<opt::option<int&>>);
 static_assert(is_trivial_compatible<opt::option<nontrivial_struct&>>);
 
 TEST_F(reference, basic) {
@@ -439,6 +438,22 @@ TEST_F(reference, const_basic) {
     EXPECT_TRUE(refc.has_value());
     EXPECT_EQ(&(refc.get()), &a);
     EXPECT_EQ(*refc, 1);
+}
+
+TEST_F(reference, function) {
+    opt::option<int(&)(int)> a;
+    EXPECT_FALSE(a.has_value());
+    const auto& f1 = [](int x) { return x + 1; };
+    a = *+f1;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a.ptr_or_null(), +f1);
+
+    opt::option<int(&)(int)> b = *+[](int x) { return x + 1; };
+    EXPECT_TRUE(b.has_value());
+    a = b;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(&*a, &*b);
 }
 
 struct tuple_like : ::testing::Test {};

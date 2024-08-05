@@ -20,6 +20,7 @@ function(target_add_warnings target)
         /wd4623 # 'derived class' : default constructor was implicitly defined as deleted
         /wd4582 # 'type': constructor is not implicitly called
         /wd4583 # 'type': destructor is not implicitly called
+        /wd4180 # qualifier applied to function type has no meaning; ignored
         )
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")

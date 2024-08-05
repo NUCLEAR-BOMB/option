@@ -1259,7 +1259,8 @@ namespace impl {
     public:
         raw_type* value;
 
-        option_storage_base() = default;
+        constexpr option_storage_base() noexcept
+            : value{nullptr} {}
 
         template<class Arg>
         constexpr option_storage_base(Arg&& arg) noexcept
