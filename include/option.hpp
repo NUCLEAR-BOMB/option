@@ -97,7 +97,7 @@
 #else // !defined(OPTION_USE_BOOST_PFR)
     #if __has_include(OPTION_BOOST_PFR_FILE)
         #include OPTION_BOOST_PFR_FILE
-        #ifndef BOOST_PFR_NOT_SUPPORTED
+        #if BOOST_PFR_ENABLED
             #define OPTION_HAS_BOOST_PFR
         #endif
     #endif
