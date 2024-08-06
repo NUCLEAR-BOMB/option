@@ -21,6 +21,8 @@ function(target_add_warnings target)
         /wd4582 # 'type': constructor is not implicitly called
         /wd4583 # 'type': destructor is not implicitly called
         /wd4180 # qualifier applied to function type has no meaning; ignored
+        /wd4371 # 'classname': layout of class may have changed from a previous version of the compiler due to better packing of member 'member'
+        /wd4800 # implicit conversion from 'type' to bool. Possible information loss
         )
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")

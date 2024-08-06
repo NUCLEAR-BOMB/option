@@ -390,6 +390,8 @@ namespace impl {
         polymorphic,
         string_view,
         unique_ptr,
+        member_pointer_32,
+        member_pointer_64,
 #ifdef OPTION_HAS_BOOST_PFR
         reflectable,
 #endif
@@ -464,6 +466,16 @@ namespace impl {
                 return st::pointer_16;
             } else
             return st::pointer_64;
+        } else
+        if constexpr (std::is_member_pointer_v<T>) {
+            if constexpr (sizeof(T) == 4) {
+                return st::member_pointer_32;
+            } else
+            if constexpr (sizeof(T) >= 8) {
+                return st::member_pointer_64;
+            } else {
+                return st::none;
+            }
         } else
         if constexpr (std::is_floating_point_v<T>) {
             using limits = std::numeric_limits<T>;
@@ -843,6 +855,7 @@ namespace impl {
             impl::ptr_bit_copy_least(value, std::uintptr_t(vtable_ptr_start + level));
         }
     };
+
     template<class Elem, class Traits>
     struct internal_option_traits<std::basic_string_view<Elem, Traits>, option_strategy::string_view> {
     private:
@@ -877,6 +890,90 @@ namespace impl {
         static void set_level(std::unique_ptr<Elem>* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::construct_at(value, reinterpret_cast<Elem*>(sentinel_ptr + level));
+        }
+    };
+
+    // https://rants.vastheman.com/2021/09/21/msvc/
+    // https://devblogs.microsoft.com/oldnewthing/20040209-00/?p=40713
+    // 
+    // Pointer to member data representations (?)
+    // struct {
+    //     uint32_t offset;
+    // };
+    // nullptr: offset = -1
+    // 
+    // Pointer to member function representations
+    // 
+    // Single inheritance
+    // struct {
+    //     uintptr_t ptr;
+    // };
+    // Multiple inheritance
+    // struct {
+    //     uintptr_t ptr;
+    //     int adj;
+    // };
+    // Virtual inheritance
+    // struct {
+    //     uintptr_t ptr;
+    //     int adj;
+    //     int vindex;
+    // };
+    // Unknown inheritance
+    // struct {
+    //     uintptr_t ptr;
+    //     int adj;
+    //     int vadj;
+    //     int vindex;
+    // };
+
+    // https://itanium-cxx-abi.github.io/cxx-abi/abi.html#member-pointers
+    // 
+    // Pointer to member data representations
+    // struct {
+    //     ptrdiff_t offset;
+    // };
+    // nullptr: offset = -1
+    //
+    // Pointer to member function representations
+    // struct {
+    //     fnptr_t ptr;
+    //     ptrdiff_t adj;
+    // };
+    // nullptr: ptr = 0
+
+    template<class T, class U>
+    struct internal_option_traits<T U::*, option_strategy::member_pointer_32> {
+    private:
+        using type = T U::*;
+        static constexpr std::uint32_t offset_start = 0xFFFF'FC17;
+    public:
+        static constexpr std::uintmax_t max_level = 255;
+
+        static std::uintmax_t get_level(const type* const value) noexcept {
+            std::uint32_t uint = impl::ptr_bit_cast<std::uint32_t>(value);
+            uint -= offset_start;
+            return uint < max_level ? uint : std::uintmax_t(-1);
+        }
+        static void set_level(type* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy(value, std::uint32_t(level + offset_start));
+        }
+    };
+    template<class T, class U>
+    struct internal_option_traits<T U::*, option_strategy::member_pointer_64> {
+    private:
+        using type = T U::*;
+        static constexpr std::uint64_t offset_start = 0xFFFFFFFF'D3B2F9B2;
+    public:
+        static constexpr std::uintmax_t max_level = 255;
+
+        static std::uintmax_t get_level(const type* const value) noexcept {
+            std::uint64_t uint = impl::ptr_bit_cast_least<std::uint64_t>(value);
+            uint -= offset_start;
+            return uint < max_level ? uint : std::uintmax_t(-1);
+        }
+        static void set_level(type* const value, const std::uintmax_t level) noexcept {
+            impl::ptr_bit_copy_least(value, std::uint64_t(level + offset_start));
         }
     };
 }
@@ -1072,6 +1169,8 @@ namespace impl {
         
         constexpr option_destruct_base() noexcept
             : dummy{} {
+            [[maybe_unused]]
+            const auto aaa = sizeof(value);
             traits::set_level(std::addressof(value), 0);
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }

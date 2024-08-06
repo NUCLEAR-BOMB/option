@@ -702,6 +702,363 @@ TEST_F(aggregate, nested) {
 
 #endif
 
+struct pointer_to_member_data : ::testing::Test {};
+
+// #pragma pointers_to_members(full_generality)
+
+// NOLINTBEGIN(readability-make-member-function-const)
+
+TEST_F(pointer_to_member_data, no_inheritance) {
+    struct s1 {
+        int x;
+        int y;
+    };
+    opt::option<int s1::*> a;
+    EXPECT_EQ(sizeof(a), sizeof(int s1::*));
+
+    EXPECT_FALSE(a.has_value());
+    a = &s1::x;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::x);
+    EXPECT_NE(a, &s1::y);
+    a = &s1::y;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::y);
+    EXPECT_NE(a, &s1::x);
+
+    a = nullptr;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+
+    struct s2 {
+        int x;
+        int y;
+        int z;
+        int w;
+    };
+    opt::option<int s2::*> b = &s2::y;
+    EXPECT_EQ(sizeof(a), sizeof(int s2::*));
+
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, &s2::y);
+    b = &s2::x;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, &s2::x);
+    b = &s2::z;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, &s2::z);
+
+    b = nullptr;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, nullptr);
+}
+TEST_F(pointer_to_member_data, single_inheritance) {
+    struct s1 {
+        int x;
+        int y;
+    };
+    struct s2 : s1 {
+        int z;
+        int w;
+    };
+    opt::option<int s2::*> a;
+    EXPECT_EQ(sizeof(a), sizeof(int s2::*));
+
+    EXPECT_FALSE(a.has_value());
+    a = &s2::x;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::x);
+    a.emplace(&s2::z);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::z);
+    a = &s2::w;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::w);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a = &s2::y;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::y);
+
+    a = nullptr;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+
+    opt::option<int s2::*> b = &s2::z;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, &s2::z);
+    b = &s1::x;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, &s1::x);
+    EXPECT_EQ(b, &s2::x);
+
+    b = nullptr;
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, nullptr);
+
+    b.emplace(&s1::y);
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b, &s1::y);
+    EXPECT_EQ(b, &s2::y);
+}
+TEST_F(pointer_to_member_data, multiple_inheritance) {
+    struct s1 {
+        int x;
+        int y;
+    };
+    struct s2 {
+        int z;
+        int w;
+    };
+    struct s3 : s1, s2 {
+        int v;
+    };
+    opt::option<int s3::*> a;
+    EXPECT_EQ(sizeof(a), sizeof(int s3::*));
+
+    EXPECT_FALSE(a.has_value());
+    a = &s3::v;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::v);
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a = &s3::x;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::x);
+#if !(OPTION_MSVC && !OPTION_CLANG) // MSVC bug
+    a = &s3::z;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(*a, &s3::z);
+#endif
+    a.emplace(&s3::x);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::x);
+
+    a = nullptr;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+    EXPECT_NE(a, &s3::x);
+}
+
+struct pointer_to_member_function : ::testing::Test {};
+
+TEST_F(pointer_to_member_function, no_inheritance) {
+    struct s1 {
+        int x;
+        int f1() { return x + 100; }
+        int f2() { return x + 200; }
+    };
+    opt::option<int (s1::*)()> a;
+    s1 s1_var{12};
+    EXPECT_EQ(sizeof(a), sizeof(int (s1::*)()));
+
+    EXPECT_FALSE(a.has_value());
+    a = &s1::f1;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::f1);
+    EXPECT_EQ((s1_var.**a)(), 112);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    a.emplace(&s1::f2);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::f2);
+    EXPECT_EQ((s1_var.**a)(), 212);
+
+    a = nullptr;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+    EXPECT_NE(a, &s1::f2);
+}
+TEST_F(pointer_to_member_function, single_inheritance) {
+    struct s1 {
+        int x{};
+        int f1(int a) { return x * a; }
+        int f2(int a) { return x + a; }
+    };
+    struct s2 : s1 {
+        int y{};
+        int f3(int a) { return y - a; }
+        int f4(int a) { return a - y; }
+    };
+    s2 s2_var{{5}, 10};
+    opt::option<int (s2::*)(int)> a;
+    EXPECT_EQ(sizeof(a), sizeof(int (s2::*)(int)));
+    EXPECT_FALSE(a.has_value());
+
+    a = &s2::f3;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::f3);
+    EXPECT_EQ((s2_var.**a)(2), 8);
+
+    a = &s2::f4;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::f4);
+    EXPECT_EQ((s2_var.**a)(5), -5);
+
+    a = &s2::f1;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::f1);
+    EXPECT_EQ((s2_var.**a)(10), 50);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a.emplace(&s1::f1);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::f1);
+    EXPECT_EQ(a, &s2::f1);
+    EXPECT_EQ((s2_var.**a)(-2), -10);
+
+    a.emplace(&s1::f2);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::f2);
+    EXPECT_EQ(a, &s2::f2);
+    EXPECT_EQ((s2_var.**a)(-10), -5);
+
+    a = nullptr;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+    EXPECT_NE(a, &s1::f2);
+}
+TEST_F(pointer_to_member_function, multiple_inheritance) {
+    struct s1 {
+        int x = 100;
+        int f1() { return x + 1; }
+        int f2() { return x + 2; }
+    };
+    struct s2 {
+        int y = 2000;
+        int f3() { return y + 3; }
+        int f4() { return y + 4; }
+    };
+    struct s3 : s1, s2 {
+        int z = 30000;
+        int f5() { return z + x + y + 5; }
+        int f6() { return z + x + y + 6; }
+    };
+    s3 var;
+    opt::option<int (s3::*)()> a;
+    EXPECT_EQ(sizeof(a), sizeof(int (s3::*)()));
+    EXPECT_FALSE(a.has_value());
+
+    a = &s3::f5;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::f5);
+    EXPECT_EQ((var.**a)(), 32105);
+
+    a = &s3::f6;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::f6);
+    EXPECT_EQ((var.**a)(), 32106);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+    a.emplace(&s3::f1);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::f1);
+    EXPECT_EQ((var.**a)(), 101);
+    a.emplace(&s3::f2);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::f2);
+    EXPECT_EQ((var.**a)(), 102);
+
+    a = &s3::f3;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::f3);
+    EXPECT_EQ((var.**a)(), 2003);
+    a = &s3::f4;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s3::f4);
+    EXPECT_EQ((var.**a)(), 2004);
+
+    a = nullptr;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+    EXPECT_NE(a, &s3::f4);
+}
+TEST_F(pointer_to_member_function, virtual_inheritance) {
+    struct s1 {
+        int x = 100;
+        virtual ~s1() = default;
+
+        virtual int f1() { return x + 1; }
+        virtual int f2() { return x + 2; }
+    };
+    struct s2 : s1 {
+        int y = 2000;
+        int f1() override { return x + y + 3; }
+        int f3() { return x + y + 4; }
+    };
+    s2 var;
+    opt::option<int (s2::*)()> a;
+    EXPECT_EQ(sizeof(a), sizeof(int (s2::*)()));
+    EXPECT_FALSE(a.has_value());
+
+    a = &s2::f1;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::f1);
+    EXPECT_EQ((var.**a)(), 2103);
+
+    a.emplace(&s2::f2);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::f2);
+    EXPECT_EQ((var.**a)(), 102);
+
+    a.emplace(nullptr);
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+    EXPECT_NE(a, &s2::f2);
+
+    a = &s2::f3;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s2::f3);
+    EXPECT_EQ((var.**a)(), 2104);
+}
+TEST_F(pointer_to_member_function, unknown_inheritance) {
+    struct s1;
+
+    opt::option<int (s1::*)()> a;
+    EXPECT_FALSE(a.has_value());
+
+    struct s2 {
+        int y = 100;
+
+        virtual ~s2() = default;
+        virtual int f1() { return y + 1; }
+    };
+    struct s3 {
+        int z = 2000;
+
+        virtual ~s3() = default;
+        virtual int f2() { return z + 2; }
+    };
+
+    struct s1 : s2, s3 {
+        int x = 30000;
+
+        int f1() override { return x + y + 3; }
+    };
+    s1 var;
+
+    a = &s1::f1;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::f1);
+    EXPECT_EQ((var.**a)(), 30103);
+    
+    a = &s1::f2;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, &s1::f2);
+    EXPECT_EQ((var.**a)(), 2002);
+    
+    a = nullptr;
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a, nullptr);
+    EXPECT_NE(a, &s1::f2);
+}
+
+// NOLINTEND(readability-make-member-function-const)
+
 struct struct1 {
     int a;
     float x;
