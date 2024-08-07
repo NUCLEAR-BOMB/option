@@ -1299,6 +1299,7 @@ namespace impl {
                 if constexpr (has_after_assignment_method<T, traits>) {
                     traits::after_assignment(std::addressof(base::value));
                 }
+                OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
             } else {
                 construct(std::forward<U>(other));
             }
@@ -1312,6 +1313,7 @@ namespace impl {
                     if constexpr (has_after_assignment_method<T, traits>) {
                         traits::after_assignment(std::addressof(base::value));
                     }
+                    OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
                 } else {
                     construct(std::forward<Option>(other).get());
                 }
