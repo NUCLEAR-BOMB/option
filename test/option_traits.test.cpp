@@ -139,3 +139,60 @@ TEST_F(option_traits, level_2) {
 
 }
 
+struct optional_members {
+    std::uint32_t x;
+    std::uint32_t y;
+    bool operator==(const optional_members& o) const { return x == o.x && y == o.y; }
+};
+
+template<>
+struct opt::option_traits<optional_members> {
+    static constexpr std::uintmax_t max_level = 1;
+
+    static std::uintmax_t get_level(const optional_members* const value) {
+        return value->x != std::uint32_t(-1) ? value->x : std::uintmax_t(-1);
+    }
+    static void set_level(optional_members* const value, const std::uintmax_t level) {
+        value->x = std::uint32_t(level);
+    }
+    static void after_constructor(optional_members* const value) {
+        value->x = std::uint32_t(-1);
+    }
+    static void after_assignment(optional_members* const value) {
+        value->x = std::uint32_t(-1);
+    }
+};
+
+namespace {
+
+TEST_F(option_traits, optional_members) {
+    EXPECT_EQ(sizeof(opt::option<optional_members>), sizeof(optional_members));
+    EXPECT_GT(sizeof(opt::option<opt::option<optional_members>>), sizeof(optional_members));
+    EXPECT_GT(sizeof(opt::option<opt::option<opt::option<optional_members>>>), sizeof(optional_members));
+
+    opt::option<optional_members> a;
+    EXPECT_FALSE(a.has_value());
+
+    a = optional_members{1, 2};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, std::uint32_t(-1));
+    EXPECT_EQ(a->y, 2);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    a.emplace(optional_members{100, 2});
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, std::uint32_t(-1));
+    EXPECT_EQ(a->y, 2);
+
+    a->x = 0;
+    EXPECT_FALSE(a.has_value());
+    a.get_unchecked().x = std::uint32_t(-1);
+    EXPECT_TRUE(a.has_value());
+    a.get_unchecked().x = 0;
+    EXPECT_FALSE(a.has_value());
+}
+
+}
+
