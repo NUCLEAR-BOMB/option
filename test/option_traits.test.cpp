@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include <option.hpp>
+#include <cstdint>
 
-#include "utils.hpp"
+#include "utils.hpp" // NOLINT(misc-include-cleaner)
 
 struct empty1 {};
 struct empty2 {};
@@ -52,6 +53,9 @@ TEST_F(option_traits, level_1) {
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(a, some_struct_level1{5});
 
+    a.get_unchecked() = some_struct_level1{-10};
+    EXPECT_FALSE(a.has_value());
+
     opt::option<opt::option<some_struct_level1>> b = -1;
     EXPECT_TRUE(b.has_value());
     EXPECT_EQ(b, some_struct_level1{-1});
@@ -75,7 +79,9 @@ struct opt::option_traits<some_struct_level2> {
     static constexpr std::uintmax_t max_level = 2;
 
     static std::uintmax_t get_level(const some_struct_level2* const value) {
-        return value->x == -1 ? 0 : value->y == -1 ? 1 : std::uintmax_t(-1);
+        if (value->x == -1) { return 0; }
+        if (value->y == -1) { return 1; }
+        return std::uintmax_t(-1);
     }
     static void set_level(some_struct_level2* const value, const std::uintmax_t level) {
         if (level == 0) { value->x = -1; }
@@ -105,12 +111,30 @@ TEST_F(option_traits, level_2) {
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(a, (some_struct_level2{9, 10}));
 
+    a.get_unchecked() = some_struct_level2{-1, 1};
+    EXPECT_FALSE(a.has_value());
+
+    a.get_unchecked() = some_struct_level2{0, -1};
+    EXPECT_FALSE(a.has_value());
+
+    a.get_unchecked() = some_struct_level2{0, 0};
+    EXPECT_TRUE(a.has_value());
+
     opt::option<opt::option<some_struct_level2>> b{5, 15};
     EXPECT_TRUE(b.has_value());
     EXPECT_EQ(b, (some_struct_level2{5, 15}));
 
     b.reset();
     EXPECT_FALSE(b.has_value());
+
+    b.get_unchecked().get_unchecked() = some_struct_level2{-1, 0};
+    EXPECT_FALSE(b->has_value());
+
+    b.get_unchecked().get_unchecked() = some_struct_level2{0, -1};
+    EXPECT_FALSE(b.has_value());
+
+    b.get_unchecked().get_unchecked() = some_struct_level2{-1, -1};
+    EXPECT_FALSE(b->has_value());
 }
 
 }
