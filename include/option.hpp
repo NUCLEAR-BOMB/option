@@ -1169,8 +1169,6 @@ namespace impl {
         
         constexpr option_destruct_base() noexcept
             : dummy{} {
-            [[maybe_unused]]
-            const auto aaa = sizeof(value);
             traits::set_level(std::addressof(value), 0);
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }
