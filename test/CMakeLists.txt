@@ -11,6 +11,7 @@ add_executable(option-test
     "operators.test.cpp"
     "special.test.cpp"
     "lifetime.test.cpp"
+    "option_traits.test.cpp"
     "main.cpp"
 
     "utils.hpp"
@@ -18,9 +19,9 @@ add_executable(option-test
 target_add_warnings(option-test)
 target_link_libraries(option-test PRIVATE option)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_options(option-test PRIVATE
-		/Zc:preprocessor /Zc:gotoScope /Zc:__cplusplus /bigobj /MP
-	)
+    target_compile_options(option-test PRIVATE
+        /Zc:preprocessor /Zc:gotoScope /Zc:__cplusplus /bigobj /MP
+    )
 endif()
 
 include(FetchContent)

@@ -204,9 +204,6 @@ struct option<int(*)(int)> : ::testing::Test {
 };
 
 
-
-
-
 using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
 
 template<class T>
