@@ -1,30 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <Type Name="opt::option&lt;bool&gt;">
-        <DisplayString Condition="(natvis_destruct_base::traits::empty_value) &amp; (*(const uint_least8_t*)&amp;(natvis_destruct_base::value))">[none]</DisplayString>
+        <DisplayString Condition="2 == (*(uint8_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
-            <Item Name="value">base::value</Item>
+            <Item Name="[raw]">(*(uint8_t*)&amp;(base::value)),nvo</Item>
         </Expand>
     </Type>
-    <Type Name="opt::option&lt;*&gt;">
-        <Intrinsic Name="is_type_reference" Expression="
-            &quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '&amp;'
-        "></Intrinsic>
-        <Intrinsic Name="is_bitwise_empty" Optional="true" Expression="
-            memcmp(&amp;(natvis_destruct_base::traits::empty_value), &amp;(natvis_destruct_base::value), sizeof($T1)) == 0
-         "></Intrinsic>
-        <Intrinsic Name="has_value" Optional="true" Expression="natvis_destruct_base::has_value_flag"></Intrinsic>
-        
-        <DisplayString Condition="!has_value()" Optional="true">[none]</DisplayString>
-        <DisplayString Condition="is_type_reference() &amp;&amp; base::value == nullptr" Optional="true">[none]</DisplayString>
-        <DisplayString Condition="is_bitwise_empty()" Optional="true">[none]</DisplayString>
-        <DisplayString Condition="is_type_reference()" Optional="true">{*base::value}</DisplayString>
+    <Type Name="opt::option&lt;opt::option&lt;bool&gt;&gt;">
+        <DisplayString Condition="3 == (*(uint8_t*)&amp;(base::value))">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint8_t*)&amp;(base::value)),nvo</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;bool&gt;&gt;&gt;">
+        <DisplayString Condition="4 == (*(uint8_t*)&amp;(base::value))">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint8_t*)&amp;(base::value)),nvo</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="opt::option&lt;std::reference_wrapper&lt;*&gt;&gt;">
+        <DisplayString Condition="0 == (*(uintptr_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
-            <ExpandedItem>base::value</ExpandedItem>
+            <Item Name="[raw]">(*(uintptr_t*)&amp;(base::value)),nvoX</Item>
         </Expand>
     </Type>
+    <Type Name="opt::option&lt;opt::option&lt;std::reference_wrapper&lt;*&gt;&gt;&gt;">
+        <DisplayString Condition="1 == (*(uintptr_t*)&amp;(base::value))">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uintptr_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;std::reference_wrapper&lt;*&gt;&gt;&gt;&gt;">
+        <DisplayString Condition="2 == (*(uintptr_t*)&amp;(base::value))">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uintptr_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+
+    <Intrinsic Name="sNaN32_start" Expression="0xFFBF69AF"></Intrinsic>
+    <Intrinsic Name="qNaN32_start" Expression="0xFFC3EFB5"></Intrinsic>
+    
+    <Type Name="opt::option&lt;float&gt;">
+        <DisplayString Condition="
+            (sNaN32_start() == *(uint32_t*)&amp;(base::value)) || (qNaN32_start() == *(uint32_t*)&amp;(base::value))
+        ">[none]</DisplayString>
+        <DisplayString>{base::value}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint32_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;float&gt;&gt;">
+        <DisplayString Condition="
+            ((sNaN32_start() + 1) == *(uint32_t*)&amp;(base::value)) || ((qNaN32_start() + 1) == *(uint32_t*)&amp;(base::value))
+        ">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint32_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;float&gt;&gt;&gt;">
+        <DisplayString Condition="
+            ((sNaN32_start() + 2) == *(uint32_t*)&amp;(base::value)) || ((qNaN32_start() + 2) == *(uint32_t*)&amp;(base::value))
+        ">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint32_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+
+    <Intrinsic Name="sNaN64_start" Expression="0xFFF6C79F55B0898F"></Intrinsic>
+    <Intrinsic Name="qNaN64_start" Expression="0xFFFBF26430BB3557"></Intrinsic>
+
+    <Type Name="opt::option&lt;double&gt;">
+        <DisplayString Condition="
+            (sNaN64_start() == *(uint64_t*)&amp;(base::value)) || (qNaN64_start() == *(uint64_t*)&amp;(base::value))
+        ">[none]</DisplayString>
+        <DisplayString>{base::value}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint64_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;double&gt;&gt;">
+        <DisplayString Condition="
+            ((sNaN64_start() + 1) == *(uint64_t*)&amp;(base::value)) || ((qNaN64_start() + 1) == *(uint32_t*)&amp;(base::value))
+        ">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint64_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;double&gt;&gt;&gt;">
+        <DisplayString Condition="
+            ((sNaN64_start() + 2) == *(uint64_t*)&amp;(base::value)) || ((qNaN64_start() + 2) == *(uint64_t*)&amp;(base::value))
+        ">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">(*(uint64_t*)&amp;(base::value)),nvoX</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="opt::option&lt;*&gt;" Priority="MediumHigh">
+        <Intrinsic Name="is_reference" Expression="&quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '&amp;'"></Intrinsic>
+        <Intrinsic Name="is_pointer" Expression="&quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '*'"></Intrinsic>
+
+        <DisplayString Condition="is_reference() &amp;&amp; (*(uintptr_t*)&amp;(base::value) == 0)" Optional="true">[none]</DisplayString>
+        <DisplayString Condition="is_reference()" Optional="true">{*base::value}</DisplayString>
+        <DisplayString Condition="is_pointer() &amp;&amp; (*(uintptr_t*)&amp;(base::value) == 0xF8E1B1825D5D6C67)" Optional="true">[none]</DisplayString>
+        <DisplayString Condition="is_pointer()" Optional="true">{base::value}</DisplayString>
+        <DisplayString Condition="*(uint8_t*)&amp;(base::has_value_flag) == 0" Optional="true">[none]</DisplayString>
+        <DisplayString>{base::value}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">base::value,nvoX</Item>
+        </Expand>
+    </Type>
+    
     <Type Name="opt::none_t">
         <DisplayString>none</DisplayString>
     </Type>
