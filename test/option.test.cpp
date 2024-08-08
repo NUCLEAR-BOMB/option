@@ -11,9 +11,9 @@
 
 #include "utils.hpp"
 
-#ifdef _MSC_VER
-#pragma fenv_access (on)
-#elif defined(__clang__)
+#if OPTION_MSVC
+#pragma fenv_access(on)
+#elif OPTION_GCC || OPTION_MSVC
 #pragma STDC FENV_ACCESS ON
 #endif
 
