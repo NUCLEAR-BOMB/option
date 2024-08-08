@@ -13,7 +13,7 @@
 
 #if OPTION_MSVC
 #pragma fenv_access(on)
-#elif OPTION_GCC || OPTION_MSVC
+#elif OPTION_CLANG
 #pragma STDC FENV_ACCESS ON
 #endif
 
