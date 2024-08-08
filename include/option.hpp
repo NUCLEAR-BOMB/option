@@ -518,7 +518,7 @@ namespace impl {
 
         static std::uintmax_t get_level(const bool* const value) noexcept {
             uint_bool u8_value = impl::ptr_bit_cast<uint_bool>(value);
-            u8_value -= 2U;
+            u8_value -= uint_bool(2);
             return u8_value < max_level ? u8_value : std::uintmax_t(-1);
         }
         static void set_level(bool* const value, const std::uintmax_t level) noexcept {
