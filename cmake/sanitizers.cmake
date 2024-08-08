@@ -27,11 +27,6 @@ function(target_add_sanitizer target)
     get_target_name(libraries ${ARG_LIBRARIES})
     set(options ${ARG_OPTIONS})
 
-    set(ubasan_options
-        -fsanitize=undefined,signed-integer-overflow,shift,integer-divide-by-zero,implicit-signed-integer-truncation,implicit-integer-sign-change,alignment,bool,builtin,function,null,unreachable
-        -fno-sanitize-recover=all
-    )
-
     target_compile_options(${target} PRIVATE ${options})
     if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -85,7 +80,11 @@ function(target_add_sanitizer target)
                 endif()
             endif()
             if (sanitizers_Undefined)
-                target_compile_options(${target} PRIVATE ${ubasan_options})
+                target_compile_options(${target} PRIVATE
+                    -fsanitize=undefined,integer,alignment,bool,builtin,function,null,unreachable
+                    -fno-sanitize=unsigned-integer-overflow,unsigned-shift-base
+                    -fno-sanitize-recover=all
+                )
                 set_target_properties(${target} ${libraries} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded")
                 target_link_libraries(${target} PRIVATE
                     clang_rt.ubsan_standalone_cxx-x86_64.lib
@@ -102,8 +101,8 @@ function(target_add_sanitizer target)
                 target_link_options(${target} PRIVATE -fsanitize=address)
             endif()
             if (sanitizers_Undefined)
-                set_property(TARGET ${target} ${libraries} APPEND PROPERTY COMPILE_OPTIONS ${ubasan_options})
-                target_link_options(${target} PRIVATE ${ubasan_options})
+                set_property(TARGET ${target} ${libraries} APPEND PROPERTY COMPILE_OPTIONS -fsanitize=undefined)
+                target_link_options(${target} PRIVATE -fsanitize=undefined)
             endif()
             set_target_properties(${target} ${libraries} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded")
             return()
@@ -114,7 +113,7 @@ function(target_add_sanitizer target)
         target_link_options(${target} PRIVATE -fsanitize=address)
     endif()
     if (sanitizers_Undefined)
-        target_compile_options(${target} PRIVATE ${ubasan_options})
-        target_link_options(${target} PRIVATE ${ubasan_options})
+        target_compile_options(${target} PRIVATE -fsanitize=undefined)
+        target_link_options(${target} PRIVATE -fsanitize=undefined)
     endif()
 endfunction()
