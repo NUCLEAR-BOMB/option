@@ -58,8 +58,12 @@ struct option<float> : ::testing::Test {
         ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
     }
     void TearDown() override {
-        const int n = std::fetestexcept(FE_ALL_EXCEPT);
-        ASSERT_EQ(n, 0);
+        EXPECT_EQ(std::fetestexcept(FE_DIVBYZERO), 0);
+        EXPECT_EQ(std::fetestexcept(FE_INEXACT), 0);
+        EXPECT_EQ(std::fetestexcept(FE_INVALID), 0);
+        EXPECT_EQ(std::fetestexcept(FE_OVERFLOW), 0);
+        EXPECT_EQ(std::fetestexcept(FE_UNDERFLOW), 0);
+
         ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
     }
 };
@@ -71,8 +75,12 @@ struct option<double> : ::testing::Test {
         ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
     }
     void TearDown() override {
-        const int n = std::fetestexcept(FE_ALL_EXCEPT);
-        ASSERT_EQ(n, 0);
+        EXPECT_EQ(std::fetestexcept(FE_DIVBYZERO), 0);
+        EXPECT_EQ(std::fetestexcept(FE_INEXACT), 0);
+        EXPECT_EQ(std::fetestexcept(FE_INVALID), 0);
+        EXPECT_EQ(std::fetestexcept(FE_OVERFLOW), 0);
+        EXPECT_EQ(std::fetestexcept(FE_UNDERFLOW), 0);
+            
         ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
     }
 };
