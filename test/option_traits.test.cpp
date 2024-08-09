@@ -5,7 +5,7 @@
 #include <string_view>
 #include <cmath>
 #include <array>
-#include <utility>
+#include <functional>
 #include <memory>
 
 #include "utils.hpp" // NOLINT(misc-include-cleaner)
