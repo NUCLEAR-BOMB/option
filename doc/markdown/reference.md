@@ -75,11 +75,15 @@ Constructs an `opt::option` object that does not contain a value.
 - *Trivial* when the `opt::option` is specialized for reference types (`std::is_reference_v<T>`).
 - *Postcondition:* `has_value() == false`.
 
+---
+
 ```cpp
 constexpr option(opt::none_t) noexcept;
 ```
 Constructs an `opt::option` object that does not contain a value.
 - *Postcondition:* `has_value() == false`.
+
+---
 
 ```cpp
 constexpr option(const option& other) noexcept(/*see below*/);
@@ -90,6 +94,8 @@ Copy constructs an object of type `T` using *direct-list-initialization* with th
 - *Deleted* when `!std::is_copy_constructible_v<T>`.
 - *Trivial* when `std::is_trivially_copy_constructible_v<T>`.
 - *Postcondition:* `has_value() == other.has_value()`.
+
+---
 
 ```cpp
 constexpr option(option&& other) noexcept(/*see below*/);
@@ -104,6 +110,8 @@ Move constructs an object of type `T` using *direct-list-initialization* with th
 > [!IMPORTANT]
 > After move, `other` still holds a value (if it had before), but the value itself is moved from.
 
+---
+
 ```cpp
 template<class U = T>
 constexpr explicit(/*see below*/) option(U&& value) noexcept(/*see below*/);
@@ -117,6 +125,8 @@ Constructs an `opt::option` object that *contains a value*. Initializes a contai
     - `!(std::is_same_v<remove_cvref<T>, bool> && opt::is_option<remove_cvref<U>>)`. \
     Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
 
+---
+
 ```cpp
 template<class First, class... Args>
 constexpr option(First&& first, Args&&... args) noexcept(/*see below*/);
@@ -128,6 +138,8 @@ Constructs an `opt::option` object that contains a value, initialized an object 
     - `!std::is_same_v<remove_cvref<First>, opt::option<T>>`. \
     Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type X. \
     Where `is_direct_list_initializable<X, XArgs...>` is a metafunction, that checks if a type `X` can be *direct-list-initialized* with the arguments of types `XArgs...`.
+
+---
 
 ```cpp
 template<class U>
@@ -153,6 +165,8 @@ Constructs an object of type `T` using *direct-list-initialization* with the exp
         - `std::is_convertible_v<const opt::option<Y>&&, X>`.
 - *Postcondition:* `has_value() == other.has_value()`.
 
+---
+
 ```cpp
 template<class U>
 constexpr explicit(/*see below*/) option(option<U>&& other) noexcept(/*see below*/);
@@ -177,6 +191,8 @@ Constructs an object of type `T` using *direct-list-initialization* with the exp
         - `std::is_convertible_v<const opt::option<Y>&&, X>`.
 - *Postcondition:* `has_value() == other.has_value()`.
 
+---
+
 ### Destructor
 
 ```cpp
@@ -187,6 +203,8 @@ Destructs the contained object of type `T` if the `opt::option` object contains 
 - *Trivial* when `std::is_trivially_destructible_v<T>`.
 - *`constexpr`* when `std::is_trivially_destructible_v<T>`.
 
+---
+
 ### `operator=`
 
 ```cpp
@@ -195,6 +213,8 @@ constexpr option& operator=(opt::none_t) noexcept(/*see below*/);
 The contained value is destroyed if this `opt::option` contains a value.
 - *`noexcept`* when `std::is_nothrow_destructible_v<T>`.
 - *Postcondition:* `has_value() == false`.
+
+---
 
 ```cpp
 constexpr option& operator=(const option& other) noexcept(/*see below*/);
@@ -212,6 +232,8 @@ Copy assigns this `opt::option` from `other`.
     - `std::is_trivially_copy_constructible_v<T>`.
     - `std::is_trivially_destructible_v<T>`.
 - *Postcondition:* `has_value() == other.has_value()`.
+
+---
 
 ```cpp
 constexpr option& operator=(option&& other) noexcept(/*see below*/);
@@ -233,6 +255,8 @@ Move assigns this `opt::option` from `other`.
     - `std::is_trivially_destructible_v<T>`.
 - *Postcondition:* `has_value() == other.has_value()`.
 
+---
+
 ```cpp
 template<class U = T>
 constexpr option& operator=(U&& value) noexcept(/*see below*/);
@@ -248,6 +272,8 @@ If this `opt::option` contains a value before the call, it is assigned from the 
     - `!(std::is_scalar_v<T> && std::is_same_v<T, std::decay_t<U>>)`.
     - `std::is_constructible_v<T, U>`.
     - `std::is_assignable_v<T&, U>`.
+
+---
 
 ```cpp
 template<class U>
@@ -275,6 +301,8 @@ Assigns this `opt::option` from `other`. \
     - `std::is_assignable_v<X&, opt::option<Y>&&>`.
     - `std::is_assignable_v<X&, const opt::option<Y>&&>`.
 - *Postcondition:* `has_value() == other.has_value()`.
+
+---
 
 ```cpp
 template<class U = T>
@@ -306,6 +334,8 @@ Assigns this `opt::option` from `other`.
     - `std::is_assignable_v<X&, const opt::option<Y>&&>`.
 - *Postcondition:* `has_value() == other.has_value()`.
 
+---
+
 ### `reset`
 ```cpp
 constexpr void reset() noexcept(/*see below*/);
@@ -314,6 +344,8 @@ Destroys the contained value. \
 If this `opt::option` contains a value, destroy that contained value. If does not, do nothing.
 - *`noexcept`* when `std::is_nothrow_destructible_v<T>`.
 - *Postcondition:* `has_value() == false`
+
+---
 
 ### `emplace`
 ```cpp
@@ -333,6 +365,8 @@ constexpr explicit operator bool() const noexcept;
 ```
 Checks if this `opt::option` contains a value. \
 Returns `true` if this `opt::option` contains a value, otherwise if it does not, return `false`.
+
+---
 
 ### `has_value_and`
 ```cpp
@@ -362,6 +396,8 @@ a = opt::none;
 std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // false
 ```
 
+---
+
 ### `take`
 ```cpp
 constexpr option take() &;
@@ -369,6 +405,8 @@ constexpr option take() &;
 Takes the value out of the `opt::option`. \
 Copy construct temporary value using the contained value in the `opt::option`, destroy which is left in the contained value in the `opt::option`, and return that temporary value with copy elision.
 - *Postcondition:* `has_value() == false`.
+
+---
 
 ```cpp
 constexpr option take() &&;
@@ -392,6 +430,8 @@ b = a.take();
 std::cout << a.has_value() << '\n'; // false
 std::cout << b.has_value() << '\n'; // false
 ```
+
+---
 
 ### `take_if`
 ```cpp
@@ -421,6 +461,8 @@ std::cout << a.has_value() << '\n'; // false
 std::cout << *b << '\n'; // 3
 ```
 
+---
+
 ### `insert`
 ```cpp
 constexpr T& insert(const std::remove_reference_t<T>& value) /*lifetimebound*/;
@@ -429,12 +471,16 @@ Insert `value` into the `opt::option`, and then returns a non-const reference to
 If the `opt::option` contains a value, the contained value is destroyed, and copy constructs the new value in-place with `value` as parameters, and then returns a reference to the new contained value.
 - *Postcondition:* `has_value() == true`.
 
+---
+
 ```cpp
 constexpr T& insert(std::remove_reference_t<T>&& value) /*lifetimebound*/;
 ```
 Insert `value` into the `opt::option`, and then returns a non-const reference to the new contained value. \
 If the `opt::option` contains a value, the contained value is destroyed, and move constructs the new value in-place with `std::move(value)` as parameters, and then returns a reference to the new contained value.
 - *Postcondition:* `has_value() == true`.
+
+---
 
 ### `inspect`
 ```cpp
@@ -463,6 +509,8 @@ a.map([](int x) { return x * 2; })
  .inspect([](double x) { std::cout << x << '\n'; }); // will not print `x`
 ```
 
+---
+
 ### `get`, `operator*`, `operator->`
 ```cpp
 constexpr T& get() & noexcept /*lifetimebound*/;
@@ -474,6 +522,8 @@ Access the contained value. \
 Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value. Same as `operator*`.
 - *Precondition:* `has_value() == true`
 
+---
+
 ```cpp
 constexpr std::add_pointer_t<const T> operator->() const noexcept /*lifetimebound*/;
 constexpr std::add_pointer_t<T> operator->() noexcept /*lifetimebound*/;
@@ -481,6 +531,8 @@ constexpr std::add_pointer_t<T> operator->() noexcept /*lifetimebound*/;
 Access the contained value members. \ 
 Returns a pointer to the contained value (`std::addressof(get())`) of the `opt::option`. Calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value.
 - *Precondition:* `has_value() == true`
+
+---
 
 ```cpp
 constexpr T& operator*() & noexcept /*lifetimebound*/;
@@ -491,6 +543,8 @@ constexpr const std::remove_reference_t<T>&& operator*() const&& /*lifetimebound
 Access the contained value. \
 Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value. Same as `get()`.
 - *Precondition:* `has_value() == true`
+
+---
 
 ### `get_unchecked`
 ```cpp
@@ -504,6 +558,8 @@ Returns a reference to the contained value. *Does not* calls the [`OPTION_VERIFY
 
 > [!CAUTION]
 > Using this method on an empty `opt::option` will cause [Undefined Behavior][UB].
+
+---
 
 ### `value`, `value_or_throw`
 ```cpp
@@ -521,6 +577,8 @@ Returns a reference to the contained value. \
 Throws a [`opt::bad_access`](#bad_access) exception if `opt::option` does not contain the value. \
 The `value_or_throw()` method is a more explicit version of the `value()` method.
 
+---
+
 ### `value_or`
 ```cpp
 template<class U>
@@ -530,6 +588,8 @@ Returns the contained value if `opt::option` contains one or returns a provided 
 - *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>` and ` std::is_nothrow_constructible_v<T, U&&>`.
 - *Requirements:* `std::is_copy_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
 
+---
+
 ```cpp
 template<class U>
 constexpr T value_or(U&& default) && noexcept(/*see below*/) /*lifetimebound*/;
@@ -537,6 +597,8 @@ constexpr T value_or(U&& default) && noexcept(/*see below*/) /*lifetimebound*/;
 Returns the contained value if `opt::option` contains one or returns a provided `default` instead. \
 - *`noexcept`* when `std::is_nothrow_move_constructible_v<T>` and ` std::is_nothrow_constructible_v<T, U&&>`.
 - *Requirements:* `std::is_move_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
+
+---
 
 ### `value_or_default`
 ```cpp
@@ -546,12 +608,16 @@ Returns the contained value if `opt::option` contains one, otherwise returns a d
 - *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>` and `std::is_nothrow_default_constructible_v<T>`.
 - *Requirements:* `std::is_default_constructible_v<T>`, `std::is_copy_constructible_v<T>` and `std::is_move_constructible_v<T>`.
 
+---
+
 ```cpp
 constexpr T value_or_default() const& noexcept(/*see below*/);
 ```
 Returns the contained value if `opt::option` contains one, otherwise returns a default constructed of type `T` (expression `T{}`).
 - *`noexcept`* when `std::is_nothrow_move_constructible_v<T>` and `std::is_nothrow_default_constructible_v<T>`.
 - *Requirements:* `std::is_default_constructible_v<T>` and `std::is_move_constructible_v<T>`.
+
+---
 
 ### `map_or`
 ```cpp
@@ -577,6 +643,8 @@ std::cout << a.map_or(0, [](int x) { return x * 200; }) << '\n'; // 400
 a = opt::none;
 std::cout << a.map_or(0, [](int x) { return x * 2; }) << '\n'; // 0
 ```
+
+---
 
 ### `map_or_else`
 ```cpp
@@ -609,6 +677,8 @@ std::cout << a.map_or_else(
 ) << '\n'; // will print -100
 ```
 
+---
+
 ### `ptr_or_null`
 ```cpp
 constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept /*lifetimebound*/;
@@ -629,6 +699,8 @@ std::cout << (b.ptr_or_null() == &a) << '\n'; // true
 b = opt::none;
 std::cout << b.ptr_or_null() << '\n'; // 0000000000000000 (nullptr)
 ```
+
+---
 
 ### `filter`
 ```cpp
@@ -654,6 +726,8 @@ a = opt::none;
 std::cout << a.filter(is_odd).has_value() << '\n'; // false
 ```
 
+---
+
 ### `flatten`
 ```cpp
 constexpr typename T::value_type flatten() const&;
@@ -675,6 +749,8 @@ std::cout << a.flatten().has_value() << '\n'; // false
 a = opt::none;
 std::cout << a.flatten().has_value() << '\n'; // false
 ```
+
+---
 
 ### `and_then`
 ```cpp
@@ -709,6 +785,8 @@ a = opt::none;
 std::cout << a.and_then(do_something).has_value() << '\n'; // false
 ```
 
+---
+
 ### `map`
 ```cpp
 template<class Fn>
@@ -738,6 +816,8 @@ std::cout << a.map(to_float).get() << '\n'; // 0.5
 a = opt::none;
 std::cout << a.map(to_float).has_value() << '\n'; // false
 ```
+
+---
 
 ### `or_else`
 ```cpp
@@ -778,6 +858,8 @@ Specifies that `opt::option` will always contain a value at a given point.
 > [!CAUTION]
 > Will cause [Undefined Behavior][UB] if `opt::option` does not contain a value.
 
+---
+
 ### `unzip`
 ```cpp
 constexpr auto unzip() &;
@@ -808,6 +890,8 @@ unzipped_b = b.unzip();
 
 std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // true
 ```
+
+---
 
 ### `replace`
 ```cpp
@@ -862,6 +946,8 @@ abc = opt::zip(a, b, c);
 std::cout << abc.has_value() << '\n'; // false
 ```
 
+---
+
 ### `zip_with`
 ```cpp
 template<class Fn, class... Options>
@@ -884,6 +970,8 @@ opt::zip_with(add_and_print, a, b); // 15
 a = opt::none;
 opt::zip_with(add_and_print, a, b); // will not call `add_and_print`
 ```
+
+---
 
 ### `option_cast`
 ```cpp
@@ -908,12 +996,16 @@ b = opt::option_cast<int>(a);
 std::cout << b.has_value() << '\n'; // false
 ```
 
+---
+
 ### `from_nullable`
 ```cpp
 template<class T>
 constexpr option<T> from_nullable(T* const nullable_ptr);
 ```
 Constructs `opt::option<T>` from dereferenced value of proveded pointer if it is not equal to 'nullptr'; otherwise, returns empty `opt::option<T>`.
+
+---
 
 ### `operator|`
 ```cpp
@@ -923,17 +1015,23 @@ constexpr T operator|(const option<T>& left, const T& right);
 If `left` does not contain a value, returns `right` value instead. If `left` does, just returns `left`. \
 Same as [`opt::option<T>::value_or`](#value_or).
 
+---
+
 ```cpp
 template<class T>
 constexpr option<T> operator|(const option<T>& left, const option<T>& right);
 ```
 Returns `left` if it does contains a value, or returns `right` if `left` does not.
 
+---
+
 ```cpp
 template<class T>
 constexpr option<T> operator|(const option<T>& left, none_t);
 ```
 Returns `left`.
+
+---
 
 ```cpp
 template<class T>
@@ -977,6 +1075,8 @@ constexpr option<T>& operator|=(option<T>& left, const T& right);
 Copy assigns `right` to `left` if the `left` does not contain a value. \
 Returns a reference to `left`.
 
+---
+
 ```cpp
 template<class T>
 constexpr option<T>& operator|=(option<T>& left, option<T>&& right);
@@ -986,6 +1086,8 @@ constexpr option<T>& operator|=(option<T>& left, T&& right);
 ```
 Move assigns `right` to `left` if the `left` does not contain a value, \
 Returns a reference to `left`.
+
+---
 
 ### `operator&`
 ```cpp
@@ -1008,6 +1110,8 @@ a = 1;
 b = opt::none;
 std::cout << (a & b).has_value() << '\n'; // false
 ```
+
+---
 
 ### `operator^`
 ```cpp
@@ -1035,6 +1139,8 @@ b = opt::none;
 std::cout << (a ^ b).has_value() << '\n'; // false
 ```
 
+---
+
 ### `operator==`
 ```cpp
 template<class T1, class T2>
@@ -1043,11 +1149,15 @@ constexpr bool operator==(const option<T1>& left, const option<T2>& right) noexc
 If `left` and `right` contains the values, then compare values using operator `==`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `==`.
 - *`noexcept`* when `noexcept(*left == *right)` is `true`.
 
+---
+
 ```cpp
 template<class T>
 constexpr bool operator==(const option<T>& left, none_t) noexcept;
 ```
 Returns `!left.has_value()`.
+
+---
 
 ```cpp
 template<class T>
@@ -1055,12 +1165,16 @@ constexpr bool operator==(none_t, const option<T>& right) noexcept;
 ```
 Returns `!right.has_value()`.
 
+---
+
 ```cpp
 template<class T1, class T2>
 constexpr bool operator==(const option<T1>& left, const T2& right) noexcept(/*see below*/);
 ```
 If `left` contains a value, then compare it with `right` using operator `==`; otherwise, return `false`.
 - *`noexcept`* when `noexcept(*left == right)` is `true`.
+
+---
 
 ```cpp
 template<class T1, class T2>
@@ -1077,11 +1191,15 @@ constexpr bool operator!=(const option<T1>& left, const option<T2>& right) noexc
 If `left` and `right` contains the values, then compare values using operator `!=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `!=`.
 - *`noexcept`* when `noexcept(*left != *right)` is `true`.
 
+---
+
 ```cpp
 template<class T>
 constexpr bool operator!=(const option<T>& left, none_t) noexcept;
 ```
 Returns `left.has_value()`.
+
+---
 
 ```cpp
 template<class T>
@@ -1089,12 +1207,16 @@ constexpr bool operator!=(none_t, const option<T>& right) noexcept;
 ```
 Returns `right.has_value()`.
 
+---
+
 ```cpp
 template<class T1, class T2>
 constexpr bool operator!=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
 ```
 If `left` contains a value, then compare it with `right` using operator `!=`; otherwise, return `true`.
 - *`noexcept`* when `noexcept(*left != right)` is `true`.
+
+---
 
 ```cpp
 template<class T1, class T2>
@@ -1111,11 +1233,15 @@ constexpr bool operator<(const option<T1>& left, const option<T2>& right) noexce
 If `left` and `right` contains the values, then compare values using operator `<`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<`.
 - *`noexcept`* when `noexcept(*left < *right)` is `true`.
 
+---
+
 ```cpp
 template<class T>
 constexpr bool operator<(const option<T>& left, none_t) noexcept;
 ```
 Returns `false`.
+
+---
 
 ```cpp
 template<class T>
@@ -1123,12 +1249,16 @@ constexpr bool operator<(none_t, const option<T>& right) noexcept;
 ```
 Returns `right.has_value()`.
 
+---
+
 ```cpp
 template<class T1, class T2>
 constexpr bool operator<(const option<T1>& left, const T2& right) noexcept(/*see below*/);
 ```
 If `left` contains a value, then compare it with `right` using operator `<`; otherwise, return `true`.
 - *`noexcept`* when `noexcept(*left < right)` is `true`.
+
+---
 
 ```cpp
 template<class T1, class T2>
@@ -1145,11 +1275,15 @@ constexpr bool operator<=(const option<T1>& left, const option<T2>& right) noexc
 If `left` and `right` contains the values, then compare values using operator `<=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<=`.
 - *`noexcept`* when `noexcept(*left <= *right)` is `true`.
 
+---
+
 ```cpp
 template<class T>
 constexpr bool operator<=(const option<T>& left, none_t) noexcept;
 ```
 Returns `!left.has_value()`.
+
+---
 
 ```cpp
 template<class T>
@@ -1157,12 +1291,16 @@ constexpr bool operator<=(none_t, const option<T>& right) noexcept;
 ```
 Returns `true`.
 
+---
+
 ```cpp
 template<class T1, class T2>
 constexpr bool operator<=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
 ```
 If `left` contains a value, then compare it with `right` using operator `<=`; otherwise, return `true`.
 - *`noexcept`* when `noexcept(*left <= right)` is `true`.
+
+---
 
 ```cpp
 template<class T1, class T2>
@@ -1179,11 +1317,15 @@ constexpr bool operator>(const option<T1>& left, const option<T2>& right) noexce
 If `left` and `right` contains the values, then compare values using operator `>`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>`.
 - *`noexcept`* when `noexcept(*left > *right)` is `true`.
 
+---
+
 ```cpp
 template<class T>
 constexpr bool operator>(const option<T>& left, none_t) noexcept;
 ```
 Returns `left.has_value()`.
+
+---
 
 ```cpp
 template<class T>
@@ -1191,12 +1333,16 @@ constexpr bool operator>(none_t, const option<T>& right) noexcept;
 ```
 Returns `false`.
 
+---
+
 ```cpp
 template<class T1, class T2>
 constexpr bool operator>(const option<T1>& left, const T2& right) noexcept(/*see below*/);
 ```
 If `left` contains a value, then compare it with `right` using operator `>`; otherwise, return `false`.
 - *`noexcept`* when `noexcept(*left < right)` is `true`.
+
+---
 
 ```cpp
 template<class T1, class T2>
@@ -1213,11 +1359,15 @@ constexpr bool operator>=(const option<T1>& left, const option<T2>& right) noexc
 If `left` and `right` contains the values, then compare values using operator `>=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>=`.
 - *`noexcept`* when `noexcept(*left >= *right)` is `true`.
 
+---
+
 ```cpp
 template<class T>
 constexpr bool operator>=(const option<T>& left, none_t) noexcept;
 ```
 Returns `true`.
+
+---
 
 ```cpp
 template<class T>
@@ -1225,12 +1375,16 @@ constexpr bool operator>=(none_t, const option<T>& right) noexcept;
 ```
 Returns `!right.has_value()`.
 
+---
+
 ```cpp
 template<class T1, class T2>
 constexpr bool operator>=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
 ```
 If `left` contains a value, then compare it with `right` using operator `=>`; otherwise, return `false`.
 - *`noexcept`* when `noexcept(*left >= right)` is `true`.
+
+---
 
 ```cpp
 template<class T1, class T2>
@@ -1261,6 +1415,8 @@ a = opt::none;
 std::cout << std::hash<opt::option<int>>{}(a) << '\n'; // [some empty option hash]
 ```
 
+---
+
 ### `none_t`
 ```cpp
 struct none_t;
@@ -1268,17 +1424,23 @@ struct none_t;
 The tag type used to indicate `opt::option` with the contained value in uninitialized state. \
 `opt::none_t` do not have a default constructor.
 
+---
+
 ### `none`
 ```cpp
 inline constexpr none_t none{/*special value*/};
 ```
 The `opt::none` variable is a `constexpr` value of type [`opt::none_t`](#none_t) that is used to indicate `opt::option` with the contained value in uninitialized state.
 
+---
+
 ### `bad_access`
 ```cpp
 class bad_access;
 ```
 The exception type of an object to be thrown by [`opt::option<T>::value`, `opt::option<T>::value_or_throw`](#value-value_or_throw) methods, if `opt::option` does not contain a value inside it.
+
+---
 
 ### `option_traits`
 ```cpp
@@ -1294,6 +1456,8 @@ If `max_level` is equal to 0, `opt::option_traits` is disabled and `opt::option`
 Otherwise, `opt::option_traits` specialization must have at least these two static methods: `get_level`, `set_level`.
 
 See [guide](./custom_traits_guide.md) for creating custom option traits.
+
+---
 
 #### `get_level`
 
@@ -1315,6 +1479,8 @@ until `max_level` is reached.
 
 This function is called when `opt::option` is needed to check if it contains a value.
 
+---
+
 #### `set_level`
 
 ```cpp
@@ -1328,6 +1494,8 @@ and the provided `T*` pointer to the underlying object must be non-`nullptr`.
 
 Usually `set_level` is called after the original object is destructed/uninitialized, but also `set_level` can be called multiple times in a row.
 
+---
+
 #### `after_constructor`
 
 ```cpp
@@ -1340,6 +1508,8 @@ The term "after the object is constructed" does not include `opt::option` trivia
 
 > [!TIP]
 > The compiler may be not properly initialize the contained value, use this function to do this manually.
+
+---
 
 #### `after_assignment`
 
@@ -1372,6 +1542,8 @@ static_assert(std::is_same_v<decltype(a), opt::option<int>>);
 opt::option b{2.f};
 static_assert(std::is_same_v<decltype(b), opt::option<float>>);
 ```
+
+---
 
 ```cpp
 template<class T>
