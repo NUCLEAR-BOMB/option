@@ -55,10 +55,12 @@
 - [Deduction guides](#deduction-guides)
 
 ## Template parameters
+
 `T` - the type of the value to manage initialization state for. \
 The type must be not `opt::none_t`, not `void`, and be destructible.
 
 ## Member types
+
 | Member type | Definition |
 | ----------- | ---------- |
 | value_type  | T          |
@@ -337,6 +339,7 @@ Assigns this `opt::option` from `other`.
 ---
 
 ### `reset`
+
 ```cpp
 constexpr void reset() noexcept(/*see below*/);
 ```
@@ -348,6 +351,7 @@ If this `opt::option` contains a value, destroy that contained value. If does no
 ---
 
 ### `emplace`
+
 ```cpp
 template<class... Args>
 constexpr T& emplace(Args&&... args) noexcept(/*see below*/) /*lifetimebound*/;
@@ -358,6 +362,7 @@ If this `opt::option` already contains a value, the contained value is destroyed
 - *Enabled* when `std::is_constructible_v<T, Args...>`.
 
 ### `has_value`, `operator bool`
+
 ```cpp
 constexpr bool has_value() const noexcept;
 
@@ -369,6 +374,7 @@ Returns `true` if this `opt::option` contains a value, otherwise if it does not,
 ---
 
 ### `has_value_and`
+
 ```cpp
 template<class P>
 constexpr bool has_value_and(P&& predicate) &;
@@ -399,6 +405,7 @@ std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // false
 ---
 
 ### `take`
+
 ```cpp
 constexpr option take() &;
 ```
@@ -434,6 +441,7 @@ std::cout << b.has_value() << '\n'; // false
 ---
 
 ### `take_if`
+
 ```cpp
 template<class P>
 constexpr option take_if(P&& predicate);
@@ -464,6 +472,7 @@ std::cout << *b << '\n'; // 3
 ---
 
 ### `insert`
+
 ```cpp
 constexpr T& insert(const std::remove_reference_t<T>& value) /*lifetimebound*/;
 ```
@@ -483,6 +492,7 @@ If the `opt::option` contains a value, the contained value is destroyed, and mov
 ---
 
 ### `inspect`
+
 ```cpp
 template<class F>
 constexpr option& inspect(F&& fn) &;
@@ -512,6 +522,7 @@ a.map([](int x) { return x * 2; })
 ---
 
 ### `get`, `operator*`, `operator->`
+
 ```cpp
 constexpr T& get() & noexcept /*lifetimebound*/;
 constexpr const T& get() const& noexcept /*lifetimebound*/;
@@ -547,6 +558,7 @@ Returns a reference to the contained value of the `opt::option`. Calls the [`OPT
 ---
 
 ### `get_unchecked`
+
 ```cpp
 constexpr T& get_unchecked() & noexcept;
 constexpr const T& get_unchecked() const& noexcept;
@@ -562,6 +574,7 @@ Returns a reference to the contained value. *Does not* calls the [`OPTION_VERIFY
 ---
 
 ### `value`, `value_or_throw`
+
 ```cpp
 constexpr T& value_or_throw() & /*lifetimebound*/;
 constexpr const T& value_or_throw() const& /*lifetimebound*/;
@@ -580,6 +593,7 @@ The `value_or_throw()` method is a more explicit version of the `value()` method
 ---
 
 ### `value_or`
+
 ```cpp
 template<class U>
 constexpr T value_or(U&& default) const& noexcept(/*see below*/) /*lifetimebound*/;
@@ -601,6 +615,7 @@ Returns the contained value if `opt::option` contains one or returns a provided 
 ---
 
 ### `value_or_default`
+
 ```cpp
 constexpr T value_or_default() const& noexcept(/*see below*/);
 ```
@@ -620,6 +635,7 @@ Returns the contained value if `opt::option` contains one, otherwise returns a d
 ---
 
 ### `map_or`
+
 ```cpp
 template<class U, class Fn>
 constexpr remove_cvref<U> map_or(U&& default, Fn&& function) &;
@@ -647,6 +663,7 @@ std::cout << a.map_or(0, [](int x) { return x * 2; }) << '\n'; // 0
 ---
 
 ### `map_or_else`
+
 ```cpp
 template<class D, class Fn>
 constexpr auto map_or_else(D&& default, Fn&& function) &;
@@ -680,6 +697,7 @@ std::cout << a.map_or_else(
 ---
 
 ### `ptr_or_null`
+
 ```cpp
 constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept /*lifetimebound*/;
 constexpr const std::remove_reference_t<T>* ptr_or_null() const& noexcept /*lifetimebound*/;
@@ -703,6 +721,7 @@ std::cout << b.ptr_or_null() << '\n'; // 0000000000000000 (nullptr)
 ---
 
 ### `filter`
+
 ```cpp
 template<class Fn>
 constexpr option filter(Fn&& function) const;
@@ -729,6 +748,7 @@ std::cout << a.filter(is_odd).has_value() << '\n'; // false
 ---
 
 ### `flatten`
+
 ```cpp
 constexpr typename T::value_type flatten() const&;
 constexpr typename T::value_type flatten() &&;
@@ -753,6 +773,7 @@ std::cout << a.flatten().has_value() << '\n'; // false
 ---
 
 ### `and_then`
+
 ```cpp
 template<class Fn>
 constexpr option<U> and_then(Fn&& function) &;
@@ -788,6 +809,7 @@ std::cout << a.and_then(do_something).has_value() << '\n'; // false
 ---
 
 ### `map`
+
 ```cpp
 template<class Fn>
 constexpr option<U> map(Fn&& function) &;
@@ -820,6 +842,7 @@ std::cout << a.map(to_float).has_value() << '\n'; // false
 ---
 
 ### `or_else`
+
 ```cpp
 template<class Fn>
 constexpr option or_else(Fn&& function) const&;
@@ -850,6 +873,7 @@ std::cout << a.or_else(
 ```
 
 ### `assume_has_value`
+
 ```cpp
 constexpr void assume_has_value() const noexcept;
 ```
@@ -861,6 +885,7 @@ Specifies that `opt::option` will always contain a value at a given point.
 ---
 
 ### `unzip`
+
 ```cpp
 constexpr auto unzip() &;
 constexpr auto unzip() const&;
@@ -894,6 +919,7 @@ std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // tr
 ---
 
 ### `replace`
+
 ```cpp
 template<class U>
 constexpr option<T> replace(U&& value) &;
@@ -920,6 +946,7 @@ std::cout << b.has_value() << '\n'; // false
 ## Non-member functions
 
 ### `zip`
+
 ```cpp
 template<class Options>
 constexpr /*see below*/ zip(Options&&... options);
@@ -949,6 +976,7 @@ std::cout << abc.has_value() << '\n'; // false
 ---
 
 ### `zip_with`
+
 ```cpp
 template<class Fn, class... Options>
 constexpr auto zip_with(Fn&& fn, Options&&... options);
@@ -974,6 +1002,7 @@ opt::zip_with(add_and_print, a, b); // will not call `add_and_print`
 ---
 
 ### `option_cast`
+
 ```cpp
 template<class To, class From>
 constexpr option<To> option_cast(const option<From>& value);
@@ -998,6 +1027,7 @@ std::cout << b.has_value() << '\n'; // false
 
 ---
 
+
 ### `from_nullable`
 ```cpp
 template<class T>
@@ -1008,6 +1038,7 @@ Constructs `opt::option<T>` from dereferenced value of proveded pointer if it is
 ---
 
 ### `operator|`
+
 ```cpp
 template<class T>
 constexpr T operator|(const option<T>& left, const T& right);
@@ -1065,6 +1096,7 @@ std::cout << *b << '\n'; // 5
 ```
 
 ### `operator|=`
+
 ```cpp
 template<class T>
 constexpr option<T>& operator|=(option<T>& left, const option<T>& right);
@@ -1090,6 +1122,7 @@ Returns a reference to `left`.
 ---
 
 ### `operator&`
+
 ```cpp
 template<class T, class U>
 constexpr option<U> operator&(const option<T>& left, const option<U>& right);
@@ -1114,6 +1147,7 @@ std::cout << (a & b).has_value() << '\n'; // false
 ---
 
 ### `operator^`
+
 ```cpp
 template<class T>
 constexpr option<T> operator^(const option<T>& left, const option<T>& right);
@@ -1142,6 +1176,7 @@ std::cout << (a ^ b).has_value() << '\n'; // false
 ---
 
 ### `operator==`
+
 ```cpp
 template<class T1, class T2>
 constexpr bool operator==(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
@@ -1396,6 +1431,7 @@ If `right` contains a value, then compare it with `left` using operator `=>`; ot
 ## Helpers
 
 ### `std::hash<opt::option>`
+
 ```cpp
 template<class T>
 struct std::hash<opt::option<T>>;
@@ -1418,6 +1454,7 @@ std::cout << std::hash<opt::option<int>>{}(a) << '\n'; // [some empty option has
 ---
 
 ### `none_t`
+
 ```cpp
 struct none_t;
 ```
@@ -1427,6 +1464,7 @@ The tag type used to indicate `opt::option` with the contained value in uninitia
 ---
 
 ### `none`
+
 ```cpp
 inline constexpr none_t none{/*special value*/};
 ```
@@ -1435,6 +1473,7 @@ The `opt::none` variable is a `constexpr` value of type [`opt::none_t`](#none_t)
 ---
 
 ### `bad_access`
+
 ```cpp
 class bad_access;
 ```
@@ -1443,6 +1482,7 @@ The exception type of an object to be thrown by [`opt::option<T>::value`, `opt::
 ---
 
 ### `option_traits`
+
 ```cpp
 template<class T, class = void>
 struct option_traits;
@@ -1529,6 +1569,7 @@ The term "after the object is assigned" does not include `opt::option` trivially
 *`noexcept` - optional `noexcept` specifiers. `opt::option` doesn't support exceptions in that functions, so currently `noexcept` doesn't do anything.
 
 ## Deduction guides
+
 ```cpp
 template<class T>
 option(T) -> option<T>;
