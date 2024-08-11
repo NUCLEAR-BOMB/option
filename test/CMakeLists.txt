@@ -1,10 +1,7 @@
 
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
 
-find_program(ccache_result ccache)
-if(ccache_result)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${ccache_result})
-endif()
+
 
 add_executable(option-test
     "option.test.cpp"
@@ -86,12 +83,12 @@ if (USE_LIBASSERT)
     set(libassert_target libassert::assert cpptrace::cpptrace)
 endif()
 
-if (USE_SANITIZER)
-    include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
-    target_add_sanitizer(option-test SANITIZERS Address Undefined
-        LIBRARIES GTest::gtest ${libassert_target}
-    )
-endif()
+# if (USE_SANITIZER)
+#     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
+#     target_add_sanitizer(option-test SANITIZERS Address Undefined
+#         LIBRARIES GTest::gtest ${libassert_target}
+#     )
+# endif()
 
 if (USE_CLANG_TIDY)
     include("${PROJECT_SOURCE_DIR}/cmake/clang_tidy.cmake")
@@ -102,9 +99,6 @@ if (USE_CLANG_TIDY)
     )
 endif()
 
-set_target_properties(option-test PROPERTIES
-    VS_DEBUGGER_ENVIRONMENT "UBSAN_OPTIONS=print_stacktrace=1"
-)
 add_custom_target(run-option-test VERBATIM
-    COMMAND "${CMAKE_COMMAND}" -E env "UBSAN_OPTIONS=print_stacktrace=1" "$<TARGET_FILE:option-test>"
+    COMMAND "$<TARGET_FILE:option-test>"
 )

@@ -12,9 +12,11 @@
 #include "utils.hpp"
 
 #if OPTION_MSVC
-#pragma fenv_access(on)
+    #pragma fenv_access(on)
 #elif OPTION_CLANG
-#pragma STDC FENV_ACCESS ON
+    #if __clang_major__ >= 12
+        #pragma STDC FENV_ACCESS ON
+    #endif
 #endif
 
 #define TypeParam T
@@ -610,7 +612,7 @@ TYPED_TEST(option, inspect) {
         int x = 0;
         a.inspect([&](int y) { x += y; });
         EXPECT_EQ(x, 1);
-        as_rvalue(a)
+        opt::option<int>{a}
             .inspect([&](const int& y) { x += y; })
             .inspect([&](int& y) { return x += y * 2; });
         EXPECT_EQ(x, 4);
@@ -697,7 +699,13 @@ TYPED_TEST(option, function_zip) {
 
     auto c = opt::zip(a, b);
     EXPECT_TRUE(c.has_value());
-    EXPECT_EQ(*c, std::tuple(V0, V1));
+
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93147
+    EXPECT_EQ(std::tuple_size_v<typename decltype(c)::value_type>, 2);
+    if constexpr (std::tuple_size_v<typename decltype(c)::value_type> == 2) {
+        EXPECT_EQ(std::get<0>(*c), V0);
+        EXPECT_EQ(std::get<1>(*c), V1);
+    }
 
     a.reset();
     c = opt::zip(a, b);

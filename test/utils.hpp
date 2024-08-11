@@ -2,8 +2,10 @@
 
 #include <iostream>
 #include <gtest/gtest.h>
-#include <libassert/assert.hpp>
 #include <option.hpp>
+
+#if __has_include(<libassert/assert.hpp>)
+#include <libassert/assert.hpp>
 
 inline void libassert_failure_handler(const libassert::assertion_info& info) {
     libassert::enable_virtual_terminal_processing_if_needed(); // for terminal colors on windows
@@ -19,6 +21,7 @@ inline const auto set_libassert_handle = []() {
     libassert::set_failure_handler(&libassert_failure_handler);
     return 1;
 } ();
+#endif
 
 namespace opt {
     template<class T>

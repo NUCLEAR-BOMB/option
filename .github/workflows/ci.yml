@@ -1,93 +1,302 @@
 name: CI
 
-on: [push, pull_request]
-
-env:
-    CMAKE_BUILD_PARALLEL_LEVEL:
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
-  build:
-    name: ${{ matrix.platform.name }} [${{ matrix.type.name }}]
-    runs-on: ${{ matrix.platform.os }}
+  linux:
+    name: 'Linux ${{matrix.name}} (Debug/Release)'
+    runs-on: ${{matrix.os}}
+
+    env:
+      CMAKE_GENERATOR: 'Ninja Multi-Config'
+      CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      VERBOSE: 1
+      CXX: ${{matrix.cxx}}
+      CC: ${{matrix.cc}}
+      CXXFLAGS: ${{matrix.options}}
+      CFLAGS: ${{matrix.options}}
+      ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=2:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true:${{matrix.asan_options}}'
+      UBSAN_OPTIONS: 'print_stacktrace=1:silence_unsigned_overflow=1'
+
     strategy:
       fail-fast: false
       matrix:
-        platform:
-        - { name: Linux Clang,        os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ }
-        - { name: Linux GCC,          os: ubuntu-latest, flags: -DCMAKE_C_COMPILER=gcc   -DCMAKE_CXX_COMPILER=g++ }
-        - { name: Windows Clang,      os: windows-2022,  flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DUSE_SANITIZER=FALSE -G "Unix Makefiles" }
-        - { name: Windows VS,         os: windows-2022,  install-llvm: 'true' }
-        - { name: Windows VS ClangCL, os: windows-2022,  flags: -T ClangCL -DUSE_SANITIZER=FALSE }
-        type:
-        - { name: Release, flags: -DCMAKE_BUILD_TYPE=Release }
-        - { name: Debug,   flags: -DCMAKE_BUILD_TYPE=Debug }
+        include:
+          - name: 'clang 17.0.6'
+            cxx: 'clang++'
+            cc: 'clang'
+            os: 'ubuntu-22.04'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -ffp-exception-behavior=maytrap
+            install-llvm: { version: '17.0.6', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
+
+          - name: 'clang 16.0.4'
+            cxx: 'clang++'
+            cc: 'clang'
+            os: 'ubuntu-22.04'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -ffp-exception-behavior=maytrap
+            install-llvm: { version: '16.0.4', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.4/clang+llvm-16.0.4-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
+
+          - name: 'clang 15'
+            cxx: 'clang++-15'
+            cc: 'clang-15'
+            packages: 'clang-15'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -ffp-exception-behavior=maytrap
+
+          - name: 'clang 14'
+            cxx: 'clang++-14'
+            cc: 'clang-14'
+            packages: 'clang-14'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -ffp-exception-behavior=maytrap
+
+
+          - name: 'clang 13'
+            cxx: 'clang++-13'
+            cc: 'clang-13'
+            packages: 'clang-13'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -ffp-exception-behavior=maytrap
+          - name: 'clang 12'
+            cxx: 'clang++-12'
+            cc: 'clang-12'
+            packages: 'clang-12'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -ffp-exception-behavior=maytrap
+              -Wno-unknown-warning-option
+
+          - name: 'clang 11'
+            cxx: 'clang++-11'
+            cc: 'clang-11'
+            packages: 'clang-11'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -Wno-unknown-warning-option
+              -ffp-exception-behavior=maytrap
+            asan_options: 'use_sigaltstack=false'
+
+          - name: 'clang 10'
+            cxx: 'clang++-10'
+            cc: 'clang-10'
+            packages: 'clang-10'
+            os: 'ubuntu-20.04'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -Wno-unknown-warning-option
+              -ffp-exception-behavior=maytrap
+
+          - name: 'clang 9'
+            cxx: 'clang++-9'
+            cc: 'clang-9'
+            packages: 'clang-9'
+            os: 'ubuntu-20.04'
+            options: >-
+              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fno-sanitize-recover=all
+              -Wno-unknown-warning-option
+          
+          - name: 'gcc 12'
+            cxx: 'g++-12'
+            cc: 'gcc-12'
+            packages: 'g++-12'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+
+          - name: 'gcc 11'
+            cxx: 'g++-11'
+            cc: 'gcc-11'
+            packages: 'g++-11'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+
+          - name: 'gcc 10'
+            cxx: 'g++-10'
+            cc: 'gcc-10'
+            packages: 'g++-10'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+
+          - name: 'gcc 9'
+            cxx: 'g++-9'
+            cc: 'gcc-9'
+            packages: 'g++-9'
+            os: 'ubuntu-latest'
+            options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+              -Wno-error=extra
+
+          # - cxx: 'g++-8', cc: 'gcc-8', packages: 'g++-8', os: 'ubuntu-20.04',
+          #   options: '
+          #   -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+          #   -fno-sanitize-recover=all
+          #   -fno-sanitize=vptr'
+          #   }
+          # - { cxx: 'g++-7', cc: 'gcc-7', packages: 'g++-7', os: 'ubuntu-20.04',
+          #   options: '
+          #   -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum
+          #   -fno-sanitize-recover=all
+          #   -fno-sanitize=vptr',
+          #   cmake_options: '-DUSE_LIBASSERT=FALSE'
+          #   }
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4.1.7
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
 
-    - name: Install LLVM
-      if: matrix.platform.install-llvm == 'true'
-      uses: KyleMayes/install-llvm-action@v2.0.3
-      with:
-        version: "18.1.2"
-        force-url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.2/clang+llvm-18.1.2-x86_64-pc-windows-msvc.tar.xz"
-    
-    - name: Configure CMake
-      run: cmake -B build ${{ matrix.platform.flags }} ${{ matrix.type.flags }}
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install ninja-build ccache ${{matrix.packages}}
 
-    - name: Build
-      run: cmake --build build --config ${{ matrix.type.name }}
+      - name: Install LLVM
+        if: ${{matrix.install-llvm}}
+        uses: KyleMayes/install-llvm-action@v2.0.3
+        with:
+          version: ${{matrix.install-llvm.version}}
+          force-url: ${{matrix.install-llvm.url}}
 
-    - name: Test
-      run: cmake --build build --config ${{ matrix.type.name }} --target run-option-test
+      - name: Configure CMake
+        run: >-
+          cmake -B build
+          -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
+          -DCMAKE_CXX_EXTENSIONS=FALSE
+          ${{matrix.cmake_options}}
 
-    - name: Build Examples
-      run: cmake --build build --target option-examples --config ${{ matrix.type.name }}
+      - name: Build (Debug)
+        run: cmake --build build --config Debug --parallel `nproc`
+
+      - name: Run tests (Debug)
+        run: cmake --build build --config Debug --target run-option-test
+
+      - name: Build (Release)
+        run: cmake --build build --config Release --parallel `nproc`
+
+      - name: Run tests (Release)
+        run: cmake --build build --config Release --target run-option-test
+      
+  windows:
+    name: 'Windows VS ${{matrix.compiler.toolset}} ${{matrix.platform}} (${{matrix.configuration}})'
+    runs-on: windows-latest
+
+    env:
+      CFLAGS: ${{matrix.compiler.options}}
+      CXXFLAGS: ${{matrix.compiler.options}}
+      VERBOSE: 1
+      ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=0:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: ['Debug', 'Release']
+        platform: ['x64', 'Win32']
+        compiler:
+          - { toolset: 'v143', options: '/fsanitize=address /Zi /DEBUG' }
+          - { toolset: 'ClangCL', cmake_options: '"-DOPTION_DEV_CLANGCL_SANITIZERS=-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable"' }
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+
+      - name: Install LLVM
+        uses: KyleMayes/install-llvm-action@v2.0.3
+        with:
+          version: '18.1.8'
+          force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
+
+      - name: Configure CMake
+        run: cmake -B build -A "${{matrix.platform}}" -T "${{matrix.compiler.toolset}}" ${{matrix.compiler.cmake_options}}
+
+      - name: Build
+        run: cmake --build build --config ${{matrix.configuration}} --parallel %NUMBER_OF_PROCESSORS%
+        shell: cmd
+
+      - name: Run tests
+        run: cmake --build build --config ${{matrix.configuration}} --target run-option-test
 
   clang-tidy:
-    name: Analyze code on ${{ matrix.platform.name }} [${{ matrix.type.name }}]
-    runs-on: ${{ matrix.platform.os }}
+    name: 'Clang tidy on ${{matrix.os}} (${{matrix.configuration}})'
+    runs-on: ${{matrix.os}}
+
+    env:
+      VERBOSE: 1
+      CMAKE_GENERATOR: Ninja
+      CXX: clang++
+      CC: clang
 
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - { name: Linux,   os: ubuntu-latest, flags: -G "Ninja" }
-        type:
-          - { name: Debug, flags: -DCMAKE_BUILD_TYPE=Debug }
-          - { name: Release, flags: -DCMAKE_BUILD_TYPE=Release }
+        configuration: ['Debug', 'Release']
+        os: ['ubuntu-latest', 'windows-latest']
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4.1.7
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
 
-    - name: Install CMake and Ninja
-      uses: lukka/get-cmake@latest
-      with:
-        cmakeVersion: "3.24.0"
-        ninjaVersion: "latest"
-        
-    - name: Cache LLVM
-      id: cache-llvm
-      uses: actions/cache@v4.0.2
-      with:
-        path: ./llvm-18/**
-        key: ubuntu-llvm-18
-      
-    - name: Install LLVM
-      uses: KyleMayes/install-llvm-action@v2.0.3
-      with:
-        version: "18.1.8"
-        directory: llvm-18
-        cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-        force-url: "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
-    
-    - name: Install dependencies
-      run: |
-        sudo apt install libncurses5
-    
-    - name: Configure CMake
-      run: |
-        cmake -B build ${{ matrix.platform.flags }} -DUSE_CLANG_TIDY=TRUE -DUSE_SANITIZER=FALSE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ${{ matrix.type.flags }}
+      - name: Install LLVM (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: KyleMayes/install-llvm-action@v2.0.3
+        with:
+          version: '18.1.8'
+          force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz'
 
-    - name: Analyze Code
-      run: cmake --build build --target clang-tidy --config ${{ matrix.type.name }}
+      - name: Install LLVM (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: KyleMayes/install-llvm-action@v2.0.3
+        with:
+          version: '18.1.8'
+          force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
+
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install ninja-build libncurses5
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          curl -Lo ninja-win-v1-12-1.zip https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip
+          7z x ninja-win-v1-12-1.zip -oninja-win-v1-12-1
+          Add-Content $env:GITHUB_PATH "$env:GITHUB_WORKSPACE/ninja-win-v1-12-1"
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{matrix.configuration}} -DCMAKE_CXX_EXTENSIONS=FALSE -DUSE_CLANG_TIDY=TRUE
+
+      - name: Run clang-tidy
+        run: cmake --build build --config ${{matrix.configuration}} --target clang-tidy

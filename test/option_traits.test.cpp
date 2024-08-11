@@ -11,9 +11,11 @@
 #include "utils.hpp" // NOLINT(misc-include-cleaner)
 
 #if OPTION_MSVC
-#pragma fenv_access(on)
+    #pragma fenv_access(on)
 #elif OPTION_CLANG
-#pragma STDC FENV_ACCESS ON
+    #if __clang_major__ >= 12
+        #pragma STDC FENV_ACCESS ON
+    #endif
 #endif
 
 struct empty1 {};

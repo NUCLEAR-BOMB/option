@@ -456,16 +456,17 @@ namespace impl {
             return st::reference;
         } else
         if constexpr (std::is_pointer_v<T>) {
-            if constexpr (sizeof(T) <= 1) {
-                return st::none;
+            if constexpr (sizeof(T) == 8) {
+                return st::pointer_64;
             } else
-            if constexpr (sizeof(T) <= 4) {
-                return st::pointer_32;
+            if constexpr (sizeof(T) == 4) {
+                return st::pointer_32;    
             } else
-            if constexpr (sizeof(T) <= 2) {
+            if constexpr (sizeof(T) == 2) {
                 return st::pointer_16;
-            } else
-            return st::pointer_64;
+            } else {
+                return st::none;
+            }
         } else
         if constexpr (std::is_member_pointer_v<T>) {
             if constexpr (sizeof(T) == 4) {
@@ -518,7 +519,7 @@ namespace impl {
 
         static std::uintmax_t get_level(const bool* const value) noexcept {
             uint_bool u8_value = impl::ptr_bit_cast<uint_bool>(value);
-            u8_value -= uint_bool(2);
+            u8_value = uint_bool(u8_value - 2);
             return u8_value < max_level ? u8_value : std::uintmax_t(-1);
         }
         static void set_level(bool* const value, const std::uintmax_t level) noexcept {
@@ -559,12 +560,12 @@ namespace impl {
     template<class T>
     struct internal_option_traits<T, option_strategy::pointer_64> {
     private:
-        static constexpr std::uintptr_t ptr_offset = 0xF8E1B1825D5D6C67;
+        static constexpr std::uint64_t ptr_offset = 0xF8E1B1825D5D6C67;
     public:
         static constexpr std::uintmax_t max_level = 512;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            auto uint = impl::ptr_bit_cast<std::uintptr_t>(value);
+            auto uint = impl::ptr_bit_cast<std::uint64_t>(value);
             uint -= ptr_offset;
             return uint < max_level ? uint : std::uintmax_t(-1);
         }
@@ -576,12 +577,12 @@ namespace impl {
     template<class T>
     struct internal_option_traits<T, option_strategy::pointer_32> {
     private:
-        static constexpr std::uintptr_t ptr_offset = 0xFFFF'FFFF - 31;
+        static constexpr std::uint32_t ptr_offset = 0xFFFF'FFFF - 31;
     public:
         static constexpr std::uintmax_t max_level = 256;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            auto uint = impl::ptr_bit_cast<std::uintptr_t>(value);
+            auto uint = impl::ptr_bit_cast<std::uint32_t>(value);
             uint -= (ptr_offset - max_level);
             return uint <= max_level ? max_level - uint : std::uintmax_t(-1);
         }
@@ -593,12 +594,12 @@ namespace impl {
     template<class T>
     struct internal_option_traits<T, option_strategy::pointer_16> {
     private:
-        static constexpr std::uintptr_t ptr_offset = 0xFFFF;
+        static constexpr std::uint16_t ptr_offset = 0xFFFF;
     public:
         static constexpr std::uintmax_t max_level = 256;
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            auto uint = impl::ptr_bit_cast<std::uintptr_t>(value);
+            auto uint = impl::ptr_bit_cast<std::uint16_t>(value);
             uint -= (ptr_offset - max_level);
             return uint <= max_level ? max_level - uint : std::uintmax_t(-1);
         }

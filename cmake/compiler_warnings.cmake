@@ -23,6 +23,8 @@ function(target_add_warnings target)
         /wd4180 # qualifier applied to function type has no meaning; ignored
         /wd4371 # 'classname': layout of class may have changed from a previous version of the compiler due to better packing of member 'member'
         /wd4800 # implicit conversion from 'type' to bool. Possible information loss
+        /wd5243 # 'type': using incomplete class 'class-name' can cause ODR violation due to ABI limitation. You can workaround the issue by specifying inheritance keyword on the forward declaration of the class.
+        /wd4738 # storing 32-bit float result in memory, possible loss of performance
         )
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
