@@ -1,8 +1,6 @@
 
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
 
-
-
 add_executable(option-test
     "option.test.cpp"
     "operators.test.cpp"

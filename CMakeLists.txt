@@ -37,15 +37,15 @@ if (DEFINED OPTION_DEV_CLANGCL_SANITIZERS)
     endif()
 endif()
 
-add_library(option INTERFACE "include/option.hpp")
+add_library(option INTERFACE "include/opt/option.hpp")
 
 if (NOT PROJECT_IS_TOP_LEVEL)
     set(include_as_system "SYSTEM")
 endif()
 
 target_include_directories(option ${include_as_system} INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include>"
 )
 
 target_compile_features(option INTERFACE cxx_std_17)

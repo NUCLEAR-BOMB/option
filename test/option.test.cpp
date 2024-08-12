@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <type_traits>
-#include <option.hpp>
+#include <opt/option.hpp>
 #include <utility>
 #include <tuple>
 #include <array>
@@ -219,7 +219,7 @@ struct struct_with_sentinel {
     int x;
     std::uint8_t SENTINEL{};
 
-    // NOLINTNEXT(clang-analyzer-core.UndefinedBinaryOperatorResult)
+    // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const struct_with_sentinel& o) const { return x == o.x; }
 };
 template<>

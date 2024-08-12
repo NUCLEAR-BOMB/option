@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <option.hpp>
+#include <opt/option.hpp>
 
 namespace {
 
