@@ -8,6 +8,7 @@
 #include <cfenv>
 #include <string_view>
 #include <functional>
+#include <cstdint>
 
 #include "utils.hpp"
 
@@ -218,6 +219,7 @@ struct struct_with_sentinel {
     int x;
     std::uint8_t SENTINEL{};
 
+    // NOLINTNEXT(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const struct_with_sentinel& o) const { return x == o.x; }
 };
 template<>
