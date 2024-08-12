@@ -27,6 +27,7 @@
 #define V4 (this->values[4])
 
 #define TEST_SIZE_LIST \
+    struct_with_sentinel, \
     int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, \
     aggregate_int_float, std::array<int, 0>, \
     empty_struct, std::tuple<>, std::tuple<int, float, int>, \
@@ -211,6 +212,17 @@ struct option<int(*)(int)> : ::testing::Test {
         [](int x) { return x + 4; },
         [](int x) { return x + 5; }
     };
+};
+
+struct struct_with_sentinel {
+    int x;
+    std::uint8_t SENTINEL{};
+
+    bool operator==(const struct_with_sentinel& o) const { return x == o.x; }
+};
+template<>
+struct option<struct_with_sentinel> : ::testing::Test {
+    struct_with_sentinel values[5]{struct_with_sentinel{1}, struct_with_sentinel{2}, struct_with_sentinel{3}, struct_with_sentinel{4}, struct_with_sentinel{5}};
 };
 
 

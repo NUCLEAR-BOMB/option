@@ -277,6 +277,11 @@ namespace impl {
     template<class T, class Traits>
     inline constexpr bool has_after_assignment_method<T, Traits, decltype(Traits::after_assignment(std::declval<T*>()))> = true;
 
+    template<class T, class = void>
+    inline constexpr bool has_sentinel_member = false;
+    template<class T>
+    inline constexpr bool has_sentinel_member<T, std::void_t<decltype(std::declval<T&>().SENTINEL)>> = true;
+
 #if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
@@ -414,6 +419,7 @@ namespace impl {
         unique_ptr,
         member_pointer_32,
         member_pointer_64,
+        sentinel_member,
 #ifdef OPTION_HAS_PFR
         reflectable,
 #endif
@@ -518,6 +524,9 @@ namespace impl {
         } else
         if constexpr (std::is_polymorphic_v<T> && sizeof(T) >= sizeof(std::uintptr_t)) {
             return st::polymorphic;
+        } else
+        if constexpr (has_sentinel_member<T>) {
+            return st::sentinel_member;
         } else
 #ifdef OPTION_HAS_PFR
         if constexpr (pfr_has_available_traits<T>) {
@@ -980,6 +989,7 @@ namespace impl {
             return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(type* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, std::uint32_t(level + offset_start));
         }
     };
@@ -997,7 +1007,25 @@ namespace impl {
             return uint < max_level ? uint : std::uintmax_t(-1);
         }
         static void set_level(type* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy_least(value, std::uint64_t(level + offset_start));
+        }
+    };
+    template<class T>
+    struct internal_option_traits<T, option_strategy::sentinel_member> {
+    private:
+        using member_type = decltype(std::declval<T&>().SENTINEL);
+        static_assert(std::is_unsigned_v<member_type>, ".SENTINEL member must be an unsigned integer type");
+    public:
+        static constexpr std::uintmax_t max_level = std::uintmax_t(~member_type(0));
+
+        static std::uintmax_t get_level(const T* const value) noexcept {
+            // return value->SENTINEL != 0 ? value->SENTINEL - 1 : std::uintmax_t(-1);
+            return std::uintmax_t(std::uintmax_t(value->SENTINEL) - 1);
+        }
+        static void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
+            value->SENTINEL = member_type(level + 1);
         }
     };
 }
@@ -1843,7 +1871,6 @@ public:
 
     // Default constructor.
     // Constructors an object that does not contain a value.
-    // Trivial only for `opt::option<T&>`.
     // Postcondition: has_value() == false
     option() = default;
 

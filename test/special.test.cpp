@@ -770,6 +770,153 @@ TEST_F(pointer_to_member_function, unknown_inheritance) {
 
 // NOLINTEND(readability-make-member-function-const)
 
+struct with_sentinel_member : ::testing::Test {};
+
+TEST_F(with_sentinel_member, uint8_t) {
+    struct s1 { std::uint8_t SENTINEL{}; };
+
+    opt::option<s1> a;
+    EXPECT_EQ(sizeof(opt::option<s1>), sizeof(s1));
+
+    EXPECT_FALSE(a.has_value());
+    a = s1{};
+    EXPECT_TRUE(a.has_value());
+
+    *a = s1{};
+    EXPECT_TRUE(a.has_value());
+
+    opt::option<s1> b{a};
+    EXPECT_TRUE(b.has_value());
+    b.reset();
+    EXPECT_FALSE(b.has_value());
+    b = a;
+    EXPECT_TRUE(b.has_value());
+
+    struct s2 { int x; std::uint8_t SENTINEL{}; };
+
+    opt::option<s2> c;
+    EXPECT_EQ(sizeof(opt::option<s2>), sizeof(s2));
+
+    EXPECT_FALSE(c.has_value());
+    c.emplace(s2{5});
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 5);
+
+    c->x = 10;
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 10);
+    *c = s2{-100};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, -100);
+
+#if !OPTION_MSVC // fatal error
+    opt::option<s2> d{c};
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d->x, -100);
+    
+    d = opt::none;
+    EXPECT_FALSE(d.has_value());
+    
+    d = c;
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d->x, -100);
+#endif
+}
+
+TEST_F(with_sentinel_member, uint16_t) {
+    struct s1 { std::uint16_t SENTINEL{}; };
+
+    opt::option<s1> a;
+    EXPECT_EQ(sizeof(opt::option<s1>), sizeof(s1));
+
+    EXPECT_FALSE(a.has_value());
+    a.emplace(s1{});
+    EXPECT_TRUE(a.has_value());
+
+    a = s1{};
+    EXPECT_TRUE(a.has_value());
+
+    opt::option<s1> b = a;
+    EXPECT_TRUE(b.has_value());
+
+    *b = s1{};
+    EXPECT_TRUE(b.has_value());
+
+    *b = *a;
+    EXPECT_TRUE(b.has_value());
+    b.reset();
+    b = a;
+    EXPECT_TRUE(b.has_value());
+
+    a = b;
+    EXPECT_TRUE(a.has_value());
+
+    struct s2 { int x; std::uint16_t SENTINEL{}; };
+
+    opt::option<s2> c;
+    EXPECT_EQ(sizeof(opt::option<s2>), sizeof(s2));
+
+    EXPECT_FALSE(c.has_value());
+
+    c = s2{123};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 123);
+
+    *c = s2{-1};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, -1);
+
+    c.reset();
+    EXPECT_FALSE(c.has_value());
+}
+
+TEST_F(with_sentinel_member, uint32_t) {
+    struct s1 { std::uint32_t SENTINEL{}; };
+
+    opt::option<s1> a;
+    EXPECT_EQ(sizeof(opt::option<s1>), sizeof(s1));
+
+    EXPECT_FALSE(a.has_value());
+    a.emplace(s1{});
+    EXPECT_TRUE(a.has_value());
+
+    a = s1{};
+    EXPECT_TRUE(a.has_value());
+
+    opt::option<s1> b = a;
+    EXPECT_TRUE(b.has_value());
+
+    *b = s1{};
+    EXPECT_TRUE(b.has_value());
+
+    *b = *a;
+    EXPECT_TRUE(b.has_value());
+    b.reset();
+    b = a;
+    EXPECT_TRUE(b.has_value());
+
+    a = b;
+    EXPECT_TRUE(a.has_value());
+
+    struct s2 { int x; std::uint32_t SENTINEL{}; };
+
+    opt::option<s2> c;
+    EXPECT_EQ(sizeof(opt::option<s2>), sizeof(s2));
+
+    EXPECT_FALSE(c.has_value());
+
+    c = s2{123};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 123);
+
+    *c = s2{-1};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, -1);
+
+    c.reset();
+    EXPECT_FALSE(c.has_value());
+}
+
 struct struct1 {
     int a;
     float x;
