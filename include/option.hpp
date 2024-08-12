@@ -79,26 +79,48 @@
     #define OPTION_USE_QUIET_NAN 0
 #endif
 
-#ifndef OPTION_BOOST_PFR_FILE
-    #define OPTION_BOOST_PFR_FILE <boost/pfr.hpp>
-#endif
-
-#ifdef OPTION_USE_BOOST_PFR
-    #if OPTION_USE_BOOST_PFR
-        #if __has_include(OPTION_BOOST_PFR_FILE)
-            #include OPTION_BOOST_PFR_FILE
-            #ifndef BOOST_PFR_NOT_SUPPORTED
-                #define OPTION_HAS_BOOST_PFR
+#ifdef OPTION_USE_PFR
+    #if OPTION_USE_PFR
+        #if __has_include(OPTION_PFR_FILE)
+            #include OPTION_PFR_FILE
+            #if defined(BOOST_PFR_ENABLED)
+                #if BOOST_PFR_ENABLED
+                    #define OPTION_HAS_PFR
+                    #define OPTION_PFR_NAMESPACE ::boost::pfr::
+                #endif
+            #elif defined(PFR_ENABLED)
+                #if PFR_ENABLED
+                    #define OPTION_HAS_PFR
+                    #define OPTION_PFR_NAMESPACE ::pfr::
+                #endif
+            #else
+                #error "The 'boost.pfr' or 'ptr' library have wrong installation. The 'BOOST_PFR_ENABLED' and 'PFR_ENABLED' macro are not defined"
             #endif
-        #else // !__has_include(OPTION_BOOST_PFR_FILE)
-            #error "The 'boost.pfr' library was not found. Define the 'OPTION_BOOST_PFR_FILE' macro to specify a custom path to the 'boost.pfr' library header"
+        #else
+            #error "The 'boost.pfr' or 'pfr' library were not found. Define the 'OPTION_PFR_FILE' macro to specify a custom path to the 'boost.pfr' or 'pfr' library header"
         #endif
     #endif
 #else // !defined(OPTION_USE_BOOST_PFR)
-    #if __has_include(OPTION_BOOST_PFR_FILE)
-        #include OPTION_BOOST_PFR_FILE
-        #if BOOST_PFR_ENABLED
-            #define OPTION_HAS_BOOST_PFR
+    #ifdef OPTION_PFR_FILE
+        #if __has_include(OPTION_PFR_FILE)
+            #include OPTION_PFR_FILE
+            #if BOOST_PFR_ENABLED
+                #define OPTION_HAS_PFR
+            #endif
+        #endif
+    #else
+        #if __has_include(<boost/pfr.hpp>)
+            #include <boost/pfr.hpp>
+            #if BOOST_PFR_ENABLED
+                #define OPTION_HAS_PFR
+                #define OPTION_PFR_NAMESPACE ::boost::pfr::
+            #endif
+        #elif __has_include(<pfr.hpp>)
+            #include <pfr.hpp>
+            #if PFR_ENABLED
+                #define OPTION_HAS_PFR
+                #define OPTION_PFR_NAMESPACE ::pfr::
+            #endif
         #endif
     #endif
 #endif
@@ -204,7 +226,7 @@ inline constexpr bool is_option = false;
 template<class T>
 inline constexpr bool is_option<opt::option<T>> = true;
 
-#ifdef OPTION_HAS_BOOST_PFR
+#ifdef OPTION_HAS_PFR
 struct option_tag {};
 #endif
 
@@ -342,10 +364,10 @@ namespace impl {
     struct select_max_level_traits
         : select_max_level_traits_impl<0, dummy_traits, 0, 0, Ts...> {};
 
-#ifdef OPTION_HAS_BOOST_PFR
+#ifdef OPTION_HAS_PFR
     template<class Struct>
     inline constexpr bool pfr_is_option_reflectable =
-        ::boost::pfr::is_implicitly_reflectable_v<Struct, option_tag>;
+        OPTION_PFR_NAMESPACE is_implicitly_reflectable_v<Struct, option_tag>;
 
     template<class Struct>
     struct unpack_tuple_select_max_level_traits;
@@ -359,7 +381,7 @@ namespace impl {
     template<class Struct>
     inline constexpr bool pfr_has_available_traits<Struct, true> =
         (unpack_tuple_select_max_level_traits<
-            decltype(::boost::pfr::structure_to_tuple(std::declval<Struct&>()))
+            decltype(OPTION_PFR_NAMESPACE structure_to_tuple(std::declval<Struct&>()))
         >::level) > 0;
 #endif
 
@@ -392,7 +414,7 @@ namespace impl {
         unique_ptr,
         member_pointer_32,
         member_pointer_64,
-#ifdef OPTION_HAS_BOOST_PFR
+#ifdef OPTION_HAS_PFR
         reflectable,
 #endif
     };
@@ -497,7 +519,7 @@ namespace impl {
         if constexpr (std::is_polymorphic_v<T> && sizeof(T) >= sizeof(std::uintptr_t)) {
             return st::polymorphic;
         } else
-#ifdef OPTION_HAS_BOOST_PFR
+#ifdef OPTION_HAS_PFR
         if constexpr (pfr_has_available_traits<T>) {
             return st::reflectable;
         } else
@@ -810,12 +832,12 @@ namespace impl {
             impl::ptr_bit_copy_least(value, uint_t(255));
         }
     };
-#ifdef OPTION_HAS_BOOST_PFR
+#ifdef OPTION_HAS_PFR
     template<class T>
     struct internal_option_traits<T, option_strategy::reflectable> {
     private:
         using select_traits = unpack_tuple_select_max_level_traits<
-            decltype(::boost::pfr::structure_to_tuple(std::declval<T&>()))
+            decltype(OPTION_PFR_NAMESPACE structure_to_tuple(std::declval<T&>()))
         >;
         using type = typename select_traits::type;
         using traits = ::opt::option_traits<type>;
@@ -825,18 +847,18 @@ namespace impl {
         static constexpr std::uintmax_t max_level = select_traits::level;
 
         static constexpr std::uintmax_t get_level(const T* const value) {
-            return traits::get_level(std::addressof(::boost::pfr::get<index>(*value)));
+            return traits::get_level(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)));
         }
         static constexpr void set_level(T* const value, const std::uintmax_t level) {
-            traits::set_level(std::addressof(::boost::pfr::get<index>(*value)), level);
+            traits::set_level(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)), level);
         }
         template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
         static constexpr void after_constructor(T* const value) {
-            traits::after_constructor(std::addressof(::boost::pfr::get<index>(*value)));
+            traits::after_constructor(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)));
         }
         template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
         static constexpr void after_assignment(T* const value) noexcept {
-            traits::after_assignment(std::addressof(::boost::pfr::get<index>(*value)));
+            traits::after_assignment(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)));
         }
     };
 #endif
