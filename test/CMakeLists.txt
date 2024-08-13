@@ -67,6 +67,7 @@ if (USE_LIBASSERT)
         URL_HASH SHA256=e42405b49cde017c44c78aacac35c6e03564532838709031e73d10ab71f5363d
         FIND_PACKAGE_ARGS 2.1.0
     )
+    set(CMAKE_SKIP_INSTALL_RULES TRUE)
     FetchContent_MakeAvailable(libassert)
     # set_target_properties(libassert-lib PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:libassert-lib,INTERFACE_INCLUDE_DIRECTORIES>)
     target_link_libraries(option-test PRIVATE libassert::assert)
@@ -78,7 +79,6 @@ if (USE_LIBASSERT)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         set_target_properties(libassert-lib cpptrace-lib PROPERTIES COMPILE_OPTIONS "-w")
     endif()
-    set(libassert_target libassert::assert cpptrace::cpptrace)
 endif()
 
 # if (USE_SANITIZER)

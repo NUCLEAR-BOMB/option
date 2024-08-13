@@ -54,7 +54,6 @@ function(target_add_warnings target)
         -Werror # Make all warnings into errors.
         -Wcast-align # Warn whenever a pointer is cast such that the required alignment of the target is increased
         -Wunused # -Wunused options combined
-        -Wconversion # Warn for implicit conversions that may alter a value
         -Wsign-conversion # Warn for implicit conversions that may change the sign of an integer value
         -Wdouble-promotion # Give a warning when a value of type float is implicitly promoted to double
         -Wold-style-cast # Warn for C style casting

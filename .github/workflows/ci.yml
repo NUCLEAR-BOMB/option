@@ -311,3 +311,89 @@ jobs:
 
       - name: Run clang-tidy
         run: cmake --build build --config ${{matrix.configuration}} --target clang-tidy
+
+  install-project:
+    name: 'Install on ${{matrix.name}}'
+    runs-on: ${{matrix.os}}
+
+    env:
+      VERBOSE: 1
+      CXX: ${{matrix.cxx}}
+      CC: ${{matrix.cc}}
+      CXXFLAGS: ${{matrix.options}}
+      CFLAGS: ${{matrix.options}}
+      # CMAKE_BUILD_PARALLEL_LEVEL: ''
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Linux GCC'
+            os: 'ubuntu-latest'
+            cxx: 'g++'
+            cc: 'gcc'
+            options: >- 
+              -Wall -Wextra -Wconversion -Werror -Wpedantic -Wold-style-cast -Wfloat-equal -Wlogical-op -Wundef
+              -Wredundant-decls -Wshadow -Wwrite-strings -Wpointer-arith -Wcast-qual -Wswitch-default
+              -Wmissing-include-dirs -Wcast-align -Wswitch-enum -Wctor-dtor-privacy
+              -Wsign-conversion -Wdisabled-optimization -Weffc++ -Winvalid-pch -Wmissing-declarations
+              -Woverloaded-virtual -Wunused-but-set-variable -Wunused-result -Wnoexcept -Wdouble-promotion
+              -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast -Wvector-operation-performance
+              -Wnull-dereference -Wduplicated-cond -Walloc-zero -Walloca -Wduplicated-branches
+              -Wcast-align -Wunused -Wsign-conversion
+
+          - name: 'Linux Clang'
+            os: 'ubuntu-latest'
+            cxx: 'clang++'
+            cc: 'clang'
+            options: '-Weverything -Werror'
+
+          - name: 'Windows MSVC'
+            os: 'windows-latest'
+            options: '/Wall /WX /permissive-'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+
+      - name: Configure CMake for installation project (main)
+        env: { CXXFLAGS: '', CFLAGS: '' }
+        run: cmake -B build -DINSTALL_OPTION=TRUE
+
+      - name: Install project (main)
+        run: ${{matrix.os == 'ubuntu-latest' && 'sudo' || ''}} cmake --install build --verbose
+
+      - name: Configure CMake (find_package)
+        run: cmake -B find_package-build -S ./test/cmake/find_package/ -DCMAKE_FIND_DEBUG_MODE=TRUE
+
+      - name: Build project (find_package)
+        run: cmake --build find_package-build
+
+      - name: Run executable (find_package)
+        run: cmake --build find_package-build --target run
+
+      - name: Configure CMake (FetchContent)
+        run: >-
+          cmake -B FetchContent-build -S ./test/cmake/FetchContent/
+          -DGIT_REPOSITORY=${{github.server_url}}/${{github.repository}}.git
+          -DGIT_TAG=${{github.sha}}
+          -DFETCHCONTENT_QUIET=FALSE
+
+      - name: Build project (FetchContent)
+        run: cmake --build FetchContent-build
+
+      - name: Run executable (FetchContent)
+        run: cmake --build FetchContent-build --target run
+
+      - name: Configure CMake (ExternalProject)
+        run: >-
+          cmake -B ExternalProject-build -S ./test/cmake/ExternalProject/
+          -DGIT_REPOSITORY=${{github.server_url}}/${{github.repository}}.git
+          -DGIT_TAG=${{github.sha}}
+
+      - name: Build project (ExternalProject)
+        run: cmake --build ExternalProject-build
+
+      - name: Run executable (ExternalProject)
+        run: cmake --build ExternalProject-build --target run
+

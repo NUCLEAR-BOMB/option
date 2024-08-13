@@ -57,62 +57,85 @@ endif()
 if (USE_NATVIS)
     target_sources(option INTERFACE
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natvis>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/debugger/option.natvis>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATAROOTDIR}/debugger/option.natvis>"
     )
 endif()
 if (USE_NATSTEPFILTER)
     target_sources(option INTERFACE
         "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATADIR}/debugger/option.natstepfilter>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATAROOTDIR}/debugger/option.natstepfilter>"
     )
 endif()
 
+if(INSTALL_OPTION)
+    set(exclude_from_all EXCLUDE_FROM_ALL)
+endif()
+
 if (BUILD_TEST)
-    add_subdirectory(test)
+    add_subdirectory(test ${exclude_from_all})
 endif()
 
 if (BUILD_EXAMPLES)
-    add_subdirectory(examples)
+    add_subdirectory(examples ${exclude_from_all})
 endif()
 
 if (INSTALL_OPTION)
     include(CMakePackageConfigHelpers)
     include(GNUInstallDirs)
 
-    install(
-        TARGETS option
-        EXPORT option-targets
-        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    )
-    install(
-        EXPORT option-targets
-        FILE "option-targets.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/option"
-    )
-    write_basic_package_version_file(
-        "${PROJECT_BINARY_DIR}/option-config-version.cmake"
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY AnyNewerVersion
-        ARCH_INDEPENDENT
-    )
+    # https://cmake.org/cmake/help/latest/command/find_package.html#search-modes
+    # Generate config file
     configure_package_config_file(
         "${PROJECT_SOURCE_DIR}/cmake/option-config.cmake.in"
         "${PROJECT_BINARY_DIR}/option-config.cmake"
         INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/option"
     )
+    # Generate version file
+    write_basic_package_version_file(
+        "${PROJECT_BINARY_DIR}/option-config-version.cmake"
+        # VERSION is implicit
+        COMPATIBILITY SameMajorVersion
+        ARCH_INDEPENDENT
+    )
+    # Install cmake config files
     install(
-        FILES "${PROJECT_BINARY_DIR}/option-config.cmake"
-              "${PROJECT_BINARY_DIR}/option-config-version.cmake"
+        FILES
+            "${PROJECT_BINARY_DIR}/option-config.cmake"
+            "${PROJECT_BINARY_DIR}/option-config-version.cmake"
+        DESTINATION
+            "${CMAKE_INSTALL_LIBDIR}/cmake/option"
+    )
+
+    # Generate option targets
+    install(
+        TARGETS              option
+        EXPORT               option-targets
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+    )
+    # Install option targets
+    install(
+        EXPORT      option-targets
+        FILE        "option-targets.cmake"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/option"
     )
-    install(FILES
-        "${PROJECT_SOURCE_DIR}/include/option.hpp"
+
+    # Install headers
+    install(
+        DIRECTORY   "include/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     )
-    if (CMAKE_GENERATOR MATCHES "Visual Studio")
-        install(FILES
-            "${PROJECT_SOURCE_DIR}/option_visualization.natvis"
-            DESTINATION "${CMAKE_INSTALL_DATADIR}"
+    # Install natvis
+    if (USE_NATVIS)
+        install(
+            FILES       "${PROJECT_SOURCE_DIR}/debugger/option.natvis"
+            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/debugger"
+        )
+    endif()
+    # Install natstepfilter
+    if (USE_NATSTEPFILTER)
+        install(
+            FILES       "${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter"
+            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/debugger"
         )
     endif()
 endif()
