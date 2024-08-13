@@ -215,11 +215,18 @@ jobs:
       - name: Run tests (Debug)
         run: cmake --build build --config Debug --target run-option-test
 
+      - name: Check examples (Debug)
+        run: cmake --build build --config Debug --target check-option-examples
+
       - name: Build (Release)
         run: cmake --build build --config Release --parallel `nproc`
 
       - name: Run tests (Release)
         run: cmake --build build --config Release --target run-option-test
+
+      - name: Check examples (Release)
+        run: cmake --build build --config Release --target check-option-examples
+
       
   windows:
     name: 'Windows VS ${{matrix.compiler.toolset}} ${{matrix.platform}} (${{matrix.configuration}})'
@@ -237,7 +244,7 @@ jobs:
         configuration: ['Debug', 'Release']
         platform: ['x64', 'Win32']
         compiler:
-          - { toolset: 'v143', options: '/fsanitize=address /Zi /DEBUG' }
+          - { toolset: 'v143', options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO' }
           - { toolset: 'ClangCL', cmake_options: '"-DOPTION_DEV_CLANGCL_SANITIZERS=-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable"' }
 
     steps:
@@ -259,6 +266,10 @@ jobs:
 
       - name: Run tests
         run: cmake --build build --config ${{matrix.configuration}} --target run-option-test
+
+      - name: Check examples
+        if: matrix.configuration != 'Release' || matrix.compiler.toolset != 'ClangCL'
+        run: cmake --build build --config ${{matrix.configuration}} --target check-option-examples
 
   clang-tidy:
     name: 'Clang tidy on ${{matrix.os}} (${{matrix.configuration}})'

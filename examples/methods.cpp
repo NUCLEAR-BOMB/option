@@ -1,32 +1,32 @@
 #include <iostream>
-#include <option.hpp>
+#include <opt/option.hpp>
 
 void has_value_and() {
     opt::option<int> a = 3;
 
-    std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // true
+    std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; //$ true
 
     a = 0;
-    std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // false
+    std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; //$ false
 
     a = opt::none;
-    std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // false
+    std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; //$ false
 }
 
 void take() {
     opt::option<int> a = 1;
 
-    std::cout << a.has_value() << '\n'; // true
+    std::cout << a.has_value() << '\n'; //$ true
 
     auto b = a.take();
 
-    std::cout << a.has_value() << '\n'; // false
-    std::cout << *b << '\n'; // 1
+    std::cout << a.has_value() << '\n'; //$ false
+    std::cout << *b << '\n'; //$ 1
 
     a = opt::none;
     b = a.take();
-    std::cout << a.has_value() << '\n'; // false
-    std::cout << b.has_value() << '\n'; // false
+    std::cout << a.has_value() << '\n'; //$ false
+    std::cout << b.has_value() << '\n'; //$ false
 }
 
 void take_if() {
@@ -36,15 +36,15 @@ void take_if() {
         x += 1;
         return x >= 3;
     });
-    std::cout << *a << '\n'; // 2
-    std::cout << b.has_value() << '\n'; // false
+    std::cout << *a << '\n'; //$ 2
+    std::cout << b.has_value() << '\n'; //$ false
 
     b = a.take_if([](int& x) {
         x += 1;
         return x >= 3;
     });
-    std::cout << a.has_value() << '\n'; // false
-    std::cout << *b << '\n'; // 3
+    std::cout << a.has_value() << '\n'; //$ false
+    std::cout << *b << '\n'; //$ 3
 }
 
 // skip insert()
@@ -52,12 +52,12 @@ void take_if() {
 void inspect() {
     opt::option<int> a = 1;
 
-    a.inspect([](int x) { std::cout << x << '\n'; }); // 1
+    a.inspect([](int x) { std::cout << x << '\n'; }); //$ 1
 
     a.map([](int x) { return x * 2; })
-     .inspect([](int x) { std::cout << x << '\n'; }) // 2
+     .inspect([](int x) { std::cout << x << '\n'; }) //$ 2
      .map([](int x) { return float(x * 2) + 0.5f; })
-     .inspect([](float x) { std::cout << x << '\n'; }) // 4.5
+     .inspect([](float x) { std::cout << x << '\n'; }) //$ 4.5
      .and_then([](float x) { return x > 5.f ? opt::option<double>{x} : opt::none; })
      .inspect([](double x) { std::cout << x << '\n'; }); // will not print `x`
 }
@@ -65,10 +65,10 @@ void inspect() {
 void map_or() {
     opt::option<int> a = 2;
 
-    std::cout << a.map_or(0, [](int x) { return x * 200; }) << '\n'; // 400
+    std::cout << a.map_or(0, [](int x) { return x * 200; }) << '\n'; //$ 400
 
     a = opt::none;
-    std::cout << a.map_or(0, [](int x) { return x * 2; }) << '\n'; // 0
+    std::cout << a.map_or(0, [](int x) { return x * 2; }) << '\n'; //$ 0
 }
 
 void map_or_else() {
@@ -77,13 +77,13 @@ void map_or_else() {
     std::cout << a.map_or_else(
         [] { std::cout << "will not print"; return 0; },
         [](int x) { return x + 1; }
-    ) << '\n'; // 4
+    ) << '\n'; //$ 4
 
     a = opt::none;
     std::cout << a.map_or_else(
         [] { std::cout << "will print "; return -100; },
         [](int x) { return x - 2; }
-    ) << '\n'; // will print -100
+    ) << '\n'; //$ will print -100
 }
 
 void ptr_or_null() {
@@ -91,10 +91,10 @@ void ptr_or_null() {
 
     opt::option<int&> b = a;
 
-    std::cout << (b.ptr_or_null() == &a) << '\n'; // true
+    std::cout << (b.ptr_or_null() == &a) << '\n'; //$ true
 
     b = opt::none;
-    std::cout << b.ptr_or_null() << '\n'; // 0000000000000000 (nullptr)
+    std::cout << b.ptr_or_null() << '\n'; //$ [nullptr]
 }
 
 void filter() {
@@ -103,26 +103,26 @@ void filter() {
     };
     opt::option<int> a = 1;
 
-    std::cout << *a.filter(is_odd) << '\n'; // 1
+    std::cout << *a.filter(is_odd) << '\n'; //$ 1
 
     a = 2;
-    std::cout << a.filter(is_odd).has_value() << '\n'; // false
+    std::cout << a.filter(is_odd).has_value() << '\n'; //$ false
 
     a = opt::none;
-    std::cout << a.filter(is_odd).has_value() << '\n'; // false
+    std::cout << a.filter(is_odd).has_value() << '\n'; //$ false
 }
 
 void flatten() {
     opt::option<opt::option<int>> a = 1;
 
     opt::option<int> b = a.flatten();
-    std::cout << *b << '\n'; // 1
+    std::cout << *b << '\n'; //$ 1
 
     *a = opt::none;
-    std::cout << a.flatten().has_value() << '\n'; // false
+    std::cout << a.flatten().has_value() << '\n'; //$ false
 
     a = opt::none;
-    std::cout << a.flatten().has_value() << '\n'; // false
+    std::cout << a.flatten().has_value() << '\n'; //$ false
 }
 
 void and_then() {
@@ -132,13 +132,13 @@ void and_then() {
 
     opt::option<int> a = 0;
 
-    std::cout << a.and_then(do_something).get() << '\n'; // 1.5
+    std::cout << a.and_then(do_something).get() << '\n'; //$ 1.5
 
     a = 1;
-    std::cout << a.and_then(do_something).has_value() << '\n'; // false
+    std::cout << a.and_then(do_something).has_value() << '\n'; //$ false
 
     a = opt::none;
-    std::cout << a.and_then(do_something).has_value() << '\n'; // false
+    std::cout << a.and_then(do_something).has_value() << '\n'; //$ false
 }
 
 void map() {
@@ -148,10 +148,10 @@ void map() {
 
     opt::option<int> a = 1;
 
-    std::cout << a.map(to_float).get() << '\n'; // 0.5
+    std::cout << a.map(to_float).get() << '\n'; //$ 0.5
 
     a = opt::none;
-    std::cout << a.map(to_float).has_value() << '\n'; // false
+    std::cout << a.map(to_float).has_value() << '\n'; //$ false
 }
 
 void or_else() {
@@ -159,16 +159,16 @@ void or_else() {
 
     std::cout << a.or_else(
         [] { std::cout << "will not print"; return opt::option{3}; }
-    ).get() << '\n'; // 2
+    ).get() << '\n'; //$ 2
 
     a = opt::none;
     std::cout << a.or_else(
         [] { std::cout << "will print "; return opt::option{10}; }
-    ).get() << '\n'; // will print 10
+    ).get() << '\n'; //$ will print 10
 
     std::cout << a.or_else(
         [] { std::cout << "will print "; return opt::option<int>{}; }
-    ).has_value() << '\n'; // will print false
+    ).has_value() << '\n'; //$ will print false
 }
 
 void unzip() {
@@ -179,15 +179,15 @@ void unzip() {
     std::tuple<opt::option<int>, opt::option<float>> unzipped_a;
     unzipped_a = a.unzip();
 
-    std::cout << std::get<0>(unzipped_a).get() << '\n'; // 1
-    std::cout << std::get<1>(unzipped_a).get() << '\n'; // 2.5
+    std::cout << std::get<0>(unzipped_a).get() << '\n'; //$ 1
+    std::cout << std::get<1>(unzipped_a).get() << '\n'; //$ 2.5
 
     opt::option<std::array<int, 3>> b = opt::none;
 
     std::array<opt::option<int>, 3> unzipped_b;
     unzipped_b = b.unzip();
 
-    std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // true
+    std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; //$ true
 }
 
 void replace() {
@@ -195,14 +195,14 @@ void replace() {
 
     opt::option<int> b = a.replace(2);
 
-    std::cout << *a << '\n'; // 2
-    std::cout << *b << '\n'; // 1
+    std::cout << *a << '\n'; //$ 2
+    std::cout << *b << '\n'; //$ 1
 
     a = opt::none;
     b = a.replace(3);
 
-    std::cout << *a << '\n'; // 3
-    std::cout << b.has_value() << '\n'; // false
+    std::cout << *a << '\n'; //$ 3
+    std::cout << b.has_value() << '\n'; //$ false
 }
 
 int main() {
