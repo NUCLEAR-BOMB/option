@@ -727,7 +727,6 @@ TEST_F(pointer_to_member_function, virtual_inheritance) {
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(a, &s2::f3);
     EXPECT_EQ((var.**a)(), 2104);
-// NOLINTEND(bugprone-compare-pointer-to-member-virtual-function)
 }
 TEST_F(pointer_to_member_function, unknown_inheritance) {
     struct s1;
@@ -771,6 +770,7 @@ TEST_F(pointer_to_member_function, unknown_inheritance) {
     EXPECT_NE(a, &s1::f2);
 }
 
+// NOLINTEND(bugprone-compare-pointer-to-member-virtual-function)
 // NOLINTEND(readability-make-member-function-const)
 
 struct with_sentinel_member : ::testing::Test {};
