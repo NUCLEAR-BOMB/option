@@ -917,6 +917,308 @@ TEST_F(with_sentinel_member, uint32_t) {
     EXPECT_FALSE(c.has_value());
 }
 
+struct polymorphic : ::testing::Test {};
+
+TEST_F(polymorphic, no_inheritance) {
+    struct s1 {
+        int x;
+        s1(int x_) : x{x_} {}
+
+        s1(const s1&) = default;
+        s1& operator=(const s1&) = default;
+        virtual ~s1() = default;
+    };
+    opt::option<s1> a;
+    EXPECT_EQ(sizeof(a), sizeof(s1));
+    EXPECT_FALSE(a.has_value());
+
+    a = s1{1};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, 1);
+
+    a = s1{10};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, 10);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+}
+TEST_F(polymorphic, single_inheritance) {
+    struct s1 {
+        int x;
+    };
+    struct s2 : s1 {
+        int y;
+        s2(int x_, int y_) : s1{x_}, y{y_} {}
+
+        s2(const s2&) = default;
+        s2& operator=(const s2&) = default;
+        virtual ~s2() = default;
+    };
+    opt::option<s2> a;
+    EXPECT_EQ(sizeof(a), sizeof(s2));
+    EXPECT_FALSE(a.has_value());
+
+    a = s2{1, 2};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, 1);
+    EXPECT_EQ(a->y, 2);
+
+    a = s2{10, 20};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, 10);
+    EXPECT_EQ(a->y, 20);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    struct s3 {
+        int x;
+        s3(int x_) : x{x_} {}
+
+        s3(const s3&) = default;
+        s3& operator=(const s3&) = default;
+        virtual ~s3() = default;
+    };
+    struct s4 : s3 {
+        int y;
+        s4(int x_, int y_) : s3{x_}, y{y_} {}
+
+        s4(const s4&) = default;
+        s4& operator=(const s4&) = default;
+        virtual ~s4() override = default; // NOLINT(modernize-use-override)
+    };
+    opt::option<s4> b;
+    EXPECT_EQ(sizeof(b), sizeof(s4));
+    EXPECT_FALSE(b.has_value());
+
+    b.emplace(1, 2);
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b->x, 1);
+    EXPECT_EQ(b->y, 2);
+
+    b = s4{10, 20};
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b->x, 10);
+    EXPECT_EQ(b->y, 20);
+
+    b.reset();
+    EXPECT_FALSE(b.has_value());
+
+    struct s5 {
+        int x;
+        s5(int x_) : x{x_} {}
+
+        s5(const s5&) = default;
+        s5& operator=(const s5&) = default;
+        virtual ~s5() = default;
+    };
+    struct s6 : s5 {
+        int y;
+        s6(int x_, int y_) : s5{x_}, y{y_} {}
+    };
+    opt::option<s6> c;
+    EXPECT_EQ(sizeof(c), sizeof(s6));
+    EXPECT_FALSE(c.has_value());
+
+    c = s6{1, 2};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 1);
+    EXPECT_EQ(c->y, 2);
+
+    c = s6{10, 20};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 10);
+    EXPECT_EQ(c->y, 20);
+
+    c.reset();
+    EXPECT_FALSE(c.has_value());
+}
+TEST_F(polymorphic, multiple_inheritance) {
+    struct s1 {
+        int x;
+    };
+    struct s2 {
+        int y;
+    };
+    struct s3 : s1, s2 {
+        int z;
+        s3(int x_, int y_, int z_) : s1{x_}, s2{y_}, z{z_} {}
+
+        s3(const s3&) = default;
+        s3& operator=(const s3&) = default;
+        virtual ~s3() = default;
+    };
+    opt::option<s3> a;
+    EXPECT_EQ(sizeof(a), sizeof(s3));
+    EXPECT_FALSE(a.has_value());
+
+    a = s3{1, 2, 3};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, 1);
+    EXPECT_EQ(a->y, 2);
+    EXPECT_EQ(a->z, 3);
+
+    a = s3{10, 20, 30};
+    EXPECT_TRUE(a.has_value());
+    EXPECT_EQ(a->x, 10);
+    EXPECT_EQ(a->y, 20);
+    EXPECT_EQ(a->z, 30);
+
+    a.reset();
+    EXPECT_FALSE(a.has_value());
+
+    struct s4 {
+        int x;
+        s4(int x_) : x{x_} {}
+
+        s4(const s4&) = default;
+        s4& operator=(const s4&) = default;
+        virtual ~s4() = default;
+    };
+    struct s5 {
+        int y;
+    };
+    struct s6 : s4, s5 {
+        int z;
+        s6(int x_, int y_, int z_) : s4{x_}, s5{y_}, z{z_} {}
+
+        s6(const s6&) = default;
+        s6& operator=(const s6&) = default;
+        virtual ~s6() override = default; // NOLINT(modernize-use-override)
+    };
+    opt::option<s6> b;
+    EXPECT_EQ(sizeof(b), sizeof(s6));
+    EXPECT_FALSE(b.has_value());
+
+    b.emplace(1, 2, 3);
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b->x, 1);
+    EXPECT_EQ(b->y, 2);
+    EXPECT_EQ(b->z, 3);
+
+    b = s6{10, 20, 30};
+    EXPECT_TRUE(b.has_value());
+    EXPECT_EQ(b->x, 10);
+    EXPECT_EQ(b->y, 20);
+    EXPECT_EQ(b->z, 30);
+
+    b.reset();
+    EXPECT_FALSE(b.has_value());
+
+    struct s7 {
+        int x;
+        s7(int x_) : x{x_} {}
+
+        s7(const s7&) = default;
+        s7& operator=(const s7&) = default;
+        virtual ~s7() = default;
+    };
+    struct s8 {
+        int y;
+    };
+    struct s9 : s7, s8 {
+        int z;
+        s9(int x_, int y_, int z_) : s7{x_}, s8{y_}, z{z_} {}
+    };
+    opt::option<s9> c;
+    EXPECT_EQ(sizeof(c), sizeof(s9));
+    EXPECT_FALSE(c.has_value());
+
+    c = s9{1, 2, 3};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 1);
+    EXPECT_EQ(c->y, 2);
+    EXPECT_EQ(c->z, 3);
+
+    c = s9{10, 20, 30};
+    EXPECT_TRUE(c.has_value());
+    EXPECT_EQ(c->x, 10);
+    EXPECT_EQ(c->y, 20);
+    EXPECT_EQ(c->z, 30);
+
+    c.reset();
+    EXPECT_FALSE(c.has_value());
+
+    struct s10 {
+        int x;
+        s10(int x_) : x{x_} {}
+
+        s10(const s10&) = default;
+        s10& operator=(const s10&) = default;
+        virtual ~s10() = default;
+    };
+    struct s11 {
+        int y;
+        s11(int y_) : y{y_} {}
+
+        s11(const s11&) = default;
+        s11& operator=(const s11&) = default;
+        virtual ~s11() = default;
+    };
+    struct s12 : s10, s11 {
+        int z;
+        s12(int x_, int y_, int z_) : s10{x_}, s11{y_}, z{z_} {}
+    };
+    opt::option<s12> d;
+    EXPECT_EQ(sizeof(d), sizeof(s12));
+    EXPECT_FALSE(c.has_value());
+
+    d = s12{1, 2, 3};
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d->x, 1);
+    EXPECT_EQ(d->y, 2);
+    EXPECT_EQ(d->z, 3);
+
+    d = s12{10, 20, 30};
+    EXPECT_TRUE(d.has_value());
+    EXPECT_EQ(d->x, 10);
+    EXPECT_EQ(d->y, 20);
+    EXPECT_EQ(d->z, 30);
+
+    d.reset();
+    EXPECT_FALSE(d.has_value());
+
+    struct s13 {
+        int x;
+        s13(int x_) : x{x_} {}
+
+        s13(const s13&) = default;
+        s13& operator=(const s13&) = default;
+        virtual ~s13() = default;
+    };
+    struct s14 {
+        int y;
+        s14(int y_) : y{y_} {}
+
+        s14(const s14&) = default;
+        s14& operator=(const s14&) = default;
+        virtual ~s14() = default;
+    };
+    struct s15 : s13, s14 {
+        int z;
+        s15(int x_, int y_, int z_) : s13{x_}, s14{y_}, z{z_} {}
+    };
+    opt::option<s15> e;
+    EXPECT_EQ(sizeof(e), sizeof(s15));
+    EXPECT_FALSE(e.has_value());
+
+    e.emplace(1, 2, 3);
+    EXPECT_TRUE(e.has_value());
+    EXPECT_EQ(e->x, 1);
+    EXPECT_EQ(e->y, 2);
+    EXPECT_EQ(e->z, 3);
+
+    e = s15{10, 20, 30};
+    EXPECT_TRUE(e.has_value());
+    EXPECT_EQ(e->x, 10);
+    EXPECT_EQ(e->y, 20);
+    EXPECT_EQ(e->z, 30);
+
+    e.reset();
+    EXPECT_FALSE(e.has_value());
+}
+
 struct struct1 {
     int a;
     float x;
@@ -930,3 +1232,4 @@ struct opt::option_traits<struct1>;
 static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
 
 #endif // OPTION_USE_BUILTIN_TRAITS
+
