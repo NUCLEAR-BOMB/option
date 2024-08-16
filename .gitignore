@@ -4,6 +4,7 @@
 !.editorconfig
 !.gitattributes
 !CMakeLists.txt
+!README.md
 !.clang-tidy
 !.github/
 !include/
