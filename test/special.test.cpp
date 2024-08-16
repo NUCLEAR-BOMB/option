@@ -689,6 +689,7 @@ TEST_F(pointer_to_member_function, multiple_inheritance) {
     EXPECT_NE(a, &s3::f4);
 }
 TEST_F(pointer_to_member_function, virtual_inheritance) {
+// NOLINTBEGIN(bugprone-compare-pointer-to-member-virtual-function)
     struct s1 {
         int x = 100;
         virtual ~s1() = default;
@@ -725,6 +726,7 @@ TEST_F(pointer_to_member_function, virtual_inheritance) {
     EXPECT_TRUE(a.has_value());
     EXPECT_EQ(a, &s2::f3);
     EXPECT_EQ((var.**a)(), 2104);
+// NOLINTEND(bugprone-compare-pointer-to-member-virtual-function)
 }
 TEST_F(pointer_to_member_function, unknown_inheritance) {
     struct s1;
