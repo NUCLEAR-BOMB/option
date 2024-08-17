@@ -258,7 +258,7 @@ jobs:
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
       - name: Configure CMake
-        run: cmake -B build -A "${{matrix.platform}}" -T "${{matrix.compiler.toolset}}" ${{matrix.compiler.cmake_options}}
+        run: cmake -B build -A "${{matrix.platform}}" -T "${{matrix.compiler.toolset}}" -DCMAKE_BUILD_TYPE=${{matrix.configuration}} ${{matrix.compiler.cmake_options}}
 
       - name: Build
         run: cmake --build build --config ${{matrix.configuration}} --parallel %NUMBER_OF_PROCESSORS%

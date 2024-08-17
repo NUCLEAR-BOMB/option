@@ -1,4 +1,24 @@
 
+if (DEFINED OPTION_DEV_CLANGCL_SANITIZERS AND NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPTION_DEV_CLANGCL_SANITIZERS}")
+    if (CMAKE_SIZEOF_VOID_P STREQUAL 8)
+        link_libraries(
+            "$ENV{ProgramFiles}/LLVM/lib/clang/18/lib/windows/clang_rt.asan-x86_64.lib"
+            "$ENV{ProgramFiles}/LLVM/lib/clang/18/lib/windows/clang_rt.asan_cxx-x86_64.lib"
+            clang_rt.ubsan_standalone_cxx-x86_64.lib
+            clang_rt.ubsan_standalone-x86_64.lib
+        )
+    elseif(CMAKE_SIZEOF_VOID_P STREQUAL 4)
+        link_libraries(
+            "$ENV{ProgramFiles}/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan-i386.lib"
+            "$ENV{ProgramFiles}/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan_cxx-i386.lib"
+            clang_rt.ubsan_standalone_cxx-x86_64.lib
+            clang_rt.ubsan_standalone-x86_64.lib
+        )
+    endif()
+endif()
+
 include("${PROJECT_SOURCE_DIR}/cmake/compiler_warnings.cmake")
 
 add_executable(option-test

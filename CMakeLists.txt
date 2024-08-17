@@ -17,26 +17,6 @@ option(USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
 option(USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" ${not_project_is_top_level})
 option(USE_LIBASSERT "Enable libassert library integration" TRUE)
 
-if (DEFINED OPTION_DEV_CLANGCL_SANITIZERS)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPTION_DEV_CLANGCL_SANITIZERS}")
-    if (CMAKE_SIZEOF_VOID_P STREQUAL 8)
-        link_libraries(
-            "$ENV{ProgramFiles}/LLVM/lib/clang/18/lib/windows/clang_rt.asan-x86_64.lib"
-            "$ENV{ProgramFiles}/LLVM/lib/clang/18/lib/windows/clang_rt.asan_cxx-x86_64.lib"
-            clang_rt.ubsan_standalone_cxx-x86_64.lib
-            clang_rt.ubsan_standalone-x86_64.lib
-        )
-    elseif(CMAKE_SIZEOF_VOID_P STREQUAL 4)
-        link_libraries(
-            "$ENV{ProgramFiles}/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan-i386.lib"
-            "$ENV{ProgramFiles}/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan_cxx-i386.lib"
-            clang_rt.ubsan_standalone_cxx-x86_64.lib
-            clang_rt.ubsan_standalone-x86_64.lib
-        )
-    endif()
-endif()
-
 add_library(option INTERFACE "include/opt/option.hpp")
 
 if (NOT PROJECT_IS_TOP_LEVEL)
