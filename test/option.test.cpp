@@ -154,7 +154,7 @@ struct polymorphic_type {
 
     polymorphic_type() = default;
     polymorphic_type(const polymorphic_type&) = default; // NOLINT(clang-analyzer-core.uninitialized.Assign)
-    polymorphic_type& operator=(const polymorphic_type&) = default;
+    polymorphic_type& operator=(const polymorphic_type&) = default; // NOLINT(clang-analyzer-core.uninitialized.Assign)
 
     virtual ~polymorphic_type() = default;
 
@@ -193,7 +193,7 @@ template<> struct sample_values<struct_with_sentinel> {
 };
 
 TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
-    sample_values<T> sample;
+    const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];
     const auto& v1 = sample.values[1];
