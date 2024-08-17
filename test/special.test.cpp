@@ -12,6 +12,7 @@
 #include <array>
 #include <memory>
 #include <cstdint>
+#include <cstddef>
 
 #include "utils.hpp"
 // NOLINTEND(misc-include-cleaner)
@@ -1220,6 +1221,7 @@ TEST_F(polymorphic, multiple_inheritance) {
     e.reset();
     EXPECT_FALSE(e.has_value());
 }
+
 
 struct struct1 {
     int a;

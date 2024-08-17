@@ -201,6 +201,18 @@
     #define OPTION_CONSTEXPR_CXX20 inline
 #endif
 
+#if OPTION_GCC || OPTION_CLANG
+    #define OPTION_CURRENT_FUNCTION() __PRETTY_FUNCTION__
+#elif OPTION_MSVC
+    #define OPTION_CURRENT_FUNCTION() __builtin_FUNCSIG()
+#endif
+
+#ifdef OPTION_CURRENT_FUNCTION
+    #define OPTION_CAN_REFLECT_ENUM 1
+#else
+    #define OPTION_CAN_REFLECT_ENUM 0
+#endif
+
 namespace opt {
 
 namespace impl {
@@ -394,6 +406,82 @@ namespace impl {
     #pragma warning(pop)
 #endif
 
+#if OPTION_CAN_REFLECT_ENUM
+    template<auto... Enumerators>
+    constexpr std::uintmax_t max_enum_value_impl2(const std::uintmax_t max) {
+        const auto name = OPTION_CURRENT_FUNCTION();
+        auto end = __builtin_strlen(name);
+#if OPTION_GCC
+        const char template_close = '}';
+        const char template_open = '{';
+#else
+        const char template_close = '>';
+        const char template_open = '<';
+#endif
+
+        // Advance until template close symbol is found
+        end -= 1;
+        while (name[end] != template_close) {
+            end -= 1;
+        }
+
+        std::uintmax_t value = max;
+
+        // <namespace::enum::enumerator, ...>
+        // <... , namespace::enum::enumerator, ...>
+        // <(namespace::enum)number, ...>
+        // <..., (namespace::enum)number, ...>
+
+        bool has_parenthesis = false;
+        for (std::size_t i = end - 1;; --i) {
+            // If namespace, then it's enumerator, but only if it's not a explicit conversion
+            if (name[i] == ':' && !has_parenthesis) {
+                break;
+            }
+            // Found explicit conversion to an enum type
+            if (name[i] == ')') {
+                has_parenthesis = true;
+            }
+            // Next value
+            if (name[i] == ',') {
+                value -= 1;
+                has_parenthesis = false;
+            }
+            // Reached the end, assume enum is empty, don't use it
+            if (name[i] == template_open) {
+                return 0;
+            }
+        }
+        return value;
+    }
+
+    template<class E, std::uintmax_t Max, class T, T... Vals>
+    constexpr std::uintmax_t max_enum_value_impl1(std::integer_sequence<T, Vals...>) {
+        return max_enum_value_impl2<static_cast<E>(Vals)...>(Max);
+    }
+    template<class E, std::uintmax_t Max>
+    constexpr std::uintmax_t max_enum_value() {
+        return max_enum_value_impl1<E, Max>(
+            std::make_integer_sequence<std::uintmax_t, Max>{}
+        );
+    }
+    template<class E, std::uintmax_t Max, E... Enumerators>
+    constexpr auto xmax_enum_value_impl2() {
+        return OPTION_CURRENT_FUNCTION();
+    }
+
+    template<class E, std::uintmax_t Max, class T, T... Vals>
+    constexpr auto xmax_enum_value_impl1(std::integer_sequence<T, Vals...>) {
+        return xmax_enum_value_impl2<E, Max, static_cast<E>(Vals)...>();
+    }
+    template<class E, std::uintmax_t Max>
+    constexpr auto xmax_enum_value() {
+        return xmax_enum_value_impl1<E, Max>(
+            std::make_integer_sequence<std::uintmax_t, Max>{}
+        );
+    }
+#endif
+
     enum class option_strategy {
         none,
         other,
@@ -420,6 +508,9 @@ namespace impl {
         member_pointer_32,
         member_pointer_64,
         sentinel_member,
+#if OPTION_CAN_REFLECT_ENUM
+        enumeration,
+#endif
 #ifdef OPTION_HAS_PFR
         reflectable,
 #endif
@@ -528,6 +619,11 @@ namespace impl {
         if constexpr (has_sentinel_member<T>) {
             return st::sentinel_member;
         } else
+#if OPTION_CAN_REFLECT_ENUM
+        if constexpr (std::is_enum_v<T>) {
+            return std::is_unsigned_v<std::underlying_type_t<T>> ? st::enumeration : st::none;
+        } else
+#endif
 #ifdef OPTION_HAS_PFR
         if constexpr (pfr_has_available_traits<T>) {
             return st::reflectable;
@@ -541,6 +637,14 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 0;
     };
 
+#if OPTION_CLANG
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wconversion"
+#elif OPTION_GCC
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wconversion"
+#endif
+
     template<>
     struct internal_option_traits<bool, option_strategy::bool_> {
     private:
@@ -550,7 +654,7 @@ namespace impl {
 
         static std::uintmax_t get_level(const bool* const value) noexcept {
             uint_bool u8_value = impl::ptr_bit_cast<uint_bool>(value);
-            u8_value = uint_bool(u8_value - 2);
+            u8_value -= 2;
             return u8_value < max_level ? u8_value : std::uintmax_t(-1);
         }
         static void set_level(bool* const value, const std::uintmax_t level) noexcept {
@@ -1028,6 +1132,35 @@ namespace impl {
             value->SENTINEL = member_type(level + 1);
         }
     };
+#if OPTION_CAN_REFLECT_ENUM
+    template<class T>
+    struct internal_option_traits<T, option_strategy::enumeration> {
+    private:
+        static constexpr std::uintmax_t probe_value = 256;
+        static constexpr std::uintmax_t max_enumerator_value = impl::max_enum_value<T, probe_value>();
+
+        using underlying = std::underlying_type_t<T>;
+    public:
+        static constexpr std::uintmax_t max_level =
+            max_enumerator_value == 0 ? 0 : probe_value - max_enumerator_value;
+
+        static constexpr std::uintmax_t get_level(const T* const value) noexcept {
+            underlying uint = impl::ptr_bit_cast<underlying>(value);
+            uint -= max_enumerator_value;
+            return uint < max_level ? uint : std::uintmax_t(-1);
+        }
+        static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
+            impl::ptr_bit_copy(value, underlying(level + max_enumerator_value));
+        }
+    };
+#endif
+
+#if OPTION_CLANG
+    #pragma clang diagnostic pop
+#elif OPTION_GCC
+    #pragma GCC diagnostic pop
+#endif
 }
 
 template<class T, class>
