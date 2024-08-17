@@ -573,6 +573,30 @@ TEST_CASE("enumeration") {
             CHECK_EQ(traits3::get_level(&c), 0);
         }
     }
+    SUBCASE("std::byte") {
+        using traits = opt::option_traits<std::byte>;
+        CHECK_EQ(traits::max_level, 0);
+    }
+    SUBCASE("uint16_t") {
+        SUBCASE("empty") {
+            enum class empty : std::uint16_t {};
+            using traits = opt::option_traits<empty>;
+
+            CHECK_EQ(traits::max_level, 0);
+        }
+        SUBCASE("enumerators") {
+            enum class enumeration : std::uint16_t {
+                a = 500
+            };
+            using traits = opt::option_traits<enumeration>;
+            CHECK_GT(traits::max_level, 1);
+
+            enumeration a = enumeration::a;
+            CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+            traits::set_level(&a, 0);
+            CHECK_EQ(traits::get_level(&a), 0);
+        }
+    }
 }
 
 TEST_SUITE_END();

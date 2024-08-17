@@ -420,6 +420,7 @@ namespace impl {
 #endif
 
         // Advance until template close symbol is found
+
         end -= 1;
         while (name[end] != template_close) {
             end -= 1;
@@ -437,16 +438,16 @@ namespace impl {
             // If namespace, then it's enumerator, but only if it's not a explicit conversion
             if (name[i] == ':' && !has_parenthesis) {
                 break;
-            }
+            } else
             // Found explicit conversion to an enum type
             if (name[i] == ')') {
                 has_parenthesis = true;
-            }
+            } else
             // Next value
             if (name[i] == ',') {
                 value -= 1;
                 has_parenthesis = false;
-            }
+            } else
             // Reached the end, assume enum is empty, don't use it
             if (name[i] == template_open) {
                 return 0;
@@ -462,21 +463,6 @@ namespace impl {
     template<class E, std::uintmax_t Max>
     constexpr std::uintmax_t max_enum_value() {
         return max_enum_value_impl1<E, Max>(
-            std::make_integer_sequence<std::uintmax_t, Max>{}
-        );
-    }
-    template<class E, std::uintmax_t Max, E... Enumerators>
-    constexpr auto xmax_enum_value_impl2() {
-        return OPTION_CURRENT_FUNCTION();
-    }
-
-    template<class E, std::uintmax_t Max, class T, T... Vals>
-    constexpr auto xmax_enum_value_impl1(std::integer_sequence<T, Vals...>) {
-        return xmax_enum_value_impl2<E, Max, static_cast<E>(Vals)...>();
-    }
-    template<class E, std::uintmax_t Max>
-    constexpr auto xmax_enum_value() {
-        return xmax_enum_value_impl1<E, Max>(
             std::make_integer_sequence<std::uintmax_t, Max>{}
         );
     }
@@ -1136,7 +1122,14 @@ namespace impl {
     template<class T>
     struct internal_option_traits<T, option_strategy::enumeration> {
     private:
-        static constexpr std::uintmax_t probe_value = 256;
+        static constexpr std::uintmax_t probe_value = sizeof(T) == 1 ? 256 : 1024;
+// #################################################################################################
+// MSVC:  If you have error C2131 set the compiler option /constexpr:stepsN to a higher value.
+// CLANG: If you have 'error: constexpr variable 'max_enumerator_value' must be initialized
+//        by a constant expression', set the compiler option -fconstexpr-steps=N to a higher value.
+// GCC:   If you have 'error: ‘constexpr’ loop iteration count exceeds limit of XXX',
+//        set the compiler option -fconstexpr-loop-limit=N to a higher value.
+// #################################################################################################
         static constexpr std::uintmax_t max_enumerator_value = impl::max_enum_value<T, probe_value>();
 
         using underlying = std::underlying_type_t<T>;
