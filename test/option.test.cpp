@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <doctest/doctest.h>
 #include <memory>
 #include <type_traits>
 #include <opt/option.hpp>
@@ -20,25 +20,14 @@
     #endif
 #endif
 
-#define TypeParam T
-#define V0 (this->values[0])
-#define V1 (this->values[1])
-#define V2 (this->values[2])
-#define V3 (this->values[3])
-#define V4 (this->values[4])
-
 #define TEST_SIZE_LIST \
     struct_with_sentinel, \
     int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, \
     aggregate_int_float, std::array<int, 0>, \
     empty_struct, std::tuple<>, std::tuple<int, float, int>, \
     double, bool, std::reference_wrapper<int>, int*, float, \
-    std::pair<int, float>, std::pair<float, int>, std::array<float, 4>
+    std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int
     
-
-#define TEST_MAIN_LIST \
-    int, unsigned int
-
 namespace {
 
 struct trivial_struct {};
@@ -50,90 +39,73 @@ static_assert(is_trivial_compatible<opt::option<int>>);
 static_assert(std::is_nothrow_destructible_v<opt::option<int>>);
 static_assert(!std::is_nothrow_destructible_v<opt::option<nontrivial_struct>>);
 
-template<class T>
-struct option : ::testing::Test {
-    T values[5]{1, 2, 3, 4, 5};
+struct fp_exception_checker {
+    fp_exception_checker() {
+        REQUIRE_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+    ~fp_exception_checker() {
+        CHECK_EQ(std::fetestexcept(FE_DIVBYZERO), 0);
+        CHECK_EQ(std::fetestexcept(FE_INEXACT), 0);
+        CHECK_EQ(std::fetestexcept(FE_INVALID), 0);
+        CHECK_EQ(std::fetestexcept(FE_OVERFLOW), 0);
+        CHECK_EQ(std::fetestexcept(FE_UNDERFLOW), 0);
+
+        REQUIRE_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
 };
-template<>
-struct option<float> : ::testing::Test {
+
+template<class T>
+struct sample_values;
+
+template<> struct sample_values<int> {
+    int values[5]{1, 2, 3, 4, 5};
+};
+
+template<> struct sample_values<float> {
     float values[5]{1.f, 2.f, 3.f, 4.f, 5.f};
 
-    void SetUp() override {
-        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
-    }
-    void TearDown() override {
-        EXPECT_EQ(std::fetestexcept(FE_DIVBYZERO), 0);
-        EXPECT_EQ(std::fetestexcept(FE_INEXACT), 0);
-        EXPECT_EQ(std::fetestexcept(FE_INVALID), 0);
-        EXPECT_EQ(std::fetestexcept(FE_OVERFLOW), 0);
-        EXPECT_EQ(std::fetestexcept(FE_UNDERFLOW), 0);
-
-        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
-    }
+    fp_exception_checker checker{};
 };
-template<>
-struct option<double> : ::testing::Test {
+template<> struct sample_values<double> {
     double values[5]{1., 2., 3., 4., 5.};
 
-    void SetUp() override {
-        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
-    }
-    void TearDown() override {
-        EXPECT_EQ(std::fetestexcept(FE_DIVBYZERO), 0);
-        EXPECT_EQ(std::fetestexcept(FE_INEXACT), 0);
-        EXPECT_EQ(std::fetestexcept(FE_INVALID), 0);
-        EXPECT_EQ(std::fetestexcept(FE_OVERFLOW), 0);
-        EXPECT_EQ(std::fetestexcept(FE_UNDERFLOW), 0);
-            
-        ASSERT_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
-    }
+    fp_exception_checker checker{};
 };
-
-template<>
-struct option<bool> : ::testing::Test {
+template<> struct sample_values<bool> {
     bool values[5]{false, true, false, true, false};
 };
-template<>
-struct option<std::reference_wrapper<int>> : ::testing::Test {
+template<> struct sample_values<std::reference_wrapper<int>> {
     int values_orig[5]{1, 2, 3, 4, 5};
     std::reference_wrapper<int> values[5]{values_orig[0], values_orig[1], values_orig[2], values_orig[3], values_orig[4]};
 };
-template<>
-struct option<int*> : ::testing::Test {
+template<> struct sample_values<int*> {
     int values_orig[5]{1, 2, 3, 4, 5};
     int* values[5]{&values_orig[0], &values_orig[1], &values_orig[2], &values_orig[3], &values_orig[4]};
 };
-template<>
-struct option<std::pair<int, float>> : ::testing::Test {
+template<> struct sample_values<std::pair<int, float>> {
     std::pair<int, float> values[5]{{1, 2.f}, {3, 4.f}, {5, 6.f}, {7, 8.f}, {9, 10.f}};
 };
-template<>
-struct option<std::pair<float, int>> : ::testing::Test {
+template<> struct sample_values<std::pair<float, int>> {
     std::pair<float, int> values[5]{{1.f, 2}, {3.f, 4}, {5.f, 6}, {7.f, 8}, {9.f, 10}};
 };
-template<>
-struct option<std::array<float, 4>> : ::testing::Test {
+template<> struct sample_values<std::array<float, 4>> {
     std::array<float, 4> values[5]{{1.f, 2.f, 3.f, 4.f}, {5.f, 6.f, 7.f, 8.f}, {9.f, 10.f, 11.f, 12.f}, {13.f, 14.f, 15.f, 16.f}, {17.f, 18.f, 19.f, 20.f}};
 };
-template<>
-struct option<std::array<int, 0>> : ::testing::Test {
+template<> struct sample_values<std::array<int, 0>> {
     std::array<int, 0> values[5]{{}, {}, {}, {}, {}};
 };
 
 struct empty_struct {
     bool operator==(const empty_struct&) const { return true; }
 };
-template<>
-struct option<empty_struct> : ::testing::Test {
+template<> struct sample_values<empty_struct> {
     empty_struct values[5]{{}, {}, {}, {}, {}};
 };
 
-template<>
-struct option<std::tuple<>> : ::testing::Test {
+template<> struct sample_values<std::tuple<>> {
     std::tuple<> values[5]{{}, {}, {}, {}, {}};
 };
-template<>
-struct option<std::tuple<int, float, int>> : ::testing::Test {
+template<> struct sample_values<std::tuple<int, float, int>> {
     std::tuple<int, float, int> values[5]{{1, 2.f, 3}, {4, 5.f, 6}, {7, 8.f, 9}, {10, 11.f, 12}, {13, 14.f, 15}};
 };
 
@@ -144,8 +116,7 @@ struct aggregate_int_float {
     // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const aggregate_int_float& a) const { return x == a.x && y == a.y; }
 };
-template<>
-struct option<aggregate_int_float> : ::testing::Test {
+template<> struct sample_values<aggregate_int_float> {
     aggregate_int_float values[5]{{1, 2.f}, {3, 4.f}, {5, 6.f}, {7, 8.f}, {9, 10.f}};
 };
 
@@ -155,8 +126,7 @@ struct aggregate_with_empty_struct {
 
     bool operator==(const aggregate_with_empty_struct& a) const { return x == a.x; }
 };
-template<>
-struct option<aggregate_with_empty_struct> : ::testing::Test {
+template<> struct sample_values<aggregate_with_empty_struct> {
     aggregate_with_empty_struct values[5]{
         {1, {}}, {2, {}}, {3, {}}, {4, {}}, {5, {}}
     };
@@ -173,8 +143,7 @@ struct empty_polymorphic_type {
 };
 static_assert(std::is_polymorphic_v<empty_polymorphic_type>);
 
-template<>
-struct option<empty_polymorphic_type> : ::testing::Test {
+template<> struct sample_values<empty_polymorphic_type> {
     empty_polymorphic_type values[5]{{}, {}, {}, {}, {}};
 };
 
@@ -193,18 +162,15 @@ struct polymorphic_type {
 };
 static_assert(std::is_polymorphic_v<polymorphic_type>);
 
-template<>
-struct option<polymorphic_type> : ::testing::Test {
+template<> struct sample_values<polymorphic_type> {
     polymorphic_type values[5]{{1}, {2}, {3}, {4}, {5}};
 };
 
-template<>
-struct option<std::string_view> : ::testing::Test {
+template<> struct sample_values<std::string_view> {
     std::string_view values[5]{"a1", "b2", "c3", "d4", "e5"};
 };
 
-template<>
-struct option<int(*)(int)> : ::testing::Test {
+template<> struct sample_values<int(*)(int)> {
     using t = int(*)(int);
     t values[5]{
         [](int x) { return x + 1; },
@@ -222,563 +188,554 @@ struct struct_with_sentinel {
     // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const struct_with_sentinel& o) const { return x == o.x; }
 };
-template<>
-struct option<struct_with_sentinel> : ::testing::Test {
+template<> struct sample_values<struct_with_sentinel> {
     struct_with_sentinel values[5]{struct_with_sentinel{1}, struct_with_sentinel{2}, struct_with_sentinel{3}, struct_with_sentinel{4}, struct_with_sentinel{5}};
 };
 
+TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
+    sample_values<T> sample;
+    // Allow captured structured bindings in lambda
+    const auto& v0 = sample.values[0];
+    const auto& v1 = sample.values[1];
+    const auto& v2 = sample.values[2];
+    const auto& v3 = sample.values[3];
+    const auto& v4 = sample.values[4];
 
-using test_size_types = ::testing::Types<TEST_SIZE_LIST>;
+    SUBCASE("constructor") {
+        const opt::option<T> a;
+        CHECK_UNARY_FALSE(a.has_value());
 
-template<class T>
-struct test_size : ::testing::Test {};
-TYPED_TEST_SUITE(test_size, test_size_types);
-TYPED_TEST(test_size, check) {
-    EXPECT_EQ(sizeof(T), sizeof(opt::option<T>));
-    EXPECT_EQ(sizeof(T), sizeof(opt::option<opt::option<T>>));
-    EXPECT_EQ(sizeof(T), sizeof(opt::option<opt::option<opt::option<T>>>));
-    EXPECT_EQ(sizeof(T), sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>));
-}
+        const opt::option<T> b(opt::none);
+        CHECK_UNARY_FALSE(b.has_value());
 
-using test_main_types = ::testing::Types<TEST_SIZE_LIST, TEST_MAIN_LIST>;
-TYPED_TEST_SUITE(option, test_main_types);
+        const opt::option<T> c = opt::none;
+        CHECK_UNARY_FALSE(c.has_value());
 
-TYPED_TEST(option, default_ctor) {
-    const opt::option<T> a;
-    EXPECT_FALSE(a.has_value());
-
-    const opt::option<T> b(opt::none);
-    EXPECT_FALSE(b.has_value());
-
-    const opt::option<T> c = opt::none;
-    EXPECT_FALSE(c.has_value());
-}
-TYPED_TEST(option, constructors) {
-    if constexpr (std::is_default_constructible_v<T>) {
-        const opt::option<T> a{{}};
-        EXPECT_EQ(a, T{});
+        if constexpr (std::is_default_constructible_v<T>) {
+            const opt::option<T> d{{}};
+            CHECK_EQ(d, T{});
+        }
     }
-}
-TYPED_TEST(option, get) {
-    opt::option<T> a{V0};
-    EXPECT_EQ(a.get(), V0);
-    EXPECT_EQ(std::as_const(a).get(), V0);
-    EXPECT_EQ(as_const_rvalue(a).get(), V0);
-    EXPECT_EQ(as_rvalue(a).get(), V0);
-}
-TYPED_TEST(option, assignment) {
-    opt::option<T> a = V0;
-    a = opt::none;
-    EXPECT_FALSE(a.has_value());
-    {
-        const opt::option tmp{V1};
-        a = tmp;
+    SUBCASE(".get") {
+        opt::option<T> a{v0};
+        CHECK_EQ(a.get(), v0);
+        CHECK_EQ(std::as_const(a).get(), v0);
+        CHECK_EQ(as_const_rvalue(a).get(), v0);
+        CHECK_EQ(as_rvalue(a).get(), v0);
     }
-    EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(a, V1);
-    {
-        const opt::option<T> tmp{opt::none};
-        a = tmp;
-    }
-    EXPECT_FALSE(a.has_value());
-    a = opt::option<T>(V2);
-    EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(a, V2);
-    a = opt::option<T>(opt::none);
-    EXPECT_FALSE(a.has_value());
-    EXPECT_FALSE(a.has_value());
-    {
-        const T tmp = V3;
-        a = tmp;
-    }
-    EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(a, V3);
-    a = V4;
-    EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(a, V4);
-
-    opt::option<T> b;
-    EXPECT_FALSE(b.has_value());
-    b = V0;
-    EXPECT_TRUE(b.has_value());
-    EXPECT_EQ(b, V0);
-    b = V0;
-    EXPECT_TRUE(b.has_value());
-    EXPECT_EQ(b, V0);
-    b = V1;
-    EXPECT_TRUE(b.has_value());
-    EXPECT_EQ(b, V1);
-    b = opt::option<T>{};
-    EXPECT_FALSE(b.has_value());
-    b = opt::option<T>{};
-    EXPECT_FALSE(b.has_value());
-    b = opt::option<T>{V0};
-    EXPECT_TRUE(b.has_value());
-    EXPECT_EQ(b, V0);
-    b = opt::none;
-    EXPECT_FALSE(b.has_value());
-    b = opt::none;
-    EXPECT_FALSE(b.has_value());
-
-    opt::option<T> c;
-    EXPECT_FALSE(c.has_value());
-    c = V0;
-    EXPECT_TRUE(c.has_value());
-    EXPECT_EQ(c, V0);
-
-    opt::option<T> d;
-    EXPECT_FALSE(d.has_value());
-    d = c;
-    EXPECT_TRUE(c.has_value());
-    EXPECT_TRUE(d.has_value());
-    EXPECT_EQ(d, V0);
-
-    c = opt::none;
-    EXPECT_FALSE(c.has_value());
-    EXPECT_TRUE(d.has_value());
-    EXPECT_EQ(d, V0);
-    d = opt::none;
-
-    c = d;
-    EXPECT_FALSE(c.has_value());
-    EXPECT_FALSE(d.has_value());
-
-    c = opt::option<T>{d};
-    EXPECT_FALSE(c.has_value());
-    EXPECT_FALSE(d.has_value());
-
-    d = V0;
-    EXPECT_TRUE(d.has_value());
-    EXPECT_EQ(d, V0);
-
-    c = opt::option<T>{d};
-    EXPECT_TRUE(c.has_value());
-    EXPECT_TRUE(d.has_value());
-    EXPECT_EQ(d, V0);
-    EXPECT_EQ(c, V0);
-
-    d = opt::option<T>{c};
-    EXPECT_TRUE(c.has_value());
-    EXPECT_TRUE(d.has_value());
-
-    d = opt::none;
-    EXPECT_FALSE(d.has_value());
-    c = opt::option<T>{d};
-    EXPECT_FALSE(c.has_value());
-    EXPECT_FALSE(d.has_value());
-
-    c = V0;
-    EXPECT_TRUE(c.has_value());
-    d = std::move(c);
-    EXPECT_TRUE(d.has_value());
-    EXPECT_TRUE(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
-
-    d = opt::none;
-    c = V0;
-    EXPECT_FALSE(d.has_value());
-    EXPECT_TRUE(c.has_value());
-    d = opt::option<T>{std::move(c)};
-    EXPECT_TRUE(d.has_value());
-    EXPECT_TRUE(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
-}
-
-TYPED_TEST(option, reset) {
-    opt::option<T> a;
-    EXPECT_FALSE(a.has_value());
-    a.reset();
-    EXPECT_FALSE(a.has_value());
-    a = V0;
-    EXPECT_TRUE(a.has_value());
-    a.reset();
-    EXPECT_FALSE(a.has_value());
-}
-TYPED_TEST(option, emplace) {
-    opt::option<T> a{V0};
-    EXPECT_EQ(a, V0);
-    a.emplace(V0);
-    EXPECT_EQ(a, V0);
-    a.reset();
-    EXPECT_EQ(a, opt::none);
-    a.emplace(V1);
-    EXPECT_EQ(a, V1);
-    a.emplace(V0);
-    EXPECT_EQ(a, V0);
-}
-TYPED_TEST(option, hash) {
-    if constexpr (is_hashable<T>) {
-        opt::option<T> a{V0};
-        opt::option<T> b{V0};
-        EXPECT_EQ(hash_fn(a), hash_fn(b));
+    SUBCASE("operator=") {
+        opt::option<T> a = v0;
         a = opt::none;
-        EXPECT_NE(hash_fn(a), hash_fn(b));
+        CHECK_UNARY_FALSE(a.has_value());
+        {
+            const opt::option tmp{v1};
+            a = tmp;
+        }
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v1);
+        {
+            const opt::option<T> tmp{opt::none};
+            a = tmp;
+        }
+        CHECK_UNARY_FALSE(a.has_value());
+        a = opt::option<T>(v2);
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v2);
+        a = opt::option<T>(opt::none);
+        CHECK_UNARY_FALSE(a.has_value());
+        CHECK_UNARY_FALSE(a.has_value());
+        {
+            const T tmp = v3;
+            a = tmp;
+        }
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v3);
+        a = v4;
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v4);
+
+        opt::option<T> b;
+        CHECK_UNARY_FALSE(b.has_value());
+        b = v0;
+        CHECK_UNARY(b.has_value());
+        CHECK_EQ(b, v0);
+        b = v0;
+        CHECK_UNARY(b.has_value());
+        CHECK_EQ(b, v0);
+        b = v1;
+        CHECK_UNARY(b.has_value());
+        CHECK_EQ(b, v1);
+        b = opt::option<T>{};
+        CHECK_UNARY_FALSE(b.has_value());
+        b = opt::option<T>{};
+        CHECK_UNARY_FALSE(b.has_value());
+        b = opt::option<T>{v0};
+        CHECK_UNARY(b.has_value());
+        CHECK_EQ(b, v0);
         b = opt::none;
-        EXPECT_EQ(hash_fn(a), hash_fn(b));
-    }
-}
-TYPED_TEST(option, value_or_throw) {
-    opt::option<T> a{V0};
-    EXPECT_NO_THROW((void)a.value_or_throw());
-    EXPECT_NO_THROW((void)a.value());
-    EXPECT_NO_THROW((void)as_const(a).value());
-    EXPECT_NO_THROW((void)as_const_rvalue(a).value());
-    a = opt::none;
-    EXPECT_THROW((void)a.value_or_throw(), opt::bad_access);
-    EXPECT_THROW((void)a.value(), opt::bad_access);
-    EXPECT_THROW((void)as_const(a).value(), opt::bad_access);
-    EXPECT_THROW((void)as_const_rvalue(a).value(), opt::bad_access);
-}
-TYPED_TEST(option, value_or) {
-    opt::option<T> a; // NOLINT(clang-analyzer-core.uninitialized.UndefReturn)
-    EXPECT_EQ(a.value_or(V0), V0); // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult, clang-analyzer-core.uninitialized.Assign)
-    a = V1;
-    EXPECT_EQ(a.value_or(V2), V1);
-    EXPECT_EQ(as_rvalue(a).value_or(V3), V1);
-}
-TYPED_TEST(option, and_then) {
-    if constexpr (std::is_same_v<T, int>) {
-        const auto convert_to_uint = [](int x) -> opt::option<unsigned> {
-            if (x >= 0) { return opt::option<unsigned>{unsigned(x + 1)}; }
-            return opt::none;
-        };
-        EXPECT_EQ(opt::option<int>{2}.and_then(convert_to_uint), 3u);
-        EXPECT_EQ(opt::option<int>{-10}.and_then(convert_to_uint), opt::none);
-        EXPECT_EQ(opt::option<int>{opt::none}.and_then(convert_to_uint), opt::none);
-    }
-}
-TYPED_TEST(option, map) {
-    if constexpr (std::is_same_v<T, int>) {
-        const auto func = [](auto x) { return x - 1; };
-        EXPECT_EQ(opt::option<int>{1}.map(func), 0);
-        EXPECT_EQ(opt::option<int>{}.map(func), opt::none);
-        EXPECT_EQ(opt::option<int>{10}.map(func).map(func), 8);
-    }
-}
-TYPED_TEST(option, or_else) {
-    if constexpr (std::is_same_v<T, int>) {
-        const auto func = []() { return opt::option{1 << 10}; };
-        EXPECT_EQ(opt::option<int>{1}.or_else(func), 1);
-        EXPECT_EQ(opt::option<int>{}.or_else(func), 1 << 10);
-        EXPECT_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);
-    }
-}
-TYPED_TEST(option, take) {
-    opt::option<T> a;
-    opt::option<T> b = a.take();
-    EXPECT_FALSE(a.has_value());
-    EXPECT_FALSE(a.has_value());
-    a = V0;
-    EXPECT_FALSE(b.has_value());
-    EXPECT_TRUE(a.has_value());
-    b = a.take();
-    EXPECT_TRUE(b.has_value());
-    EXPECT_EQ(b, V0);
-    EXPECT_FALSE(a.has_value());
-    a = b.take();
-    EXPECT_TRUE(a.has_value());
-    EXPECT_FALSE(b.has_value());
-    EXPECT_EQ(a, V0);
-    a = V1;
-    EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(*a, V1);
-    a.take();
-    EXPECT_FALSE(a.has_value());
-}
-TYPED_TEST(option, option_cast) {
-    if constexpr (std::is_same_v<T, int>) {
-        opt::option<int> a{1};
-        opt::option<unsigned> b = opt::option_cast<unsigned>(a);
-        EXPECT_EQ(*b, 1u);
-        b = opt::option_cast<unsigned>(as_rvalue(a));
-        EXPECT_EQ(*b, 1u);
-    }
-}
-TYPED_TEST(option, deduction_guides) {
-    auto a = opt::option{V0}; // NOLINT(misc-const-correctness)
-    static_assert(std::is_same_v<decltype(a), opt::option<T>>);
-    opt::option b{V1}; // NOLINT(misc-const-correctness)
-    static_assert(std::is_same_v<decltype(b), opt::option<T>>);
+        CHECK_UNARY_FALSE(b.has_value());
+        b = opt::none;
+        CHECK_UNARY_FALSE(b.has_value());
 
-    auto c = opt::option{opt::option{V0}};
-    static_assert(std::is_same_v<decltype(c), opt::option<opt::option<T>>>);
+        opt::option<T> c;
+        CHECK_UNARY_FALSE(c.has_value());
+        c = v0;
+        CHECK_UNARY(c.has_value());
+        CHECK_EQ(c, v0);
 
-    auto d = opt::option{opt::option{opt::option{V1}}};
-    static_assert(std::is_same_v<decltype(d), opt::option<opt::option<opt::option<T>>>>);
-}
-TYPED_TEST(option, value_or_default) {
-    if constexpr (std::is_default_constructible_v<T>) {
-        opt::option a{V0};
-        EXPECT_EQ(a.value_or_default(), V0);
+        opt::option<T> d;
+        CHECK_UNARY_FALSE(d.has_value());
+        d = c;
+        CHECK_UNARY(c.has_value());
+        CHECK_UNARY(d.has_value());
+        CHECK_EQ(d, v0);
+
+        c = opt::none;
+        CHECK_UNARY_FALSE(c.has_value());
+        CHECK_UNARY(d.has_value());
+        CHECK_EQ(d, v0);
+        d = opt::none;
+
+        c = d;
+        CHECK_UNARY_FALSE(c.has_value());
+        CHECK_UNARY_FALSE(d.has_value());
+
+        c = opt::option<T>{d};
+        CHECK_UNARY_FALSE(c.has_value());
+        CHECK_UNARY_FALSE(d.has_value());
+
+        d = v0;
+        CHECK_UNARY(d.has_value());
+        CHECK_EQ(d, v0);
+
+        c = opt::option<T>{d};
+        CHECK_UNARY(c.has_value());
+        CHECK_UNARY(d.has_value());
+        CHECK_EQ(d, v0);
+        CHECK_EQ(c, v0);
+
+        d = opt::option<T>{c};
+        CHECK_UNARY(c.has_value());
+        CHECK_UNARY(d.has_value());
+
+        d = opt::none;
+        CHECK_UNARY_FALSE(d.has_value());
+        c = opt::option<T>{d};
+        CHECK_UNARY_FALSE(c.has_value());
+        CHECK_UNARY_FALSE(d.has_value());
+
+        c = v0;
+        CHECK_UNARY(c.has_value());
+        d = std::move(c);
+        CHECK_UNARY(d.has_value());
+        CHECK_UNARY(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
+
+        d = opt::none;
+        c = v0;
+        CHECK_UNARY_FALSE(d.has_value());
+        CHECK_UNARY(c.has_value());
+        d = opt::option<T>{std::move(c)};
+        CHECK_UNARY(d.has_value());
+        CHECK_UNARY(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
+    }
+    SUBCASE(".reset") {
+        opt::option<T> a;
+        CHECK_UNARY_FALSE(a.has_value());
+        a.reset();
+        CHECK_UNARY_FALSE(a.has_value());
+        a = v0;
+        CHECK_UNARY(a.has_value());
+        a.reset();
+        CHECK_UNARY_FALSE(a.has_value());
+    }
+    SUBCASE(".emplace") {
+        opt::option<T> a{v0};
+        CHECK_EQ(a, v0);
+        a.emplace(v0);
+        CHECK_EQ(a, v0);
+        a.reset();
+        CHECK_EQ(a, opt::none);
+        a.emplace(v1);
+        CHECK_EQ(a, v1);
+        a.emplace(v0);
+        CHECK_EQ(a, v0);
+    }
+    SUBCASE("std::hash") {
+        if constexpr (is_hashable<T>) {
+            opt::option<T> a{v0};
+            opt::option<T> b{v0};
+            CHECK_EQ(hash_fn(a), hash_fn(b));
+            a = opt::none;
+            CHECK_NE(hash_fn(a), hash_fn(b));
+            b = opt::none;
+            CHECK_EQ(hash_fn(a), hash_fn(b));
+        }
+    }
+    SUBCASE(".value_or_throw") {
+        opt::option<T> a{v0};
+        CHECK_NOTHROW((void)a.value_or_throw());
+        CHECK_NOTHROW((void)a.value());
+        CHECK_NOTHROW((void)as_const(a).value());
+        CHECK_NOTHROW((void)as_const_rvalue(a).value());
         a = opt::none;
-        EXPECT_EQ(a.value_or_default(), T{});
+        CHECK_THROWS_AS((void)a.value_or_throw(), opt::bad_access);
+        CHECK_THROWS_AS((void)a.value(), opt::bad_access);
+        CHECK_THROWS_AS((void)as_const(a).value(), opt::bad_access);
+        CHECK_THROWS_AS((void)as_const_rvalue(a).value(), opt::bad_access);
     }
-}
-TYPED_TEST(option, ptr_or_pull) {
-    opt::option a{V0};
+    SUBCASE(".value_or") {
+        opt::option<T> a; // NOLINT(clang-analyzer-core.uninitialized.UndefReturn)
+        CHECK_EQ(a.value_or(v0), v0); // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult, clang-analyzer-core.uninitialized.Assign)
+        a = v1;
+        CHECK_EQ(a.value_or(v2), v1);
+        CHECK_EQ(as_rvalue(a).value_or(v3), v1);
+    }
+    SUBCASE(".and_then") {
+        if constexpr (std::is_same_v<T, int>) {
+            const auto convert_to_uint = [](int x) -> opt::option<unsigned> {
+                if (x >= 0) { return opt::option<unsigned>{unsigned(x + 1)}; }
+                return opt::none;
+            };
+            CHECK_EQ(opt::option<int>{2}.and_then(convert_to_uint), 3u);
+            CHECK_EQ(opt::option<int>{-10}.and_then(convert_to_uint), opt::none);
+            CHECK_EQ(opt::option<int>{opt::none}.and_then(convert_to_uint), opt::none);
+        }
+    }
+    SUBCASE(".map") {
+        if constexpr (std::is_same_v<T, int>) {
+            const auto func = [](auto x) { return x - 1; };
+            CHECK_EQ(opt::option<int>{1}.map(func), 0);
+            CHECK_EQ(opt::option<int>{}.map(func), opt::none);
+            CHECK_EQ(opt::option<int>{10}.map(func).map(func), 8);
+        }
+    }
+    SUBCASE(".or_else") {
+        if constexpr (std::is_same_v<T, int>) {
+            const auto func = []() { return opt::option{1 << 10}; };
+            CHECK_EQ(opt::option<int>{1}.or_else(func), 1);
+            CHECK_EQ(opt::option<int>{}.or_else(func), 1 << 10);
+            CHECK_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);
+        }
+    }
+    SUBCASE(".take") {
+        opt::option<T> a;
+        opt::option<T> b = a.take();
+        CHECK_UNARY_FALSE(a.has_value());
+        CHECK_UNARY_FALSE(a.has_value());
+        a = v0;
+        CHECK_UNARY_FALSE(b.has_value());
+        CHECK_UNARY(a.has_value());
+        b = a.take();
+        CHECK_UNARY(b.has_value());
+        CHECK_EQ(b, v0);
+        CHECK_UNARY_FALSE(a.has_value());
+        a = b.take();
+        CHECK_UNARY(a.has_value());
+        CHECK_UNARY_FALSE(b.has_value());
+        CHECK_EQ(a, v0);
+        a = v1;
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(*a, v1);
+        a.take();
+        CHECK_UNARY_FALSE(a.has_value());
+    }
+    SUBCASE("opt::option_cast") {
+        if constexpr (std::is_same_v<T, int>) {
+            opt::option<int> a{1};
+            opt::option<unsigned> b = opt::option_cast<unsigned>(a);
+            CHECK_EQ(*b, 1u);
+            b = opt::option_cast<unsigned>(as_rvalue(a));
+            CHECK_EQ(*b, 1u);
+        }
+    }
+    SUBCASE("deduction guides") {
+        auto a = opt::option{v0}; // NOLINT(misc-const-correctness)
+        CHECK_UNARY(std::is_same_v<decltype(a), opt::option<T>>);
+        opt::option b{v1}; // NOLINT(misc-const-correctness)
+        CHECK_UNARY(std::is_same_v<decltype(b), opt::option<T>>);
 
-    EXPECT_EQ(*(a.ptr_or_null()), V0);
-    a = opt::none;
-    EXPECT_EQ(a.ptr_or_null(), nullptr);
-    a = V1;
-    EXPECT_EQ(*(as_const(a).ptr_or_null()), V1);
-}
-TYPED_TEST(option, filter) {
-    if constexpr (std::is_same_v<T, int>) {
-        const auto is_even = [](int x) { return x % 2 == 0; };
+        auto c = opt::option{opt::option{v0}};
+        CHECK_UNARY(std::is_same_v<decltype(c), opt::option<opt::option<T>>>);
 
-        opt::option a{1};
-        EXPECT_EQ(a.filter(is_even), opt::none);
-        a = 2;
-        EXPECT_EQ(a.filter(is_even), 2);
+        auto d = opt::option{opt::option{opt::option{v1}}};
+        CHECK_UNARY(std::is_same_v<decltype(d), opt::option<opt::option<opt::option<T>>>>);
+    }
+    SUBCASE(".value_or_default") {
+        if constexpr (std::is_default_constructible_v<T>) {
+            opt::option a{v0};
+            CHECK_EQ(a.value_or_default(), v0);
+            a = opt::none;
+            CHECK_EQ(a.value_or_default(), T{});
+        }
+    }
+    SUBCASE(".ptr_or_null") {
+        opt::option a{v0};
+
+        CHECK_EQ(*(a.ptr_or_null()), v0);
         a = opt::none;
-        EXPECT_EQ(a.filter(is_even), opt::none);
+        CHECK_EQ(a.ptr_or_null(), nullptr);
+        a = v1;
+        CHECK_EQ(*(as_const(a).ptr_or_null()), v1);
     }
-}
-TYPED_TEST(option, flatten) {
-    auto a = opt::option{opt::option{V0}};
-    EXPECT_EQ(**a, V0);
-    auto b = a.flatten();
-    EXPECT_EQ(*b, V0);
+    SUBCASE(".filter") {
+        if constexpr (std::is_same_v<T, int>) {
+            const auto is_even = [](int x) { return x % 2 == 0; };
 
-    a = opt::option{opt::option<T>{opt::none}};
-    b = a.flatten();
-    EXPECT_FALSE(b.has_value());
-    a = opt::option<T>{opt::none};
-    b = a.flatten();
-    EXPECT_FALSE(b.has_value());
-    a = opt::none;
-    b = a.flatten();
-    EXPECT_FALSE(b.has_value());
-}
-TYPED_TEST(option, map_or) {
-    if constexpr (std::is_same_v<T, int>) {
-        const auto add_one = [](int x) { return x + 1; };
-        opt::option a{1};
-        EXPECT_EQ(a.map_or(10, add_one), 2);
+            opt::option a{1};
+            CHECK_EQ(a.filter(is_even), opt::none);
+            a = 2;
+            CHECK_EQ(a.filter(is_even), 2);
+            a = opt::none;
+            CHECK_EQ(a.filter(is_even), opt::none);
+        }
+    }
+    SUBCASE(".flatten") {
+        auto a = opt::option{opt::option{v0}};
+        CHECK_EQ(**a, v0);
+        auto b = a.flatten();
+        CHECK_EQ(*b, v0);
+
+        a = opt::option{opt::option<T>{opt::none}};
+        b = a.flatten();
+        CHECK_UNARY_FALSE(b.has_value());
+        a = opt::option<T>{opt::none};
+        b = a.flatten();
+        CHECK_UNARY_FALSE(b.has_value());
         a = opt::none;
-        EXPECT_EQ(a.map_or(11, add_one), 11);
-
-        const auto add_two = [](int x) { return float(x) + 2.f; };
-        a = 2;
-        EXPECT_EQ(a.map_or(0.f, add_two), 4.f);
-        a = opt::none;
-        EXPECT_EQ(a.map_or(5.f, add_two), 5.f);
+        b = a.flatten();
+        CHECK_UNARY_FALSE(b.has_value());
     }
-}
-TYPED_TEST(option, map_or_else) {
-    if constexpr (std::is_same_v<T, int>) {
-        const auto default_fn = []() { return 2; };
-        const auto do_fn = [](int x) { return x - 1; };
+    SUBCASE(".map_or") {
+        if constexpr (std::is_same_v<T, int>) {
+            const auto add_one = [](int x) { return x + 1; };
+            opt::option a{1};
+            CHECK_EQ(a.map_or(10, add_one), 2);
+            a = opt::none;
+            CHECK_EQ(a.map_or(11, add_one), 11);
 
-        opt::option a{1};
-        EXPECT_EQ(a.map_or_else(default_fn, do_fn), 0);
-        a = opt::none;
-        EXPECT_EQ(a.map_or_else(default_fn, do_fn), 2);
+            const auto add_two = [](int x) { return float(x) + 2.f; };
+            a = 2;
+            CHECK_EQ(a.map_or(0.f, add_two), 4.f);
+            a = opt::none;
+            CHECK_EQ(a.map_or(5.f, add_two), 5.f);
+        }
     }
-}
-TYPED_TEST(option, take_if) {
-    if constexpr (std::is_same_v<T, int>) {
-        opt::option a{1};
-        auto b = a.take_if([](int) { return false; });
-        EXPECT_FALSE(b.has_value());
-        EXPECT_TRUE(a.has_value());
+    SUBCASE(".map_or_else") {
+        if constexpr (std::is_same_v<T, int>) {
+            const auto default_fn = []() { return 2; };
+            const auto do_fn = [](int x) { return x - 1; };
 
-        b = a.take_if([](int& x) {
-            return ++x == 2;
-        });
-        EXPECT_TRUE(b.has_value());
-        EXPECT_EQ(*b, 2);
-        EXPECT_FALSE(a.has_value());
-
-        auto c = a.take_if([](int) { return false; });
-        EXPECT_FALSE(c.has_value());
-        EXPECT_FALSE(a.has_value());
-
-        c = a.take_if([](int) { return true; });
-        EXPECT_FALSE(c.has_value());
-        EXPECT_FALSE(a.has_value());
+            opt::option a{1};
+            CHECK_EQ(a.map_or_else(default_fn, do_fn), 0);
+            a = opt::none;
+            CHECK_EQ(a.map_or_else(default_fn, do_fn), 2);
+        }
     }
-}
-TYPED_TEST(option, has_value_and) {
-    opt::option a{V0};
-    EXPECT_TRUE(a.has_value_and([&](const T& x) { return x == V0; }));
-    if (!(V0 == V1)) {
-        EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V1; }));
+    SUBCASE(".take_if") {
+        if constexpr (std::is_same_v<T, int>) {
+            opt::option a{1};
+            auto b = a.take_if([](int) { return false; });
+            CHECK_UNARY_FALSE(b.has_value());
+            CHECK_UNARY(a.has_value());
+
+            b = a.take_if([](int& x) {
+                return ++x == 2;
+            });
+            CHECK_UNARY(b.has_value());
+            CHECK_EQ(*b, 2);
+            CHECK_UNARY_FALSE(a.has_value());
+
+            auto c = a.take_if([](int) { return false; });
+            CHECK_UNARY_FALSE(c.has_value());
+            CHECK_UNARY_FALSE(a.has_value());
+
+            c = a.take_if([](int) { return true; });
+            CHECK_UNARY_FALSE(c.has_value());
+            CHECK_UNARY_FALSE(a.has_value());
+        }
     }
-    a.reset();
-    EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V0; }));
-    EXPECT_FALSE(a.has_value_and([&](const T& x) { return x == V1; }));
-}
-TYPED_TEST(option, insert) {
-    opt::option a{V0};
-    const T& x = a.insert(V1);
-    EXPECT_EQ(&x, a.ptr_or_null());
-    EXPECT_EQ(*a, V1);
-
-    const T tmp = V2;
-    const T& y = a.insert(tmp);
-
-    EXPECT_EQ(&y, a.ptr_or_null());
-    EXPECT_EQ(*a, V2);
-}
-TYPED_TEST(option, inspect) {
-    if constexpr (std::is_same_v<T, int>) {
-        opt::option a{1};
-        int x = 0;
-        a.inspect([&](int y) { x += y; });
-        EXPECT_EQ(x, 1);
-        opt::option<int>{a}
-            .inspect([&](const int& y) { x += y; })
-            .inspect([&](int& y) { return x += y * 2; });
-        EXPECT_EQ(x, 4);
+    SUBCASE(".has_value_and") {
+        opt::option a{v0};
+        CHECK_UNARY(a.has_value_and([&](const T& x) { return x == v0; }));
+        if (!(v0 == v1)) {
+            CHECK_UNARY_FALSE(a.has_value_and([&](const T& x) { return x == v1; }));
+        }
+        a.reset();
+        CHECK_UNARY_FALSE(a.has_value_and([&](const T& x) { return x == v0; }));
+        CHECK_UNARY_FALSE(a.has_value_and([&](const T& x) { return x == v1; }));
     }
-}
-TYPED_TEST(option, assume_has_value) {
-    opt::option a{V0};
-    a.assume_has_value();
-    EXPECT_EQ(*a, V0);
-}
-TYPED_TEST(option, unzip) {
-    { // std::tuple
-        opt::option a{std::tuple{V0, V1, V2, V3}};
-        EXPECT_TRUE(a.has_value());
+    SUBCASE(".insert") {
+        opt::option a{v0};
+        const T& x = a.insert(v1);
+        CHECK_EQ(&x, a.ptr_or_null());
+        CHECK_EQ(*a, v1);
 
-        auto b = a.unzip();
-        static_assert(std::is_same_v<decltype(b), std::tuple<
-            opt::option<T>, opt::option<T>, opt::option<T>, opt::option<T>
-        >>);
-        auto& [b1, b2, b3, b4] = b;
+        const T tmp = v2;
+        const T& y = a.insert(tmp);
 
-        EXPECT_TRUE(b1.has_value());
-        EXPECT_EQ(*b1, V0);
-        EXPECT_TRUE(b2.has_value());
-        EXPECT_EQ(*b2, V1);
-        EXPECT_TRUE(b3.has_value());
-        EXPECT_EQ(*b3, V2);
-        EXPECT_TRUE(b4.has_value());
-        EXPECT_EQ(*b4, V3);
+        CHECK_EQ(&y, a.ptr_or_null());
+        CHECK_EQ(*a, v2);
+    }
+    SUBCASE(".inspect") {
+        if constexpr (std::is_same_v<T, int>) {
+            opt::option a{1};
+            int x = 0;
+            a.inspect([&](int y) { x += y; });
+            CHECK_EQ(x, 1);
+            opt::option<int>{a}
+                .inspect([&](const int& y) { x += y; })
+                .inspect([&](int& y) { return x += y * 2; });
+            CHECK_EQ(x, 4);
+        }
+    }
+    SUBCASE(".assume_has_value") {
+        opt::option a{v0};
+        a.assume_has_value();
+        CHECK_EQ(*a, v0);
+    }
+    SUBCASE(".unzip") {
+        SUBCASE("std::tuple") {
+            opt::option a{std::tuple{v0, v1, v2, v3}};
+            CHECK_UNARY(a.has_value());
+
+            auto b = a.unzip();
+            CHECK_UNARY(std::is_same_v<decltype(b), std::tuple<
+                opt::option<T>, opt::option<T>, opt::option<T>, opt::option<T>
+            >>);
+            auto& [b1, b2, b3, b4] = b;
+
+            CHECK_UNARY(b1.has_value());
+            CHECK_EQ(*b1, v0);
+            CHECK_UNARY(b2.has_value());
+            CHECK_EQ(*b2, v1);
+            CHECK_UNARY(b3.has_value());
+            CHECK_EQ(*b3, v2);
+            CHECK_UNARY(b4.has_value());
+            CHECK_EQ(*b4, v3);
+
+            a.reset();
+            auto c = a.unzip();
+            auto& [c1, c2, c3, c4] = c;
+            CHECK_UNARY_FALSE(c1.has_value());
+            CHECK_UNARY_FALSE(c2.has_value());
+            CHECK_UNARY_FALSE(c3.has_value());
+            CHECK_UNARY_FALSE(c4.has_value());
+        }
+        SUBCASE("std::pair") {
+            opt::option a{std::pair{v0, v1}};
+            CHECK_UNARY(a.has_value());
+
+            auto b = a.unzip();
+            CHECK_UNARY(std::is_same_v<decltype(b), std::pair<opt::option<T>, opt::option<T>>>);
+            auto& [b1, b2] = b;
+
+            CHECK_UNARY(b1.has_value());
+            CHECK_EQ(*b1, v0);
+            CHECK_UNARY(b2.has_value());
+            CHECK_EQ(*b2, v1);
+
+            a.reset();
+            auto c = a.unzip();
+            auto& [c1, c2] = c;
+            CHECK_UNARY_FALSE(c1.has_value());
+            CHECK_UNARY_FALSE(c2.has_value());
+        }
+        SUBCASE("std::array") {
+            opt::option a{std::array{v0, v1, v2}};
+            CHECK_UNARY(a.has_value());
+
+            auto b = a.unzip();
+            CHECK_UNARY(std::is_same_v<decltype(b), std::array<opt::option<T>, 3>>);
+            auto& [b1, b2, b3] = b;
+
+            CHECK_UNARY(b1.has_value());
+            CHECK_EQ(*b1, v0);
+            CHECK_UNARY(b2.has_value());
+            CHECK_EQ(*b2, v1);
+            CHECK_UNARY(b3.has_value());
+            CHECK_EQ(*b3, v2);
+
+            a.reset();
+            auto c = a.unzip();
+            auto& [c1, c2, c3] = c;
+            CHECK_UNARY_FALSE(c1.has_value());
+            CHECK_UNARY_FALSE(c2.has_value());
+            CHECK_UNARY_FALSE(c3.has_value());
+        }
+    }
+    SUBCASE("opt::zip") {
+        opt::option<T> a{v0};
+        opt::option<T> b{v1};
+
+        auto c = opt::zip(a, b);
+        CHECK_UNARY(c.has_value());
+
+        // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93147
+        CHECK_EQ(std::tuple_size_v<typename decltype(c)::value_type>, 2);
+        if constexpr (std::tuple_size_v<typename decltype(c)::value_type> == 2) {
+            CHECK_EQ(std::get<0>(*c), v0);
+            CHECK_EQ(std::get<1>(*c), v1);
+        }
 
         a.reset();
-        auto c = a.unzip();
-        auto& [c1, c2, c3, c4] = c;
-        EXPECT_FALSE(c1.has_value());
-        EXPECT_FALSE(c2.has_value());
-        EXPECT_FALSE(c3.has_value());
-        EXPECT_FALSE(c4.has_value());
+        c = opt::zip(a, b);
+        CHECK_UNARY_FALSE(c.has_value());
+
+        b.reset();
+        c = opt::zip(a, b);
+        CHECK_UNARY_FALSE(c.has_value());
     }
-    { // std::pair
-        opt::option a{std::pair{V0, V1}};
-        EXPECT_TRUE(a.has_value());
+    SUBCASE("opt::zip_with") {
+        if constexpr (std::is_same_v<T, int>) {
+            struct point { float x, y; };
+            const auto construct_point = [](float x, float y) {
+                return point{x, y};
+            };
 
-        auto b = a.unzip();
-        static_assert(std::is_same_v<decltype(b), std::pair<opt::option<T>, opt::option<T>>>);
-        auto& [b1, b2] = b;
+            const opt::option<int> a{1};
+            const opt::option<float> b{2.f};
 
-        EXPECT_TRUE(b1.has_value());
-        EXPECT_EQ(*b1, V0);
-        EXPECT_TRUE(b2.has_value());
-        EXPECT_EQ(*b2, V1);
+            auto c = opt::zip_with(construct_point, opt::option_cast<float>(a), b);
 
-        a.reset();
-        auto c = a.unzip();
-        auto& [c1, c2] = c;
-        EXPECT_FALSE(c1.has_value());
-        EXPECT_FALSE(c2.has_value());
+            CHECK_UNARY(c.has_value());
+            CHECK_EQ(c->x, 1.f);
+            CHECK_EQ(c->y, 2.f);
+
+            c = opt::zip_with(construct_point, opt::option<float>{}, b);
+            CHECK_UNARY_FALSE(c.has_value());
+
+            c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
+            CHECK_UNARY_FALSE(c.has_value());
+
+            const auto do_something_else = [](int x, float y) {
+                (void)x;
+                (void)y;
+            };
+            opt::zip_with(do_something_else, a, b);
+            opt::zip_with(do_something_else, opt::option<int>{}, b);
+            opt::zip_with(do_something_else, a, opt::option<float>{});
+        }
     }
-    { // std::array
-        opt::option a{std::array{V0, V1, V2}};
-        EXPECT_TRUE(a.has_value());
+    SUBCASE(".replace") {
+        opt::option a{std::make_unique<T>(v0)};
 
-        auto b = a.unzip();
-        static_assert(std::is_same_v<decltype(b), std::array<opt::option<T>, 3>>);
-        auto& [b1, b2, b3] = b;
-
-        EXPECT_TRUE(b1.has_value());
-        EXPECT_EQ(*b1, V0);
-        EXPECT_TRUE(b2.has_value());
-        EXPECT_EQ(*b2, V1);
-        EXPECT_TRUE(b3.has_value());
-        EXPECT_EQ(*b3, V2);
-
-        a.reset();
-        auto c = a.unzip();
-        auto& [c1, c2, c3] = c;
-        EXPECT_FALSE(c1.has_value());
-        EXPECT_FALSE(c2.has_value());
-        EXPECT_FALSE(c3.has_value());
+        auto c = a.replace(std::make_unique<T>(v1));
+        CHECK_UNARY(c.has_value());
+        CHECK_EQ(**c, v0);
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(**a, v1);
     }
-}
-TYPED_TEST(option, function_zip) {
-    opt::option<T> a{V0};
-    opt::option<T> b{V1};
+    SUBCASE("opt::from_nullable") {
+        T a = v0;
+        T* ptr = &a;
 
-    auto c = opt::zip(a, b);
-    EXPECT_TRUE(c.has_value());
+        const opt::option<T> b = opt::from_nullable(ptr);
+        CHECK_EQ(b, v0);
 
-    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=93147
-    EXPECT_EQ(std::tuple_size_v<typename decltype(c)::value_type>, 2);
-    if constexpr (std::tuple_size_v<typename decltype(c)::value_type> == 2) {
-        EXPECT_EQ(std::get<0>(*c), V0);
-        EXPECT_EQ(std::get<1>(*c), V1);
+        ptr = nullptr;
+        const opt::option<T> c = opt::from_nullable(ptr);
+        CHECK_UNARY_FALSE(c.has_value());
     }
-
-    a.reset();
-    c = opt::zip(a, b);
-    EXPECT_FALSE(c.has_value());
-
-    b.reset();
-    c = opt::zip(a, b);
-    EXPECT_FALSE(c.has_value());
-}
-TYPED_TEST(option, function_zip_with) {
-    if constexpr (std::is_same_v<T, int>) {
-        struct point { float x, y; };
-        const auto construct_point = [](float x, float y) {
-            return point{x, y};
-        };
-
-        const opt::option<int> a{1};
-        const opt::option<float> b{2.f};
-
-        auto c = opt::zip_with(construct_point, opt::option_cast<float>(a), b);
-
-        EXPECT_TRUE(c.has_value());
-        EXPECT_EQ(c->x, 1.f);
-        EXPECT_EQ(c->y, 2.f);
-
-        c = opt::zip_with(construct_point, opt::option<float>{}, b);
-        EXPECT_FALSE(c.has_value());
-
-        c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
-        EXPECT_FALSE(c.has_value());
-
-        const auto do_something_else = [](int x, float y) {
-            (void)x;
-            (void)y;
-        };
-        opt::zip_with(do_something_else, a, b);
-        opt::zip_with(do_something_else, opt::option<int>{}, b);
-        opt::zip_with(do_something_else, a, opt::option<float>{});
-    }
-}
-TYPED_TEST(option, replace) {
-    opt::option a{std::make_unique<T>(V0)};
-
-    auto c = a.replace(std::make_unique<T>(V1));
-    EXPECT_TRUE(c.has_value());
-    EXPECT_EQ(**c, V0);
-    EXPECT_TRUE(a.has_value());
-    EXPECT_EQ(**a, V1);
-}
-TYPED_TEST(option, from_nullable) {
-    T a = V0;
-    T* ptr = &a;
-
-    const opt::option<T> b = opt::from_nullable(ptr);
-    EXPECT_EQ(b, V0);
-
-    ptr = nullptr;
-    const opt::option<T> c = opt::from_nullable(ptr);
-    EXPECT_FALSE(c.has_value());
 }
 
 }

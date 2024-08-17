@@ -1,12 +1,8 @@
-#include <gtest/gtest.h>
-
+#include <doctest/doctest.h>
 #include <opt/option.hpp>
 #include <cstdint>
 
-
 namespace {
-
-struct lifetime : ::testing::Test {};
 
 namespace counters {
     inline std::uint64_t default_ctor = 0;
@@ -38,13 +34,13 @@ namespace expected_counters {
     inline std::uint64_t move_oper = 0;
 
     void test() {
-        EXPECT_EQ(counters::default_ctor, default_ctor);
-        EXPECT_EQ(counters::value_ctor, value_ctor);
-        EXPECT_EQ(counters::destructor, destructor);
-        EXPECT_EQ(counters::copy_ctor, copy_ctor);
-        EXPECT_EQ(counters::move_ctor, move_ctor);
-        EXPECT_EQ(counters::copy_oper, copy_oper);
-        EXPECT_EQ(counters::move_oper, move_oper);
+        CHECK_EQ(counters::default_ctor, default_ctor);
+        CHECK_EQ(counters::value_ctor, value_ctor);
+        CHECK_EQ(counters::destructor, destructor);
+        CHECK_EQ(counters::copy_ctor, copy_ctor);
+        CHECK_EQ(counters::move_ctor, move_ctor);
+        CHECK_EQ(counters::copy_oper, copy_oper);
+        CHECK_EQ(counters::move_oper, move_oper);
     }
     void reset() {
         default_ctor = 0;
@@ -77,59 +73,58 @@ struct lifetime_tester {
     // NOLINTEND(cert-oop54-cpp, performance-noexcept-move-constructor)
 };
 
-TEST_F(lifetime, default_ctor) {
-    using namespace expected_counters;
+TEST_CASE("lifetime") {
+    namespace ec = expected_counters;
 
     counters::reset();
-    expected_counters::reset();
+    ec::reset();
 
     opt::option<lifetime_tester> tester;
-    expected_counters::test();
+    ec::test();
 
     tester = lifetime_tester{1};
-    value_ctor += 1;
-    destructor += 1;
-    move_ctor += 1;
-    expected_counters::test();
+    ec::value_ctor += 1;
+    ec::destructor += 1;
+    ec::move_ctor += 1;
+    ec::test();
 
     tester.emplace();
-    default_ctor += 1;
-    destructor += 1;
-    expected_counters::test();
+    ec::default_ctor += 1;
+    ec::destructor += 1;
+    ec::test();
 
     tester.emplace(1);
-    value_ctor += 1;
-    destructor += 1;
-    expected_counters::test();
+    ec::value_ctor += 1;
+    ec::destructor += 1;
+    ec::test();
 
     tester = opt::option<lifetime_tester>{};
-    destructor += 1;
-    expected_counters::test();
+    ec::destructor += 1;
+    ec::test();
 
     tester = opt::option<lifetime_tester>{{}};
-    default_ctor += 1;
-    move_ctor += 2;
-    destructor += 2;
-    expected_counters::test();
+    ec::default_ctor += 1;
+    ec::move_ctor += 2;
+    ec::destructor += 2;
+    ec::test();
 
     opt::option<lifetime_tester> tester2{tester.take()};
-    move_ctor += 1;
-    destructor += 1;
-    expected_counters::test();
+    ec::move_ctor += 1;
+    ec::destructor += 1;
+    ec::test();
 
     [[maybe_unused]] const lifetime_tester& ref = tester2.insert(lifetime_tester{1});
-    value_ctor += 1;
-    move_ctor += 1;
-    destructor += 2;
-    expected_counters::test();
+    ec::value_ctor += 1;
+    ec::move_ctor += 1;
+    ec::destructor += 2;
+    ec::test();
 
     [[maybe_unused]]
     const opt::option<lifetime_tester> tester3 = tester2.replace(lifetime_tester{1});
-    value_ctor += 1;
-    move_ctor += 2;
-    destructor += 2;
-    expected_counters::test();
+    ec::value_ctor += 1;
+    ec::move_ctor += 2;
+    ec::destructor += 2;
+    ec::test();
 }
-
 
 }

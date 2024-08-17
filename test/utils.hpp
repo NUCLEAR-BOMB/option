@@ -1,8 +1,8 @@
 #pragma once
 
 #include <iostream>
-#include <gtest/gtest.h>
 #include <opt/option.hpp>
+#include <doctest/doctest.h>
 
 #if __has_include(<libassert/assert.hpp>)
 #include <libassert/assert.hpp>
@@ -14,7 +14,7 @@ inline void libassert_failure_handler(const libassert::assertion_info& info) {
         libassert::isatty(libassert::stderr_fileno) ? libassert::get_color_scheme() : libassert::color_scheme::blank
     );
     const std::string file_name{info.file_name};
-    GTEST_MESSAGE_AT_(file_name.c_str(), int(info.line), message.c_str(), ::testing::TestPartResult::kNonFatalFailure);
+    ADD_FAIL_CHECK_AT(file_name.c_str(), int(info.line), message.c_str());
 }
 
 inline const auto set_libassert_handle = []() {
@@ -23,18 +23,18 @@ inline const auto set_libassert_handle = []() {
 } ();
 #endif
 
-namespace opt {
-    template<class T>
-    void PrintTo(const opt::option<T>& value, ::std::ostream* os) { // NOLINT(readability-identifier-naming)
-        if (value) {
-            *os << ::testing::PrintToString(*value);
+template<class T>
+struct doctest::StringMaker<opt::option<T>> {
+    static doctest::String convert(const opt::option<T>& value) {
+        if (value.has_value()) {
+            return doctest::toString(value.get());
         } else {
-            *os << "[empty] (";
-            ::testing::internal::PrintBytesInObjectTo(reinterpret_cast<const unsigned char*>(&value), sizeof(value), os);
-            *os << ")";
+            unsigned char bytes[sizeof(value)]{};
+            std::memcpy(&bytes, &value, sizeof(value));
+            return "[empty] (" + doctest::toString(bytes) + ")";
         }
     }
-}
+};
 
 template<class T>
 constexpr std::remove_reference_t<T>&& as_rvalue(T&& x) noexcept {

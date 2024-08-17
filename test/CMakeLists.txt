@@ -21,34 +21,18 @@ endif()
 
 include(FetchContent)
 FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
-    URL_HASH SHA256=ffa17fbc5953900994e2deec164bb8949879ea09b411e07f215bfbb1f87f4632
-    FIND_PACKAGE_ARGS 1.13.0 NAMES GTest
+    doctest
+    URL https://github.com/doctest/doctest/archive/refs/tags/v2.4.11.zip
+    URL_HASH SHA512=c4b0a7b88b577e2d95c8da45f19508ea615a4c6d0ccdc2c458922ac83b6f87631c0ae25fa5cb2052c90b2484917440fb83b6d1cdd5b1ee71780a4f7a632170ee
+    FIND_PACKAGE_ARGS 2.4.11
 )
-set(BUILD_GMOCK FALSE)
-set(INSTALL_GTEST FALSE)
-set(CMAKE_DISABLE_FIND_PACKAGE_Python TRUE)
-set(gtest_disable_pthreads TRUE)
-FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(doctest)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    set_target_properties(gtest PROPERTIES COMPILE_OPTIONS "-w")
-endif()
-
-target_link_libraries(option-test PRIVATE GTest::gtest)
-
-#[=[
-FetchContent_Declare(
-    magic_enum
-    URL https://github.com/Neargye/magic_enum/archive/refs/tags/v0.9.5.zip
-    URL_HASH SHA256=6259fe6629a6d865081ad2911a5bce8b687f8d086ae04560e2d7ce3883e9ea8d
-    FIND_PACKAGE_ARGS NAMES magic_enum
+target_link_libraries(option-test PRIVATE doctest::doctest)
+target_compile_definitions(option-test PRIVATE
+    DOCTEST_CONFIG_NO_MULTITHREADING # https://github.com/doctest/doctest/blob/master/doc/markdown/configuration.md#doctest_config_no_multithreading
+    DOCTEST_CONFIG_SUPER_FAST_ASSERTS # https://github.com/doctest/doctest/blob/master/doc/markdown/configuration.md#doctest_config_super_fast_asserts
 )
-FetchContent_MakeAvailable(magic_enum)
-set_target_properties(magic_enum PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:magic_enum,INTERFACE_INCLUDE_DIRECTORIES>)
-target_link_libraries(option-test PRIVATE magic_enum::magic_enum)
-#]=]
 
 FetchContent_Declare(
     boost_pfr
@@ -80,13 +64,6 @@ if (USE_LIBASSERT)
         set_target_properties(libassert-lib cpptrace-lib PROPERTIES COMPILE_OPTIONS "-w")
     endif()
 endif()
-
-# if (USE_SANITIZER)
-#     include("${PROJECT_SOURCE_DIR}/cmake/sanitizers.cmake")
-#     target_add_sanitizer(option-test SANITIZERS Address Undefined
-#         LIBRARIES GTest::gtest ${libassert_target}
-#     )
-# endif()
 
 if (USE_CLANG_TIDY)
     include("${PROJECT_SOURCE_DIR}/cmake/clang_tidy.cmake")

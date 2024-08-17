@@ -1,116 +1,115 @@
-#include <gtest/gtest.h>
-
+#include <doctest/doctest.h>
 #include <opt/option.hpp>
 
 namespace {
 
-struct operators : ::testing::Test {
+struct values {
     opt::option<int> A{1};
     opt::option<int> B{2};
 
     opt::option<int> E{opt::none};
 };
 
-TEST_F(operators, equal) {
-    EXPECT_TRUE(A == A);
-    EXPECT_FALSE(A == B);
+TEST_CASE_FIXTURE(values, "==") {
+    CHECK_UNARY(A == A);
+    CHECK_UNARY_FALSE(A == B);
 
-    EXPECT_TRUE(E == E);
-    EXPECT_FALSE(A == E);
+    CHECK_UNARY(E == E);
+    CHECK_UNARY_FALSE(A == E);
 
-    EXPECT_TRUE(A == 1);
-    EXPECT_FALSE(E == 1);
+    CHECK_UNARY(A == 1);
+    CHECK_UNARY_FALSE(E == 1);
 }
-TEST_F(operators, not_equal) {
-    EXPECT_TRUE(A != B);
-    EXPECT_FALSE(A != A);
+TEST_CASE_FIXTURE(values, "!=") {
+    CHECK_UNARY(A != B);
+    CHECK_UNARY_FALSE(A != A);
 
-    EXPECT_TRUE(A != E);
-    EXPECT_FALSE(E != E);
+    CHECK_UNARY(A != E);
+    CHECK_UNARY_FALSE(E != E);
 
-    EXPECT_TRUE(B != 1);
-    EXPECT_TRUE(E != 1);
+    CHECK_UNARY(B != 1);
+    CHECK_UNARY(E != 1);
 }
-TEST_F(operators, less) {
-    EXPECT_TRUE(A < B);
-    EXPECT_FALSE(A < A);
+TEST_CASE_FIXTURE(values, "<") {
+    CHECK_UNARY(A < B);
+    CHECK_UNARY_FALSE(A < A);
 
-    EXPECT_TRUE(E < A);
-    EXPECT_FALSE(E < E);
+    CHECK_UNARY(E < A);
+    CHECK_UNARY_FALSE(E < E);
 
-    EXPECT_TRUE(A < 2);
-    EXPECT_FALSE(E > 1);
+    CHECK_UNARY(A < 2);
+    CHECK_UNARY_FALSE(E > 1);
 }
-TEST_F(operators, less_equal) {
-    EXPECT_TRUE(A <= A);
-    EXPECT_FALSE(B <= A);
+TEST_CASE_FIXTURE(values, "<=") {
+    CHECK_UNARY(A <= A);
+    CHECK_UNARY_FALSE(B <= A);
 
-    EXPECT_TRUE(E <= A);
-    EXPECT_FALSE(A <= E);
+    CHECK_UNARY(E <= A);
+    CHECK_UNARY_FALSE(A <= E);
 
-    EXPECT_TRUE(A <= 1);
-    EXPECT_FALSE(1 <= E);
+    CHECK_UNARY(A <= 1);
+    CHECK_UNARY_FALSE(1 <= E);
 }
-TEST_F(operators, greater) {
-    EXPECT_TRUE(B > A);
-    EXPECT_FALSE(A > A);
+TEST_CASE_FIXTURE(values, ">") {
+    CHECK_UNARY(B > A);
+    CHECK_UNARY_FALSE(A > A);
 
-    EXPECT_TRUE(A > E);
-    EXPECT_FALSE(E > A);
+    CHECK_UNARY(A > E);
+    CHECK_UNARY_FALSE(E > A);
 
-    EXPECT_TRUE(B > 1);
-    EXPECT_FALSE(E > 1);
+    CHECK_UNARY(B > 1);
+    CHECK_UNARY_FALSE(E > 1);
 }
-TEST_F(operators, greater_equal) {
-    EXPECT_TRUE(A >= A);
-    EXPECT_FALSE(A >= B);
+TEST_CASE_FIXTURE(values, ">=") {
+    CHECK_UNARY(A >= A);
+    CHECK_UNARY_FALSE(A >= B);
 
-    EXPECT_TRUE(A >= E);
-    EXPECT_FALSE(E >= A);
+    CHECK_UNARY(A >= E);
+    CHECK_UNARY_FALSE(E >= A);
 
-    EXPECT_TRUE(B >= 1);
-    EXPECT_FALSE(E >= 1);
+    CHECK_UNARY(B >= 1);
+    CHECK_UNARY_FALSE(E >= 1);
 }
-TEST_F(operators, or) {
-    EXPECT_EQ(A | 3, A);
-    EXPECT_EQ(A | opt::none, A);
-    EXPECT_EQ(opt::none | A, A);
+TEST_CASE_FIXTURE(values, "|") {
+    CHECK_EQ(A | 3, A);
+    CHECK_EQ(A | opt::none, A);
+    CHECK_EQ(opt::none | A, A);
 
-    EXPECT_EQ(A | E, A);
-    EXPECT_EQ(E | B, B);
-    EXPECT_EQ(A | B, A);
-    EXPECT_EQ(E | E, E);
+    CHECK_EQ(A | E, A);
+    CHECK_EQ(E | B, B);
+    CHECK_EQ(A | B, A);
+    CHECK_EQ(E | E, E);
 }
-TEST_F(operators, and) {
-    EXPECT_EQ(A & B, B);
-    EXPECT_EQ(E & B, E);
-    EXPECT_EQ(A & E, E);
-    EXPECT_EQ(E & E, E);
+TEST_CASE_FIXTURE(values, "&") {
+    CHECK_EQ(A & B, B);
+    CHECK_EQ(E & B, E);
+    CHECK_EQ(A & E, E);
+    CHECK_EQ(E & E, E);
 }
-TEST_F(operators, xor) {
-    EXPECT_EQ(A ^ B, E);
-    EXPECT_EQ(A ^ E, A);
-    EXPECT_EQ(E ^ B, B);
-    EXPECT_EQ(E ^ E, E);
+TEST_CASE_FIXTURE(values, "^") {
+    CHECK_EQ(A ^ B, E);
+    CHECK_EQ(A ^ E, A);
+    CHECK_EQ(E ^ B, B);
+    CHECK_EQ(E ^ E, E);
 }
-TEST_F(operators, or_assign) {
+TEST_CASE_FIXTURE(values, "|=") {
     opt::option<int> C{A};
     C |= B;
-    EXPECT_EQ(C, A);
+    CHECK_EQ(C, A);
     C |= E;
-    EXPECT_EQ(C, A);
+    CHECK_EQ(C, A);
 
     C = opt::none;
     C |= E;
-    EXPECT_EQ(C, E);
+    CHECK_EQ(C, E);
     C |= B;
-    EXPECT_EQ(C, B);
+    CHECK_EQ(C, B);
 
     C = opt::none;
     C |= 3;
-    EXPECT_EQ(C, 3);
+    CHECK_EQ(C, 3);
     C |= 4;
-    EXPECT_EQ(C, 3);
+    CHECK_EQ(C, 3);
 }
 
 }
