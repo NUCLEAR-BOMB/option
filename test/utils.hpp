@@ -14,7 +14,7 @@ inline void libassert_failure_handler(const libassert::assertion_info& info) {
         libassert::isatty(libassert::stderr_fileno) ? libassert::get_color_scheme() : libassert::color_scheme::blank
     );
     const std::string file_name{info.file_name};
-    ADD_FAIL_CHECK_AT(file_name.c_str(), int(info.line), message.c_str());
+    ADD_FAIL_CHECK_AT(file_name.c_str(), int(info.line), message);
 }
 
 inline const auto set_libassert_handle = []() {
@@ -81,3 +81,18 @@ inline constexpr bool is_not_trivial_compatible =
     !std::is_trivially_move_constructible_v<T> &&
     !std::is_trivially_copy_assignable_v<T> &&
     !std::is_trivially_move_assignable_v<T>;
+
+struct fp_exception_checker {
+    fp_exception_checker() {
+        REQUIRE_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+    ~fp_exception_checker() {
+        CHECK_EQ(std::fetestexcept(FE_DIVBYZERO), 0);
+        CHECK_EQ(std::fetestexcept(FE_INEXACT), 0);
+        CHECK_EQ(std::fetestexcept(FE_INVALID), 0);
+        CHECK_EQ(std::fetestexcept(FE_OVERFLOW), 0);
+        CHECK_EQ(std::fetestexcept(FE_UNDERFLOW), 0);
+
+        REQUIRE_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
+    }
+};
