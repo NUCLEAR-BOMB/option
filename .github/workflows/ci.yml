@@ -72,27 +72,24 @@ jobs:
           - name: 'clang 14'
             cxx: 'clang++-14'
             cc: 'clang-14'
-            packages: 'clang-14'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-
 
           - name: 'clang 13'
             cxx: 'clang++-13'
             cc: 'clang-13'
-            packages: 'clang-13'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+            
           - name: 'clang 12'
             cxx: 'clang++-12'
             cc: 'clang-12'
-            packages: 'clang-12'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
