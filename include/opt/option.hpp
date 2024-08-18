@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include <opt/option_fwd.hpp>
+
 #ifdef __INTEL_COMPILER
     #define OPTION_CLANG 0
     #define OPTION_GCC   0
@@ -225,18 +227,6 @@ struct none_t {
 // Used to indicate `opt::option` with an empty state.
 // Same as `std::nullptr`
 inline constexpr none_t none{impl::none_tag_ctor{}};
-
-template<class T>
-class option;
-
-template<class T, class = void>
-struct option_traits;
-
-// Check if is a specialization of `opt::option`
-template<class>
-inline constexpr bool is_option = false;
-template<class T>
-inline constexpr bool is_option<opt::option<T>> = true;
 
 #ifdef OPTION_HAS_PFR
 struct option_tag {};

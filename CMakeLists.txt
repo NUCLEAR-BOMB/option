@@ -17,7 +17,10 @@ option(USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
 option(USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" ${not_project_is_top_level})
 option(USE_LIBASSERT "Enable libassert library integration" TRUE)
 
-add_library(option INTERFACE "include/opt/option.hpp")
+add_library(option INTERFACE
+    "include/opt/option.hpp"
+    "include/opt/option_fwd.hpp"
+)
 
 if (NOT PROJECT_IS_TOP_LEVEL)
     set(include_as_system "SYSTEM")
