@@ -132,11 +132,19 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
-          
+
+          - name: 'gcc 13'
+            cxx: 'g++-13'
+            cc: 'gcc-13'
+            os: 'ubuntu-24.04'
+            options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+
           - name: 'gcc 12'
             cxx: 'g++-12'
             cc: 'gcc-12'
-            packages: 'g++-12'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
@@ -146,7 +154,6 @@ jobs:
           - name: 'gcc 11'
             cxx: 'g++-11'
             cc: 'gcc-11'
-            packages: 'g++-11'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
