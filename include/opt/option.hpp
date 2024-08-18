@@ -252,12 +252,6 @@ namespace impl {
         ptr->~T();
     }
 
-    template<class T, class = std::size_t>
-    inline constexpr std::uintmax_t get_max_level = 0;
-    template<class T>
-    inline constexpr std::uintmax_t get_max_level<T, decltype(sizeof(opt::option_traits<T>))> =
-        opt::option_traits<T>::max_level;
-
     template<class T, class Traits, class = std::uintmax_t>
     inline constexpr bool has_get_level_method = false;
     template<class T, class Traits>
@@ -357,10 +351,10 @@ namespace impl {
     >
     struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
         : select_max_level_traits_impl<
-            (impl::get_max_level<T> > level) ? impl::get_max_level<T> : level,
-            std::conditional_t<(impl::get_max_level<T> > level), T, Type>,
+            (opt::option_traits<T>::max_level > level) ? opt::option_traits<T>::max_level : level,
+            std::conditional_t<(opt::option_traits<T>::max_level > level), T, Type>,
             var_index + 1,
-            (impl::get_max_level<T> > level) ? var_index : index,
+            (opt::option_traits<T>::max_level > level) ? var_index : index,
             Ts...
         >
     {};
