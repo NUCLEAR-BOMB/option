@@ -90,6 +90,7 @@ jobs:
           - name: 'clang 12'
             cxx: 'clang++-12'
             cc: 'clang-12'
+            packages: 'clang-12'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
