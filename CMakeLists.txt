@@ -33,21 +33,11 @@ target_include_directories(option ${include_as_system} INTERFACE
 
 target_compile_features(option INTERFACE cxx_std_17)
 
-if (INSTALL_OPTION)
-    include(GNUInstallDirs)
-endif()
-
 if (USE_NATVIS)
-    target_sources(option INTERFACE
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natvis>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATAROOTDIR}/debugger/option.natvis>"
-    )
+    target_sources(option INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natvis>)
 endif()
 if (USE_NATSTEPFILTER)
-    target_sources(option INTERFACE
-        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_DATAROOTDIR}/debugger/option.natstepfilter>"
-    )
+    target_sources(option INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter>)
 endif()
 
 if(INSTALL_OPTION)
@@ -107,18 +97,10 @@ if (INSTALL_OPTION)
         DIRECTORY   "include/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     )
-    # Install natvis
-    if (USE_NATVIS)
-        install(
-            FILES       "${PROJECT_SOURCE_DIR}/debugger/option.natvis"
-            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/debugger"
-        )
-    endif()
-    # Install natstepfilter
-    if (USE_NATSTEPFILTER)
-        install(
-            FILES       "${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter"
-            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/debugger"
-        )
-    endif()
+    # Install natvis and natstepfilter
+    install(
+        FILES "${PROJECT_SOURCE_DIR}/debugger/option.natvis"
+              "${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/debugger"
+    )
 endif()
