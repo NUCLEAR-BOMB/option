@@ -1368,7 +1368,9 @@ struct struct1 {
 }
 
 template<>
-struct opt::option_traits<struct1>;
+struct opt::option_traits<struct1> {
+    static constexpr int max_level = 0;
+};
 
 static_assert(sizeof(opt::option<struct1>) > sizeof(struct1));
 

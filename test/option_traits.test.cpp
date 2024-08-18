@@ -22,7 +22,9 @@ struct empty1 {};
 struct empty2 {};
 
 template<>
-struct opt::option_traits<empty2>;
+struct opt::option_traits<empty2> {
+    static constexpr std::uintmax_t max_level = 0;
+};
 
 namespace {
 

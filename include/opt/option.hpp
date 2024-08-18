@@ -243,6 +243,12 @@ struct option_tag {};
 #endif
 
 namespace impl {
+    struct dummy_type_for_traits {};
+}
+template<>
+struct option_traits<impl::dummy_type_for_traits> {};
+
+namespace impl {
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
         if constexpr (std::is_trivially_copy_assignable_v<T>) {
@@ -257,11 +263,8 @@ namespace impl {
         ptr->~T();
     }
 
-    template<class T, class = std::size_t>
-    inline constexpr bool has_option_traits = false;
     template<class T>
-    inline constexpr bool has_option_traits<T, decltype(sizeof(opt::option_traits<T>))> =
-        opt::option_traits<T>::max_level >= 1;
+    inline constexpr bool has_option_traits = opt::option_traits<T>::max_level >= 1;
 
     template<class T, class = std::size_t>
     inline constexpr std::uintmax_t get_max_level = 0;
@@ -351,15 +354,6 @@ namespace impl {
     #pragma GCC diagnostic pop
 #endif
 
-    struct dummy_traits {
-        static constexpr std::uintmax_t max_level = 0;
-
-        template<class T>
-        static std::uintmax_t get_level(const T* const) = delete;
-        template<class T>
-        static void set_level(T* const, const std::uintmax_t) = delete;
-    };
-
     template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
     struct select_max_level_traits_impl;
 
@@ -394,7 +388,7 @@ namespace impl {
 
     template<class... Ts>
     struct select_max_level_traits
-        : select_max_level_traits_impl<0, dummy_traits, 0, 0, Ts...> {};
+        : select_max_level_traits_impl<0, dummy_type_for_traits, 0, 0, Ts...> {};
 
 #ifdef OPTION_HAS_PFR
     template<class Struct>
@@ -900,21 +894,10 @@ namespace impl {
         }
     };
 
-    template<class T, bool = impl::has_option_traits<T>>
-    struct get_traits_if_avaliable {
-        using type = ::opt::option_traits<T>;
-    };
-    template<class T>
-    struct get_traits_if_avaliable<T, false> {
-        using type = dummy_traits;
-    };
-
     template<class T, std::size_t N>
     struct internal_option_traits<std::array<T, N>, option_strategy::array> {
     private:
-        static_assert(N > 0);
-
-        using traits = typename get_traits_if_avaliable<T>::type;
+        using traits = opt::option_traits<T>;
     public:
         static constexpr std::uintmax_t max_level = traits::max_level;
 
@@ -1557,7 +1540,7 @@ namespace impl {
     template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
     class option_storage_base : public option_destruct_base<T> {
         using base = option_destruct_base<T>;
-        using traits = typename get_traits_if_avaliable<T>::type;
+        using traits = opt::option_traits<T>;
     public:
         using base::base;
         using base::has_value;
