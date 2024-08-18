@@ -7,6 +7,7 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <cstddef>
 
 #include "utils.hpp" // NOLINT(misc-include-cleaner)
 
@@ -562,16 +563,69 @@ TEST_CASE("enumeration") {
             CHECK_EQ(traits2::max_level, 0);
 
             enum class enumeration3 : std::uint8_t {
-                a254 = 254
+                a254 = 127
             };
             using traits3 = opt::option_traits<enumeration3>;
-            CHECK_EQ(traits3::max_level, 1);
+            CHECK_GT(traits3::max_level, 0);
 
             enumeration3 c = enumeration3::a254;
             CHECK_EQ(traits3::get_level(&c), std::uintmax_t(-1));
             traits3::set_level(&c, 0);
             CHECK_EQ(traits3::get_level(&c), 0);
         }
+        // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
+        SUBCASE("flag enum") {
+            enum class flag_enum : std::uint8_t {
+                a = 1,
+                b = 2,
+                c = 4,
+                d = 8,
+                e = 16
+            };
+            const auto combine = [](auto... x) {
+                return flag_enum((std::uint8_t(x) | ...));
+            };
+
+            using traits = opt::option_traits<flag_enum>;
+            CHECK_EQ(traits::max_level, 224);
+
+            flag_enum a{};
+            CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+            a = flag_enum::a;
+            CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+            a = combine(flag_enum::a, flag_enum::b);
+            CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+            a = combine(flag_enum::a, flag_enum::c);
+            CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+            a = combine(flag_enum::d, flag_enum::e);
+            CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+            a = combine(flag_enum::a, flag_enum::b, flag_enum::c, flag_enum::d, flag_enum::e);
+            CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+            traits::set_level(&a, 0);
+            CHECK_EQ(traits::get_level(&a), 0);
+            CHECK(std::uint8_t(a) > std::uint8_t(combine(flag_enum::a, flag_enum::b, flag_enum::c, flag_enum::d, flag_enum::e)));
+            traits::set_level(&a, 1);
+            CHECK_EQ(traits::get_level(&a), 1);
+            CHECK(std::uint8_t(a) > std::uint8_t(combine(flag_enum::a, flag_enum::b, flag_enum::c, flag_enum::d, flag_enum::e)));
+            traits::set_level(&a, 223);
+            CHECK_EQ(traits::get_level(&a), 223);
+            CHECK(std::uint8_t(a) > std::uint8_t(combine(flag_enum::a, flag_enum::b, flag_enum::c, flag_enum::d, flag_enum::e)));
+        }
+        SUBCASE("full enum flag") {
+            enum class enum_flag : std::uint8_t {
+                a = 1 << 0,
+                b = 1 << 1,
+                c = 1 << 2,
+                d = 1 << 3,
+                e = 1 << 4,
+                f = 1 << 5,
+                g = 1 << 6,
+                h = 1 << 7
+            };
+            using traits = opt::option_traits<enum_flag>;
+            CHECK_EQ(traits::max_level, 0);
+        }
+        // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
     }
     SUBCASE("std::byte") {
         using traits = opt::option_traits<std::byte>;

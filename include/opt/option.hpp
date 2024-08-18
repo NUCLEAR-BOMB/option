@@ -426,7 +426,8 @@ namespace impl {
             end -= 1;
         }
 
-        std::uintmax_t value = max;
+        std::uintmax_t current = max;
+        std::uintmax_t avaliable = max;
 
         // <namespace::enum::enumerator, ...>
         // <... , namespace::enum::enumerator, ...>
@@ -445,7 +446,10 @@ namespace impl {
             } else
             // Next value
             if (name[i] == ',') {
-                value -= 1;
+                current -= 1;
+                if ((current & (current - 1)) == 0) {
+                    avaliable = current;
+                }
                 has_parenthesis = false;
             } else
             // Reached the end, assume enum is empty, don't use it
@@ -453,7 +457,7 @@ namespace impl {
                 return 0;
             }
         }
-        return value;
+        return avaliable;
     }
 
     template<class E, std::uintmax_t Max, class T, T... Vals>
@@ -1127,7 +1131,7 @@ namespace impl {
 // MSVC:  If you have error C2131 set the compiler option /constexpr:stepsN to a higher value.
 // CLANG: If you have 'error: constexpr variable 'max_enumerator_value' must be initialized
 //        by a constant expression', set the compiler option -fconstexpr-steps=N to a higher value.
-// GCC:   If you have 'error: ‘constexpr’ loop iteration count exceeds limit of XXX',
+// GCC:   If you have 'error: `constexpr` loop iteration count exceeds limit of XXX',
 //        set the compiler option -fconstexpr-loop-limit=N to a higher value.
 // #################################################################################################
         static constexpr std::uintmax_t max_enumerator_value = impl::max_enum_value<T, probe_value>();
