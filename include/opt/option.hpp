@@ -231,10 +231,6 @@ inline constexpr none_t none{impl::none_tag_ctor{}};
 template<class T>
 inline constexpr bool has_option_traits = opt::option_traits<T>::max_level >= 1;
 
-#ifdef OPTION_HAS_PFR
-struct option_tag {};
-#endif
-
 namespace impl {
     struct dummy_type_for_traits {};
 }

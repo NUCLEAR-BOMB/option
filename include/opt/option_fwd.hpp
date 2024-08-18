@@ -13,4 +13,6 @@ inline constexpr bool is_option = false;
 template<class T>
 inline constexpr bool is_option<option<T>> = true;
 
+struct option_tag {};
+
 }
