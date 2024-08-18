@@ -409,60 +409,72 @@ namespace impl {
 #if OPTION_CAN_REFLECT_ENUM
     template<auto... Enumerators>
     constexpr std::uintmax_t max_enum_value_impl2(const std::uintmax_t max) {
-        const auto name = OPTION_CURRENT_FUNCTION();
-        auto end = __builtin_strlen(name);
-#if OPTION_GCC
-        const char template_close = '}';
-        const char template_open = '{';
+        const char* const name = OPTION_CURRENT_FUNCTION();
+#if !OPTION_GCC
+        const std::size_t size = __builtin_strlen(name);
+
+        const char* const start = __builtin_char_memchr(name, '<', size) + 1;
+#if OPTION_CLANG && __clang_major__ <= 12
+        if (*start < '0' || *start > '9') { return 0; }
 #else
-        const char template_close = '>';
-        const char template_open = '<';
+        if (*start != '(') { return 0; }
 #endif
 
-        // Advance until template close symbol is found
+        std::uintmax_t current = max;
+        for (const char* it = start;;) {
+            current -= 1;
+            it = __builtin_char_memchr(it, ',', size - std::size_t(it - name));
 
-        end -= 1;
-        while (name[end] != template_close) {
-            end -= 1;
+            if (it == nullptr) { return 0; }
+#if OPTION_CLANG
+    #if __clang_major__ <= 12
+            it += 2;
+            if (*it < '0' || *it > '9') { break; }
+    #else
+            it += 2;
+            if (*it != '(') { break; }
+            it = __builtin_char_memchr(it, ')', size - std::size_t(it - name));
+            if (it[1] == ':') { break; }
+    #endif
+#else
+            it += 1;
+            if (*it != '(') { break; }
+#endif
         }
+#else
+        std::size_t start = 0;
+        while (name[start] != '{') {
+            start += 1;
+        }
+        if (name[start + 1] != '(') { return 0; }
 
         std::uintmax_t current = max;
-        std::uintmax_t avaliable = max;
-
-        // <namespace::enum::enumerator, ...>
-        // <... , namespace::enum::enumerator, ...>
-        // <(namespace::enum)number, ...>
-        // <..., (namespace::enum)number, ...>
-
-        bool has_parenthesis = false;
-        for (std::size_t i = end - 1;; --i) {
-            // If namespace, then it's enumerator, but only if it's not a explicit conversion
-            if (name[i] == ':' && !has_parenthesis) {
-                break;
-            } else
-            // Found explicit conversion to an enum type
-            if (name[i] == ')') {
-                has_parenthesis = true;
-            } else
-            // Next value
-            if (name[i] == ',') {
-                current -= 1;
-                if ((current & (current - 1)) == 0) {
-                    avaliable = current;
-                }
-                has_parenthesis = false;
-            } else
-            // Reached the end, assume enum is empty, don't use it
-            if (name[i] == template_open) {
-                return 0;
+        for (std::size_t i = start + 1;;) {
+            current -= 1;
+            for (; name[i] != ','; ++i) {
+                if (name[i] == '}') { return 0; }
             }
+            i += 2; // skip whitespace
+            if (name[i] != '(') { break; }
         }
-        return avaliable;
+#endif
+        // https://graphics.stanford.edu/%7Eseander/bithacks.html#RoundUpPowerOf2
+        // Round up to the next highest power of 2
+        current--;
+        current |= current >> 1;
+        current |= current >> 2;
+        current |= current >> 4;
+        current |= current >> 8;
+        current |= current >> 16;
+        current |= current >> 32;
+        current++;
+
+        return current;
     }
 
     template<class E, std::uintmax_t Max, class T, T... Vals>
     constexpr std::uintmax_t max_enum_value_impl1(std::integer_sequence<T, Vals...>) {
-        return max_enum_value_impl2<static_cast<E>(Vals)...>(Max);
+        return max_enum_value_impl2<static_cast<E>(Max - 1 - Vals)...>(Max);
     }
     template<class E, std::uintmax_t Max>
     constexpr std::uintmax_t max_enum_value() {
