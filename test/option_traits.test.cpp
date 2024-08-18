@@ -639,6 +639,12 @@ TEST_CASE("enumeration") {
     }
 }
 
+TEST_CASE("opt::has_option_traits") {
+    CHECK_UNARY_FALSE(opt::has_option_traits<int>);
+    CHECK_UNARY(opt::has_option_traits<float>);
+    CHECK_UNARY(opt::has_option_traits<double>);
+}
+
 TEST_SUITE_END();
 
 }

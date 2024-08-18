@@ -228,6 +228,9 @@ struct none_t {
 // Same as `std::nullptr`
 inline constexpr none_t none{impl::none_tag_ctor{}};
 
+template<class T>
+inline constexpr bool has_option_traits = opt::option_traits<T>::max_level >= 1;
+
 #ifdef OPTION_HAS_PFR
 struct option_tag {};
 #endif
@@ -252,9 +255,6 @@ namespace impl {
     constexpr void destroy_at(T* ptr) {
         ptr->~T();
     }
-
-    template<class T>
-    inline constexpr bool has_option_traits = opt::option_traits<T>::max_level >= 1;
 
     template<class T, class = std::size_t>
     inline constexpr std::uintmax_t get_max_level = 0;
