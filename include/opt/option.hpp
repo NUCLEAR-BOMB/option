@@ -1311,13 +1311,13 @@ namespace impl {
     template<class Tuple>
     using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
 
-    template<class T, class, class... Args>
-    struct is_direct_list_initializable_impl : std::false_type {};
+    template<class, class T, class... Args>
+    inline constexpr bool is_direct_list_initializable_impl = false;
     template<class T, class... Args>
-    struct is_direct_list_initializable_impl<T, std::void_t<decltype(T{std::declval<Args>()...})>, Args...> : std::true_type {};
+    inline constexpr bool is_direct_list_initializable_impl<std::void_t<decltype(T{std::declval<Args>()...})>, T, Args...> = true;
 
     template<class T, class... Args>
-    inline constexpr bool is_direct_list_initializable = is_direct_list_initializable_impl<T, void, Args...>::value;
+    inline constexpr bool is_direct_list_initializable = is_direct_list_initializable_impl<void, T, Args...>;
 
     enum class base_strategy {
         has_traits             = 1,
