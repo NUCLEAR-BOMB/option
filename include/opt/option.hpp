@@ -294,6 +294,21 @@ namespace impl {
     template<class T>
     inline constexpr bool has_sentinel_member<T, std::void_t<decltype(std::declval<T&>().SENTINEL)>> = true;
 
+    template<class T, class = void>
+    inline constexpr bool has_sentinel_enumerator = false;
+    template<class T>
+    inline constexpr bool has_sentinel_enumerator<T, std::void_t<decltype(T::SENTINEL)>> = true;
+
+    template<class T, class = void>
+    inline constexpr bool has_sentinel_start_enumerator = false;
+    template<class T>
+    inline constexpr bool has_sentinel_start_enumerator<T, std::void_t<decltype(T::SENTINEL_START)>> = true;
+
+    template<class T, class = void>
+    inline constexpr bool has_sentinel_end_enumerator = false;
+    template<class T>
+    inline constexpr bool has_sentinel_end_enumerator<T, std::void_t<decltype(T::SENTINEL_END)>> = true;
+
 #if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
@@ -510,6 +525,9 @@ namespace impl {
         member_pointer_32,
         member_pointer_64,
         sentinel_member,
+        enumeration_sentinel,
+        enumeration_sentinel_start,
+        enumeration_sentinel_start_end,
 #if OPTION_CAN_REFLECT_ENUM
         enumeration,
 #endif
@@ -621,11 +639,24 @@ namespace impl {
         if constexpr (has_sentinel_member<T>) {
             return st::sentinel_member;
         } else
-#if OPTION_CAN_REFLECT_ENUM
         if constexpr (std::is_enum_v<T>) {
-            return std::is_unsigned_v<std::underlying_type_t<T>> ? st::enumeration : st::none;
-        } else
+            if constexpr (has_sentinel_enumerator<T>) {
+                return st::enumeration_sentinel;
+            } else
+            if constexpr (has_sentinel_start_enumerator<T>) {
+                if constexpr (has_sentinel_end_enumerator<T>) {
+                    return st::enumeration_sentinel_start_end;
+                } else {
+                    return st::enumeration_sentinel_start;
+                }
+            } else
+#if OPTION_CAN_REFLECT_ENUM
+            if constexpr (std::is_unsigned_v<std::underlying_type_t<T>>) {
+                return st::enumeration;    
+            } else
 #endif
+            return st::none;
+        } else
 #ifdef OPTION_HAS_PFR
         if constexpr (pfr_has_available_traits<T>) {
             return st::reflectable;
@@ -642,9 +673,11 @@ namespace impl {
 #if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wconversion"
+    #pragma clang diagnostic ignored "-Wsign-conversion"
 #elif OPTION_GCC
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wconversion"
+    #pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 
     template<>
@@ -1164,6 +1197,59 @@ namespace impl {
         }
     };
 #endif
+    template<class T>
+    struct internal_option_traits<T, option_strategy::enumeration_sentinel> {
+    private:
+        static constexpr T sentinel_value = T::SENTINEL;
+    public:
+        static constexpr std::uintmax_t max_level = 1;
+
+        static constexpr std::uintmax_t get_level(const T* const value) noexcept {
+            return *value == sentinel_value ? 0 : std::uintmax_t(-1);
+        }
+        static constexpr void set_level(T* const value, [[maybe_unused]] const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level == 0, "Level is out of range");
+            *value = sentinel_value;
+        }
+    };
+    template<class T>
+    struct internal_option_traits<T, option_strategy::enumeration_sentinel_start> {
+    private:
+        using underlying = std::underlying_type_t<T>;
+        static constexpr underlying sentinel_range_start = static_cast<underlying>(T::SENTINEL_START);
+    public:
+        static constexpr std::uintmax_t max_level
+            = (std::numeric_limits<underlying>::max)() - std::uintmax_t(sentinel_range_start) + 1;
+
+        static constexpr std::uintmax_t get_level(const T* const value) noexcept {
+            underlying val = impl::ptr_bit_cast<underlying>(value);
+            val -= sentinel_range_start;
+            return std::uintmax_t(val) < max_level ? std::uintmax_t(val) : std::uintmax_t(-1);
+        }
+        static constexpr void set_level(T* const value, [[maybe_unused]] const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
+            impl::ptr_bit_copy(value, underlying(sentinel_range_start + level));
+        }
+    };
+    template<class T>
+    struct internal_option_traits<T, option_strategy::enumeration_sentinel_start_end> {
+    private:
+        using underlying = std::underlying_type_t<T>;
+        static constexpr underlying sentinel_range_start = static_cast<underlying>(T::SENTINEL_START);
+        static constexpr underlying sentinel_range_end = static_cast<underlying>(T::SENTINEL_END);
+    public:
+        static constexpr std::uintmax_t max_level = sentinel_range_end - sentinel_range_start + 1;
+
+        static constexpr std::uintmax_t get_level(const T* const value) noexcept {
+            underlying val = impl::ptr_bit_cast<underlying>(value);
+            val -= sentinel_range_start;
+            return std::uintmax_t(val) < max_level ? std::uintmax_t(val) : std::uintmax_t(-1);
+        }
+        static constexpr void set_level(T* const value, [[maybe_unused]] const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
+            impl::ptr_bit_copy(value, underlying(sentinel_range_start + level));
+        }
+    };
 
 #if OPTION_CLANG
     #pragma clang diagnostic pop

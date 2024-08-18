@@ -1175,6 +1175,188 @@ TEST_CASE("polymorphic") {
     }
 }
 
+TEST_CASE("enumeration") {
+    SUBCASE("with sentinel") {
+        enum class enum1 { // NOLINT(performance-enum-size)
+            a, b, c, d, e,
+            SENTINEL
+        };
+        const auto combine = [](auto... vals) {
+            return enum1((int(vals) | ...));
+        };
+
+        opt::option<enum1> a;
+        CHECK_EQ(sizeof(a), sizeof(enum1));
+        a = enum1::a;
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, enum1::a);
+        a = enum1::b;
+        CHECK_EQ(a, enum1::b);
+        a = enum1::c;
+        CHECK_EQ(a, enum1::c);
+        a = enum1::d;
+        CHECK_EQ(a, enum1::d);
+        a = enum1::e;
+        CHECK_EQ(a, enum1::e);
+
+        a.get_unchecked() = enum1::SENTINEL;
+        CHECK_UNARY_FALSE(a.has_value());
+        CHECK_EQ(a.get_unchecked(), enum1::SENTINEL);
+
+        a.get_unchecked() = combine(enum1::b, enum1::e);
+        CHECK_UNARY_FALSE(a.has_value());
+        CHECK_EQ(a.get_unchecked(), enum1::SENTINEL);
+
+        CHECK_GT(sizeof(opt::option<opt::option<enum1>>), sizeof(enum1));
+
+        enum class enum2 : std::int8_t {
+            a1 = -1, a2 = 0, a3 = 1, a4 = 2,
+            SENTINEL = -10
+        };
+        opt::option<enum2> b;
+        CHECK_EQ(sizeof(b), sizeof(enum2));
+
+        b = enum2::a1;
+        CHECK_EQ(b, enum2::a1);
+        b = enum2::a2;
+        CHECK_EQ(b, enum2::a2);
+        b = enum2::a3;
+        CHECK_EQ(b, enum2::a3);
+        b = enum2::a4;
+        CHECK_EQ(b, enum2::a4);
+
+        b.reset();
+        CHECK_UNARY_FALSE(b.has_value());
+        CHECK_EQ(b.get_unchecked(), enum2::SENTINEL);
+    }
+    SUBCASE("with sentinel start") {
+        enum class enum1 : std::uint8_t {
+            a, b, c, d, e, f, g,
+            SENTINEL_START
+        };
+        const auto combine = [](auto... vals) {
+            return enum1((int(vals) | ...));
+        };
+
+        opt::option<enum1> a;
+        CHECK_EQ(sizeof(a), sizeof(enum1));
+        CHECK_UNARY_FALSE(a.has_value());
+
+        a = enum1::a;
+        CHECK_EQ(a, enum1::a);
+        a = enum1::b;
+        CHECK_EQ(a, enum1::b);
+        a = enum1::c;
+        CHECK_EQ(a, enum1::c);
+        a = enum1::d;
+        CHECK_EQ(a, enum1::d);
+        a = enum1::e;
+        CHECK_EQ(a, enum1::e);
+        a = enum1::f;
+        CHECK_EQ(a, enum1::f);
+        a = enum1::g;
+        CHECK_EQ(a, enum1::g);
+
+        a.reset();
+        CHECK_UNARY_FALSE(a.has_value());
+        CHECK_EQ(a.get_unchecked(), enum1::SENTINEL_START);
+
+        a.get_unchecked() = combine(enum1::a, enum1::b, enum1::c, enum1::d, enum1::e, enum1::f, enum1::g);
+        CHECK_UNARY_FALSE(a.has_value());
+        CHECK_EQ(a.get_unchecked(), enum1::SENTINEL_START);
+
+        opt::option<opt::option<enum1>> b;
+        CHECK_EQ(sizeof(b), sizeof(enum1));
+        CHECK_UNARY_FALSE(b.has_value());
+
+        b = enum1::a;
+        CHECK_EQ(b, enum1::a);
+
+        b->reset();
+        CHECK_EQ(b->get_unchecked(), enum1::SENTINEL_START);
+
+        b.reset();
+        CHECK_EQ(b.get_unchecked().get_unchecked(), enum1(std::uint8_t(enum1::SENTINEL_START) + 1));
+
+        enum class enum2 : std::uint8_t {
+            a1, b1, c1,
+            SENTINEL_START = 255
+        };
+        opt::option<enum2> c;
+        CHECK_EQ(sizeof(c), sizeof(enum2));
+
+        c = enum2::a1;
+        CHECK_EQ(c, enum2::a1);
+        c.reset();
+        CHECK_UNARY_FALSE(c.has_value());
+        CHECK_EQ(c.get_unchecked(), enum2::SENTINEL_START);
+
+        CHECK_GT(sizeof(opt::option<opt::option<enum2>>), sizeof(enum2));
+
+        enum class enum3 : std::int8_t {
+            a1 = -11, a2 = -12, a3 = -13, SENTINEL_START = -10
+        };
+        opt::option<enum3> d;
+        CHECK_EQ(sizeof(d), sizeof(enum3));
+
+        d = enum3::a1;
+        CHECK_EQ(d, enum3::a1);
+        d = enum3::a2;
+        CHECK_EQ(d, enum3::a2);
+        d = enum3::a3;
+        CHECK_EQ(d, enum3::a3);
+
+        d.reset();
+        CHECK_UNARY_FALSE(d.has_value());
+        CHECK_EQ(d.get_unchecked(), enum3::SENTINEL_START);
+    }
+    SUBCASE("with sentinel start") {
+        enum class enum1 : std::uint8_t {
+            a1, a2, a3, a4, a5,
+            SENTINEL_START, SENTINEL_END = SENTINEL_START + 5,
+            a6, a7, a8, a9, a10
+        };
+        using traits1 = opt::option_traits<enum1>;
+        CHECK_EQ(traits1::max_level, 6);
+
+        opt::option<enum1> a;
+        CHECK_EQ(sizeof(a), sizeof(enum1));
+        CHECK_UNARY_FALSE(a.has_value());
+
+        a = enum1::a1;
+        CHECK_EQ(a, enum1::a1);
+        a = enum1::a5;
+        CHECK_EQ(a, enum1::a5);
+        a = enum1::a6;
+        CHECK_EQ(a, enum1::a6);
+        a = enum1::a10;
+        CHECK_EQ(a, enum1::a10);
+
+        a.reset();
+        CHECK_UNARY_FALSE(a.has_value());
+        CHECK_EQ(a.get_unchecked(), enum1::SENTINEL_START);
+
+        enum class enum2 : std::int8_t {
+            a1 = -101, SENTINEL_START = -100, SENTINEL_END = SENTINEL_START + 1,
+            a2, a3, a4
+        };
+        opt::option<enum2> b;
+        CHECK_EQ(sizeof(b), sizeof(enum2));
+        CHECK_UNARY_FALSE(b.has_value());
+
+        b = enum2::a1;
+        CHECK_EQ(b, enum2::a1);
+        b = enum2::a2;
+        CHECK_EQ(b, enum2::a2);
+        b = enum2::a3;
+        CHECK_EQ(b, enum2::a3);
+
+        b.reset();
+        CHECK_UNARY_FALSE(b.has_value());
+        CHECK_EQ(b.get_unchecked(), enum2::SENTINEL_START);
+    }
+}
+
 TEST_SUITE_END();
 
 struct struct1 {
