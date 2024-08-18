@@ -830,27 +830,48 @@ namespace impl {
     template<class First, class Second>
     struct internal_option_traits<std::pair<First, Second>, option_strategy::pair> {
     private:
-        using select_traits = select_max_level_traits<First, Second>;
-        using type = typename select_traits::type;
-        using traits = ::opt::option_traits<type>;
+        using first_traits = opt::option_traits<First>;
+        using second_traits = opt::option_traits<Second>;
 
-        static constexpr std::size_t pair_index = select_traits::index;
+        struct selected_first { using traits = first_traits; using type = First; };
+        struct selected_second { using traits = second_traits; using type = Second; };
+
+        static constexpr bool first_is_max = first_traits::max_level > second_traits::max_level;
+
+        using selected = std::conditional_t<first_is_max, selected_first, selected_second>;
+        using traits = typename selected::traits;
     public:
-        static constexpr std::uintmax_t max_level = select_traits::level;
+        static constexpr std::uintmax_t max_level = traits::max_level;
 
         static constexpr std::uintmax_t get_level(const std::pair<First, Second>* const value) {
-            return traits::get_level(std::addressof(std::get<pair_index>(*value)));
+            if constexpr (first_is_max) {
+                return traits::get_level(std::addressof(value->first));
+            } else {
+                return traits::get_level(std::addressof(value->second));
+            }
         }
         static constexpr void set_level(std::pair<First, Second>* const value, const std::uintmax_t level) {
-            traits::set_level(std::addressof(std::get<pair_index>(*value)), level);
+            if constexpr (first_is_max) {
+                traits::set_level(std::addressof(value->first), level);
+            } else {
+                traits::set_level(std::addressof(value->second), level);
+            }
         }
-        template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<typename selected::type, traits>, U>>
         static constexpr void after_constructor(std::pair<First, Second>* const value) {
-            traits::after_constructor(std::addressof(std::get<pair_index>(*value)));
+            if constexpr (first_is_max) {
+                traits::after_constructor(std::addressof(value->first));
+            } else {
+                traits::after_constructor(std::addressof(value->second));
+            }
         }
-        template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
+        template<class U = int, class = std::enable_if_t<has_after_assignment_method<typename selected::type, traits>, U>>
         static constexpr void after_assignment(std::pair<First, Second>* const value) noexcept {
-            traits::after_assignment(std::addressof(std::get<pair_index>(*value)));
+            if constexpr (first_is_max) {
+                traits::after_assignment(std::addressof(value->first));
+            } else {
+                traits::after_assignment(std::addressof(value->second));
+            }
         }
     };
     template<class... Ts>
