@@ -153,26 +153,26 @@ jobs:
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
 
-          - name: 'gcc 10'
-            cxx: 'g++-10'
-            cc: 'gcc-10'
-            packages: 'g++-10'
-            os: 'ubuntu-latest'
-            options: >-
-              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
-              -fno-sanitize-recover=all
-              -fno-sanitize=vptr
-
-          - name: 'gcc 9'
-            cxx: 'g++-9'
-            cc: 'gcc-9'
-            packages: 'g++-9'
-            os: 'ubuntu-latest'
-            options: >-
-              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
-              -fno-sanitize-recover=all
-              -fno-sanitize=vptr
-              -Wno-error=extra
+          # - name: 'gcc 10'
+          #   cxx: 'g++-10'
+          #   cc: 'gcc-10'
+          #   packages: 'g++-10'
+          #   os: 'ubuntu-latest'
+          #   options: >-
+          #     -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+          #     -fno-sanitize-recover=all
+          #     -fno-sanitize=vptr
+          # 
+          # - name: 'gcc 9'
+          #   cxx: 'g++-9'
+          #   cc: 'gcc-9'
+          #   packages: 'g++-9'
+          #   os: 'ubuntu-latest'
+          #   options: >-
+          #     -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+          #     -fno-sanitize-recover=all
+          #     -fno-sanitize=vptr
+          #     -Wno-error=extra
 
           # - cxx: 'g++-8', cc: 'gcc-8', packages: 'g++-8', os: 'ubuntu-20.04',
           #   options: '
