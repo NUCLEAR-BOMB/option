@@ -3,6 +3,7 @@
 #include <iostream>
 #include <opt/option.hpp>
 #include <doctest/doctest.h>
+#include <cfenv>
 
 #if __has_include(<libassert/assert.hpp>)
 #include <libassert/assert.hpp>

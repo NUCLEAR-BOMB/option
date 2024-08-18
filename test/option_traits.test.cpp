@@ -1,7 +1,6 @@
 #include <doctest/doctest.h>
 #include <opt/option.hpp>
 #include <cstdint>
-#include <cfenv>
 #include <string_view>
 #include <cmath>
 #include <array>
@@ -96,21 +95,6 @@ TEST_CASE("T*") {
     b = &a;
     CHECK_EQ(traits::get_level(&b), std::uintmax_t(-1));
 }
-
-struct fp_exception_checker {
-    fp_exception_checker() {
-        REQUIRE_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
-    }
-    ~fp_exception_checker() {
-        CHECK_EQ(std::fetestexcept(FE_DIVBYZERO), 0);
-        CHECK_EQ(std::fetestexcept(FE_INEXACT), 0);
-        CHECK_EQ(std::fetestexcept(FE_INVALID), 0);
-        CHECK_EQ(std::fetestexcept(FE_OVERFLOW), 0);
-        CHECK_EQ(std::fetestexcept(FE_UNDERFLOW), 0);
-
-        REQUIRE_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
-    }
-};
 
 TEST_CASE_FIXTURE(fp_exception_checker, "double") {
     SUBCASE("sNaN") {
