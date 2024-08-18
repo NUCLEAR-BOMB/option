@@ -1276,6 +1276,7 @@ TEST_CASE("enumeration") {
         CHECK_EQ(b->get_unchecked(), enum1::SENTINEL_START);
 
         b.reset();
+        // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
         CHECK_EQ(b.get_unchecked().get_unchecked(), enum1(std::uint8_t(enum1::SENTINEL_START) + 1));
 
         enum class enum2 : std::uint8_t {
