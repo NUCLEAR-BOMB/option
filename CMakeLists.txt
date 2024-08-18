@@ -77,7 +77,7 @@ if (INSTALL_OPTION)
     write_basic_package_version_file(
         "${PROJECT_BINARY_DIR}/option-config-version.cmake"
         # VERSION is implicit
-        COMPATIBILITY SameMajorVersion
+        COMPATIBILITY ExactVersion
         ARCH_INDEPENDENT
     )
     # Install cmake config files
