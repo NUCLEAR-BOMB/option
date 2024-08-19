@@ -454,8 +454,8 @@ namespace impl {
         current |= current >> 2;
         current |= current >> 4;
         current |= current >> 8;
-        current |= current >> 16;
-        current |= current >> 32;
+        // current |= current >> 16;
+        // current |= current >> 32;
         current++;
 
         return current;
