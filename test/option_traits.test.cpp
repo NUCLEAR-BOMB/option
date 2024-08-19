@@ -377,7 +377,7 @@ TEST_CASE("emptiness level 2") {
     opt::option<some_struct_level2> a;
     CHECK_UNARY_FALSE(a.has_value());
 
-    a.emplace(some_struct_level2{1, 2});
+    a.emplace(1, 2);
     CHECK_UNARY(a.has_value());
     CHECK_EQ(a, (some_struct_level2{1, 2}));
 
@@ -458,7 +458,8 @@ TEST_CASE("optional members") {
     a.reset();
     CHECK_UNARY_FALSE(a.has_value());
 
-    a.emplace(optional_members{100, 2});
+    a.emplace(100u, 2u);
+    a.emplace(100u, 2u);
     CHECK_UNARY(a.has_value());
     CHECK_EQ(a->x, std::uint32_t(-1));
     CHECK_EQ(a->y, 2);

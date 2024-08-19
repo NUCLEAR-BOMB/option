@@ -198,6 +198,12 @@
 #endif
 
 #if OPTION_CXX_VER >= 202002L
+    #define OPTION_IS_CXX20 1
+#else
+    #define OPTION_IS_CXX20 0
+#endif
+
+#if OPTION_IS_CXX20
     #define OPTION_CONSTEXPR_CXX20 constexpr
 #else
     #define OPTION_CONSTEXPR_CXX20 inline
@@ -238,6 +244,9 @@ template<>
 struct option_traits<impl::dummy_type_for_traits> {};
 
 namespace impl {
+#if OPTION_IS_CXX20
+    using std::construct_at;
+#else
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
         if constexpr (std::is_trivially_copy_assignable_v<T>) {
@@ -245,6 +254,7 @@ namespace impl {
         } else {
             ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
         }
+#endif
     }
 
     template<class T>
@@ -2307,7 +2317,7 @@ public:
     // Initializes the contained value with `std::forward<Args>(args)...` as constructor parameters
     // Same as `std::optional`
     // Postcondition: has_value() == true
-    template<class... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, int> = 0>
+    template<class... Args>
     constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
         OPTION_LIFETIMEBOUND {
         reset();

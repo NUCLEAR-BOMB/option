@@ -785,7 +785,7 @@ TEST_CASE("with sentinel member") {
         CHECK_EQ(sizeof(opt::option<s2>), sizeof(s2));
     
         CHECK_UNARY_FALSE(c.has_value());
-        c.emplace(s2{5});
+        c.emplace(5);
         CHECK(c.has_value());
         CHECK_EQ(c->x, 5);
     
@@ -816,7 +816,7 @@ TEST_CASE("with sentinel member") {
         CHECK_EQ(sizeof(opt::option<s1>), sizeof(s1));
 
         CHECK_UNARY_FALSE(a.has_value());
-        a.emplace(s1{});
+        a.emplace();
         CHECK(a.has_value());
 
         a = s1{};
@@ -862,7 +862,7 @@ TEST_CASE("with sentinel member") {
         CHECK_EQ(sizeof(opt::option<s1>), sizeof(s1));
 
         CHECK_UNARY_FALSE(a.has_value());
-        a.emplace(s1{});
+        a.emplace();
         CHECK(a.has_value());
 
         a = s1{};
