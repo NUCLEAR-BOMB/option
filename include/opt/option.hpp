@@ -555,7 +555,7 @@ namespace impl {
         using st = option_strategy;
         constexpr st dispatch_st = dispatch_specializations<T>::value;
 
-        if constexpr (is_option<T>) {
+        if constexpr (is_option_v<T>) {
             if constexpr (has_option_traits<typename T::value_type>) {
                 return st::avaliable_option;
             } else {
@@ -1296,12 +1296,21 @@ namespace impl {
     using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
 
     template<class, class T, class... Args>
-    inline constexpr bool is_direct_list_initializable_impl = false;
+    struct is_direct_list_initializable_impl {
+        static constexpr bool value = false;
+    };
     template<class T, class... Args>
-    inline constexpr bool is_direct_list_initializable_impl<std::void_t<decltype(T{std::declval<Args>()...})>, T, Args...> = true;
+    struct is_direct_list_initializable_impl<std::void_t<decltype(T{std::declval<Args>()...})>, T, Args...> {
+        static constexpr bool value = true;
+    };
+    template<class T, class... Args>
+    struct is_direct_list_initializable {
+        static constexpr bool value = is_direct_list_initializable_impl<void, T, Args...>::value;
+    };
 
     template<class T, class... Args>
-    inline constexpr bool is_direct_list_initializable = is_direct_list_initializable_impl<void, T, Args...>;
+    inline constexpr bool is_direct_list_initializable_v = is_direct_list_initializable<T, Args...>::value;
+
 
     enum class base_strategy {
         has_traits             = 1,
@@ -1745,12 +1754,15 @@ namespace impl {
     };
 
     template<class T,
-        bool /*true*/ = (
-            std::is_trivially_copy_assignable_v<T> &&
-            std::is_trivially_copy_constructible_v<T> &&
-            std::is_trivially_destructible_v<T>
-            ) || std::is_reference_v<T>,
-        bool = (std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>) || std::is_reference_v<T>
+        bool /*true*/ = std::disjunction_v<
+            std::is_reference<T>,
+            std::conjunction<
+                std::is_trivially_copy_assignable<T>,
+                std::is_trivially_copy_constructible<T>,
+                std::is_trivially_destructible<T>
+            >
+        >,
+        bool = std::disjunction_v<std::is_reference<T>, std::conjunction<std::is_copy_constructible<T>, std::is_copy_assignable<T>>>
     >
     struct option_copy_assign_base : option_move_base<T> {
         using option_move_base<T>::option_move_base;
@@ -1784,12 +1796,15 @@ namespace impl {
     };
 
     template<class T,
-        bool /*true*/ = (
-            std::is_trivially_move_assignable_v<T> &&
-            std::is_trivially_move_constructible_v<T> &&
-            std::is_trivially_destructible_v<T>
-            ) || std::is_reference_v<T>,
-        bool = (std::is_move_constructible_v<T> && std::is_move_assignable_v<T>) || std::is_reference_v<T>
+        bool /*true*/ = std::disjunction_v<
+            std::is_reference<T>,
+            std::conjunction<
+                std::is_trivially_move_assignable<T>,
+                std::is_trivially_move_constructible<T>,
+                std::is_trivially_destructible<T>
+            >
+        >,
+        bool = std::disjunction_v<std::is_reference<T>, std::conjunction<std::is_move_constructible<T>, std::is_move_assignable<T>>>
     >
     struct option_move_assign_base : option_copy_assign_base<T> {
         using option_copy_assign_base<T>::option_copy_assign_base;
@@ -1821,9 +1836,6 @@ namespace impl {
 
         option_move_assign_base& operator=(option_move_assign_base&&) = delete;
     };
-
-    template<class T>
-    inline constexpr bool is_cv_bool = std::is_same_v<std::remove_cv_t<T>, bool>;
 }
 
 class bad_access : public std::exception {
@@ -1847,93 +1859,150 @@ namespace impl {
 }
 
 namespace impl::option {
-    template<class T, class U, bool is_explicit>
+    template<class, class>
+    struct is_not_same { static constexpr bool value = true; };
+    template<class T>
+    struct is_not_same<T, T> { static constexpr bool value = false; };
+
+    template<class T1, class T2>
+    struct exclusive_disjunction
+        : std::bool_constant<bool(T1::value) != bool(T2::value)> {};
+
+    template<class T, class U, class is_explicit>
     using enable_constructor_5 = std::enable_if_t<
-           std::is_constructible_v<T, U&&> && !std::is_same_v<impl::remove_cvref<U>, opt::option<T>>
-        && !(std::is_same_v<impl::remove_cvref<T>, bool> && opt::is_option<impl::remove_cvref<U>>)
-        && (std::is_convertible_v<U&&, T> == !is_explicit) // explicit( condition )
+        std::conjunction_v<
+            std::is_constructible<T, U&&>,
+            is_not_same<impl::remove_cvref<U>, opt::option<T>>,
+            std::negation<std::conjunction<
+                std::is_same<impl::remove_cvref<T>, bool>,
+                opt::is_option<impl::remove_cvref<U>>
+            >>,
+            exclusive_disjunction<is_explicit, std::is_convertible<U&&, T>>
+        >
     , int>;
 
     template<class T, class First, class... Args>
     using enable_constructor_6 = std::enable_if_t<
-        (std::is_constructible_v<T, First, Args...> || is_direct_list_initializable<T, First, Args...>)
-        && !std::is_same_v<impl::remove_cvref<First>, opt::option<T>>
+        std::conjunction_v<
+            is_direct_list_initializable<T, First, Args...>,
+            is_not_same<remove_cvref<First>, opt::option<T>>
+        >
     , int>;
 
     template<class T, class U>
     using enable_assigment_operator_4 = std::enable_if_t<
-           !opt::is_option<U>
-        && (!std::is_scalar_v<T> || !std::is_same_v<T, std::decay_t<U>>)
-        && std::is_constructible_v<T, U> && std::is_assignable_v<T&, U>
+        std::conjunction_v<
+            is_not_same<remove_cvref<U>, opt::option<T>>,
+            std::is_constructible<T, U>,
+            std::is_assignable<T&, U>,
+            std::negation<std::conjunction<
+                std::is_scalar<T>,
+                std::is_same<T, std::decay_t<U>>
+            >>
+        >
     , int>;
 
     template<class T, class U, class UOpt = opt::option<U>>
-    inline constexpr bool is_constructible_from_option =
-        std::is_constructible_v<T, UOpt&> ||
-        std::is_constructible_v<T, const UOpt&> ||
-        std::is_constructible_v<T, UOpt&&> ||
-        std::is_constructible_v<T, const UOpt&&> ||
-        std::is_convertible_v<UOpt&, T> ||
-        std::is_convertible_v<const UOpt&, T> ||
-        std::is_convertible_v<UOpt&&, T> ||
-        std::is_convertible_v<const UOpt&&, T>;
+    using is_constructible_from_option =
+        std::disjunction<
+            std::is_constructible<T, UOpt&>,
+            std::is_constructible<T, const UOpt&>,
+            std::is_constructible<T, UOpt&&>,
+            std::is_constructible<T, const UOpt&&>,
+            std::is_convertible<UOpt&, T>,
+            std::is_convertible<const UOpt&, T>,
+            std::is_convertible<UOpt&&, T>,
+            std::is_convertible<const UOpt&&, T>
+        >;
 
     template<class T, class U, class UOpt = opt::option<U>>
-    inline constexpr bool is_assignable_from_option =
-        std::is_assignable_v<T&, UOpt&> ||
-        std::is_assignable_v<T&, const UOpt&> ||
-        std::is_assignable_v<T&, UOpt&&> ||
-        std::is_assignable_v<T&, const UOpt&&>;
+    using is_assignable_from_option =
+        std::disjunction<
+            std::is_assignable<T&, UOpt&>,
+            std::is_assignable<T&, const UOpt&>,
+            std::is_assignable<T&, UOpt&&>,
+            std::is_assignable<T&, const UOpt&&>
+        >;
 
-    template<class T, class U, bool is_explicit>
+    template<class T, class U, class is_explicit>
     using enable_constructor_8 = std::enable_if_t<
-           std::is_constructible_v<T, const U&>
-        && (!is_cv_bool<T> && !is_constructible_from_option<T, U>)
-        && (std::is_convertible_v<const U&, T> == !is_explicit)
+        std::conjunction_v<
+            std::is_convertible<T, const U&>,
+            std::negation<std::disjunction<
+                std::is_same<std::remove_cv_t<T>, bool>,
+                is_constructible_from_option<T, U>
+            >>,
+            exclusive_disjunction<is_explicit, std::is_convertible<const U&, T>>
+        >
     , int>;
 
-    template<class T, class U, bool is_explicit>
+    template<class T, class U, class is_explicit>
     using enable_constructor_9 = std::enable_if_t<
-           std::is_convertible_v<T, U&&>
-        && (!is_cv_bool<T> && !is_constructible_from_option<T, U>)
-        && (std::is_convertible_v<U&&, T> == !is_explicit)
+        std::conjunction_v<
+            std::is_convertible<T, U&&>,
+            std::negation<std::disjunction<
+                std::is_same<std::remove_const_t<T>, bool>,
+                is_constructible_from_option<T, U>
+            >>,
+            exclusive_disjunction<is_explicit, std::is_convertible<U&&, T>>
+        >
     , int>;
 
     template<class T, class U>
     using enable_assigment_operator_5 = std::enable_if_t<
-        (!is_constructible_from_option<T, U> && !is_assignable_from_option<T, U>)
-        && ((std::is_constructible_v<T, const U&> && std::is_assignable_v<T&, const U&>)
-            || std::is_reference_v<T>)
+        std::conjunction_v<
+            std::negation<std::disjunction<
+                is_constructible_from_option<T, U>,
+                is_assignable_from_option<T, U>
+            >>,
+            std::disjunction<std::is_reference<T>, std::conjunction<
+                std::is_constructible<T, const U&>,
+                std::is_assignable<T&, const U&>
+            >>
+        >
     , int>;
 
     template<class T, class U>
     using enable_assigment_operator_6 = std::enable_if_t<
-        (!is_constructible_from_option<T, U> && !is_assignable_from_option<T, U>)
-        && ((std::is_constructible_v<T, U&&> && std::is_assignable_v<T&, U&&>)
-            || std::is_reference_v<T>)
+        std::conjunction_v<
+            std::negation<std::disjunction<
+                is_constructible_from_option<T, U>,
+                is_assignable_from_option<T, U>
+            >>,
+            std::disjunction<std::is_reference<T>, std::conjunction<
+                std::is_constructible<T, U&&>,
+                std::is_assignable<T&, U&&>
+            >>
+        >
     , int>;
 
     template<class T>
     inline constexpr bool nothrow_assigment_operator_2 =
-        std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_copy_assignable_v<T>
-        && std::is_nothrow_destructible_v<T>;
-
+        std::conjunction_v<
+            std::is_nothrow_copy_constructible<T>,
+            std::is_nothrow_copy_assignable<T>,
+            std::is_nothrow_destructible<T>
+        >;
     template<class T>
     inline constexpr bool nothrow_assigment_operator_3 =
-        std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>
-        && std::is_nothrow_destructible_v<T>;
-
+        std::conjunction_v<
+            std::is_nothrow_move_constructible<T>,
+            std::is_nothrow_move_assignable<T>,
+            std::is_nothrow_destructible<T>
+        >;
     template<class T, class U>
     inline constexpr bool nothrow_assigment_operator_4 =
-        std::is_nothrow_assignable_v<T&, U&&> && std::is_nothrow_constructible_v<T, U&&>
-        && std::is_nothrow_destructible_v<T>;
-
+        std::conjunction_v<
+            std::is_nothrow_assignable<T&, U&&>,
+            std::is_nothrow_constructible<T, U&&>,
+            std::is_nothrow_destructible<T>
+        >;
 
     // implementation of opt::option<T>::and_then(F&&)
     template<class Self, class F>
     constexpr auto and_then(Self&& self, F&& f) {
         using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
-        static_assert(opt::is_option<invoke_res>, "The return type of function F must be a specialization of opt::option");
+        static_assert(opt::is_option_v<invoke_res>, "The return type of function F must be a specialization of opt::option");
         if (self.has_value()) {
             return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
         } else {
@@ -2006,7 +2075,7 @@ namespace impl::option {
     constexpr auto flatten(Self&& self) {
         using pure_self = impl::remove_cvref<Self>;
         // this is for a nice error message if Self is not an opt::option<opt::option<T>>
-        constexpr bool is_option_option = opt::is_option<typename pure_self::value_type>;
+        constexpr bool is_option_option = opt::is_option_v<typename pure_self::value_type>;
         if constexpr (is_option_option) {
             if (self.has_value() && self->has_value()) {
                 return typename pure_self::value_type{std::forward<Self>(self)->get()};
@@ -2109,10 +2178,10 @@ public:
     // Constructs the `opt::option` that contains a value from `val`.
     // Explicit if `!std::is_convertible_v<U&&, T>`.
     // Postcondition: has_value() == true
-    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/true> = 0>
+    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : base(std::forward<U>(val)) {}
-    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/false> = 0>
+    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
         : base(std::forward<U>(val)) {}
 
@@ -2135,11 +2204,11 @@ public:
     // If `other` does not contain a value, constructs an empty `opt::option`.
     // Explicit if `!std::is_convertible_v<const U&, T>`.
     // Postcondition: has_value() == other.has_value()
-    template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/false> = 0>
+    template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
         base::construct_from_option(other);
     }
-    template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/true> = 0>
+    template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
         base::construct_from_option(other);
     }
@@ -2148,11 +2217,11 @@ public:
     // If `other` does not contain a value, constructs an empty `opt::option`.
     // Explicit if `!std::is_convertible_v<U&&, T>`.
     // Postcondition: has_value() == other.has_value()
-    template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/false> = 0>
+    template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
         base::construct_from_option(std::move(other));
     }
-    template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/true> = 0>
+    template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
         base::construct_from_option(std::move(other));
     }
@@ -2632,7 +2701,7 @@ namespace impl {
 // will return `opt::option<std::tuple<option1::value_type, option2::value_type>>`
 // if `option1.has_value()` and `option2.has_value()`; otherwise will return an empty `opt::option`
 template<class... Options, std::enable_if_t<
-    (opt::is_option<impl::remove_cvref<Options>> && ...)
+    (opt::is_option_v<impl::remove_cvref<Options>> && ...)
 , int> = 0>
 constexpr auto zip(Options&&... options)
     -> opt::option<std::tuple<typename impl::remove_cvref<Options>::value_type...>>
@@ -2652,7 +2721,7 @@ constexpr auto zip(Options&&... options)
 // will return invocation of `func` with (`option1.get()`, `option2.get()`) as arguments
 // if `option1.has_value()` and `option2.has_value()`; otherwise will return an empty `opt::option`
 template<class Fn, class... Options, std::enable_if_t<
-    (opt::is_option<impl::remove_cvref<Options>> && ...)
+    (opt::is_option_v<impl::remove_cvref<Options>> && ...)
 , int> = 0>
 constexpr auto zip_with(Fn&& fn, Options&&... options)
 {

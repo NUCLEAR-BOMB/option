@@ -9,9 +9,12 @@ template<class T, class = void>
 struct option_traits;
 
 template<class>
-inline constexpr bool is_option = false;
+struct is_option { static constexpr bool value = false; };
 template<class T>
-inline constexpr bool is_option<option<T>> = true;
+struct is_option<option<T>> { static constexpr bool value = true; };
+
+template<class T>
+inline constexpr bool is_option_v = is_option<T>::value;
 
 struct option_tag {};
 
