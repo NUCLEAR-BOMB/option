@@ -2136,8 +2136,6 @@ class option : private impl::option_move_assign_base<T>
     using base = impl::option_move_assign_base<T>;
 
     template<class, impl::option_strategy> friend struct impl::internal_option_traits;
-
-    using natvis_destruct_base = impl::option_destruct_base<T>; // For IntelliSense Natvis visualizations
 public:
     static_assert(!std::is_same_v<T, opt::none_t>,
         "In opt::option<T>, T cannot be opt::none_t."
