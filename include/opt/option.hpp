@@ -249,7 +249,7 @@ namespace impl {
 #else
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
-        if constexpr (std::is_trivially_copy_assignable_v<T>) {
+        if constexpr (std::is_trivially_move_assignable_v<T>) {
             *ptr = T{std::forward<Args>(args)...};
         } else {
             ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
