@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <string_view>
 #include <cmath>
-#include <array>
 #include <functional>
 #include <memory>
 #include <cstddef>
@@ -177,22 +176,22 @@ TEST_CASE_FIXTURE(fp_exception_checker, "float") {
     }
 }
 
-TEST_CASE("std::array<T, 0>") {
-    using traits = opt::option_traits<std::array<int, 0>>;
-    CHECK_EQ(traits::max_level, 255);
-
-    std::array<int, 0> a{};
-    traits::after_constructor(&a);
-    CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
-    traits::set_level(&a, 0);
-    CHECK_EQ(traits::get_level(&a), 0);
-    traits::set_level(&a, 1);
-    CHECK_EQ(traits::get_level(&a), 1);
-    traits::set_level(&a, 254);
-    CHECK_EQ(traits::get_level(&a), 254);
-    traits::after_assignment(&a);
-    CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
-}
+// TEST_CASE("std::array<T, 0>") {
+//     using traits = opt::option_traits<std::array<int, 0>>;
+//     CHECK_EQ(traits::max_level, 255);
+// 
+//     std::array<int, 0> a{};
+//     traits::after_constructor(&a);
+//     CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+//     traits::set_level(&a, 0);
+//     CHECK_EQ(traits::get_level(&a), 0);
+//     traits::set_level(&a, 1);
+//     CHECK_EQ(traits::get_level(&a), 1);
+//     traits::set_level(&a, 254);
+//     CHECK_EQ(traits::get_level(&a), 254);
+//     traits::after_assignment(&a);
+//     CHECK_EQ(traits::get_level(&a), std::uintmax_t(-1));
+// }
 TEST_CASE("empty type") {
     CHECK_EQ(sizeof(opt::option<empty1>), sizeof(empty1));
     CHECK_GT(sizeof(opt::option<empty2>), sizeof(empty2));

@@ -45,6 +45,11 @@ function(target_add_warnings target)
                 -Wno-unused-macros
             )
         endif()
+        if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+            set(gcc_opts
+                -Wno-stringop-overread # Warn for calls to string manipulation functions such as memchr, or strcpy that are determined to read past the end of the source sequence.
+            )
+        endif()
 
         target_compile_options(${target} PRIVATE
         -Wall # Enables all the warnings
@@ -58,6 +63,7 @@ function(target_add_warnings target)
         -Wdouble-promotion # Give a warning when a value of type float is implicitly promoted to double
         -Wold-style-cast # Warn for C style casting
         -Wshadow # Warn whenever a local variable or type declaration shadows another variable
+        ${gcc_opts}
         ${clang_opts}
         ${clang_cl_opts}
         )

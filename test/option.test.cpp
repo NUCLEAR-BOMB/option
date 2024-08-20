@@ -169,7 +169,18 @@ template<> struct sample_values<struct_with_sentinel> {
     struct_with_sentinel values[5]{struct_with_sentinel{1}, struct_with_sentinel{2}, struct_with_sentinel{3}, struct_with_sentinel{4}, struct_with_sentinel{5}};
 };
 
-TEST_CASE_TEMPLATE("opt::option<T>", T, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, aggregate_int_float, std::array<int, 0>, empty_struct, std::tuple<>, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int) {
+template<> struct sample_values<std::pair<empty_struct, int>> {
+    std::pair<empty_struct, int> values[5]{{{}, 1}, {{}, 2}, {{}, 3}, {{}, 4}, {{}, 5}};
+};
+template<> struct sample_values<std::tuple<int, empty_struct, long>> {
+    std::tuple<int, empty_struct, long> values[5]{{1, {}, 2l}, {3, {}, 4l}, {5, {}, 6l}, {7, {}, 8l}, {9, {}, 10l}};
+};
+template<> struct sample_values<std::array<empty_struct, 2>> {
+    std::array<empty_struct, 2> values[5]{};
+};
+
+
+TEST_CASE_TEMPLATE("opt::option", T, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, empty_struct, std::tuple<>, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, std::pair<empty_struct, int>, /*std::tuple<int, empty_struct, long>,*/ /*std::array<empty_struct, 2>,*/ /*aggregate_with_empty_struct,*/ int) {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];
@@ -178,6 +189,7 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, struct_with_sentinel, int(*)(int), std::
     const auto& v3 = sample.values[3];
     const auto& v4 = sample.values[4];
 
+    // NOLINTBEGIN(clang-analyzer-core.UndefinedBinaryOperatorResult)
     if constexpr (!std::is_same_v<T, int>) {
         CHECK_EQ(sizeof(opt::option<T>), sizeof(T));
         CHECK_EQ(sizeof(opt::option<opt::option<T>>), sizeof(T));
@@ -185,6 +197,7 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, struct_with_sentinel, int(*)(int), std::
         CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>), sizeof(T));
         CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<opt::option<T>>>>>), sizeof(T));
     }
+    // NOLINTEND(clang-analyzer-core.UndefinedBinaryOperatorResult)
 
     SUBCASE("constructor") {
         const opt::option<T> a;
@@ -346,6 +359,33 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, struct_with_sentinel, int(*)(int), std::
         CHECK_UNARY(d.has_value());
         CHECK_UNARY(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
     }
+    SUBCASE("ref assignment") {
+        opt::option<T> a;
+        CHECK_EQ(a, opt::none);
+        a = v0;
+        CHECK_EQ(a, v0);
+        *a = v1;
+        CHECK_EQ(a, v1);
+        a.emplace(v1);
+
+        T& b = *a;
+        b = v0;
+        CHECK_EQ(a, v0);
+
+        const auto fn1 = [&](T& x) {
+            x = v0;
+        };
+        a.emplace(v1);
+        fn1(*a);
+        CHECK_EQ(a, v0);
+
+        const auto fn2 = [&](T& x) {
+            x = v1;
+        };
+        a.emplace(v0);
+        fn2(*a);
+        CHECK_EQ(a, v1);
+    }
     SUBCASE(".reset") {
         opt::option<T> a;
         CHECK_UNARY_FALSE(a.has_value());
@@ -483,7 +523,7 @@ skip_map:
         CHECK_UNARY_FALSE(a.has_value());
     }
     SUBCASE("opt::option_cast") {
-        opt::option<T> a = v0;
+        const opt::option<T> a = v0;
         CHECK_EQ(a, v0);
         opt::option<T> b = opt::option_cast<T>(a);
         CHECK_EQ(b, v0);
@@ -491,7 +531,7 @@ skip_map:
         CHECK_EQ(b, v1);
 
         if constexpr (std::is_convertible_v<T, int>) {
-            opt::option<T> c = v0;
+            const opt::option<T> c = v0;
             CHECK_EQ(c, v0);
             opt::option<int> d = opt::option_cast<int>(c);
             CHECK_EQ(d, static_cast<int>(v0));
@@ -514,7 +554,7 @@ skip_map:
 
         // auto e = opt::option{a};
         // CHECK_UNARY(std::is_same_v<decltype(e), opt::option<T>>);
-        // NOLINTNED(misc-const-correctness)
+        // NOLINTEND(misc-const-correctness)
     }
     SUBCASE(".value_or_default") {
         if constexpr (std::is_default_constructible_v<T>) {

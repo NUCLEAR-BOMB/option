@@ -353,6 +353,13 @@ namespace impl {
     #pragma warning(disable : 4296) // 'operator' : expression is always false
 #endif
 
+    template<class T, bool /*false*/ = std::is_empty_v<T>>
+    struct option_traits_but_empty : opt::option_traits<T> {};
+    template<class T>
+    struct option_traits_but_empty<T, true> {
+        static constexpr std::uintmax_t max_level = 0;
+    };
+
     template<
         std::uintmax_t level,
         class Type,
@@ -362,10 +369,10 @@ namespace impl {
     >
     struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
         : select_max_level_traits_impl<
-            (opt::option_traits<T>::max_level > level) ? opt::option_traits<T>::max_level : level,
-            std::conditional_t<(opt::option_traits<T>::max_level > level), T, Type>,
+            (option_traits_but_empty<T>::max_level > level) ? option_traits_but_empty<T>::max_level : level,
+            std::conditional_t<(option_traits_but_empty<T>::max_level > level), T, Type>,
             var_index + 1,
-            (opt::option_traits<T>::max_level > level) ? var_index : index,
+            (option_traits_but_empty<T>::max_level > level) ? var_index : index,
             Ts...
         >
     {};
@@ -483,7 +490,6 @@ namespace impl {
         pair,
         tuple,
         array,
-        array_0,
         avaliable_option,
         unavaliable_option,
         reference,
@@ -537,11 +543,7 @@ namespace impl {
     };
     template<class T, std::size_t N>
     struct dispatch_specializations<std::array<T, N>> {
-        static constexpr option_strategy value = option_strategy::array;
-    };
-    template<class T>
-    struct dispatch_specializations<std::array<T, 0>> {
-        static constexpr option_strategy value = option_strategy::array_0;
+        static constexpr option_strategy value = (N == 0) ? option_strategy::none : option_strategy::array;
     };
     template<class Elem, class Traits>
     struct dispatch_specializations<std::basic_string_view<Elem, Traits>> {
@@ -826,6 +828,7 @@ namespace impl {
     template<class First, class Second>
     struct internal_option_traits<std::pair<First, Second>, option_strategy::pair> {
     private:
+        // for some reason option_traits_but_empty<T> is not needed
         using first_traits = opt::option_traits<First>;
         using second_traits = opt::option_traits<Second>;
 
@@ -900,7 +903,7 @@ namespace impl {
     template<class T, std::size_t N>
     struct internal_option_traits<std::array<T, N>, option_strategy::array> {
     private:
-        using traits = opt::option_traits<T>;
+        using traits = option_traits_but_empty<T>;
     public:
         static constexpr std::uintmax_t max_level = traits::max_level;
 
@@ -917,29 +920,6 @@ namespace impl {
         template<class U = int, class = std::enable_if_t<has_after_assignment_method<T, traits>, U>>
         static constexpr void after_assignment(std::array<T, N>* const value) noexcept {
             traits::after_assignment(std::addressof((*value)[0]));
-        }
-    };
-    template<class T>
-    struct internal_option_traits<std::array<T, 0>, option_strategy::array_0> {
-    private:
-        using uint_t = std::uint_least8_t;
-    public:
-        static constexpr std::uintmax_t max_level = 255;
-
-        static std::uintmax_t get_level(const std::array<T, 0>* const value) {
-            const auto uint = impl::ptr_bit_cast_least<uint_t>(value);
-            return uint != 255 ? uint_t(uint) : std::uintmax_t(-1);
-        }
-        static void set_level(std::array<T, 0>* const value, const std::uintmax_t level) noexcept {
-            OPTION_VERIFY(level < max_level, "Level is out of range");
-            impl::ptr_bit_copy_least(value, uint_t(level));
-        }
-
-        static void after_constructor(std::array<T, 0>* const value) noexcept {
-            impl::ptr_bit_copy_least(value, uint_t(255));
-        }
-        static void after_assignment(std::array<T, 0>* const value) noexcept {
-            impl::ptr_bit_copy_least(value, uint_t(255));
         }
     };
 
@@ -2199,6 +2179,7 @@ public:
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
         : base(std::in_place, std::forward<First>(first), std::forward<Args>(args)...) {}
 
+#if !OPTION_GCC
     template<class... Args>
     constexpr explicit option(const std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
         : base(std::in_place, std::forward<Args>(args)...) {}
@@ -2207,6 +2188,16 @@ public:
     constexpr explicit option(const std::in_place_t, std::initializer_list<U> ilist, Args&&... args)
         noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>, Args...>)
         : base(std::in_place, ilist, std::forward<Args>(args)...) {}
+#else
+    template<class InPlaceT, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t>, int> = 0>
+    constexpr explicit option(const InPlaceT, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+        : base(std::in_place, std::forward<Args>(args)...) {}
+
+    template<class InPlaceT, class U, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t>, int> = 0>
+    constexpr explicit option(const InPlaceT, std::initializer_list<U> ilist, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>, Args...>)
+        : base(std::in_place, ilist, std::forward<Args>(args)...) {}
+#endif
 
     // Constructs the `opt::option` that contains a value,
     // direct-initialized from `f` function result.
@@ -2751,7 +2742,7 @@ constexpr auto zip_with(Fn&& fn, Options&&... options)
         if ((options.has_value() && ...)) {
             return opt::option<fn_result>{std::invoke(std::forward<Fn>(fn), std::forward<Options>(options).get()...)};
         } else {
-            return opt::option<fn_result>{};
+            return opt::option<fn_result>{opt::none};
         }
     }
 }
