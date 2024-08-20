@@ -413,3 +413,12 @@ jobs:
       - name: Run executable (ExternalProject)
         run: cmake --build ExternalProject-build --target run
 
+      - name: Configure CMake (add_subdirectory)
+        run: cmake -B add_subdirectory-build -S ./test/cmake/add_subdirectory/ "-DROOT=${{github.workspace}}"
+
+      - name: Build project (add_subdirectory)
+        run: cmake --build add_subdirectory-build
+
+      - name: Run executable (add_subdirectory)
+        run: cmake --build add_subdirectory-build --target run
+
