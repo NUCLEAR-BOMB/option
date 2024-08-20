@@ -484,13 +484,13 @@ skip_and_then:
             return x == v0 ? opt::none : opt::option<int>{1};
         };
         opt::option<T> a{v0};
-        CHECK_EQ(a.map(fn4), opt::option{opt::option<int>{opt::none}});
+        CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{opt::none}));
         CHECK_EQ(a, v0);
         a = v1;
-        CHECK_EQ(a.map(fn4), opt::option{opt::option<int>{1}});
+        CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{1}));
         CHECK_EQ(a, v1);
         var = true;
-        CHECK_EQ(a.map(fn4), opt::option{opt::option<int>{opt::none}});
+        CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{opt::none}));
         CHECK_EQ(a, v0);
     }
 skip_map:
@@ -547,13 +547,26 @@ skip_map:
         CHECK_UNARY(std::is_same_v<decltype(b), opt::option<T>>);
 
         auto c = opt::option{opt::option{v0}};
-        CHECK_UNARY(std::is_same_v<decltype(c), opt::option<opt::option<T>>>);
+        CHECK_UNARY(std::is_same_v<decltype(c), opt::option<T>>);
 
         auto d = opt::option{opt::option{opt::option{v1}}};
-        CHECK_UNARY(std::is_same_v<decltype(d), opt::option<opt::option<opt::option<T>>>>);
+        CHECK_UNARY(std::is_same_v<decltype(d), opt::option<T>>);
 
-        // auto e = opt::option{a};
-        // CHECK_UNARY(std::is_same_v<decltype(e), opt::option<T>>);
+        auto e = opt::make_option(opt::option{v0});
+        CHECK_UNARY(std::is_same_v<decltype(e), opt::option<opt::option<T>>>);
+
+        auto f = opt::make_option(opt::make_option(v2));
+        CHECK_UNARY(std::is_same_v<decltype(f), opt::option<opt::option<T>>>);
+
+        opt::option g(opt::make_option(v4));
+        CHECK_UNARY(std::is_same_v<decltype(g), opt::option<T>>);
+
+        auto h = opt::option{a};
+        CHECK_UNARY(std::is_same_v<decltype(h), opt::option<T>>);
+
+        auto i = opt::option{e};
+        CHECK_UNARY(std::is_same_v<decltype(i), opt::option<opt::option<T>>>);
+
         // NOLINTEND(misc-const-correctness)
     }
     SUBCASE(".value_or_default") {
@@ -585,7 +598,7 @@ skip_map:
 skip_filter:
     if (v0 == v1) { goto skip_flatten; }
     SUBCASE(".flatten") {
-        auto a = opt::option{opt::option{v0}};
+        auto a = opt::make_option(opt::make_option(v0));
         CHECK_EQ(**a, v0);
         auto b = a.flatten();
         CHECK_EQ(*b, v0);

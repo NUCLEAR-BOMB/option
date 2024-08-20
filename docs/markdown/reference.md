@@ -1587,6 +1587,30 @@ The term "after the object is assigned" does not include `opt::option` trivially
 
 *`noexcept` - optional `noexcept` specifiers. `opt::option` doesn't support exceptions in that functions, so currently `noexcept` doesn't do anything.
 
+## `make_option`
+
+```cpp
+template<class T>
+constexpr opt::option<std::decay_t<T>> make_option(T&& value);
+```
+Creates `opt::option` from `value`. Returns `opt::option<std::decay_t<T>>{std::forward<T>(value)}`
+
+---
+
+```cpp
+template<class T, class... Args>
+constexpr opt::option<T> make_option(Args&&... args);
+```
+Creates `opt::option` from `args...`. Returns `opt::option<T>{std::in_place, std::forward<Args>(args)...}`.
+
+---
+
+```cpp
+template<class T, class U, class... Args>
+constexpr opt::option<T> make_option(std::initializer_list<U> ilist, Args&&... args);
+```
+Creates `opt::option` from `ilist` and `args...`. Returns `opt::option<T>{std::in_place, ilist, std::forward<Args>(args)...}`.
+
 ## Deduction guides
 
 ```cpp
@@ -1601,23 +1625,9 @@ static_assert(std::is_same_v<decltype(a), opt::option<int>>);
 
 opt::option b{2.f};
 static_assert(std::is_same_v<decltype(b), opt::option<float>>);
-```
 
----
-
-```cpp
-template<class T>
-option(option<T>) -> option<option<T>>;
-```
-This deduction guide is provided to allow nesting `opt::option`s.
-
-Example:
-```cpp
-auto a = opt::option{opt::option{1}};
-static_assert(std::is_same_v<decltype(a), opt::option<opt::option<int>>>);
-
-auto b = opt::option{opt::option{opt::option{2.f}}};
-static_assert(std::is_same_v<decltype(b), opt::option<opt::option<opt::option<float>>>>)
+auto c = opt::option{opt::option{3.}};
+static_assert(std::is_same_v<decltype(c), opt::option<double>>);
 ```
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub

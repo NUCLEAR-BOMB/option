@@ -2661,9 +2661,6 @@ public:
 template<class T>
 option(T) -> option<T>;
 
-template<class T>
-option(option<T>) -> option<option<T>>;
-
 namespace impl {
     template<class T>
     struct internal_option_traits<opt::option<T>, option_strategy::avaliable_option> {
@@ -2699,6 +2696,19 @@ namespace impl {
             bool_traits::set_level(std::addressof(static_cast<base*>(value)->has_value_flag), level);
         }
     };
+}
+
+template<class T>
+constexpr option<std::decay_t<T>> make_option(T&& value) {
+    return option<std::decay_t<T>>{std::forward<T>(value)};
+}
+template<class T, class... Args>
+constexpr option<T> make_option(Args&&... args) {
+    return option<T>{std::in_place, std::forward<Args>(args)...};
+}
+template<class T, class U, class... Args>
+constexpr option<T> make_option(std::initializer_list<U> ilist, Args&&... args) {
+    return option<T>{std::in_place, ilist, std::forward<Args>(args)...};
 }
 
 // Zips `options...` into `opt::option<std::tuple<VALS...>>`
