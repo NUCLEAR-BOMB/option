@@ -2186,7 +2186,7 @@ public:
 
     template<class U, class... Args>
     constexpr explicit option(const std::in_place_t, std::initializer_list<U> ilist, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>, Args...>)
+        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
         : base(std::in_place, ilist, std::forward<Args>(args)...) {}
 #else
     template<class InPlaceT, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t>, int> = 0>
@@ -2195,7 +2195,7 @@ public:
 
     template<class InPlaceT, class U, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t>, int> = 0>
     constexpr explicit option(const InPlaceT, std::initializer_list<U> ilist, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>, Args...>)
+        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
         : base(std::in_place, ilist, std::forward<Args>(args)...) {}
 #endif
 
