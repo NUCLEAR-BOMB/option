@@ -7,7 +7,6 @@
   - [`std::pair`](#stdpair)
   - [`std::tuple`](#stdtuple)
   - [`std::array`](#stdarray)
-  - [`std::array<T, 0>`](#stdarrayt-0)
   - [Empty types](#empty-types)
   - [Reflectable types](#reflectable-types)
   - [Polymorphic types](#polymorphic-types)
@@ -31,8 +30,7 @@
 | floating point (8 bytes, quite NaN)          | 256       | [0xFFFBF26430BB3557,0xFFFBF26430BB3656] |
 | floating point (4 bytes, signaling NaN)      | 256       | [0xFFBF69AF,0xFFBF6AAE]                 |
 | floating point (4 bytes, quite NaN)          | 256       | [0xFFC3EFB5,0xFFC3F0B4]                 |
-| `std::array<T, 0>`                           | 255       | [0,254]                                 |
-| Empty type                                   | 255       | [0,254]                                 |
+| Empty type                                   | 255       | [1,255]                                 |
 | Polymorphic type                             | 255       | [-89152,-88898]                         |
 | `std::basic_string_view`                     | 255       | data(): -32186, size(): [0, 254]        |
 | `std::unique_ptr<T, std::default_delete<T>>` | 255       | [-46509,-46255]                         |
@@ -48,8 +46,6 @@ Size of [`bool`][bool] type is required to be at least 1 byte, but only uses two
 Option traits assumes that [`true`][bool literals] is represented as `1` and [`false`][bool literals] as `0` (C++ standard specifies these values as implementation defined [[basic.fundamental]/10][basic.fundamental/10]).
 
 ## `std::reference_wrapper`
-
-Stores level value in [0,255] range.
 
 Assumes that [`std::reference_wrapper`][std::reference_wrapper] is implemented as pointer and that [0,255] is very unlikely value to be represented as valid [`std::reference_wrapper`][std::reference_wrapper].
 
@@ -77,6 +73,9 @@ Where `{index}` - index of selected [`std::tuple`][std::tuple] element, `{tuple}
 
 Enables `after_constructor` and `after_assignment` static methods only if selected element's option trait containes them correspondingly.
 
+> [!NOTE]
+> Ignores elements with empty type ([`std::is_empty_v<T>`][std::is_empty])[^1].
+
 ## `std::array`
 
 Stores level value in first [`std::array`][std::array] element.
@@ -88,20 +87,10 @@ Where `{array}` - passed pointer to [`std::array`][std::tuple] argument.
 
 Enables `after_constructor` and `after_assignment` static methods only if first element's option trait containes them correspondingly.
 
-## `std::array<T, 0>`
-
-Stores level value in [0,254] range.
-
-Different C++ standard library implements empty `std::array` differently:
-- MSVC STL: if `T` is default constructible or is implicitly default constructible contains array of size 1 of type `T`. Otherwise, special type `_Empty_array_element`, which is effectively an empty type.
-- Clang libc++: array of type `_EmptyType`, with alignment of `T` with size of `T`. `_EmptyType` is `__empty` or `const __empty` if `T` is `const`.
-- GCC libstdc++: empty type.
-
-So this requires separate option trait.
+> [!NOTE]
+> Ignores element with empty type ([`std::is_empty_v<T>`][std::is_empty])[^1].
 
 ## Empty types
-
-Stores level value in [0,254] range.
 
 Since C++ standard requires that size of a type must be at least 1 byte, we're storing level in unused space and indicate "in use" state when the value is 255.
 
@@ -112,8 +101,6 @@ This is forces the compiler to fully trivially copy stores empty type.
 
 ## Reflectable types
 
-Stores level value in one of the members with higher `max_level`.
-
 Uses `boost.pfr` functions to search for maximum `max_level` value and correspondingly use that member.
 The type is considered "reflectable" only if `::boost::pfr::is_implicitly_reflectable_v<T, opt::option_tag>`, where `opt::option_tag` is a special tag.
 
@@ -123,6 +110,9 @@ Selected member's option traits static methods are called with an argument `std:
 Where `{index}` - index of selected member, `{value}` - passed pointer to `T` argument.
 
 Enables `after_constructor` and `after_assignment` static methods only if selected member's option trait containes them correspondingly.
+
+> [!NOTE]
+> Ignores members with empty type ([`std::is_empty_v<T>`][std::is_empty])[^1].
 
 ## Polymorphic types
 
@@ -153,8 +143,6 @@ Otherwise, tries to use negative [quite NaN][quite NaN] payload range. If that i
 Under normal circumstances, it is impossible to recreate level values: manipulating with [signaling NaNs][signaling NaN] causes floating point exception, hardware only generate [quite NaN][quite NaN] with pre-set payload.
 
 ## Reference
-
-Stores level value in [0,254] range.
 
 Since `opt::option` uses a pointer to store references, this option trait stores level in around [`nullptr`][nullptr] range.
 
@@ -204,6 +192,8 @@ Underlying `opt::option` uses option traits for it's value:
 Underlying `opt::option` uses seperate "has value" flag:
 - Stores it's level inside that "has value" flag.
 
+[^1]: GCC with -O0 optimization seems to copy the entire object, including an empty type contained in it, which is assigns a garbage data to it that breaks `opt::option` later.
+
 [basic.fundamental/10]: https://eel.is/c++draft/basic.fundamental#10
 [std::pair]: https://en.cppreference.com/w/cpp/utility/pair
 [std::pair members]: https://en.cppreference.com/w/cpp/utility/pair#Member_objects
@@ -226,3 +216,4 @@ Underlying `opt::option` uses seperate "has value" flag:
 [std::reference_wrapper]: https://en.cppreference.com/w/cpp/utility/functional/reference_wrapper
 [bool]: https://en.cppreference.com/w/cpp/language/types#Boolean_type
 [bool literals]: https://en.cppreference.com/w/cpp/language/bool_literal
+[std::is_empty]: https://en.cppreference.com/w/cpp/types/is_empty

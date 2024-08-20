@@ -74,7 +74,6 @@ constexpr option() noexcept;
 ```
 Default constructor. \
 Constructs an `opt::option` object that does not contain a value.
-- *Trivial* when the `opt::option` is specialized for reference types (`std::is_reference_v<T>`).
 - *Postcondition:* `has_value() == false`.
 
 ---
@@ -90,7 +89,8 @@ Constructs an `opt::option` object that does not contain a value.
 ```cpp
 constexpr option(const option& other) noexcept(/*see below*/);
 ```
-Copy constructor. \
+Copy constructor.
+
 Copy constructs an object of type `T` using *direct-list-initialization* with the expression `other.get()` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
 - *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>`.
 - *Deleted* when `!std::is_copy_constructible_v<T>`.
@@ -102,7 +102,8 @@ Copy constructs an object of type `T` using *direct-list-initialization* with th
 ```cpp
 constexpr option(option&& other) noexcept(/*see below*/);
 ```
-Move constructor. \
+Move constructor.
+
 Move constructs an object of type `T` using *direct-list-initialization* with the expression `std::move(other.get())` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
 - *`noexcept`* when `std::is_nothrow_move_constructible_v<T>`.
 - *Deleted* when `!std::is_move_constructible_v<T>`
@@ -133,13 +134,31 @@ Constructs an `opt::option` object that *contains a value*. Initializes a contai
 template<class First, class... Args>
 constexpr option(First&& first, Args&&... args) noexcept(/*see below*/);
 ```
-Constructs an `opt::option` object that contains a value, initialized an object of type `T` using *direct-list-initialization* with the arguments `std::forward<First>(first), std::forward<Args>(args)...`.
+Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `std::forward<First>(first), std::forward<Args>(args)...`.
 - *`noexpect`* when `std::is_nothrow_constructible_v<T, First, Args...>`.
 - *Enabled* when the following conditions are true:
     - `std::is_constructible_v<T, First, Args...> || is_direct_list_initializable<T, First, Args...>`.
     - `!std::is_same_v<remove_cvref<First>, opt::option<T>>`. \
     Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type X. \
     Where `is_direct_list_initializable<X, XArgs...>` is a metafunction, that checks if a type `X` can be *direct-list-initialized* with the arguments of types `XArgs...`.
+
+---
+
+```cpp
+template<class... Args>
+constexpr explicit option(std::in_place_t, Args&&... args) noexcept(/*see below*/);
+```
+Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `std::forward<Args>(args)...`.
+- *`noexpect`* when `std::is_nothrow_constructible_v<T, Args...>`.
+
+---
+
+```cpp
+template<class U, class... Args>
+constexpr explicit option(std::in_place_t, std::initializer_list<U> ilist, Args&&... args) noexcept(/*see below*/);
+```
+Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `ilist, std::forward<Args>(args)...`.
+- *`noexpect`* when `std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>`.
 
 ---
 
@@ -203,7 +222,7 @@ Constructs an object of type `T` using *direct-list-initialization* with the exp
 Destructs the contained object of type `T` if the `opt::option` object contains it. If the `opt::option` object does not contain the value, do nothing.
 - *`noexcept`* when `std::is_nothrow_destructible_v<T>`.
 - *Trivial* when `std::is_trivially_destructible_v<T>`.
-- *`constexpr`* when `std::is_trivially_destructible_v<T>`.
+- *`constexpr`* for non-`std::is_trivially_destructible_v<T>` types when C++20.
 
 ---
 
