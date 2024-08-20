@@ -15,6 +15,7 @@
 #include <string_view>
 #include <string>
 #include <vector>
+#include <initializer_list>
 
 #include <opt/option_fwd.hpp>
 
@@ -270,7 +271,7 @@ namespace impl {
     template<class T, class Traits, class = void>
     inline constexpr bool has_set_level_method = false;
     template<class T, class Traits>
-    inline constexpr bool has_set_level_method<T, Traits, decltype(Traits::set_level(std::declval<T*>(), std::declval<std::uintmax_t>()))> = true;
+    inline constexpr bool has_set_level_method<T, Traits, decltype(Traits::set_level(std::declval<std::remove_const_t<T>*>(), std::declval<std::uintmax_t>()))> = true;
 
     template<class T, class Traits, class = void>
     inline constexpr bool has_after_constructor_method = false;
@@ -388,17 +389,8 @@ namespace impl {
     template<class Struct>
     struct unpack_tuple_select_max_level_traits;
     template<class... Ts>
-    struct unpack_tuple_select_max_level_traits<std::tuple<Ts...>>
+    struct unpack_tuple_select_max_level_traits<std::tuple<Ts&...>>
         : select_max_level_traits<Ts...> {};
-
-    template<class Struct, bool = pfr_is_option_reflectable<Struct>>
-    inline constexpr bool pfr_has_available_traits = false;
-
-    template<class Struct>
-    inline constexpr bool pfr_has_available_traits<Struct, true> =
-        (unpack_tuple_select_max_level_traits<
-            decltype(OPTION_PFR_NAMESPACE structure_to_tuple(std::declval<Struct&>()))
-        >::level) > 0;
 #endif
 
 #if OPTION_MSVC
@@ -642,7 +634,7 @@ namespace impl {
             return st::none;
         } else
 #ifdef OPTION_HAS_PFR
-        if constexpr (pfr_has_available_traits<T>) {
+        if constexpr (pfr_is_option_reflectable<T>) {
             return st::reflectable;
         } else
 #endif
@@ -960,18 +952,18 @@ namespace impl {
 
         static std::uintmax_t get_level(const T* const value) {
             const auto uint = impl::ptr_bit_cast_least<uint_t>(value);
-            return uint != 255 ? uint : std::uintmax_t(-1); 
+            return uint == 0 ? std::uintmax_t(-1) : uint - 1; 
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
-            impl::ptr_bit_copy_least(value, uint_t(level));
+            impl::ptr_bit_copy_least(value, uint_t(level + 1));
         }
 
         static void after_constructor(T* const value) noexcept {
-            impl::ptr_bit_copy_least(value, uint_t(255));
+            impl::ptr_bit_copy_least(value, uint_t(0));
         }
         static void after_assignment(T* const value) noexcept {
-            impl::ptr_bit_copy_least(value, uint_t(255));
+            impl::ptr_bit_copy_least(value, uint_t(0));
         }
     };
 #ifdef OPTION_HAS_PFR
@@ -979,12 +971,12 @@ namespace impl {
     struct internal_option_traits<T, option_strategy::reflectable> {
     private:
         using select_traits = unpack_tuple_select_max_level_traits<
-            decltype(OPTION_PFR_NAMESPACE structure_to_tuple(std::declval<T&>()))
+            decltype(OPTION_PFR_NAMESPACE structure_tie(std::declval<T&>()))
         >;
-        using type = typename select_traits::type;
-        using traits = ::opt::option_traits<type>;
-
         static constexpr std::size_t index = select_traits::index;
+
+        using type = typename select_traits::type;
+        using traits = opt::option_traits<type>;
     public:
         static constexpr std::uintmax_t max_level = select_traits::level;
 
@@ -1255,6 +1247,9 @@ namespace impl {
 template<class T, class>
 struct option_traits : impl::internal_option_traits<T> {};
 
+template<class T>
+struct option_traits<const T> : impl::internal_option_traits<T> {};
+
 namespace impl {
     template<class T>
     using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
@@ -1321,7 +1316,6 @@ namespace impl {
     template<class T, class... Args>
     inline constexpr bool is_direct_list_initializable_v = is_direct_list_initializable<T, Args...>::value;
 
-
     enum class base_strategy {
         has_traits             = 1,
         trivially_destructible = 2
@@ -1370,7 +1364,7 @@ namespace impl {
             : dummy{}, has_value_flag(false) {}
 
         template<class... Args>
-        constexpr option_destruct_base(Args&&... args)
+        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
             : value{std::forward<Args>(args)...}, has_value_flag(true) {}
 
         template<class F, class Arg>
@@ -1404,7 +1398,7 @@ namespace impl {
             : dummy(), has_value_flag(false) {}
 
         template<class... Args>
-        constexpr option_destruct_base(Args&&... args)
+        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
             : value{std::forward<Args>(args)...}, has_value_flag(true) {}
 
         template<class F, class Arg>
@@ -1445,7 +1439,7 @@ namespace impl {
             nontrivial_dummy_with_size_t<sizeof(T)> dummy;
             T value;
         };
-        using traits = ::opt::option_traits<T>;
+        using traits = opt::option_traits<T>;
 
         static_assert(impl::has_get_level_method<T, traits>, "The static method 'get_level' in 'opt::option_traits' does not exist or has an invalid function signature");
         static_assert(impl::has_set_level_method<T, traits>, "The static method 'set_level' in 'opt::option_traits' does not exist or has an invalid function signature");
@@ -1456,7 +1450,7 @@ namespace impl {
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }
         template<class... Args>
-        constexpr option_destruct_base(Args&&... args)
+        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
             : value{std::forward<Args>(args)...} {
             if constexpr (has_after_constructor_method<T, traits>) {
                 traits::after_constructor(std::addressof(value));
@@ -1499,7 +1493,7 @@ namespace impl {
             nontrivial_dummy_with_size_t<sizeof(T)> dummy;
             T value;
         };
-        using traits = ::opt::option_traits<T>;
+        using traits = opt::option_traits<T>;
 
         static_assert(impl::has_get_level_method<T, traits>, "The static method 'get_level' in 'opt::option_traits' does not exist or has an invalid function signature");
         static_assert(impl::has_set_level_method<T, traits>, "The static method 'set_level' in 'opt::option_traits' does not exist or has an invalid function signature");
@@ -1510,7 +1504,7 @@ namespace impl {
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }
         template<class... Args>
-        constexpr option_destruct_base(Args&&... args)
+        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
             : value{std::forward<Args>(args)...} {
             if constexpr (has_after_constructor_method<T, traits>) {
                 traits::after_constructor(std::addressof(value));
@@ -1558,8 +1552,8 @@ namespace impl {
 #endif
 
     template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
-    class option_storage_base : public option_destruct_base<T> {
-        using base = option_destruct_base<T>;
+    class option_storage_base : public option_destruct_base<std::remove_const_t<T>> {
+        using base = option_destruct_base<std::remove_const_t<T>>;
         using traits = opt::option_traits<T>;
     public:
         using base::base;
@@ -1645,7 +1639,7 @@ namespace impl {
             : value{nullptr} {}
 
         template<class Arg>
-        constexpr option_storage_base(Arg&& arg) noexcept
+        constexpr option_storage_base(const std::in_place_t, Arg&& arg) noexcept
             : value{ref_to_ptr(std::forward<Arg>(arg))} {}
 
         template<class F, class Arg>
@@ -2147,10 +2141,15 @@ class option : private impl::option_move_assign_base<T>
 
     template<class, impl::option_strategy> friend struct impl::internal_option_traits;
 public:
-    static_assert(!std::is_same_v<T, opt::none_t>,
+    static_assert(!std::is_same_v<impl::remove_cvref<T>, opt::none_t>,
         "In opt::option<T>, T cannot be opt::none_t."
         "If you using CTAD (Class template argument deduction),"
-        "you should probably specify the type for an empty opt::option<T>");
+        "you should specify the type for an empty opt::option<T>.");
+    static_assert(!std::is_same_v<impl::remove_cvref<T>, std::in_place_t>,
+        "In opt::option<T>, T cannot be std::in_place_t."
+        "If you using CTAD (Class template argument deduction),"
+        "you should specify the type.");
+
     static_assert(!std::is_void_v<T>,
         "T cannot be (possibly cv-qualified) `void`");
     static_assert(std::is_destructible_v<T>,
@@ -2188,17 +2187,26 @@ public:
     // Postcondition: has_value() == true
     template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
-        : base(std::forward<U>(val)) {}
+        : base(std::in_place, std::forward<U>(val)) {}
     template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
-        : base(std::forward<U>(val)) {}
+        : base(std::in_place, std::forward<U>(val)) {}
 
     // Constructs the `opt::option` that contains a value,
     // initialized from the arguments `first`, `args...`.
     // Postcondition: has_value() == true
     template<class First, class... Args, impl::option::enable_constructor_6<T, First, Args...> = 0>
     constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
-        : base(std::forward<First>(first), std::forward<Args>(args)...) {}
+        : base(std::in_place, std::forward<First>(first), std::forward<Args>(args)...) {}
+
+    template<class... Args>
+    constexpr explicit option(const std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+        : base(std::in_place, std::forward<Args>(args)...) {}
+
+    template<class U, class... Args>
+    constexpr explicit option(const std::in_place_t, std::initializer_list<U> ilist, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>, Args...>)
+        : base(std::in_place, ilist, std::forward<Args>(args)...) {}
 
     // Constructs the `opt::option` that contains a value,
     // direct-initialized from `f` function result.

@@ -36,6 +36,12 @@ struct doctest::StringMaker<opt::option<T>> {
         }
     }
 };
+template<>
+struct doctest::StringMaker<opt::none_t> {
+    static doctest::String convert(const opt::none_t&) {
+        return "[empty]";
+    }
+};
 
 template<class T>
 constexpr std::remove_reference_t<T>&& as_rvalue(T&& x) noexcept {

@@ -18,14 +18,6 @@
         #pragma STDC FENV_ACCESS ON
     #endif
 #endif
-
-#define TEST_SIZE_LIST \
-    struct_with_sentinel, \
-    int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, \
-    aggregate_int_float, std::array<int, 0>, \
-    empty_struct, std::tuple<>, std::tuple<int, float, int>, \
-    double, bool, std::reference_wrapper<int>, int*, float, \
-    std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int
     
 namespace {
 
@@ -110,6 +102,7 @@ struct aggregate_with_empty_struct {
 
     bool operator==(const aggregate_with_empty_struct& a) const { return x == a.x; }
 };
+
 template<> struct sample_values<aggregate_with_empty_struct> {
     aggregate_with_empty_struct values[5]{
         {1, {}}, {2, {}}, {3, {}}, {4, {}}, {5, {}}
@@ -176,7 +169,7 @@ template<> struct sample_values<struct_with_sentinel> {
     struct_with_sentinel values[5]{struct_with_sentinel{1}, struct_with_sentinel{2}, struct_with_sentinel{3}, struct_with_sentinel{4}, struct_with_sentinel{5}};
 };
 
-TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
+TEST_CASE_TEMPLATE("opt::option<T>", T, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_with_empty_struct, aggregate_int_float, std::array<int, 0>, empty_struct, std::tuple<>, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int) {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];
@@ -184,6 +177,14 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
     const auto& v2 = sample.values[2];
     const auto& v3 = sample.values[3];
     const auto& v4 = sample.values[4];
+
+    if constexpr (!std::is_same_v<T, int>) {
+        CHECK_EQ(sizeof(opt::option<T>), sizeof(T));
+        CHECK_EQ(sizeof(opt::option<opt::option<T>>), sizeof(T));
+        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<T>>>), sizeof(T));
+        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>), sizeof(T));
+        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<opt::option<T>>>>>), sizeof(T));
+    }
 
     SUBCASE("constructor") {
         const opt::option<T> a;
@@ -199,6 +200,29 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
             const opt::option<T> d{{}};
             CHECK_EQ(d, T{});
         }
+
+        opt::option<const T> e;
+        CHECK_UNARY_FALSE(e.has_value());
+        e.emplace(v0);
+        CHECK_UNARY(e.has_value());
+        CHECK_EQ(e, v0);
+
+        e.emplace(v1);
+        CHECK_UNARY(e.has_value());
+        CHECK_EQ(e, v1);
+    }
+    SUBCASE("std::in_place constructors") {
+        if constexpr (std::is_default_constructible_v<T>) {
+            const opt::option<T> a{std::in_place};
+            CHECK_UNARY(a.has_value());
+            CHECK_EQ(a, T{});
+        }
+        opt::option<T> b{std::in_place, v0};
+        CHECK_UNARY(b.has_value());
+        CHECK_EQ(b, v0);
+        b = opt::option<T>{std::in_place, v1};
+        CHECK_UNARY(b.has_value());
+        CHECK_EQ(b, v1);
     }
     SUBCASE(".get") {
         opt::option<T> a{v0};
@@ -374,32 +398,67 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
         CHECK_EQ(a.value_or(v2), v1);
         CHECK_EQ(as_rvalue(a).value_or(v3), v1);
     }
+    if (v0 == v1) { goto skip_and_then; }
     SUBCASE(".and_then") {
-        if constexpr (std::is_same_v<T, int>) {
-            const auto convert_to_uint = [](int x) -> opt::option<unsigned> {
-                if (x >= 0) { return opt::option<unsigned>{unsigned(x + 1)}; }
-                return opt::none;
-            };
-            CHECK_EQ(opt::option<int>{2}.and_then(convert_to_uint), 3u);
-            CHECK_EQ(opt::option<int>{-10}.and_then(convert_to_uint), opt::none);
-            CHECK_EQ(opt::option<int>{opt::none}.and_then(convert_to_uint), opt::none);
-        }
+        const auto fn1 = [&](const T& x) -> opt::option<int> {
+            return x == v0 ? 0 : 1;
+        };
+        CHECK_EQ(opt::option<T>{v0}.and_then(fn1), 0);
+        CHECK_EQ(opt::option<T>{v1}.and_then(fn1), 1);
+        CHECK_EQ(opt::option<T>{opt::none}.and_then(fn1), opt::none);
+
+        const auto fn2 = [&](const T& x) -> opt::option<unsigned> {
+            return x == v1 ? opt::option<unsigned>{123u} : opt::none;
+        };
+        CHECK_EQ(opt::option<T>{v0}.and_then(fn2), opt::none);
+        CHECK_EQ(opt::option<T>{v1}.and_then(fn2), 123u);
+        CHECK_EQ(opt::option<T>{opt::none}.and_then(fn2), opt::none);
     }
+skip_and_then:
+    if (v0 == v1) { goto skip_map; }
     SUBCASE(".map") {
-        if constexpr (std::is_same_v<T, int>) {
-            const auto func = [](auto x) { return x - 1; };
-            CHECK_EQ(opt::option<int>{1}.map(func), 0);
-            CHECK_EQ(opt::option<int>{}.map(func), opt::none);
-            CHECK_EQ(opt::option<int>{10}.map(func).map(func), 8);
-        }
+        const auto fn1 = [&](const T& x) -> T {
+            return x == v0 ? v1 : v0;
+        };
+        CHECK_EQ(opt::option<T>{v0}.map(fn1), v1);
+        CHECK_EQ(opt::option<T>{v1}.map(fn1), v0);
+        CHECK_EQ(opt::option<T>{opt::none}.map(fn1), opt::none);
+
+        const auto fn2 = [&](const T& x) -> int {
+            return x == v0 ? 100 : -1;
+        };
+        CHECK_EQ(opt::option<T>{v0}.map(fn2), 100);
+        CHECK_EQ(opt::option<T>{v1}.map(fn2), -1);
+        CHECK_EQ(opt::option<T>{opt::none}.map(fn2), opt::none);
+
+        const auto fn3 = [&](T&&) -> unsigned {
+            return 1;
+        };
+        CHECK_EQ(opt::option<T>{v0}.map(fn3), 1u);
+        CHECK_EQ(opt::option<T>{v1}.map(fn3), 1u);
+        CHECK_EQ(opt::option<T>{opt::none}.map(fn3), opt::none);
+
+        bool var = false;
+        const auto fn4 = [&](T& x) -> opt::option<int> {
+            if (var) { x = v0; }
+            return x == v0 ? opt::none : opt::option<int>{1};
+        };
+        opt::option<T> a{v0};
+        CHECK_EQ(a.map(fn4), opt::option{opt::option<int>{opt::none}});
+        CHECK_EQ(a, v0);
+        a = v1;
+        CHECK_EQ(a.map(fn4), opt::option{opt::option<int>{1}});
+        CHECK_EQ(a, v1);
+        var = true;
+        CHECK_EQ(a.map(fn4), opt::option{opt::option<int>{opt::none}});
+        CHECK_EQ(a, v0);
     }
+skip_map:
     SUBCASE(".or_else") {
-        if constexpr (std::is_same_v<T, int>) {
-            const auto func = []() { return opt::option{1 << 10}; };
-            CHECK_EQ(opt::option<int>{1}.or_else(func), 1);
-            CHECK_EQ(opt::option<int>{}.or_else(func), 1 << 10);
-            CHECK_EQ(opt::option<int>{}.or_else(func).or_else(func), 1 << 10);
-        }
+        const auto fn1 = [&]() { return opt::option<T>{v0}; };
+        CHECK_EQ(opt::option<T>{v0}.or_else(fn1), v0);
+        CHECK_EQ(opt::option<T>{v1}.or_else(fn1), v1);
+        CHECK_EQ(opt::option<T>{opt::none}.or_else(fn1), v0);
     }
     SUBCASE(".take") {
         opt::option<T> a;
@@ -424,18 +483,27 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
         CHECK_UNARY_FALSE(a.has_value());
     }
     SUBCASE("opt::option_cast") {
-        if constexpr (std::is_same_v<T, int>) {
-            opt::option<int> a{1};
-            opt::option<unsigned> b = opt::option_cast<unsigned>(a);
-            CHECK_EQ(*b, 1u);
-            b = opt::option_cast<unsigned>(as_rvalue(a));
-            CHECK_EQ(*b, 1u);
+        opt::option<T> a = v0;
+        CHECK_EQ(a, v0);
+        opt::option<T> b = opt::option_cast<T>(a);
+        CHECK_EQ(b, v0);
+        b = opt::option_cast<T>(opt::option<T>{v1});
+        CHECK_EQ(b, v1);
+
+        if constexpr (std::is_convertible_v<T, int>) {
+            opt::option<T> c = v0;
+            CHECK_EQ(c, v0);
+            opt::option<int> d = opt::option_cast<int>(c);
+            CHECK_EQ(d, static_cast<int>(v0));
+            d = opt::option_cast<int>(opt::option<T>{v1});
+            CHECK_EQ(d, static_cast<int>(v1));
         }
     }
     SUBCASE("deduction guides") {
-        auto a = opt::option{v0}; // NOLINT(misc-const-correctness)
+        // NOLINTBEGIN(misc-const-correctness)
+        auto a = opt::option{v0};
         CHECK_UNARY(std::is_same_v<decltype(a), opt::option<T>>);
-        opt::option b{v1}; // NOLINT(misc-const-correctness)
+        opt::option b{v1};
         CHECK_UNARY(std::is_same_v<decltype(b), opt::option<T>>);
 
         auto c = opt::option{opt::option{v0}};
@@ -443,6 +511,10 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
 
         auto d = opt::option{opt::option{opt::option{v1}}};
         CHECK_UNARY(std::is_same_v<decltype(d), opt::option<opt::option<opt::option<T>>>>);
+
+        // auto e = opt::option{a};
+        // CHECK_UNARY(std::is_same_v<decltype(e), opt::option<T>>);
+        // NOLINTNED(misc-const-correctness)
     }
     SUBCASE(".value_or_default") {
         if constexpr (std::is_default_constructible_v<T>) {
@@ -461,18 +533,17 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
         a = v1;
         CHECK_EQ(*(as_const(a).ptr_or_null()), v1);
     }
+    if (v0 == v1) { goto skip_filter; }
     SUBCASE(".filter") {
-        if constexpr (std::is_same_v<T, int>) {
-            const auto is_even = [](int x) { return x % 2 == 0; };
-
-            opt::option a{1};
-            CHECK_EQ(a.filter(is_even), opt::none);
-            a = 2;
-            CHECK_EQ(a.filter(is_even), 2);
-            a = opt::none;
-            CHECK_EQ(a.filter(is_even), opt::none);
-        }
+        const auto fn1 = [&](const T& x) {
+            return x == v0;
+        };
+        CHECK_EQ(opt::option<T>{v0}.filter(fn1), v0);
+        CHECK_EQ(opt::option<T>{v1}.filter(fn1), opt::none);
+        CHECK_EQ(opt::option<T>{opt::none}.filter(fn1), opt::none);
     }
+skip_filter:
+    if (v0 == v1) { goto skip_flatten; }
     SUBCASE(".flatten") {
         auto a = opt::option{opt::option{v0}};
         CHECK_EQ(**a, v0);
@@ -489,55 +560,73 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
         b = a.flatten();
         CHECK_UNARY_FALSE(b.has_value());
     }
+skip_flatten:
+    if (v0 == v1) { goto skip_map_or; }
     SUBCASE(".map_or") {
-        if constexpr (std::is_same_v<T, int>) {
-            const auto add_one = [](int x) { return x + 1; };
-            opt::option a{1};
-            CHECK_EQ(a.map_or(10, add_one), 2);
-            a = opt::none;
-            CHECK_EQ(a.map_or(11, add_one), 11);
+        const auto fn1 = [&](const T& x) {
+            return x == v0 ? v1 : v0;
+        };
+        CHECK_EQ(opt::option<T>{v0}.map_or(v0, fn1), v1);
+        CHECK_EQ(opt::option<T>{v0}.map_or(v1, fn1), v1);
+        CHECK_EQ(opt::option<T>{v1}.map_or(v0, fn1), v0);
+        CHECK_EQ(opt::option<T>{v1}.map_or(v1, fn1), v0);
+        CHECK_EQ(opt::option<T>{opt::none}.map_or(v0, fn1), v0);
+        CHECK_EQ(opt::option<T>{opt::none}.map_or(v1, fn1), v1);
 
-            const auto add_two = [](int x) { return float(x) + 2.f; };
-            a = 2;
-            CHECK_EQ(a.map_or(0.f, add_two), 4.f);
-            a = opt::none;
-            CHECK_EQ(a.map_or(5.f, add_two), 5.f);
-        }
+        const auto fn2 = [&](const T& x) -> int {
+            return x == v0 ? 0 : 1;
+        };
+        CHECK_EQ(opt::option<T>{v0}.map_or(3, fn2), 0);
+        CHECK_EQ(opt::option<T>{v1}.map_or(3, fn2), 1);
+        CHECK_EQ(opt::option<T>{opt::none}.map_or(3, fn2), 3);
     }
+skip_map_or:
+    if (v0 == v1) { goto skip_map_or_else; }
     SUBCASE(".map_or_else") {
-        if constexpr (std::is_same_v<T, int>) {
-            const auto default_fn = []() { return 2; };
-            const auto do_fn = [](int x) { return x - 1; };
+        const auto fn1 = [&](const T& x) {
+            return x == v0 ? v1 : v0;
+        };
+        const auto fn2 = [&]() {
+            return v0;
+        };
+        CHECK_EQ(opt::option<T>{v0}.map_or_else(fn2, fn1), v1);
+        CHECK_EQ(opt::option<T>{v1}.map_or_else(fn2, fn1), v0);
+        CHECK_EQ(opt::option<T>{opt::none}.map_or_else(fn2, fn1), v0);
 
-            opt::option a{1};
-            CHECK_EQ(a.map_or_else(default_fn, do_fn), 0);
-            a = opt::none;
-            CHECK_EQ(a.map_or_else(default_fn, do_fn), 2);
-        }
+        const auto fn3 = [&](const T& x) -> int {
+            return x == v0 ? 1 : -1;
+        };
+        const auto fn4 = []() -> int {
+            return 0;
+        };
+        CHECK_EQ(opt::option<T>{v0}.map_or_else(fn4, fn3), 1);
+        CHECK_EQ(opt::option<T>{v1}.map_or_else(fn4, fn3), -1);
+        CHECK_EQ(opt::option<T>{opt::none}.map_or_else(fn4, fn3), 0);
     }
+skip_map_or_else:
+    if (v0 == v1) { goto skip_take_if; }
     SUBCASE(".take_if") {
-        if constexpr (std::is_same_v<T, int>) {
-            opt::option a{1};
-            auto b = a.take_if([](int) { return false; });
-            CHECK_UNARY_FALSE(b.has_value());
-            CHECK_UNARY(a.has_value());
+        opt::option<T> a = v0;
+        opt::option<T> b = a.take_if([&](const T& x) { return x == v0; });
+        CHECK_EQ(b, v0);
+        CHECK_UNARY_FALSE(a.has_value());
 
-            b = a.take_if([](int& x) {
-                return ++x == 2;
-            });
-            CHECK_UNARY(b.has_value());
-            CHECK_EQ(*b, 2);
-            CHECK_UNARY_FALSE(a.has_value());
+        a.emplace(v0);
 
-            auto c = a.take_if([](int) { return false; });
-            CHECK_UNARY_FALSE(c.has_value());
-            CHECK_UNARY_FALSE(a.has_value());
+        b = a.take_if([&](const T& x) { return x == v1; });
+        CHECK_EQ(a, v0);
+        CHECK_UNARY_FALSE(b.has_value());
 
-            c = a.take_if([](int) { return true; });
-            CHECK_UNARY_FALSE(c.has_value());
-            CHECK_UNARY_FALSE(a.has_value());
-        }
+        a = v1;
+        CHECK_EQ(a, v1);
+        b = a.take_if([&](T& x) {
+            x = v0;
+            return true;
+        });
+        CHECK_EQ(b, v0);
+        CHECK_UNARY_FALSE(a.has_value());
     }
+skip_take_if:
     SUBCASE(".has_value_and") {
         opt::option a{v0};
         CHECK_UNARY(a.has_value_and([&](const T& x) { return x == v0; }));
@@ -560,18 +649,21 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
         CHECK_EQ(&y, a.ptr_or_null());
         CHECK_EQ(*a, v2);
     }
+    if (v0 == v1) { goto skip_inspect; }
     SUBCASE(".inspect") {
-        if constexpr (std::is_same_v<T, int>) {
-            opt::option a{1};
-            int x = 0;
-            a.inspect([&](int y) { x += y; });
-            CHECK_EQ(x, 1);
-            opt::option<int>{a}
-                .inspect([&](const int& y) { x += y; })
-                .inspect([&](int& y) { return x += y * 2; });
-            CHECK_EQ(x, 4);
-        }
+        opt::option<T> a;
+        a.inspect([&](T& x) { x = v0; });
+        CHECK_UNARY_FALSE(a.has_value());
+
+        a = v0;
+        CHECK_EQ(a, v0);
+        a.inspect([&](T& x) { x = v1; });
+        CHECK_EQ(a, v1);
+
+        a.inspect([&](T& x) { x = v2; }).inspect([&](T& x) { x = v3; });
+        CHECK_EQ(a, v3);
     }
+skip_inspect:
     SUBCASE(".assume_has_value") {
         opt::option a{v0};
         a.assume_has_value();
@@ -669,37 +761,51 @@ TEST_CASE_TEMPLATE("opt::option<T>", T, TEST_SIZE_LIST) {
         c = opt::zip(a, b);
         CHECK_UNARY_FALSE(c.has_value());
     }
+    if (v0 == v1) { goto skip_zip_with; }
     SUBCASE("opt::zip_with") {
-        if constexpr (std::is_same_v<T, int>) {
-            struct point { float x, y; };
-            const auto construct_point = [](float x, float y) {
-                return point{x, y};
-            };
+        const auto fn1 = [&](const T& x) -> int {
+            return x == v0 ? 1 : 0;
+        };
+        CHECK_EQ(opt::zip_with(fn1, opt::option<T>{v0}), 1);
+        CHECK_EQ(opt::zip_with(fn1, opt::option<T>{v1}), 0);
+        CHECK_EQ(opt::zip_with(fn1, opt::option<T>{opt::none}), opt::none);
 
-            const opt::option<int> a{1};
-            const opt::option<float> b{2.f};
+        struct s1 {
+            T x;
+            T y;
+            int z;
+        };
+        const auto fn2 = [&](const T& x, const T& y) {
+            return s1{(x == v0 ? v1 : v0), (y), (x == v0 && y == v0 ? 1 : -1)};
+        };
+        opt::option<s1> a = opt::zip_with(fn2, opt::option<T>{v0}, opt::option<T>{v0});
+        CHECK_EQ(a->x, v1);
+        CHECK_EQ(a->y, v0);
+        CHECK_EQ(a->z, 1);
+        a = opt::zip_with(fn2, opt::option<T>{v1}, opt::option<T>{v0});
+        CHECK_EQ(a->x, v0);
+        CHECK_EQ(a->y, v0);
+        CHECK_EQ(a->z, -1);
+        a = opt::zip_with(fn2, opt::option<T>{opt::none}, opt::option<T>{v1});
+        CHECK_EQ(a, opt::none);
+        a = opt::zip_with(fn2, opt::option<T>{v1}, opt::option<T>{opt::none});
+        CHECK_EQ(a, opt::none);
 
-            auto c = opt::zip_with(construct_point, opt::option_cast<float>(a), b);
+        const auto fn3 = [&]() {
+            return v0;
+        };
+        opt::option<T> b = opt::zip_with(fn3);
+        CHECK_UNARY(b.has_value());
 
-            CHECK_UNARY(c.has_value());
-            CHECK_EQ(c->x, 1.f);
-            CHECK_EQ(c->y, 2.f);
-
-            c = opt::zip_with(construct_point, opt::option<float>{}, b);
-            CHECK_UNARY_FALSE(c.has_value());
-
-            c = opt::zip_with(construct_point, opt::option<float>{}, opt::option<float>{});
-            CHECK_UNARY_FALSE(c.has_value());
-
-            const auto do_something_else = [](int x, float y) {
-                (void)x;
-                (void)y;
-            };
-            opt::zip_with(do_something_else, a, b);
-            opt::zip_with(do_something_else, opt::option<int>{}, b);
-            opt::zip_with(do_something_else, a, opt::option<float>{});
-        }
+        const auto fn4 = [&](T& x, const T& y) {
+            x = (y == v0 ? v1 : v0);
+        };
+        opt::zip_with(fn4, b, opt::option<T>{v0});
+        CHECK_EQ(b, v1);
+        opt::zip_with(fn4, b, opt::option<T>{v1});
+        CHECK_EQ(b, v0);
     }
+skip_zip_with:
     SUBCASE(".replace") {
         opt::option a{std::make_unique<T>(v0)};
 
