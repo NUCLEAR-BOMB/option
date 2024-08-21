@@ -2352,15 +2352,10 @@ public:
     // otherwise return an empty `opt::option`
     // Same as Rust's `std::option::Option<T>::take`
     // Postcondition: has_value() == false
-    constexpr option<T> take() & {
-        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
+    constexpr option<T> take() {
         option<T> tmp{std::move(*this)};
         reset();
         return tmp;
-    }
-    constexpr option<T> take() && {
-        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
-        return std::move(*this);
     }
 
     // Takes the value out of the `opt::option`

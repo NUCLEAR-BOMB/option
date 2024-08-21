@@ -426,19 +426,11 @@ std::cout << a.has_value_and([](int x) { return x > 1; }) << '\n'; // false
 ### `take`
 
 ```cpp
-constexpr option take() &;
+constexpr option take();
 ```
 Takes the value out of the `opt::option`. \
 Copy construct temporary value using the contained value in the `opt::option`, destroy which is left in the contained value in the `opt::option`, and return that temporary value with copy elision.
 - *Postcondition:* `has_value() == false`.
-
----
-
-```cpp
-constexpr option take() &&;
-```
-Takes the value out of the `opt::option`. \
-Returns this `opt::option` with the expression `std::move(*this)`, but *do not destroys the contained value*.
 
 Example:
 ```cpp
