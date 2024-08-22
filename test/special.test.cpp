@@ -19,6 +19,65 @@
 
 #if OPTION_USE_BUILTIN_TRAITS
 
+template<class T1, class T2>
+struct my_tuple_0 {
+    T1 x;
+    T2 y;
+
+    template<std::size_t I>
+    const auto& get() const {
+        if constexpr (I == 0) { return x; }
+        else if constexpr (I == 1) { return y; }
+    }
+    template<std::size_t I>
+    auto& get() {
+        if constexpr (I == 0) { return x; }
+        else if constexpr (I == 1) { return y; }
+    }
+};
+
+template<class T1, class T2>
+struct std::tuple_size<my_tuple_0<T1, T2>> {
+    static constexpr int value = 2;
+};
+
+template<std::size_t I, class T1, class T2>
+struct std::tuple_element<I, my_tuple_0<T1, T2>> {
+    using type = std::conditional_t<I == 0, T1, T2>;
+};
+
+namespace my_ns {
+    template<class T1, class T2, class T3>
+    struct my_tuple {
+        T1 x;
+        T2 y;
+        T3 z;
+    };
+
+    template<std::size_t I, class T1, class T2, class T3>
+    auto& get(my_tuple<T1, T2, T3>& x) {
+        if constexpr (I == 0) { return x.x; }
+        else if constexpr (I == 1) { return x.y; }
+        else if constexpr (I == 2) { return x.z; }
+    }
+    template<std::size_t I, class T1, class T2, class T3>
+    const auto& get(const my_tuple<T1, T2, T3>& x) {
+        if constexpr (I == 0) { return x.x; }
+        else if constexpr (I == 1) { return x.y; }
+        else if constexpr (I == 2) { return x.z; }
+    }
+}
+
+template<class T1, class T2, class T3>
+struct std::tuple_size<my_ns::my_tuple<T1, T2, T3>> {
+    static constexpr int value = 3;
+};
+
+template<std::size_t I, class T1, class T2, class T3>
+struct std::tuple_element<I, my_ns::my_tuple<T1, T2, T3>> {
+    using type = std::conditional_t<I == 0, T1, std::conditional_t<I == 1, T2, T3>>;
+};
+
 namespace {
 
 TEST_SUITE_BEGIN("special");
@@ -1355,6 +1414,61 @@ TEST_CASE("enumeration") {
         b.reset();
         CHECK_UNARY_FALSE(b.has_value());
         CHECK_EQ(b.get_unchecked(), enum2::SENTINEL_START);
+    }
+}
+
+TEST_CASE("tuple like") {
+    SUBCASE("member get<I>") {
+        opt::option<my_tuple_0<int, long>> a;
+        CHECK_GT(sizeof(a), sizeof(my_tuple_0<int, long>));
+        CHECK_UNARY_FALSE(a.has_value());
+
+        a.emplace(1, 2L);
+        CHECK_EQ(a->get<0>(), 1);
+        CHECK_EQ(a->get<1>(), 2L);
+
+        opt::option<my_tuple_0<int, float>> b;
+        CHECK_EQ(sizeof(b), sizeof(my_tuple_0<int, float>));
+        CHECK_UNARY_FALSE(b.has_value());
+
+        b.emplace(1, 2.f);
+        CHECK_EQ(b->get<0>(), 1);
+        CHECK_EQ(b->get<1>(), 2.f);
+        
+        opt::option<my_tuple_0<float, int>> c;
+        CHECK_EQ(sizeof(c), sizeof(my_tuple_0<float, int>));
+        CHECK_UNARY_FALSE(c.has_value());
+
+        c.emplace(1.f, 2);
+        CHECK_EQ(c->get<0>(), 1.f);
+        CHECK_EQ(c->get<1>(), 2);
+
+        opt::option<my_tuple_0<float, double>> d;
+        CHECK_EQ(sizeof(d), sizeof(my_tuple_0<float, double>));
+        CHECK_UNARY_FALSE(d.has_value());
+
+        d.emplace(1.f, 2.);
+        CHECK_EQ(d->get<0>(), 1.f);
+        CHECK_EQ(d->get<1>(), 2.);
+    }
+    SUBCASE("ADL get<I>") {
+        opt::option<my_ns::my_tuple<int, long, unsigned>> a;
+        CHECK_GT(sizeof(a), sizeof(my_ns::my_tuple<int, long, unsigned>));
+        CHECK_UNARY_FALSE(a.has_value());
+
+        a.emplace(1, 2l, 3u);
+        CHECK_EQ(my_ns::get<0>(*a), 1);
+        CHECK_EQ(my_ns::get<1>(*a), 2l);
+        CHECK_EQ(my_ns::get<2>(*a), 3u);
+
+        opt::option<my_ns::my_tuple<int, long, float>> b;
+        CHECK_EQ(sizeof(b), sizeof(my_ns::my_tuple<int, long, float>));
+        CHECK_UNARY_FALSE(b.has_value());
+
+        b.emplace(1, 2l, 3.f);
+        CHECK_EQ(my_ns::get<0>(*b), 1);
+        CHECK_EQ(my_ns::get<1>(*b), 2l);
+        CHECK_EQ(my_ns::get<2>(*b), 3.f);
     }
 }
 

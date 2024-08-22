@@ -303,6 +303,11 @@ namespace impl {
     template<class T>
     inline constexpr bool has_sentinel_end_enumerator<T, std::void_t<decltype(T::SENTINEL_END)>> = true;
 
+    template<class T, class = void>
+    inline constexpr bool is_custom_tuple_like = false;
+    template<class T>
+    inline constexpr bool is_custom_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> = true;
+
 #if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
@@ -482,6 +487,37 @@ namespace impl {
     }
 #endif
 
+    template<class TupleLike, class IndexSeq = std::make_integer_sequence<std::size_t, std::tuple_size<TupleLike>::value>>
+    struct unpack_tuple_like_select_max_level_traits;
+
+    template<class TupleLike, std::size_t... Index>
+    struct unpack_tuple_like_select_max_level_traits<TupleLike, std::integer_sequence<std::size_t, Index...>>
+        : select_max_level_traits<std::tuple_element_t<Index, TupleLike>...> {};
+
+    namespace tuple_like_get_impl {
+#if OPTION_MSVC
+        template<std::size_t>
+        void get();
+#else
+        template<std::size_t>
+        void get() = delete;
+#endif
+
+        template<std::size_t I, class T>
+        constexpr auto call(T& x, int) -> decltype(x.template get<I>()) {
+            return x.template get<I>();
+        }
+        template<std::size_t I, class T>
+        constexpr auto call(T& x, long) -> decltype(get<I>(x)) {
+            return get<I>(x);
+        }
+    }
+
+    template<std::size_t I, class T>
+    constexpr auto& tuple_like_get(T& x) {
+        return tuple_like_get_impl::call<I>(x, 1);
+    }
+
     enum class option_strategy {
         none,
         other,
@@ -507,6 +543,7 @@ namespace impl {
         member_pointer_32,
         member_pointer_64,
         sentinel_member,
+        tuple_like,
         enumeration_sentinel,
         enumeration_sentinel_start,
         enumeration_sentinel_start_end,
@@ -634,6 +671,9 @@ namespace impl {
             } else
 #endif
             return st::none;
+        } else
+        if constexpr (is_custom_tuple_like<T>) {
+            return st::tuple_like;
         } else
 #ifdef OPTION_HAS_PFR
         if constexpr (pfr_is_option_reflectable<T>) {
@@ -1214,6 +1254,33 @@ namespace impl {
         static constexpr void set_level(T* const value, [[maybe_unused]] const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, underlying(sentinel_range_start + level));
+        }
+    };
+
+    template<class T>
+    struct internal_option_traits<T, option_strategy::tuple_like> {
+    private:
+        using select_traits = unpack_tuple_like_select_max_level_traits<T>;
+        using type = typename select_traits::type;
+        using traits = opt::option_traits<type>;
+
+        static constexpr std::size_t index = select_traits::index;
+    public:
+        static constexpr std::uintmax_t max_level = select_traits::level;
+
+        static constexpr std::uintmax_t get_level(const T* const value) {
+            return traits::get_level(std::addressof(tuple_like_get<index>(*value)));
+        }
+        static constexpr void set_level(T* const value, const std::uintmax_t level) {
+            traits::set_level(std::addressof(tuple_like_get<index>(*value)), level);
+        }
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
+        static constexpr void after_constructor(T* const value) {
+            traits::after_constructor(std::addressof(tuple_like_get<index>(*value)));
+        }
+        template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
+        static constexpr void after_assignment(T* const value) noexcept {
+            traits::after_assignment(std::addressof(tuple_like_get<index>(*value)));
         }
     };
 
