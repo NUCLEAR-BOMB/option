@@ -1,57 +1,116 @@
 #include <doctest/doctest.h>
 #include <opt/option.hpp>
 #include <cstdint>
+#include <utility>
 
 namespace {
 
 namespace counters {
-    inline std::uint64_t default_ctor = 0;
-    inline std::uint64_t value_ctor = 0;
-    inline std::uint64_t destructor = 0;
-    inline std::uint64_t copy_ctor = 0;
-    inline std::uint64_t move_ctor = 0;
-    inline std::uint64_t copy_oper = 0;
-    inline std::uint64_t move_oper = 0;
-
-    void reset() {
-        default_ctor = 0;
-        value_ctor = 0;
-        destructor = 0;
-        copy_ctor = 0;
-        move_ctor = 0;
-        copy_oper = 0;
-        move_oper = 0;
-    }
+    inline std::int64_t default_ctor = 0;
+    inline std::int64_t value_ctor = 0;
+    inline std::int64_t destructor = 0;
+    inline std::int64_t copy_ctor = 0;
+    inline std::int64_t move_ctor = 0;
+    inline std::int64_t copy_oper = 0;
+    inline std::int64_t move_oper = 0;
 }
 
-namespace expected_counters {
-    inline std::uint64_t default_ctor = 0;
-    inline std::uint64_t value_ctor = 0;
-    inline std::uint64_t destructor = 0;
-    inline std::uint64_t copy_ctor = 0;
-    inline std::uint64_t move_ctor = 0;
-    inline std::uint64_t copy_oper = 0;
-    inline std::uint64_t move_oper = 0;
+class counters_check {
+    std::int64_t expected_default_ctor;
+    std::int64_t expected_value_ctor;
+    std::int64_t expected_destructor;
+    std::int64_t expected_copy_ctor;
+    std::int64_t expected_move_ctor;
+    std::int64_t expected_copy_oper;
+    std::int64_t expected_move_oper;
 
-    void test() {
-        CHECK_EQ(counters::default_ctor, default_ctor);
-        CHECK_EQ(counters::value_ctor, value_ctor);
-        CHECK_EQ(counters::destructor, destructor);
-        CHECK_EQ(counters::copy_ctor, copy_ctor);
-        CHECK_EQ(counters::move_ctor, move_ctor);
-        CHECK_EQ(counters::copy_oper, copy_oper);
-        CHECK_EQ(counters::move_oper, move_oper);
+    const char* file;
+    int line;
+public:
+    counters_check(
+        const std::int64_t expected_default_ctor_,
+        const std::int64_t expected_value_ctor_,
+        const std::int64_t expected_destructor_,
+        const std::int64_t expected_copy_ctor_,
+        const std::int64_t expected_move_ctor_,
+        const std::int64_t expected_copy_oper_,
+        const std::int64_t expected_move_oper_,
+        const char* const file_, const int line_
+    ) : expected_default_ctor{expected_default_ctor_},
+        expected_value_ctor{expected_value_ctor_},
+        expected_destructor{expected_destructor_},
+        expected_copy_ctor{expected_copy_ctor_},
+        expected_move_ctor{expected_move_ctor_},
+        expected_copy_oper{expected_copy_oper_},
+        expected_move_oper{expected_move_oper_},
+        file{file_}, line{line_}
+    {
+        counters::default_ctor = 0;
+        counters::value_ctor = 0;
+        counters::destructor = 0;
+        counters::copy_ctor = 0;
+        counters::move_ctor = 0;
+        counters::copy_oper = 0;
+        counters::move_oper = 0;
     }
-    void reset() {
-        default_ctor = 0;
-        value_ctor = 0;
-        destructor = 0;
-        copy_ctor = 0;
-        move_ctor = 0;
-        copy_oper = 0;
-        move_oper = 0;
+
+    ~counters_check() {
+        if (counters::default_ctor != expected_default_ctor) {
+            ADD_FAIL_CHECK_AT(file, line,
+                "LIFETIME_CHECK [default_ctor]" <<
+                "( received: " << counters::default_ctor << ", expected: " << expected_default_ctor << " )"
+            );
+        }
+        if (counters::value_ctor != expected_value_ctor) {
+            ADD_FAIL_CHECK_AT(file, line,
+                "LIFETIME_CHECK [value_ctor]" <<
+                "( received: " << counters::value_ctor << ", expected: " << expected_value_ctor << " )"
+            );
+        }
+        if (counters::destructor != expected_destructor) {
+            ADD_FAIL_CHECK_AT(file, line,
+                "LIFETIME_CHECK [destructor]" <<
+                "( received: " << counters::destructor << ", expected: " << expected_destructor << " )"
+            );
+        }
+        if (counters::copy_ctor != expected_copy_ctor) {
+            ADD_FAIL_CHECK_AT(file, line,
+                "LIFETIME_CHECK [copy_ctor]" <<
+                "( received: " << counters::copy_ctor << ", expected: " << expected_copy_ctor << " )"
+            );
+        }
+        if (counters::move_ctor != expected_move_ctor) {
+            ADD_FAIL_CHECK_AT(file, line,
+                "LIFETIME_CHECK [move_ctor]" <<
+                "( received: " << counters::move_ctor << ", expected: " << expected_move_ctor << " )"
+            );
+        }
+        if (counters::copy_oper != expected_copy_oper) {
+            ADD_FAIL_CHECK_AT(file, line,
+                "LIFETIME_CHECK [copy_oper]" <<
+                "( received: " << counters::copy_oper << ", expected: " << expected_copy_oper << " )"
+            );
+        }
+        if (counters::move_oper != expected_move_oper) {
+            ADD_FAIL_CHECK_AT(file, line,
+                "LIFETIME_CHECK [move_oper]" <<
+                "( received: " << counters::move_oper << ", expected: " << expected_move_oper << " )"
+            );
+        }
+        counters::default_ctor = 0;
+        counters::value_ctor = 0;
+        counters::destructor = 0;
+        counters::copy_ctor = 0;
+        counters::move_ctor = 0;
+        counters::copy_oper = 0;
+        counters::move_oper = 0;
     }
-}
+
+    operator bool() const { return true; }
+};
+
+#define LIFETIME_CHECK(default_ctor, value_ctor, destructor, copy_ctor, move_ctor, copy_oper, move_oper) \
+    if (counters_check _LIFETIME_CHECK_OBJECT_{default_ctor, value_ctor, destructor, copy_ctor, move_ctor, copy_oper, move_oper, __FILE__, __LINE__})
 
 struct lifetime_tester {
     // NOLINTBEGIN(cert-oop54-cpp, performance-noexcept-move-constructor)
@@ -73,58 +132,275 @@ struct lifetime_tester {
     // NOLINTEND(cert-oop54-cpp, performance-noexcept-move-constructor)
 };
 
-TEST_CASE("lifetime") {
-    namespace ec = expected_counters;
+TEST_SUITE_BEGIN("lifetime");
 
-    counters::reset();
-    ec::reset();
+TEST_CASE("on opt::option") {
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        opt::option<lifetime_tester> a;
+    }
+    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 0) {
+        opt::option<lifetime_tester> a{1};
+    }
+    LIFETIME_CHECK(1, 0, 2, 0, 1, 0, 0) {
+        opt::option<lifetime_tester> a{{}};
+    }
+    LIFETIME_CHECK(1, 0, 1, 0, 0, 0, 0) {
+        opt::option<lifetime_tester> a{std::in_place};
+    }
+    opt::option<lifetime_tester> var;
 
-    opt::option<lifetime_tester> tester;
-    ec::test();
+    var.reset();
+    LIFETIME_CHECK(0, 1, 1, 0, 1, 0, 0) {
+        var = lifetime_tester{1};
+    }
+    var.emplace();
+    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 1) {
+        var = lifetime_tester{1};
+    }
+    var.reset();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        var = opt::option<lifetime_tester>{};
+    }
+    var.reset();
+    LIFETIME_CHECK(0, 1, 1, 0, 1, 0, 0) {
+        var = opt::option<lifetime_tester>{1};
+    }
+    var.emplace();
+    LIFETIME_CHECK(0, 0, 1, 0, 0, 0, 0) {
+        var = opt::option<lifetime_tester>{};
+    }
+    var.emplace();
+    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 1) {
+        var = opt::option<lifetime_tester>{1};
+    }
 
-    tester = lifetime_tester{1};
-    ec::value_ctor += 1;
-    ec::destructor += 1;
-    ec::move_ctor += 1;
-    ec::test();
-
-    tester.emplace();
-    ec::default_ctor += 1;
-    ec::destructor += 1;
-    ec::test();
-
-    tester.emplace(1);
-    ec::value_ctor += 1;
-    ec::destructor += 1;
-    ec::test();
-
-    tester = opt::option<lifetime_tester>{};
-    ec::destructor += 1;
-    ec::test();
-
-    tester = opt::option<lifetime_tester>{{}};
-    ec::default_ctor += 1;
-    ec::move_ctor += 2;
-    ec::destructor += 2;
-    ec::test();
-
-    opt::option<lifetime_tester> tester2{tester.take()};
-    ec::move_ctor += 1;
-    ec::destructor += 1;
-    ec::test();
-
-    [[maybe_unused]] const lifetime_tester& ref = tester2.insert(lifetime_tester{1});
-    ec::value_ctor += 1;
-    ec::move_ctor += 1;
-    ec::destructor += 2;
-    ec::test();
-
-    [[maybe_unused]]
-    const opt::option<lifetime_tester> tester3 = tester2.replace(lifetime_tester{1});
-    ec::value_ctor += 1;
-    ec::move_ctor += 2;
-    ec::destructor += 2;
-    ec::test();
+    lifetime_tester val;
+    var.reset();
+    LIFETIME_CHECK(0, 0, 0, 1, 0, 0, 0) {
+        var = val;
+    }
+    var.emplace();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 1, 0) {
+        var = val;
+    }
 }
+
+TEST_CASE(".take") {
+    opt::option<lifetime_tester> var0;
+    opt::option<lifetime_tester> var1;
+
+    var0.reset();
+    var1.reset();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        var1 = var0.take();
+    }
+    var0.emplace();
+    LIFETIME_CHECK(0, 0, 2, 0, 1, 0, 0) {
+        (void)var0.take();
+    }
+    var0.emplace();
+    var1.reset();
+    LIFETIME_CHECK(0, 0, 2, 0, 2, 0, 0) {
+        var1 = var0.take();
+    }
+    var0.reset();
+    var1.emplace();
+    LIFETIME_CHECK(0, 0, 1, 0, 0, 0, 0) {
+        var1 = var0.take();
+    }
+    var0.emplace();
+    var1.emplace();
+    LIFETIME_CHECK(0, 0, 2, 0, 1, 0, 1) {
+        var1 = var0.take();
+    }
+
+    // var0.reset();
+    // LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+    //     (void)std::move(var0).take();
+    // }
+    // var0.emplace();
+    // LIFETIME_CHECK(0, 0, 1, 0, 1, 0, 0) {
+    //     (void)std::move(var0).take();
+    // }
+    // var0.reset();
+    // var1.reset();
+    // LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+    //     var1 = std::move(var0).take();
+    // }
+    // var0.reset();
+    // var1.emplace();
+    // LIFETIME_CHECK(0, 0, 1, 0, 0, 0, 0) {
+    //     var1 = std::move(var0).take();
+    // }
+}
+
+TEST_CASE(".reset") {
+    opt::option<lifetime_tester> var;
+
+    var.reset();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        var.reset();
+    }
+    var.emplace();
+    LIFETIME_CHECK(0, 0, 1, 0, 0, 0, 0) {
+        var.reset();
+    }
+}
+
+TEST_CASE(".emplace") {
+    opt::option<lifetime_tester> var;
+
+    var.reset();
+    LIFETIME_CHECK(1, 0, 0, 0, 0, 0, 0) {
+        var.emplace();
+    }
+    var.reset();
+    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
+        var.emplace(1);
+    }
+    lifetime_tester val;
+
+    var.reset();
+    LIFETIME_CHECK(0, 0, 0, 1, 0, 0, 0) {
+        var.emplace(val);
+    }
+    var.reset();
+    LIFETIME_CHECK(0, 0, 0, 0, 1, 0, 0) {
+        var.emplace(std::move(val));
+    }
+    var.emplace();
+    LIFETIME_CHECK(0, 0, 1, 1, 0, 0, 0) {
+        var.emplace(val);
+    }
+    var.emplace();
+    LIFETIME_CHECK(0, 0, 1, 0, 1, 0, 0) {
+        var.emplace(std::move(val));
+    }
+}
+
+TEST_CASE("opt::make_option") {
+    LIFETIME_CHECK(1, 0, 1, 0, 0, 0, 0) {
+        opt::option<lifetime_tester> a = opt::make_option<lifetime_tester>();
+    }
+}
+
+TEST_CASE("std::exchange") {
+    opt::option<lifetime_tester> var0;
+
+    var0.emplace();
+    LIFETIME_CHECK(0, 1, 2, 0, 1, 0, 1) {
+        (void)std::exchange(var0, 1);
+    }
+    var0.reset();
+    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
+        (void)std::exchange(var0, 1);
+    }
+
+    opt::option<lifetime_tester> var1;
+    var0.reset();
+    var1.reset();
+    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
+        var1 = std::exchange(var0, 1);
+    }
+    var0.reset();
+    var1.emplace();
+    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 0) {
+        var1 = std::exchange(var0, 1);
+    }
+    var0.emplace();
+    var1.reset();
+    LIFETIME_CHECK(0, 1, 2, 0, 2, 0, 1) {
+        var1 = std::exchange(var0, 1);
+    }
+    var0.emplace();
+    var1.emplace();
+    LIFETIME_CHECK(0, 1, 2, 0, 1, 0, 2) {
+        var1 = std::exchange(var0, 1);
+    }
+}
+
+TEST_CASE(".replace") {
+    opt::option<lifetime_tester> var0;
+
+    var0.reset();
+    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
+        (void)var0.replace(1);
+    }
+    var0.emplace();
+    LIFETIME_CHECK(0, 1, 2, 0, 1, 0, 0) {
+        (void)var0.replace(1);
+    }
+
+    opt::option<lifetime_tester> var1;
+
+    var0.reset();
+    var1.reset();
+    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
+        var1 = var0.replace(1);
+    }
+    var0.reset();
+    var1.emplace();
+    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 0) {
+        var1 = var0.replace(1);
+    }
+    var0.emplace();
+    var1.reset();
+    LIFETIME_CHECK(0, 1, 2, 0, 2, 0, 0) {
+        var1 = var0.replace(1);
+    }
+    var0.emplace();
+    var1.emplace();
+    LIFETIME_CHECK(0, 1, 2, 0, 1, 0, 1) {
+        var1 = var0.replace(1);
+    }
+}
+
+TEST_CASE(".map") {
+    opt::option<int> ivar;
+
+    ivar.emplace(1);
+    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 0) {
+        (void)ivar.map([](int x) { return lifetime_tester{x}; });
+    }
+    ivar.reset();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        (void)ivar.map([](int) { return lifetime_tester{}; });
+    }
+    opt::option<lifetime_tester> var0;
+    const auto fn = [](const lifetime_tester&) { return 1; };
+
+    var0.reset();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        (void)var0.map(fn);
+    }
+    var0.emplace();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        (void)var0.map(fn);
+    }
+    opt::option<lifetime_tester> var1;
+
+    var0.reset();
+    var1.reset();
+    LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
+        var1 = var0.map(fn);
+    }
+    var0.reset();
+    var1.emplace();
+    LIFETIME_CHECK(0, 0, 1, 0, 0, 0, 0) {
+        var1 = var0.map(fn);
+    }
+    var0.emplace();
+    var1.reset();
+    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
+        var1 = var0.map(fn);
+    }
+    var0.emplace();
+    var1.emplace();
+    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 1) {
+        var1 = var0.map(fn);
+    }
+}
+
+TEST_SUITE_END();
 
 }
