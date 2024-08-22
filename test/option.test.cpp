@@ -519,7 +519,7 @@ skip_map:
         a = v1;
         CHECK_UNARY(a.has_value());
         CHECK_EQ(*a, v1);
-        a.take();
+        (void)a.take();
         CHECK_UNARY_FALSE(a.has_value());
     }
     SUBCASE("opt::option_cast") {
