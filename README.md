@@ -183,8 +183,8 @@ FetchContent_MakeAvailable(option)
 target_link_libraries(<target> PRIVATE option)
 ```
 
-> [!NOTE]
-> You could specify the `SYSTEM` and `EXCLUDE_FROM_ALL` arguments to `FetcnhContet_Declare` but the library already uses `target_include_directories` with `SYSTEM` and it is header-only library.
+> [!TIP]
+> You could specify the `SYSTEM` (since CMake 3.25) and `EXCLUDE_FROM_ALL` (since CMake 3.28) arguments to `FetcnhContet_Declare` but the library already uses `target_include_directories` with `SYSTEM` and it is header-only library.
 
 Using URL to the archive:
 
@@ -204,7 +204,7 @@ You can create archive URL with [Source code archive URLs][Source code archive U
 
 `<hash>` is optional but recommended. With this integrity check you can more secure pin the library version and avoid possible  data corruptions and "changed file in transit" scenarios.
 
-> [!NOTE]
+> [!TIP]
 > Use `FIND_PACKAGE_ARGS` optional argument in `FetchContent_Declare` to make it firstly try a call to [`find_package`][find_package].
 
 ## [ExternalProject][ExternalProject]
