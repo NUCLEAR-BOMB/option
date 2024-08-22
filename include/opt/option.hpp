@@ -2373,18 +2373,6 @@ public:
         return opt::none;
     }
 
-    // Inserts `val` into the `opt::option` and returns a reference to it
-    // If the `opt::option` contains a value, the contained value is destroyed
-    // Same as Rust's `std::option::Option<T>::insert`
-    constexpr T& insert(const std::remove_reference_t<T>& val) OPTION_LIFETIMEBOUND {
-        this->emplace(val);
-        return get();
-    }
-    constexpr T& insert(std::remove_reference_t<T>&& val) OPTION_LIFETIMEBOUND {
-        this->emplace(std::move(val));
-        return get();
-    }
-
     // Invokes the `f` with a contained value
     // If this `opt::option` contains a value invoke `f` with the contained value as an argument;
     // otherwise do nothing.

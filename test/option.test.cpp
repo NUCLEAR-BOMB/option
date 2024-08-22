@@ -690,18 +690,6 @@ skip_take_if:
         CHECK_UNARY_FALSE(a.has_value_and([&](const T& x) { return x == v0; }));
         CHECK_UNARY_FALSE(a.has_value_and([&](const T& x) { return x == v1; }));
     }
-    SUBCASE(".insert") {
-        opt::option a{v0};
-        const T& x = a.insert(v1);
-        CHECK_EQ(&x, a.ptr_or_null());
-        CHECK_EQ(*a, v1);
-
-        const T tmp = v2;
-        const T& y = a.insert(tmp);
-
-        CHECK_EQ(&y, a.ptr_or_null());
-        CHECK_EQ(*a, v2);
-    }
     if (v0 == v1) { goto skip_inspect; }
     SUBCASE(".inspect") {
         opt::option<T> a;

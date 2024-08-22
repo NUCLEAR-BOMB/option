@@ -13,7 +13,6 @@
     - [`has_value_and`](#has_value_and)
     - [`take`](#take)
     - [`take_if`](#take_if)
-    - [`insert`](#insert)
     - [`inspect`](#inspect)
     - [`get`, `operator*`, `operator->`](#get-operator-operator)
     - [`get_unchecked`](#get_unchecked)
@@ -479,26 +478,6 @@ b = a.take_if([](int& x) {
 std::cout << a.has_value() << '\n'; // false
 std::cout << *b << '\n'; // 3
 ```
-
----
-
-### `insert`
-
-```cpp
-constexpr T& insert(const std::remove_reference_t<T>& value) /*lifetimebound*/;
-```
-Insert `value` into the `opt::option`, and then returns a non-const reference to the new contained value. \
-If the `opt::option` contains a value, the contained value is destroyed, and copy constructs the new value in-place with `value` as parameters, and then returns a reference to the new contained value.
-- *Postcondition:* `has_value() == true`.
-
----
-
-```cpp
-constexpr T& insert(std::remove_reference_t<T>&& value) /*lifetimebound*/;
-```
-Insert `value` into the `opt::option`, and then returns a non-const reference to the new contained value. \
-If the `opt::option` contains a value, the contained value is destroyed, and move constructs the new value in-place with `std::move(value)` as parameters, and then returns a reference to the new contained value.
-- *Postcondition:* `has_value() == true`.
 
 ---
 
