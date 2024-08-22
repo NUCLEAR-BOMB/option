@@ -587,9 +587,25 @@ skip_map:
         const auto fn1 = [&](const T& x) {
             return x == v0;
         };
-        CHECK_EQ(opt::option<T>{v0}.filter(fn1), v0);
-        CHECK_EQ(opt::option<T>{v1}.filter(fn1), opt::none);
-        CHECK_EQ(opt::option<T>{opt::none}.filter(fn1), opt::none);
+        opt::option<T> a;
+        a = v0;
+        CHECK_EQ(a.filter(fn1), v0);
+        a = v1;
+        CHECK_EQ(a.filter(fn1), opt::none);
+        a = opt::none;
+        CHECK_EQ(a.filter(fn1), opt::none);
+
+        const auto fn2 = [&](T& x) {
+            T prev = x;
+            x = v1;
+            return prev == v0;
+        };
+        a = v0;
+        CHECK_EQ(a.filter(fn2), v1);
+        CHECK_EQ(a, v1);
+        a = v1;
+        CHECK_EQ(a.filter(fn2), opt::none);
+        CHECK_EQ(a, v1);
     }
 skip_filter:
     if (v0 == v1) { goto skip_flatten; }

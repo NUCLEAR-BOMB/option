@@ -714,10 +714,22 @@ std::cout << b.ptr_or_null() << '\n'; // 0000000000000000 (nullptr)
 
 ```cpp
 template<class Fn>
-constexpr option filter(Fn&& function) const;
+constexpr option filter(Fn&& function) &;
+template<class Fn>
+constexpr option filter(Fn&& function) const&;
+template<class Fn>
+constexpr option filter(Fn&& function) &&;
+template<class Fn>
+constexpr option filter(Fn&& function) const&&;
 ```
 Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, returns the contained value if `function` returns `true`, and an empty `opt::option` if `function` returns `false`.
-- *Enabled* when `std::is_invocable_r_v<bool, Fn, const T&>` is `true`.
+- *Enabled* when `bool(std::invoke(std::forward<Fn>(function), {value}))` is a valid expression. `{value}` is a reference (possible `const`) to the contained value.
+
+The function is called with reference (possible `const`), and the result of it converted to `bool`.
+The returned value is constructed with forwarded contained value.
+
+> [!NOTE]
+> `opt::option` does not modify value inside function (despite having non-const reference). You can modify contained value inside function via passed reference to it.
 
 Example:
 ```cpp

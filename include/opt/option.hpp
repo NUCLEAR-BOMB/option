@@ -2189,6 +2189,19 @@ namespace impl::option {
             return unzip_impl<tuple_of_options, tuple_type>(indexes);
         }
     }
+
+    template<class T, class Fn, class = bool>
+    inline constexpr bool is_filter_fn_invocable = false;
+    template<class T, class Fn>
+    inline constexpr bool is_filter_fn_invocable<T, Fn, decltype(bool(std::invoke(std::declval<Fn>(), std::declval<T>())))> = true;
+
+    template<class Self, class F>
+    constexpr impl::remove_cvref<Self> filter(Self&& self, F&& f) {
+        if (self.has_value() && bool(std::invoke(std::forward<F>(f), self.get()))) {
+            return std::forward<Self>(self).get();
+        }
+        return opt::none;
+    }
 }
 
 template<class T>
@@ -2631,14 +2644,14 @@ public:
     //     `opt::option` that containes current contained value if `f` return `true`
     //     an empty `opt::option` if `f` returns `false`
     // Same as Rust's `std::option::Option<T>::filter`
-    template<class F, std::enable_if_t<std::is_invocable_r_v<bool, F, const T&>, int> = 0>
-    [[nodiscard]] constexpr option<T> filter(F&& f) const {
-        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
-        if (has_value() && bool(std::invoke(std::forward<F>(f), get()))) {
-            return get();
-        }
-        return {};
-    }
+    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<T&, F>, int> = 0>
+    [[nodiscard]] constexpr option<T> filter(F&& f) & { return impl::option::filter(*this, std::forward<F>(f)); }
+    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<const T&, F>, int> = 0>
+    [[nodiscard]] constexpr option<T> filter(F&& f) const& { return impl::option::filter(*this, std::forward<F>(f)); }
+    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<T&, F>, int> = 0>
+    [[nodiscard]] constexpr option<T> filter(F&& f) && { return impl::option::filter(std::move(*this), std::forward<F>(f)); }
+    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<const T&, F>, int> = 0>
+    [[nodiscard]] constexpr option<T> filter(F&& f) const&& { return impl::option::filter(std::move(*this), std::forward<F>(f)); }
 
     // Converts `opt::option<opt::option<U>>` to `opt::option<U>`.
     // If this `opt::option<T>` then return underlying `opt::option<U>`;
@@ -2705,7 +2718,7 @@ public:
     // and returns the old `opt::option` value
     // Similar to Rust's `std::option::Option<T>::replace`
     template<class U, std::enable_if_t<std::is_constructible_v<T, U&&>, int> = 0>
-    [[nodiscard]] constexpr option<T> replace(U&& val) & {
+    [[nodiscard]] constexpr option<T> replace(U&& val) {
         option<T> tmp{std::move(*this)};
         // should call the destructor after moving, because moving does not end lifetime
         base::reset();
