@@ -50,6 +50,12 @@
     #define OPTION_INTEL 0
 #endif
 
+#ifdef __has_attribute
+    #define OPTION_HAS_ATTRIBUTE(x) __has_attribute(x)
+#else
+    #define OPTION_HAS_ATTRIBUTE(x) (0)
+#endif
+
 #ifndef __has_cpp_attribute
     #define OPTION_LIFETIMEBOUND
 #elif __has_cpp_attribute(msvc::lifetimebound)
@@ -58,6 +64,14 @@
     #define OPTION_LIFETIMEBOUND [[clang::lifetimebound]]
 #else
     #define OPTION_LIFETIMEBOUND
+#endif
+
+#if OPTION_HAS_ATTRIBUTE(pure)
+    #define OPTION_PURE __attribute__((pure))
+#elif OPTION_MSVC
+    #define OPTION_PURE __declspec(noalias)
+#else
+    #define OPTION_PURE
 #endif
 
 // Define to 1 to use only quiet NaN in `opt::option<T>`, where T is floating point type.
@@ -718,7 +732,7 @@ namespace impl {
     public:
         static constexpr std::uintmax_t max_level = 255;
 
-        static std::uintmax_t get_level(const unref* const* const value) noexcept {
+        OPTION_PURE static std::uintmax_t get_level(const unref* const* const value) noexcept {
             const auto uptr = impl::ptr_bit_cast<std::uintptr_t>(value);
             return uptr < max_level ? uptr : std::uintmax_t(-1);
         }
@@ -1417,7 +1431,7 @@ namespace impl {
         constexpr void reset() noexcept {
             has_value_flag = false;
         }
-        constexpr bool has_value() const noexcept {
+        OPTION_PURE constexpr bool has_value() const noexcept {
             return has_value_flag;
         }
         template<class... Args>
@@ -1460,7 +1474,7 @@ namespace impl {
                 has_value_flag = false;
             }
         }
-        constexpr bool has_value() const noexcept {
+        OPTION_PURE constexpr bool has_value() const noexcept {
             return has_value_flag;
         }
         template<class... Args>
@@ -1513,7 +1527,7 @@ namespace impl {
             traits::set_level(std::addressof(value), 0);
             OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
         }
-        constexpr bool has_value() const noexcept {
+        OPTION_PURE constexpr bool has_value() const noexcept {
             const std::uintmax_t level = traits::get_level(std::addressof(value));
             OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
             return level == std::uintmax_t(-1);
@@ -1575,7 +1589,7 @@ namespace impl {
                 OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
             }
         }
-        constexpr bool has_value() const noexcept {
+        OPTION_PURE constexpr bool has_value() const noexcept {
             const std::uintmax_t level = traits::get_level(std::addressof(value));
             OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
             return level == std::uintmax_t(-1);
@@ -1604,10 +1618,10 @@ namespace impl {
         using base::reset;
         using base::construct;
 
-        constexpr T& get() & noexcept { return base::value; }
-        constexpr const T& get() const& noexcept { return base::value; }
-        constexpr T&& get() && noexcept { return std::move(base::value); }
-        constexpr const T&& get() const&& noexcept { return std::move(base::value); }
+        OPTION_PURE constexpr T& get() & noexcept { return base::value; }
+        OPTION_PURE constexpr const T& get() const& noexcept { return base::value; }
+        OPTION_PURE constexpr T&& get() && noexcept { return std::move(base::value); }
+        OPTION_PURE constexpr const T&& get() const&& noexcept { return std::move(base::value); }
 
         // logic of assigning opt::option<T&> from a value
         template<class U>
@@ -1689,15 +1703,15 @@ namespace impl {
         constexpr option_storage_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{ref_to_ptr(std::invoke(std::forward<F>(f), std::forward<Arg>(arg)))} {}
 
-        constexpr bool has_value() const noexcept {
+        OPTION_PURE constexpr bool has_value() const noexcept {
             return value != nullptr;
         }
         constexpr void reset() noexcept {
             value = nullptr;
         }
 
-        constexpr T& get() const& noexcept { return *value; }
-        constexpr T&& get() const&& noexcept { return std::move(*value); }
+        OPTION_PURE constexpr T& get() const& noexcept { return *value; }
+        OPTION_PURE constexpr T&& get() const&& noexcept { return std::move(*value); }
 
         // Precondition: has_value() == false
         template<class Arg>
@@ -2391,10 +2405,10 @@ public:
     // Returns `true` if this `opt::option` contains a value;
     // otherwise return `false` if this `opt::option` does not contain a value
     // Same as `std::optional`
-    [[nodiscard]] constexpr bool has_value() const noexcept {
+    [[nodiscard]] OPTION_PURE constexpr bool has_value() const noexcept {
         return base::has_value();
     }
-    [[nodiscard]] constexpr explicit operator bool() const noexcept {
+    [[nodiscard]] OPTION_PURE constexpr explicit operator bool() const noexcept {
         return base::has_value();
     }
 
@@ -2457,19 +2471,19 @@ public:
     // Calls the `OPTION_VERIFY` macro if this `opt::option` does not contain the value.
     // Same as `std::optional<T>::operator*`.
     // Precondition: has_value() == true
-    [[nodiscard]] constexpr T& get() & noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr T& get() & noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return base::get();
     }
-    [[nodiscard]] constexpr const T& get() const& noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr const T& get() const& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return base::get();
     }
-    [[nodiscard]] constexpr T&& get() && noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr T&& get() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(base::get());
     }
-    [[nodiscard]] constexpr const T&& get() const&& noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr const T&& get() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(base::get());
     }
@@ -2478,11 +2492,11 @@ public:
     // Returns `std::addressof` of this `opt::option` contained value.
     // Same as `std::optional<T>::operator->`.
     // Precondition: has_value() == true
-    [[nodiscard]] constexpr std::add_pointer_t<const T> operator->() const noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<const T> operator->() const noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::addressof(get());
     }
-    [[nodiscard]] constexpr std::add_pointer_t<T> operator->() noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<T> operator->() noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::addressof(get());
     }
@@ -2490,19 +2504,19 @@ public:
     // Calls the `OPTION_VERIFY` macro if this `opt::option` does not contain the value
     // Same as `std::optional<T>::operator*` or `opt::option<T>::get`.
     // Precondition: has_value() == true
-    [[nodiscard]] constexpr T& operator*() & noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr T& operator*() & noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return get();
     }
-    [[nodiscard]] constexpr const T& operator*() const& noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr const T& operator*() const& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return get();
     }
-    [[nodiscard]] constexpr T&& operator*() && noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr T&& operator*() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(get());
     }
-    [[nodiscard]] constexpr const T&& operator*() const&& noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr const T&& operator*() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return std::move(get());
     }
@@ -2510,10 +2524,10 @@ public:
     // Returns a reference to the contained value.
     // Does not call the `OPTION_VERIFY` macro.
     // No OPTION_LIFETIMEBOUND
-    [[nodiscard]] constexpr T& get_unchecked() & noexcept { return base::get(); }
-    [[nodiscard]] constexpr const T& get_unchecked() const& noexcept { return base::get(); }
-    [[nodiscard]] constexpr T&& get_unchecked() && noexcept { return std::move(base::get()); }
-    [[nodiscard]] constexpr const T&& get_unchecked() const&& noexcept { return std::move(base::get()); }
+    [[nodiscard]] OPTION_PURE constexpr T& get_unchecked() & noexcept { return base::get(); }
+    [[nodiscard]] OPTION_PURE constexpr const T& get_unchecked() const& noexcept { return base::get(); }
+    [[nodiscard]] OPTION_PURE constexpr T&& get_unchecked() && noexcept { return std::move(base::get()); }
+    [[nodiscard]] OPTION_PURE constexpr const T&& get_unchecked() const&& noexcept { return std::move(base::get()); }
 
     // Returns a reference to the contained value.
     // Throws a `opt::bad_access` if this `opt::option` does not contain the value.
@@ -2603,10 +2617,10 @@ public:
 
     // Returns a pointer to the contained value if this `opt::option` contains the value;
     // otherwise, return `nullptr`.
-    [[nodiscard]] constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept OPTION_LIFETIMEBOUND {
         return has_value() ? std::addressof(get()) : nullptr;
     }
-    [[nodiscard]] constexpr const std::remove_reference_t<T>* ptr_or_null() const& noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr const std::remove_reference_t<T>* ptr_or_null() const& noexcept OPTION_LIFETIMEBOUND {
         return has_value() ? std::addressof(get()) : nullptr;
     }
     constexpr void ptr_or_null() && = delete;
