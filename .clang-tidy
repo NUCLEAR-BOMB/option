@@ -21,6 +21,7 @@ Checks: >
   -readability-redundant-member-init,
   -cert-dcl16-c,
   -modernize-use-nodiscard,
+  -clang-analyzer-core.UndefinedBinaryOperatorResult,
 WarningsAsErrors: '*'
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: lower_case }

@@ -89,7 +89,6 @@ struct aggregate_int_float {
     int x;
     float y;
 
-    // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const aggregate_int_float& a) const { return x == a.x && y == a.y; }
 };
 template<> struct sample_values<aggregate_int_float> {
@@ -162,7 +161,6 @@ struct struct_with_sentinel {
     int x;
     std::uint8_t SENTINEL{};
 
-    // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const struct_with_sentinel& o) const { return x == o.x; }
 };
 template<> struct sample_values<struct_with_sentinel> {
@@ -189,7 +187,6 @@ TEST_CASE_TEMPLATE("opt::option", T, struct_with_sentinel, int(*)(int), std::str
     const auto& v3 = sample.values[3];
     const auto& v4 = sample.values[4];
 
-    // NOLINTBEGIN(clang-analyzer-core.UndefinedBinaryOperatorResult)
     if constexpr (!std::is_same_v<T, int>) {
         CHECK_EQ(sizeof(opt::option<T>), sizeof(T));
         CHECK_EQ(sizeof(opt::option<opt::option<T>>), sizeof(T));
@@ -197,7 +194,6 @@ TEST_CASE_TEMPLATE("opt::option", T, struct_with_sentinel, int(*)(int), std::str
         CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>), sizeof(T));
         CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<opt::option<T>>>>>), sizeof(T));
     }
-    // NOLINTEND(clang-analyzer-core.UndefinedBinaryOperatorResult)
 
     SUBCASE("constructor") {
         const opt::option<T> a;
@@ -433,7 +429,7 @@ TEST_CASE_TEMPLATE("opt::option", T, struct_with_sentinel, int(*)(int), std::str
     }
     SUBCASE(".value_or") {
         opt::option<T> a; // NOLINT(clang-analyzer-core.uninitialized.UndefReturn)
-        CHECK_EQ(a.value_or(v0), v0); // NOLINT(clang-analyzer-core.UndefinedBinaryOperatorResult, clang-analyzer-core.uninitialized.Assign)
+        CHECK_EQ(a.value_or(v0), v0);
         a = v1;
         CHECK_EQ(a.value_or(v2), v1);
         CHECK_EQ(as_rvalue(a).value_or(v3), v1);

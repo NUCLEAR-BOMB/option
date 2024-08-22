@@ -346,7 +346,6 @@ TEST_CASE("emptiness level 1") {
 struct some_struct_level2 {
     int x;
     int y;
-    // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
     bool operator==(const some_struct_level2& o) const { return x == o.x && y == o.y; }
 };
 
