@@ -19,6 +19,8 @@
 
 #if OPTION_USE_BUILTIN_TRAITS
 
+// NOLINTBEGIN(cert-dcl58-cpp)
+
 template<class T1, class T2>
 struct my_tuple_0 {
     T1 x;
@@ -77,6 +79,8 @@ template<std::size_t I, class T1, class T2, class T3>
 struct std::tuple_element<I, my_ns::my_tuple<T1, T2, T3>> {
     using type = std::conditional_t<I == 0, T1, std::conditional_t<I == 1, T2, T3>>;
 };
+
+// NOLINTEND(cert-dcl58-cpp)
 
 namespace {
 
