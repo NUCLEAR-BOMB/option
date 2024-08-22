@@ -6,6 +6,7 @@
   - [`std::reference_wrapper`](#stdreference_wrapper)
   - [`std::pair`](#stdpair)
   - [`std::tuple`](#stdtuple)
+  - [Tuple-like types](#tuple-like-types)
   - [`std::array`](#stdarray)
   - [Empty types](#empty-types)
   - [Reflectable types](#reflectable-types)
@@ -75,6 +76,24 @@ Enables `after_constructor` and `after_assignment` static methods only if select
 
 > [!NOTE]
 > Ignores elements with empty type ([`std::is_empty_v<T>`][std::is_empty])[^1].
+
+## Tuple-like types
+
+Stores level value in one of the element that has higher `max_level` value.
+
+The type is considered tuple-like if `std::tuple_size<T>::value` is a well-formed constant expression.
+The elements types are obtained using `std::tuple_element<I, T>::type` type.
+And references to them are from:
+- `x.get<I>()`, if it is a valid expression.
+- `get<I>(x)`, where `get` is looked up by argument-dependent lookup.
+
+`T` is the type of the tuple-like type.
+`x` is (possible `const`) reference to `T`, which is the contained value of `opt::option`.
+`I` is `std:size_t` constant expression that denotes index of the tuple-like element.
+
+This option trait wraps `get_level`, `set_level`, `after_constructor`, `after_assignment` static methods around selected tuple-like type's element.
+
+Enables `after_constructor` and `after_assignment` static methods only if selected element's option trait containes them correspondingly.
 
 ## `std::array`
 
