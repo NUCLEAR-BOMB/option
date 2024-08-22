@@ -177,7 +177,8 @@
             #include <cstdio>
             #define OPTION_VERIFY(expression, message) \
                 ((expression) ? (void)0 : ( \
-                    (void)std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
+                    (void)::std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
+                    (void)::std::fflush(stderr),
                     (void)OPTION_DEBUG_BREAK) \
                 )
         #else
