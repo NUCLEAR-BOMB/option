@@ -110,7 +110,7 @@ public:
 };
 
 #define LIFETIME_CHECK(default_ctor, value_ctor, destructor, copy_ctor, move_ctor, copy_oper, move_oper) \
-    if (counters_check _LIFETIME_CHECK_OBJECT_{default_ctor, value_ctor, destructor, copy_ctor, move_ctor, copy_oper, move_oper, __FILE__, __LINE__})
+    if (const counters_check LIFETIME_CHECK_OBJECT_{default_ctor, value_ctor, destructor, copy_ctor, move_ctor, copy_oper, move_oper, __FILE__, __LINE__})
 
 struct lifetime_tester {
     // NOLINTBEGIN(cert-oop54-cpp, performance-noexcept-move-constructor)
@@ -133,6 +133,8 @@ struct lifetime_tester {
 };
 
 TEST_SUITE_BEGIN("lifetime");
+
+// NOLINTBEGIN(misc-const-correctness, clang-analyzer-cplusplus.Move, bugprone-use-after-move)
 
 TEST_CASE("on opt::option") {
     LIFETIME_CHECK(0, 0, 0, 0, 0, 0, 0) {
@@ -400,6 +402,8 @@ TEST_CASE(".map") {
         var1 = var0.map(fn);
     }
 }
+
+// NOLINTEND(misc-const-correctness, clang-analyzer-cplusplus.Move, bugprone-use-after-move)
 
 TEST_SUITE_END();
 
