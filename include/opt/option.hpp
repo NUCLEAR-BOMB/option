@@ -50,21 +50,6 @@
     #define OPTION_INTEL 0
 #endif
 
-#ifdef __has_builtin
-    #if __has_builtin(__builtin_unreachable)
-        #define OPTION_UNREACHABLE() __builtin_unreachable()
-    #endif
-#endif
-#ifndef OPTION_UNREACHABLE
-        #if OPTION_GCC || OPTION_CLANG
-            #define OPTION_UNREACHABLE() __builtin_unreachable()
-        #elif OPTION_MSVC
-            #define OPTION_UNREACHABLE() __assume(0)
-        #else
-            #define OPTION_UNREACHABLE() ((void)0)
-        #endif
-#endif
-
 #ifndef __has_cpp_attribute
     #define OPTION_LIFETIMEBOUND
 #elif __has_cpp_attribute(msvc::lifetimebound)
@@ -155,36 +140,46 @@
 // Macro `OPTION_VERIFY` is used in `opt::option<T>::get`, `opt::option<T>::operator*`.
 // You can also redefine `OPTION_VERIFY` to specify custom behavior when something goes unexpected.
 #ifndef OPTION_VERIFY
-    #ifdef OPTION_HAS_LIBASSERT
-        #define OPTION_VERIFY(expression, message) LIBASSERT_ASSUME(expression, message)
-    #else
-        #if OPTION_CLANG
-            #define OPTION_DEBUG_BREAK __builtin_debugtrap()
-        #elif OPTION_MSVC || OPTION_INTEL
-            #define OPTION_DEBUG_BREAK __debugbreak()
-        #elif OPTION_GCC
-            #define OPTION_DEBUG_BREAK __builtin_trap()
+    #ifndef NDEBUG
+        #ifdef OPTION_HAS_LIBASSERT
+            #define OPTION_VERIFY(expression, message) LIBASSERT_ASSUME(expression, message)
         #else
-            #include <csignal>
-            #if defined(SIGTRAP)
-                #define OPTION_DEBUG_BREAK ::std::raise(SIGTRAP)
+            #if OPTION_CLANG
+                #define OPTION_DEBUG_BREAK __builtin_debugtrap()
+            #elif OPTION_MSVC || OPTION_INTEL
+                #define OPTION_DEBUG_BREAK __debugbreak()
+            #elif OPTION_GCC
+                #define OPTION_DEBUG_BREAK __builtin_trap()
             #else
-                #define OPTION_DEBUG_BREAK ::std::raise(SIGABRT)
+                #include <csignal>
+                #if defined(SIGTRAP)
+                    #define OPTION_DEBUG_BREAK ::std::raise(SIGTRAP)
+                #else
+                    #define OPTION_DEBUG_BREAK ::std::raise(SIGABRT)
+                #endif
             #endif
-        #endif
-        #ifndef NDEBUG
             // Print an error message and call a debug break if the expression is evaluated as false
             #include <cstdio>
             #define OPTION_VERIFY(expression, message) \
                 ((expression) ? (void)0 : ( \
                     (void)::std::fprintf(stderr, "%s:%d: assertion '%s' failed: %s\n", __FILE__, __LINE__, #expression, message), \
-                    (void)::std::fflush(stderr),
+                    (void)::std::fflush(stderr), \
                     (void)OPTION_DEBUG_BREAK) \
                 )
+        #endif
+    #else
+        #if OPTION_MSVC
+            #define OPTION_VERIFY(expression, message) __assume(expression)
+        #elif OPTION_CLANG
+            #define OPTION_VERIFY(expression, message) __builtin_assume(expression)
+        #elif OPTION_GCC
+            #if __GNUC__ >= 13
+                #define OPTION_VERIFY(expression, message) __attribute__((__assume__(expression)))
+            #else
+                #define OPTION_VERIFY(expression, message) if (expression) {} else { __builtin_unreachable(); }
+            #endif
         #else
-            // Disable assertation on 'Release' build config
-            #define OPTION_VERIFY(expression, message) \
-                if (expression) {} else { OPTION_UNREACHABLE(); } ((void)0)
+            #define OPTION_VERIFY(expression, message)
         #endif
     #endif
 #endif
@@ -2677,13 +2672,7 @@ public:
     // Specifies that this `opt::option` will always contains value at a given point.
     // Will cause undefined behavior if this `opt::option` does not contain a value.
     constexpr void assume_has_value() const noexcept {
-#ifdef NDEBUG
-        if (!has_value()) {
-            OPTION_UNREACHABLE();
-        }
-#else
         OPTION_VERIFY(has_value(), "Assumption 'has_value()' failed");
-#endif
     }
 
     // Unzips this `opt::option` containing a tuple like object to the tuple like object of `opt::option`s
