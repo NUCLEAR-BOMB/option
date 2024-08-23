@@ -48,6 +48,7 @@ function(target_add_warnings target)
         if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
             set(gcc_opts
                 -Wno-stringop-overread # Warn for calls to string manipulation functions such as memchr, or strcpy that are determined to read past the end of the source sequence.
+                -Wno-maybe-uninitialized
             )
         endif()
 

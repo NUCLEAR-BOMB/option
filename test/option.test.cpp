@@ -129,8 +129,8 @@ struct polymorphic_type {
     polymorphic_type(int x_) : x(x_) {}
 
     polymorphic_type() = default;
-    polymorphic_type(const polymorphic_type&) = default; // NOLINT(clang-analyzer-core.uninitialized.Assign)
-    polymorphic_type& operator=(const polymorphic_type&) = default; // NOLINT(clang-analyzer-core.uninitialized.Assign)
+    polymorphic_type(const polymorphic_type&) = default;
+    polymorphic_type& operator=(const polymorphic_type&) = default;
 
     virtual ~polymorphic_type() = default;
 
@@ -428,7 +428,7 @@ TEST_CASE_TEMPLATE("opt::option", T, struct_with_sentinel, int(*)(int), std::str
         CHECK_THROWS_AS((void)as_const_rvalue(a).value(), opt::bad_access);
     }
     SUBCASE(".value_or") {
-        opt::option<T> a; // NOLINT(clang-analyzer-core.uninitialized.UndefReturn)
+        opt::option<T> a;
         CHECK_EQ(a.value_or(v0), v0);
         a = v1;
         CHECK_EQ(a.value_or(v2), v1);

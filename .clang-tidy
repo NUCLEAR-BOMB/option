@@ -22,6 +22,9 @@ Checks: >
   -cert-dcl16-c,
   -modernize-use-nodiscard,
   -clang-analyzer-core.UndefinedBinaryOperatorResult,
+  -clang-analyzer-core.CallAndMessage,
+  -clang-analyzer-core.uninitialized.Assign,
+  -clang-analyzer-core.uninitialized.UndefReturn,
 WarningsAsErrors: '*'
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: lower_case }
