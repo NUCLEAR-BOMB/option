@@ -5,6 +5,7 @@
 !.gitattributes
 !CMakeLists.txt
 !README.md
+!LICENSE_1_0.txt
 !.clang-tidy
 !.github/
 !include/
