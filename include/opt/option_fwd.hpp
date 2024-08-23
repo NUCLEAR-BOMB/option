@@ -22,4 +22,12 @@ inline constexpr bool is_option_v = is_option<T>::value;
 
 struct option_tag {};
 
+namespace impl {
+    struct none_tag {};
+}
+struct none_t {
+    constexpr explicit none_t(impl::none_tag) {}
+};
+inline constexpr none_t none{impl::none_tag{}};
+
 }
