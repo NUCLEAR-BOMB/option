@@ -12,7 +12,7 @@
 #include <memory>
 #include <cstddef>
 
-#include "utils.hpp" // NOLINT(misc-include-cleaner)
+#include "utils.hpp"
 
 #if OPTION_MSVC
     #pragma fenv_access(on)

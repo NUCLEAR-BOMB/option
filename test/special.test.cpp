@@ -3,7 +3,6 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
-// NOLINTBEGIN(misc-include-cleaner)
 #include <doctest/doctest.h>
 #include <cfenv>
 #include <opt/option.hpp>
@@ -20,7 +19,6 @@
 #include <cstddef>
 
 #include "utils.hpp"
-// NOLINTEND(misc-include-cleaner)
 
 #if OPTION_USE_BUILTIN_TRAITS
 
