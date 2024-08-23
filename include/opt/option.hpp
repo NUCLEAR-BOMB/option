@@ -2739,12 +2739,14 @@ namespace impl {
         static constexpr std::uintmax_t max_level = traits::max_level - 1;
 
         static std::uintmax_t get_level(const opt::option<T>* const value) noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(static_cast<const base*>(value)->value));
-            if (level == std::uintmax_t(-1) || level == 0) {
-                return std::uintmax_t(-1);
-            } else {
-                return level - 1;
-            }
+            std::uintmax_t level = traits::get_level(std::addressof(static_cast<const base*>(value)->value));
+            level -= 1;
+            return level < std::uintmax_t(-2) ? level : std::uintmax_t(-1);
+            // if (level == std::uintmax_t(-1) || level == 0) {
+            //     return std::uintmax_t(-1);
+            // } else {
+            //     return level - 1;
+            // }
         }
 
         static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
