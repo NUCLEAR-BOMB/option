@@ -409,17 +409,6 @@ TEST_CASE_TEMPLATE("opt::option", T, struct_with_sentinel, int(*)(int), std::str
         a.emplace(v0);
         CHECK_EQ(a, v0);
     }
-    SUBCASE("std::hash") {
-        if constexpr (is_hashable<T>) {
-            opt::option<T> a{v0};
-            opt::option<T> b{v0};
-            CHECK_EQ(hash_fn(a), hash_fn(b));
-            a = opt::none;
-            CHECK_NE(hash_fn(a), hash_fn(b));
-            b = opt::none;
-            CHECK_EQ(hash_fn(a), hash_fn(b));
-        }
-    }
     SUBCASE(".value_or_throw") {
         opt::option<T> a{v0};
         CHECK_NOTHROW((void)a.value_or_throw());

@@ -62,11 +62,6 @@ using std::as_const;
 template<class T>
 std::size_t hash_fn(const T& x) { return std::hash<T>{}(x); }
 
-template<class T, class = void>
-inline constexpr bool is_hashable = false;
-template<class T>
-inline constexpr bool is_hashable<T, std::void_t<decltype(std::declval<std::hash<T>>()(std::declval<T>()))>> = true;
-
 // NOLINTBEGIN
 struct nontrivial_struct {
     ~nontrivial_struct() noexcept(false) {}

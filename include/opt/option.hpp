@@ -3121,17 +3121,32 @@ template<class T1, class T2>
     return right.has_value() ? left >= right.get() : true;
 }
 
+namespace impl {
+    template<class T, class>
+    using enable_hash_helper1 = T;
+
+    template<class T, class Hash = std::hash<T>>
+    using enable_hash_helper2 = std::enable_if_t<
+        std::conjunction_v<
+            std::is_default_constructible<Hash>,
+            std::is_copy_constructible<Hash>,
+            std::is_move_constructible<Hash>,
+            std::is_destructible<Hash>,
+            std::is_invocable_r<std::size_t, Hash, const T&>
+        >
+    >;
+}
+
 }
 
 template<class T>
-struct std::hash<opt::option<T>> {
-private:
-    using value_hash = std::hash<std::remove_const_t<T>>;
+struct std::hash<::opt::impl::enable_hash_helper1<
+    opt::option<T>, ::opt::impl::enable_hash_helper2<std::remove_const_t<T>>
+>> {
+    using val_hash = std::hash<std::remove_const_t<T>>;
 public:
-    std::size_t operator()(const opt::option<T>& val) noexcept(noexcept(value_hash{}(*val))) {
-        if (val.has_value()) {
-            return value_hash{}(*val);
-        }
-        return static_cast<std::size_t>(-96391);
+    std::size_t operator()(const opt::option<T>& val) const noexcept(noexcept(val_hash{}(*val))) {
+        static constexpr std::size_t disengaged_hash = 0;
+        return val.has_value() ? val_hash{}(val.get()) : disengaged_hash;
     }
 };

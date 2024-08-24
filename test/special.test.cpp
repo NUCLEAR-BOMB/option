@@ -1479,6 +1479,41 @@ TEST_CASE("tuple like") {
     }
 }
 
+template<class T, class Hash = std::hash<T>>
+inline constexpr bool is_hashable = std::conjunction_v<
+    std::is_default_constructible<Hash>,
+    std::is_copy_constructible<Hash>,
+    std::is_move_constructible<Hash>,
+    std::is_destructible<Hash>,
+    std::is_invocable_r<std::size_t, Hash, const T&>
+>;
+
+// NOLINTBEGIN(misc-const-correctness)
+TEST_CASE("std::hash") {
+    opt::option<int> a;
+    [[maybe_unused]] const std::size_t hash_a = std::hash<opt::option<int>>{}(a);
+    CHECK_UNARY(is_hashable<decltype(a)>);
+    CHECK_UNARY(is_hashable<int>);
+    CHECK_UNARY(noexcept(std::hash<opt::option<int>>{}(a)));
+
+    opt::option<const float> b;
+    [[maybe_unused]] const std::size_t hash_b = std::hash<opt::option<const float>>{}(b);
+    CHECK_UNARY(is_hashable<decltype(b)>);
+    CHECK_UNARY(is_hashable<float>);
+    CHECK_UNARY(noexcept(std::hash<opt::option<const float>>{}(b)));
+
+    struct unhashable_type {
+        int x;
+    };
+    opt::option<unhashable_type> c;
+    CHECK_UNARY_FALSE(is_hashable<decltype(c)>);
+    CHECK_UNARY_FALSE(is_hashable<unhashable_type>);
+
+    opt::option<const unhashable_type> d;
+    CHECK_UNARY_FALSE(is_hashable<decltype(d)>);
+}
+// NOLINTEND(misc-const-correctness)
+
 TEST_SUITE_END();
 
 struct struct1 {
