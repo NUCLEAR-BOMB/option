@@ -1504,7 +1504,7 @@ See [guide](./custom_traits_guide.md) for creating custom option traits.
 #### `get_level`
 
 ```cpp
-static *constexpr std::uintmax_t get_level(const T*) *noexcept;
+static *constexpr std::uintmax_t get_level(const T*) noexcept;
 ```
 Required. The `opt::option` uses the `get_level` to determine if the contained value is considered empty.
 
@@ -1526,7 +1526,7 @@ This function is called when `opt::option` is needed to check if it contains a v
 #### `set_level`
 
 ```cpp
-static *constexpr void set_level(T*, std::uintmax_t) *noexcept;
+static *constexpr void set_level(T*, std::uintmax_t) noexcept;
 ```
 
 Required. The `opt::option` uses the `set_level` to set the level depth state inside `opt::option`.
@@ -1541,7 +1541,7 @@ Usually `set_level` is called after the original object is destructed/uninitiali
 #### `after_constructor`
 
 ```cpp
-static *constexpr void after_constructor(T*) *noexcept;
+static *constexpr void after_constructor(T*) noexcept;
 ```
 
 Optional. After the object is constructed (it is not empty), the `after_constructor` function is called to properly initialize contained value for later use in `opt::option`.
@@ -1556,7 +1556,7 @@ The term "after the object is constructed" does not include `opt::option` trivia
 #### `after_assignment`
 
 ```cpp
-static *constexpr void after_assignment(T*) *noexcept;
+static *constexpr void after_assignment(T*) noexcept;
 ```
 
 Optional. After the object is assigned (it is not empty), the `after_assignment` function is called to properly initialize contained value for later use in `opt::option`.
@@ -1568,7 +1568,8 @@ The term "after the object is assigned" does not include `opt::option` trivially
 
 *`constexpr` - optional `constexpr` specifiers. Without them many operations on `opt::option` can't be executed in constant expressions.
 
-*`noexcept` - optional `noexcept` specifiers. `opt::option` doesn't support exceptions in that functions, so currently `noexcept` doesn't do anything.
+> [!IMPORTANT]
+> The `noexcept` specifier is required.
 
 ## `make_option`
 

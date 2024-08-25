@@ -50,16 +50,19 @@ Passed level is less than `max_level`.
 > If level depth is 1, entire `opt::option<opt::option<int>>` is considered empty (can't access the `opt::option<int>` value and accordingly the `int` value). \
 > If level depth is `std::uintmax_t(-1)` (last nested `opt::option` containes an underlying value), the `int` value is avaliable with every `opt::option` level correspondingly.
 
+> [!IMPORTANT]
+> The `noexcept` specifier is required. It is made to avoid similar to [`std::variant<Types...>::valueless_by_exception`][std::variant valueless_by_exception] state.
+
 Correct `opt::option_traits` specialization.
 ```cpp
 template<>
 struct opt::option_traits<my_type> {
     static constexpr std::uintmax_t max_level = 100;
 
-    static std::uintmax_t get_level(const my_type* value) {
+    static std::uintmax_t get_level(const my_type* value) noexcept {
         return value->x == -1 ? value->y : std::uintmax_t(-1);
     }
-    static void set_level(my_type* value, std::uintmax_t level) {
+    static void set_level(my_type* value, std::uintmax_t level) noexcept {
         value->x = -1;
         value->y = level;
     }
@@ -170,16 +173,16 @@ template<>
 struct opt::option_traits<my_type_2> {
     static constexpr std::uintmax_t max_level = 10;
 
-    static std::uintmax_t get_level(const my_type_2* value) {
+    static std::uintmax_t get_level(const my_type_2* value) noexcept {
         return value->x != 1 ? value->x - 2 : std::uintmax_t(-1);
     }
-    static void set_level(my_type_2* value, std::uintmax_t level) {
+    static void set_level(my_type_2* value, std::uintmax_t level) noexcept {
         value->x = level + 2;
     }
-    static void after_constructor(my_type_2* value) {
+    static void after_constructor(my_type_2* value) noexcept {
         value->x = 1;
     }
-    static void after_assignment(my_type_2* value) {
+    static void after_assignment(my_type_2* value) noexcept {
         value->x = 1;
     }
 };
@@ -240,10 +243,10 @@ template<class T>
 struct opt::option_traits<my_type_3<T>, std::enable_if_t<!std::is_same_v<T, float>>> {
     static constexpr std::uintmax_t max_level = 1;
 
-    static std::uintmax_t get_level(const my_type_3<T>* value) {
+    static std::uintmax_t get_level(const my_type_3<T>* value) noexcept {
         return value->x == -1 ? 0 : std::uintmax_t(-1);
     }
-    static void set_level(my_type_3<T>* value, [[maybe_unused]] std::uintmax_t level) {
+    static void set_level(my_type_3<T>* value, [[maybe_unused]] std::uintmax_t level) noexcept {
         value->x = -1;
     }
 };
@@ -318,10 +321,10 @@ template<>
 struct opt::option_traits<my_type_4> {
     static constexpr std::uintmax_t max_level = 10000;
 
-    static std::uintmax_t get_level(const my_type_4* value) {
+    static std::uintmax_t get_level(const my_type_4* value) noexcept {
         return value->x == -1 ? value->y : std::uintmax_t(-1);
     }
-    static void set_level(my_type_4* value, std::uintmax_t level) {
+    static void set_level(my_type_4* value, std::uintmax_t level) noexcept {
         value->x == -1;
         value->y = level;
     }
@@ -371,10 +374,10 @@ template<>
 struct opt::option_traits<float> {
     static constexpr std::uintmax_t max_level = 1;
 
-    static std::uintmax_t get_level(const float* value) {
+    static std::uintmax_t get_level(const float* value) noexcept {
         return *value == 0 ? 0 : std::uintmax_t(-1);
     }
-    static void set_level(float* value, [[maybe_unused]] std::uintmax_t level) {
+    static void set_level(float* value, [[maybe_unused]] std::uintmax_t level) noexcept {
         *value = 0;
     }
 };
@@ -404,3 +407,4 @@ a = 1.f;
 
 
 [sfinae]: https://en.cppreference.com/w/cpp/language/sfinae
+[std::variant valueless_by_exception]: https://en.cppreference.com/w/cpp/utility/variant/valueless_by_exception

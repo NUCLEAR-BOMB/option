@@ -9,10 +9,10 @@ template<>
 struct opt::option_traits<some_struct> {
     static constexpr std::uintmax_t max_level = 1;
 
-    static std::uintmax_t get_level(const some_struct* value) {
+    static std::uintmax_t get_level(const some_struct* value) noexcept {
         return value->val == -1 ? 0 : std::uintmax_t(-1);
     }
-    static void set_level(some_struct* value, [[maybe_unused]] std::uintmax_t level) {
+    static void set_level(some_struct* value, [[maybe_unused]] std::uintmax_t level) noexcept {
         value->val = -1;
     }
 };
