@@ -1430,7 +1430,7 @@ namespace impl {
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
+            OPTION_VERIFY(!has_value_flag, "Value is non-empty");
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
@@ -1473,7 +1473,7 @@ namespace impl {
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
+            OPTION_VERIFY(!has_value_flag, "Value is non-empty");
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
