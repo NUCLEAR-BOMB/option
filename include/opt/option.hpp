@@ -3121,7 +3121,7 @@ template<class T1, class T2>
     return right.has_value() ? left >= right.get() : true;
 }
 
-template<class T, T...>
+template<class T, auto...>
 class sentinel {
     T value;
 public:
@@ -3156,29 +3156,29 @@ public:
 };
 
 namespace impl {
-    template<std::uintmax_t I = 0, class T, T Value, T... Values>
-    constexpr std::uintmax_t sentinel_get_level_impl(const sentinel<T, Value, Values...>& value) {
-        if (static_cast<const T&>(value) == Value) { return I; }
+    template<class T, std::uintmax_t I, auto Value, auto... Values>
+    constexpr std::uintmax_t sentinel_get_level_impl(const T& value) {
+        if (value == Value) { return I; }
 
         if constexpr (sizeof...(Values)) {
-            return sentinel_get_level_impl<I + 1>(value);
+            return sentinel_get_level_impl<T, I + 1, Values...>(value);
         } else {
             return std::uintmax_t(-1);
         }
     }
-    template<std::uintmax_t I = 0, class T, T Value, T... Values>
-    constexpr void sentinel_set_level_impl(sentinel<T, Value, Values...>& value, const std::uintmax_t level) {
-        if (level == I) { static_cast<T&>(value) = Value; return; }
+    template<class T, std::uintmax_t I, auto Value, auto... Values>
+    constexpr void sentinel_set_level_impl(T& value, const std::uintmax_t level) {
+        if (level == I) { value = Value; return; }
 
         if constexpr (sizeof...(Values)) {
-            sentinel_set_level_impl<I + 1>(value, level);
+            sentinel_set_level_impl<T, I + 1, Values...>(value, level);
         } else {
             OPTION_VERIFY(false, "Level is out of range");
         }
     }
 }
 
-template<class T, T... Values>
+template<class T, auto... Values>
 struct option_traits<sentinel<T, Values...>> {
 private:
     using value_t = sentinel<T, Values...>;
@@ -3186,10 +3186,10 @@ public:
     static constexpr std::uintmax_t max_level = sizeof...(Values);
 
     static constexpr std::uintmax_t get_level(const value_t* const value) {
-        return impl::sentinel_get_level_impl(*value);
+        return impl::sentinel_get_level_impl<T, 0, Values...>(*value);
     }
     static constexpr void set_level(value_t* const value, const std::uintmax_t level) {
-        impl::sentinel_set_level_impl(*value, level);
+        impl::sentinel_set_level_impl<T, 0, Values...>(*value, level);
     }
 };
 

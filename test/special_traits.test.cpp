@@ -55,6 +55,80 @@ TEST_CASE("int") {
         CHECK_EQ(opt::option{-1}.map(fn), 0);
     }
 }
+TEST_CASE("uint") {
+    {
+        const opt::option<opt::sentinel<unsigned>> a;
+        CHECK_GT(sizeof(a), sizeof(unsigned));
+    }
+    {
+        opt::option<opt::sentinel<unsigned, ~0U>> a;
+        CHECK_EQ(sizeof(a), sizeof(unsigned));
+        CHECK_UNARY_FALSE(a.has_value());
+        a = 1U;
+        CHECK_EQ(a, 1U);
+        a = 0U;
+        CHECK_EQ(a, 0U);
+        a = opt::none;
+        CHECK_UNARY_FALSE(a.has_value());
+        a = 2U;
+        CHECK_EQ(a, 2U);
+        a.get_unchecked() = unsigned(-1);
+        CHECK_UNARY_FALSE(a.has_value());
+    }
+    {
+        opt::option<opt::sentinel<unsigned, 1, 2>> a;
+        CHECK_EQ(sizeof(a), sizeof(unsigned));
+        CHECK_UNARY_FALSE(a.has_value());
+        a.emplace(0U);
+        CHECK_EQ(a, 0U);
+        a = 3U;
+        CHECK_EQ(a, 3U);
+        a = opt::none;
+        CHECK_UNARY_FALSE(a.has_value());
+    }
+    {
+        opt::option<opt::option<opt::sentinel<unsigned, 1, 2>>> a;
+        CHECK_EQ(sizeof(a), sizeof(unsigned));
+        CHECK_UNARY_FALSE(a.has_value());
+        a = 0U;
+        CHECK_EQ(a, 0U);
+        a = 3U;
+        CHECK_EQ(a, 3U);
+        a->reset();
+        CHECK_UNARY_FALSE(a->has_value());
+        *a = 4U;
+        CHECK_EQ(a, 4U);
+    }
+    {
+        opt::option<opt::option<opt::option<opt::sentinel<unsigned, 10, 20>>>> a;
+        CHECK_GT(sizeof(a), sizeof(unsigned));
+        CHECK_UNARY_FALSE(a.has_value());
+        a = 0U;
+        CHECK_EQ(a, 0U);
+        a = 1U;
+        CHECK_EQ(a, 1U);
+        a = 2U;
+        CHECK_EQ(a, 2U);
+        (**a).reset();
+        CHECK_UNARY_FALSE((**a).has_value());
+        (*a).reset();
+        CHECK_UNARY_FALSE((*a).has_value());
+        a.reset();
+        CHECK_UNARY_FALSE(a.has_value());
+    }
+}
+TEST_CASE("pointer") {
+    {
+        opt::option<opt::sentinel<int*, nullptr>> a;
+        CHECK_EQ(sizeof(a), sizeof(int*));
+        CHECK_UNARY_FALSE(a.has_value());
+        int b{};
+        a = &b;
+        CHECK_EQ(a, &b);
+        a.reset();
+        CHECK_UNARY_FALSE(a.has_value());
+    }
+}
 
 TEST_SUITE_END();
 
