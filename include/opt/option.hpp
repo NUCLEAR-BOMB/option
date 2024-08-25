@@ -3121,6 +3121,78 @@ template<class T1, class T2>
     return right.has_value() ? left >= right.get() : true;
 }
 
+template<class T, T...>
+class sentinel {
+    T value;
+public:
+    template<class... Args>
+    constexpr sentinel(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+        : value{std::forward<Args>(args)...} {}
+
+    sentinel() = default;
+    sentinel(const sentinel&) = default;
+    sentinel(sentinel&&) = default;
+    sentinel& operator=(const sentinel&) = default;
+    sentinel& operator=(sentinel&&) = default;
+
+    constexpr sentinel(const T& x) noexcept(std::is_nothrow_copy_constructible_v<T>)
+        : value{x} {}
+    constexpr sentinel(T&& x) noexcept(std::is_nothrow_move_constructible_v<T>)
+        : value{std::move(x)} {}
+
+    sentinel& operator=(const T& x) noexcept(std::is_nothrow_copy_assignable_v<T>) {
+        value = x;
+        return *this;
+    }
+    sentinel& operator=(T&& x) noexcept(std::is_nothrow_move_assignable_v<T>) {
+        value = std::move(x);
+        return *this;
+    }
+
+    constexpr operator T&() & noexcept { return value; }
+    constexpr operator const T&() const& noexcept { return value; }
+    constexpr operator T&&() && noexcept { return value; }
+    constexpr operator const T&&() const&& noexcept { return value; }
+};
+
+namespace impl {
+    template<std::uintmax_t I = 0, class T, T Value, T... Values>
+    constexpr std::uintmax_t sentinel_get_level_impl(const sentinel<T, Value, Values...>& value) {
+        if (static_cast<const T&>(value) == Value) { return I; }
+
+        if constexpr (sizeof...(Values)) {
+            return sentinel_get_level_impl<I + 1>(value);
+        } else {
+            return std::uintmax_t(-1);
+        }
+    }
+    template<std::uintmax_t I = 0, class T, T Value, T... Values>
+    constexpr void sentinel_set_level_impl(sentinel<T, Value, Values...>& value, const std::uintmax_t level) {
+        if (level == I) { static_cast<T&>(value) = Value; return; }
+
+        if constexpr (sizeof...(Values)) {
+            sentinel_set_level_impl<I + 1>(value, level);
+        } else {
+            OPTION_VERIFY(false, "Level is out of range");
+        }
+    }
+}
+
+template<class T, T... Values>
+struct option_traits<sentinel<T, Values...>> {
+private:
+    using value_t = sentinel<T, Values...>;
+public:
+    static constexpr std::uintmax_t max_level = sizeof...(Values);
+
+    static constexpr std::uintmax_t get_level(const value_t* const value) {
+        return impl::sentinel_get_level_impl(*value);
+    }
+    static constexpr void set_level(value_t* const value, const std::uintmax_t level) {
+        impl::sentinel_set_level_impl(*value, level);
+    }
+};
+
 namespace impl {
     template<class T, class>
     using enable_hash_helper1 = T;
@@ -3145,8 +3217,8 @@ struct std::hash<::opt::impl::enable_hash_helper1<
 >> {
     using val_hash = std::hash<std::remove_const_t<T>>;
 public:
-    std::size_t operator()(const opt::option<T>& val) const noexcept(noexcept(val_hash{}(*val))) {
-        static constexpr std::size_t disengaged_hash = 0;
+    constexpr std::size_t operator()(const opt::option<T>& val) const noexcept(noexcept(val_hash{}(*val))) {
+        constexpr std::size_t disengaged_hash = 0;
         return val.has_value() ? val_hash{}(val.get()) : disengaged_hash;
     }
 };

@@ -26,9 +26,9 @@ add_executable(option-test
     "operators.test.cpp"
     "special.test.cpp"
     "lifetime.test.cpp"
-    "option_traits.test.cpp"
+    "special_traits.test.cpp"
     "main.cpp"
-
+    
     "utils.hpp"
 )
 target_add_warnings(option-test)
