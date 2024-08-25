@@ -1301,9 +1301,6 @@ namespace impl {
 template<class T, class>
 struct option_traits : impl::internal_option_traits<T> {};
 
-template<class T>
-struct option_traits<const T> : impl::internal_option_traits<T> {};
-
 namespace impl {
     template<class T>
     using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
