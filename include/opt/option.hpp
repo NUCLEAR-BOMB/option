@@ -2825,7 +2825,7 @@ template<class Fn, class... Options, std::enable_if_t<
 namespace impl {
     template<class To, class From>
     struct static_cast_functor {
-        constexpr To operator()(From&& from) noexcept(std::is_nothrow_constructible_v<To, From&&>) {
+        OPTION_PURE constexpr To operator()(From&& from) const noexcept(std::is_nothrow_constructible_v<To, From&&>) {
             return static_cast<To>(std::forward<From>(from));
         }
     };
@@ -3025,51 +3025,51 @@ template<class T1, class T2>
 }
 
 template<class T>
-[[nodiscard]] constexpr bool operator==(const option<T>& left, none_t) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator==(const option<T>& left, none_t) noexcept {
     return !left.has_value();
 }
 template<class T>
-[[nodiscard]] constexpr bool operator==(none_t, const opt::option<T>& right) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator==(none_t, const opt::option<T>& right) noexcept {
     return !right.has_value();
 }
 template<class T>
-[[nodiscard]] constexpr bool operator!=(const option<T>& left, none_t) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator!=(const option<T>& left, none_t) noexcept {
     return left.has_value();
 }
 template<class T>
-[[nodiscard]] constexpr bool operator!=(none_t, const opt::option<T>& right) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator!=(none_t, const opt::option<T>& right) noexcept {
     return right.has_value();
 }
 template<class T>
-[[nodiscard]] constexpr bool operator<([[maybe_unused]] const option<T>& left, none_t) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator<([[maybe_unused]] const option<T>& left, none_t) noexcept {
     return false;
 }
 template<class T>
-[[nodiscard]] constexpr bool operator<(none_t, const opt::option<T>& right) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator<(none_t, const opt::option<T>& right) noexcept {
     return right.has_value();
 }
 template<class T>
-[[nodiscard]] constexpr bool operator<=(const option<T>& left, none_t) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator<=(const option<T>& left, none_t) noexcept {
     return !left.has_value();
 }
 template<class T>
-[[nodiscard]] constexpr bool operator<=(none_t, [[maybe_unused]] const opt::option<T>& right) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator<=(none_t, [[maybe_unused]] const opt::option<T>& right) noexcept {
     return true;
 }
 template<class T>
-[[nodiscard]] constexpr bool operator>(const option<T>& left, none_t) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator>(const option<T>& left, none_t) noexcept {
     return left.has_value();
 }
 template<class T>
-[[nodiscard]] constexpr bool operator>(none_t, [[maybe_unused]] const opt::option<T>& right) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator>(none_t, [[maybe_unused]] const opt::option<T>& right) noexcept {
     return false;
 }
 template<class T>
-[[nodiscard]] constexpr bool operator>=([[maybe_unused]] const option<T>& left, none_t) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator>=([[maybe_unused]] const option<T>& left, none_t) noexcept {
     return true;
 }
 template<class T>
-[[nodiscard]] constexpr bool operator>=(none_t, const opt::option<T>& right) noexcept {
+[[nodiscard]] OPTION_PURE constexpr bool operator>=(none_t, const opt::option<T>& right) noexcept {
     return !right.has_value();
 }
 
