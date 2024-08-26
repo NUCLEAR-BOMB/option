@@ -138,4 +138,21 @@ TEST_CASE("pointer") {
 
 TEST_SUITE_END();
 
+TEST_CASE("opt::member") {
+    struct my_type {
+        float x;
+
+        my_type(float x_) : x{x_ + 1.f} {}
+    };
+    CHECK_UNARY_FALSE(std::is_aggregate_v<my_type>);
+    CHECK_GT(sizeof(opt::option<my_type>), sizeof(my_type));
+    opt::option<opt::member<my_type, &my_type::x>> a;
+    CHECK_EQ(sizeof(a), sizeof(my_type));
+    CHECK_UNARY_FALSE(a.has_value());
+    a = 1.f;
+    CHECK_EQ(a->unwrap().x, 2.f);
+    a.reset();
+    CHECK_UNARY_FALSE(a.has_value());
+}
+
 }

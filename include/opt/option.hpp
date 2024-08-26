@@ -1367,6 +1367,11 @@ namespace impl {
     template<class T, class... Args>
     inline constexpr bool is_direct_list_initializable_v = is_direct_list_initializable<T, Args...>::value;
 
+    template<class>
+    struct member_type;
+    template<class C, class T>
+    struct member_type<T C::*> { using type = T; };
+
     enum class base_strategy {
         has_traits             = 1,
         trivially_destructible = 2
@@ -3155,6 +3160,11 @@ namespace impl {
         constexpr operator const T&() const& noexcept { return value; }
         constexpr operator T&&() && noexcept { return std::move(value); }
         constexpr operator const T&&() const&& noexcept { return std::move(value); }
+
+        constexpr T& unwrap() & noexcept { return value; }
+        constexpr const T& unwrap() const& noexcept { return value; }
+        constexpr T&& unwrap() && noexcept { return std::move(value); }
+        constexpr const T&& unwrap() const&& noexcept { return std::move(value); }
     };
 }
 
@@ -3196,6 +3206,34 @@ public:
     }
     static constexpr void set_level(value_t* const value, const std::uintmax_t level) noexcept {
         impl::sentinel_set_level_impl<T, 0, Values...>(*value, level);
+    }
+};
+
+template<class T, auto T::*>
+class member : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
+
+template<class T, auto MemberPtr>
+struct option_traits<member<T, MemberPtr>> {
+private:
+    using value_t = member<T, MemberPtr>;
+    using member_t = typename impl::member_type<decltype(MemberPtr)>::type;
+    using traits = opt::option_traits<member_t>;
+public:
+    static constexpr std::uintmax_t max_level = traits::max_level;
+
+    static constexpr std::uintmax_t get_level(const value_t* const value) noexcept {
+        return traits::get_level(std::addressof(static_cast<const T&>(*value).*MemberPtr));
+    }
+    static constexpr void set_level(value_t* const value, const std::uintmax_t level) noexcept {
+        traits::set_level(std::addressof(static_cast<T&>(*value).*MemberPtr), level);
+    }
+    template<class U = int, class = std::enable_if_t<impl::has_after_constructor_method<member_t, traits>, U>>
+    static constexpr void after_constructor(value_t* const value) noexcept {
+        traits::after_constructor(std::addressof(static_cast<T&>(*value).*MemberPtr));
+    }
+    template<class U = int, class = std::enable_if_t<impl::has_after_assignment_method<member_t, traits>, U>>
+    static constexpr void after_assignment(value_t* const value) noexcept {
+        traits::after_assignment(std::addressof(static_cast<T&>(*value).*MemberPtr));
     }
 };
 
