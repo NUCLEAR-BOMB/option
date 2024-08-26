@@ -373,6 +373,18 @@ TEST_CASE("std::unique_ptr") {
     CHECK_EQ(**b, 2);
     b.emplace(std::make_unique<int>(3));
     CHECK_EQ(**b, 3);
+
+    struct my_type {
+        int x;
+        int func() { return (x += 1); }
+    };
+    opt::option<std::unique_ptr<my_type>> c;
+    CHECK_EQ(sizeof(c), sizeof(std::unique_ptr<my_type>));
+    CHECK_UNARY_FALSE(c.has_value());
+    c.emplace(std::make_unique<my_type>(my_type{1}));
+    CHECK_EQ((**c).x, 1);
+    c->reset();
+    CHECK_EQ(c, nullptr);
 }
 
 #ifdef OPTION_HAS_BOOST_PFR
