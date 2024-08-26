@@ -2061,7 +2061,7 @@ namespace impl::option {
         if (self.has_value()) {
             return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
         } else {
-            return impl::remove_cvref<invoke_res>{opt::none};
+            return invoke_res{opt::none};
         }
     }
     template<class T, class Fn>
