@@ -3240,29 +3240,29 @@ public:
 };
 
 template<class T>
-class force : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
+class enforce : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 
 template<class T>
-struct option_traits<force<T>> {
+struct option_traits<enforce<T>> {
 private:
     using traits = opt::option_traits<T>;
 public:
     static constexpr std::uintmax_t max_level = traits::max_level;
 
-    static_assert(max_level > 0, "the 'max_level' is expected to be greater than 0 (opt::force<T>)");
+    static_assert(max_level > 0, "the 'max_level' is expected to be greater than 0 (opt::enforce<T>)");
 
-    static constexpr std::uintmax_t get_level(const force<T>* const value) noexcept {
+    static constexpr std::uintmax_t get_level(const enforce<T>* const value) noexcept {
         return traits::get_level(std::addressof(static_cast<const T&>(*value)));
     }
-    static constexpr void set_level(force<T>* const value, const std::uintmax_t level) noexcept {
+    static constexpr void set_level(enforce<T>* const value, const std::uintmax_t level) noexcept {
         traits::set_level(std::addressof(static_cast<T&>(*value)), level);
     }
     template<class U = int, class = std::enable_if_t<impl::has_after_constructor_method<T, traits>, U>>
-    static constexpr void after_constructor(force<T>* const value) noexcept {
+    static constexpr void after_constructor(enforce<T>* const value) noexcept {
         traits::after_constructor(std::addressof(static_cast<T&>(*value)));
     }
     template<class U = int, class = std::enable_if_t<impl::has_after_assignment_method<T, traits>, U>>
-    static constexpr void after_assignment(force<T>* const value) noexcept {
+    static constexpr void after_assignment(enforce<T>* const value) noexcept {
         traits::after_assignment(std::addressof(static_cast<T&>(*value)));
     }
 };
