@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <Type Name="opt::option&lt;bool&gt;">
+        <AlternativeType Name="opt::option&lt;opt::enforce&lt;bool&gt;&gt;"/>
+
         <DisplayString Condition="2 == (*(uint8_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
@@ -8,6 +10,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;bool&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::enforce&lt;bool&gt;&gt;&gt;"/>
+
         <DisplayString Condition="3 == (*(uint8_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{{ {base::value} }}</DisplayString>
         <Expand HideRawView="true">
@@ -15,6 +19,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;bool&gt;&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::option&lt;opt::enforce&lt;bool&gt;&gt;&gt;&gt;"/>
+
         <DisplayString Condition="4 == (*(uint8_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{{ {base::value} }}</DisplayString>
         <Expand HideRawView="true">
@@ -23,6 +29,8 @@
     </Type>
 
     <Type Name="opt::option&lt;std::reference_wrapper&lt;*&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::enforce&lt;std::reference_wrapper&lt;*&gt;&gt;&gt;"/>
+
         <DisplayString Condition="0 == (*(uintptr_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{base::value}</DisplayString>
         <Expand HideRawView="true">
@@ -30,6 +38,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;std::reference_wrapper&lt;*&gt;&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::enforce&lt;std::reference_wrapper&lt;*&gt;&gt;&gt;&gt;"/>
+
         <DisplayString Condition="1 == (*(uintptr_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{{ {base::value} }}</DisplayString>
         <Expand HideRawView="true">
@@ -37,6 +47,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;std::reference_wrapper&lt;*&gt;&gt;&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::option&lt;opt::enforce&lt;std::reference_wrapper&lt;*&gt;&gt;&gt;&gt;&gt;"/>
+
         <DisplayString Condition="2 == (*(uintptr_t*)&amp;(base::value))">[none]</DisplayString>
         <DisplayString>{{ {base::value} }}</DisplayString>
         <Expand HideRawView="true">
@@ -48,6 +60,8 @@
     <Intrinsic Name="qNaN32_start" Expression="0xFFC3EFB5"></Intrinsic>
     
     <Type Name="opt::option&lt;float&gt;">
+        <AlternativeType Name="opt::option&lt;opt::enforce&lt;float&gt;&gt;"/>
+
         <DisplayString Condition="
             (sNaN32_start() == *(uint32_t*)&amp;(base::value)) || (qNaN32_start() == *(uint32_t*)&amp;(base::value))
         ">[none]</DisplayString>
@@ -57,6 +71,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;float&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::enforce&lt;float&gt;&gt;&gt;"/>
+
         <DisplayString Condition="
             ((sNaN32_start() + 1) == *(uint32_t*)&amp;(base::value)) || ((qNaN32_start() + 1) == *(uint32_t*)&amp;(base::value))
         ">[none]</DisplayString>
@@ -66,6 +82,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;float&gt;&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::option&lt;opt::enforce&lt;float&gt;&gt;&gt;&gt;"/>
+
         <DisplayString Condition="
             ((sNaN32_start() + 2) == *(uint32_t*)&amp;(base::value)) || ((qNaN32_start() + 2) == *(uint32_t*)&amp;(base::value))
         ">[none]</DisplayString>
@@ -79,6 +97,8 @@
     <Intrinsic Name="qNaN64_start" Expression="0xFFFBF26430BB3557"></Intrinsic>
 
     <Type Name="opt::option&lt;double&gt;">
+        <AlternativeType Name="opt::option&lt;opt::enforce&lt;double&gt;&gt;"/>
+        
         <DisplayString Condition="
             (sNaN64_start() == *(uint64_t*)&amp;(base::value)) || (qNaN64_start() == *(uint64_t*)&amp;(base::value))
         ">[none]</DisplayString>
@@ -88,6 +108,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;double&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::enforce&lt;double&gt;&gt;&gt;"/>
+
         <DisplayString Condition="
             ((sNaN64_start() + 1) == *(uint64_t*)&amp;(base::value)) || ((qNaN64_start() + 1) == *(uint32_t*)&amp;(base::value))
         ">[none]</DisplayString>
@@ -97,6 +119,8 @@
         </Expand>
     </Type>
     <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;double&gt;&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::option&lt;opt::enforce&lt;double&gt;&gt;&gt;&gt;"/>
+
         <DisplayString Condition="
             ((sNaN64_start() + 2) == *(uint64_t*)&amp;(base::value)) || ((qNaN64_start() + 2) == *(uint64_t*)&amp;(base::value))
         ">[none]</DisplayString>
@@ -107,15 +131,19 @@
     </Type>
 
     <Type Name="opt::option&lt;*&gt;" Priority="MediumHigh">
+        <AlternativeType Name="opt::option&lt;opt::enforce&lt;*&gt;&gt;"/>
+        
         <Intrinsic Name="is_reference" Expression="&quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '&amp;'"></Intrinsic>
         <Intrinsic Name="is_pointer" Expression="&quot;$T1&quot;[strlen(&quot;$T1&quot;)-1] == '*'"></Intrinsic>
-
+        
         <DisplayString Condition="is_reference() &amp;&amp; (*(uintptr_t*)&amp;(base::value) == 0)" Optional="true">[none]</DisplayString>
         <DisplayString Condition="is_reference()" Optional="true">{*base::value}</DisplayString>
         <DisplayString Condition="is_pointer() &amp;&amp; (*(uintptr_t*)&amp;(base::value) == 0xF8E1B1825D5D6C67)" Optional="true">[none]</DisplayString>
         <DisplayString Condition="is_pointer()" Optional="true">{base::value}</DisplayString>
         <DisplayString Condition="*(uint8_t*)&amp;(base::has_value_flag) == 0" Optional="true">[none]</DisplayString>
-        <DisplayString>{base::value}</DisplayString>
+        <DisplayString Condition="*(uint8_t*)&amp;(base::has_value_flag) != 0" Optional="true">{base::value}</DisplayString>
+        <DisplayString>{base::value} [has_value={base::has_value()}]</DisplayString>
+
         <Expand HideRawView="true">
             <Item Name="[raw]">base::value,nvoX</Item>
         </Expand>
@@ -123,5 +151,37 @@
     
     <Type Name="opt::none_t">
         <DisplayString>none</DisplayString>
+    </Type>
+
+    <Type Name="opt::sentinel&lt;*&gt;">
+        <AlternativeType Name="opt::sentinel_f&lt;*&gt;"/>
+        <AlternativeType Name="opt::member&lt;*&gt;"/>
+        <AlternativeType Name="opt::enforce&lt;*&gt;"/>
+        <DisplayString>{value}</DisplayString>
+        <Expand>
+            <ExpandedItem>value</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="opt::option&lt;opt::sentinel&lt;*,*&gt;&gt;">
+        <DisplayString Condition="base::value.value == $T2">[none]</DisplayString>
+        <DisplayString>{base::value.value}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">base::value.value,nvoX</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;opt::sentinel&lt;*,*,*&gt;&gt;&gt;">
+        <DisplayString Condition="base::value.base::value.value == $T3">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">base::value.base::value.value,nvoX</Item>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;opt::sentinel&lt;*,*,*,*&gt;&gt;&gt;&gt;">
+        <DisplayString Condition="base::value.base::value.base::value.value == $T4">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <Item Name="[raw]">base::value.base::value.base::value.value,nvoX</Item>
+        </Expand>
     </Type>
 </AutoVisualizer>
