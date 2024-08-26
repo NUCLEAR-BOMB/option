@@ -156,4 +156,9 @@ TEST_CASE("opt::member") {
     CHECK_UNARY_FALSE(a.has_value());
 }
 
+TEST_CASE("opt::force") {
+    CHECK_EQ(sizeof(opt::option<opt::force<float>>), sizeof(float));
+    CHECK_EQ(sizeof(opt::option<opt::force<double>>), sizeof(double));
+}
+
 }
