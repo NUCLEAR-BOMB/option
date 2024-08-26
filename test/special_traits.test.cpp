@@ -21,6 +21,12 @@ TEST_CASE("int") {
         CHECK_EQ(a, 1);
         a = opt::none;
         CHECK_UNARY_FALSE(a.has_value());
+
+        a = 2;
+        int& b = a.get();
+        CHECK_EQ(b, 2);
+        a.get() = 1;
+        CHECK_EQ(std::move(a.get()), 1);
     }
     {
         opt::option<opt::sentinel<int, 0>> a;

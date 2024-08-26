@@ -3122,39 +3122,44 @@ template<class T1, class T2>
     return right.has_value() ? left >= right.get() : true;
 }
 
+namespace impl {
+    template<class T>
+    class type_wrapper {
+        T value;
+    public:
+        template<class... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, int> = 0>
+        constexpr type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+            : value{std::forward<Args>(args)...} {}
+
+        type_wrapper() = default;
+        type_wrapper(const type_wrapper&) = default;
+        type_wrapper(type_wrapper&&) = default;
+        type_wrapper& operator=(const type_wrapper&) = default;
+        type_wrapper& operator=(type_wrapper&&) = default;
+
+        constexpr type_wrapper(const T& x) noexcept(std::is_nothrow_copy_constructible_v<T>)
+            : value{x} {}
+        constexpr type_wrapper(T&& x) noexcept(std::is_nothrow_move_constructible_v<T>)
+            : value{std::move(x)} {}
+
+        type_wrapper& operator=(const T& x) noexcept(std::is_nothrow_copy_assignable_v<T>) {
+            value = x;
+            return *this;
+        }
+        type_wrapper& operator=(T&& x) noexcept(std::is_nothrow_move_assignable_v<T>) {
+            value = std::move(x);
+            return *this;
+        }
+
+        constexpr operator T&() & noexcept { return value; }
+        constexpr operator const T&() const& noexcept { return value; }
+        constexpr operator T&&() && noexcept { return std::move(value); }
+        constexpr operator const T&&() const&& noexcept { return std::move(value); }
+    };
+}
+
 template<class T, auto...>
-class sentinel {
-    T value;
-public:
-    template<class... Args>
-    constexpr sentinel(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-        : value{std::forward<Args>(args)...} {}
-
-    sentinel() = default;
-    sentinel(const sentinel&) = default;
-    sentinel(sentinel&&) = default;
-    sentinel& operator=(const sentinel&) = default;
-    sentinel& operator=(sentinel&&) = default;
-
-    constexpr sentinel(const T& x) noexcept(std::is_nothrow_copy_constructible_v<T>)
-        : value{x} {}
-    constexpr sentinel(T&& x) noexcept(std::is_nothrow_move_constructible_v<T>)
-        : value{std::move(x)} {}
-
-    sentinel& operator=(const T& x) noexcept(std::is_nothrow_copy_assignable_v<T>) {
-        value = x;
-        return *this;
-    }
-    sentinel& operator=(T&& x) noexcept(std::is_nothrow_move_assignable_v<T>) {
-        value = std::move(x);
-        return *this;
-    }
-
-    constexpr operator T&() & noexcept { return value; }
-    constexpr operator const T&() const& noexcept { return value; }
-    constexpr operator T&&() && noexcept { return value; }
-    constexpr operator const T&&() const&& noexcept { return value; }
-};
+class sentinel : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 
 namespace impl {
     template<class T, std::uintmax_t I, auto Value, auto... Values>
