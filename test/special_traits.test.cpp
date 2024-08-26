@@ -24,9 +24,10 @@ TEST_CASE("int") {
 
         a = 2;
         int& b = a.get();
-        CHECK_EQ(b, 2);
+        b = 3;
+        CHECK_EQ(b, 3);
         a.get() = 1;
-        CHECK_EQ(std::move(a.get()), 1);
+        CHECK_EQ(std::move(a.get()), 1); // NOLINT(performance-move-const-arg)
     }
     {
         opt::option<opt::sentinel<int, 0>> a;
