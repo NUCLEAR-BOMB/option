@@ -3211,6 +3211,47 @@ public:
     }
 };
 
+template<class T, class Compare, class Set, auto...>
+class sentinel_f : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
+
+namespace impl {
+    template<class T, class Compare, std::uintmax_t I, auto Value, auto... Values>
+    constexpr std::uintmax_t sentinel_f_get_level_impl(const T& value) noexcept {
+        if (Compare{}(value, Value)) { return I; }
+
+        if constexpr (sizeof...(Values)) {
+            return sentinel_get_level_impl<T, Compare, I + 1, Values...>(value);
+        } else {
+            return std::uintmax_t(-1);
+        }
+    }
+    template<class T, class Set, std::uintmax_t I, auto Value, auto... Values>
+    constexpr void sentinel_f_set_level_impl(T& value, const std::uintmax_t level) noexcept {
+        if (level == I) { Set{}(value, Value); return; }
+
+        if constexpr (sizeof...(Values)) {
+            sentinel_set_level_impl<T, Set, I + 1, Values...>(value, level);
+        } else {
+            OPTION_VERIFY(false, "Level is out of range");
+        }
+    }
+}
+
+template<class T, class Compare, class Set, auto... Values>
+struct option_traits<sentinel_f<T, Compare, Set, Values...>> {
+private:
+    using value_t = sentinel_f<T, Compare, Set, Values...>;
+public:
+    static constexpr std::uintmax_t max_level = sizeof...(Values);
+
+    static constexpr std::uintmax_t get_level(const value_t* const value) noexcept {
+        return impl::sentinel_f_get_level_impl<T, Compare, 0, Values...>(*value);
+    }
+    static constexpr void set_level(value_t* const value, const std::uintmax_t level) noexcept {
+        impl::sentinel_f_set_level_impl<T, Set, 0, Values...>(*value, level);
+    }
+};
+
 template<class T, auto>
 class member : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 

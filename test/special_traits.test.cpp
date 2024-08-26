@@ -105,6 +105,8 @@ TEST_CASE("uint") {
         CHECK_UNARY_FALSE(a->has_value());
         *a = 4U;
         CHECK_EQ(a, 4U);
+        a.reset();
+        CHECK_EQ(a, opt::none);
     }
     {
         opt::option<opt::option<opt::option<opt::sentinel<unsigned, 10, 20>>>> a;
@@ -159,6 +161,24 @@ TEST_CASE("opt::member") {
 TEST_CASE("opt::enforce") {
     CHECK_EQ(sizeof(opt::option<opt::enforce<float>>), sizeof(float));
     CHECK_EQ(sizeof(opt::option<opt::enforce<double>>), sizeof(double));
+    const opt::option<opt::enforce<float>> a;
+    CHECK_UNARY_FALSE(a.has_value());
+}
+
+TEST_CASE("opt::sentinel_f") {
+    struct compare { bool operator()(int x, int y) const { return (x + 1) == (y - 1); } };
+    struct set { void operator()(int& x, int y) const { x = (y - 2); } };
+
+    CHECK_GT(sizeof(opt::option<opt::sentinel_f<int, compare, set>>), sizeof(int));
+    opt::option<opt::sentinel_f<int, compare, set, -1>> a;
+    CHECK_EQ(sizeof(a), sizeof(int));
+    CHECK_UNARY_FALSE(a.has_value());
+    a.emplace(1);
+    CHECK_EQ(a, 1);
+    a.reset();
+    CHECK_EQ(a, opt::none);
+    a.reset();
+    CHECK_EQ(a, opt::none);
 }
 
 }
