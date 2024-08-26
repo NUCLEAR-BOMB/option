@@ -1368,7 +1368,9 @@ namespace impl {
     inline constexpr bool is_direct_list_initializable_v = is_direct_list_initializable<T, Args...>::value;
 
     template<class>
-    struct member_type;
+    struct member_type {
+        static_assert(false, "Expected pointer to data member");
+    };
     template<class C, class T>
     struct member_type<T C::*> { using type = T; };
 
@@ -3209,7 +3211,7 @@ public:
     }
 };
 
-template<class T, auto T::*>
+template<class T, auto>
 class member : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 
 template<class T, auto MemberPtr>
