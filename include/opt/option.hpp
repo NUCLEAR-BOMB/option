@@ -678,10 +678,18 @@ namespace impl {
                 return st::none;
             } else
             if constexpr (sizeof(T) == 8) {
-                return limits::has_signaling_NaN ? st::float64_sNaN : st::float64_qNaN;
+                if constexpr (sizeof(std::uintptr_t) == 4) {
+                    return st::float64_qNaN;
+                } else {
+                    return limits::has_signaling_NaN ? st::float64_sNaN : st::float64_qNaN;
+                }
             } else
             if constexpr (sizeof(T) == 4) {
-                return limits::has_signaling_NaN ? st::float32_sNaN : st::float32_qNaN;
+                if constexpr (sizeof(std::uintptr_t) == 4) {
+                    return st::float32_qNaN;
+                } else {
+                    return limits::has_signaling_NaN ? st::float32_sNaN : st::float32_qNaN;
+                }
             } else
             return st::none;
         } else
