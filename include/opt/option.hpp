@@ -1328,20 +1328,21 @@ namespace impl {
     template<class Elem, class Traits, class Allocator>
     struct internal_option_traits<std::basic_string<Elem, Traits, Allocator>, option_strategy::string> {
     private:
+        static constexpr bool is_x64 = (sizeof(std::size_t) == 8);
 #if OPTION_STL
     #if _ITERATOR_DEBUG_LEVEL == 0
-        static constexpr std::size_t size_offset = 16;
-        static constexpr std::size_t capacity_offset = 24;
-        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 32);
+        static constexpr std::size_t size_offset = (is_x64 ? 16 : 16);
+        static constexpr std::size_t capacity_offset = (is_x64 ? 24 : 20);
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == (is_x64 ? 32 : 24));
     #else
-        static constexpr std::size_t size_offset = 24;
-        static constexpr std::size_t capacity_offset = 32;
-        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 40);
+        static constexpr std::size_t size_offset = (is_x64 ? 24 : 20);
+        static constexpr std::size_t capacity_offset = (is_x64 ? 32 : 24);
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == (is_x64 ? 40 : 28));
     #endif
 #elif OPTION_LIBCPP
     #ifdef _LIBCPP_ABI_ALTERNATE_STRING_LAYOUT
-        static constexpr std::size_t size_offset = 8;
-        static constexpr std::size_t capacity_offset = 16;
+        static constexpr std::size_t size_offset = (is_x64 ? 8 : 4);
+        static constexpr std::size_t capacity_offset = (is_x64 ? 16 : 8);
         // capacity is 0
         // is_long is true
         #ifdef _LIBCPP_BIG_ENDIAN
@@ -1350,7 +1351,7 @@ namespace impl {
         static constexpr std::size_t magic_capacity = std::size_t(1) << (sizeof(std::size_t) * CHAR_BIT - 1);
         #endif
     #else
-        static constexpr std::size_t size_offset = 8;
+        static constexpr std::size_t size_offset = (is_x64 ? 8 : 4);
         static constexpr std::size_t capacity_offset = 0;
         // capacity is 0
         // is_long is true
@@ -1360,11 +1361,11 @@ namespace impl {
         static constexpr std::size_t magic_capacity = 1;
         #endif
     #endif
-        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 24);
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == (is_x64 ? 24 : 12));
 #elif OPTION_LIBSTDCPP
         static constexpr std::size_t data_offset = 0;
-        static constexpr std::size_t size_offset = 8;
-        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 32);
+        static constexpr std::size_t size_offset = (is_x64 ? 8 : 4);
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == (is_x64 ? 32 : 16));
 #endif
     public:
         static constexpr std::uintmax_t max_level = 255;
