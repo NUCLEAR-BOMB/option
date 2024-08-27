@@ -1365,7 +1365,7 @@ namespace impl {
 #elif OPTION_LIBSTDCPP
         static constexpr std::size_t data_offset = 0;
         static constexpr std::size_t size_offset = (is_x64 ? 8 : 4);
-        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == (is_x64 ? 32 : 16));
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == (is_x64 ? 32 : 24));
 #endif
     public:
         static constexpr std::uintmax_t max_level = 255;

@@ -62,7 +62,7 @@ jobs:
           - name: 'clang 15'
             cxx: 'clang++-15'
             cc: 'clang-15'
-            packages: 'clang-15'
+            packages: 'clang-15 libclang-15-dev llvm-15-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -72,6 +72,7 @@ jobs:
           - name: 'clang 14'
             cxx: 'clang++-14'
             cc: 'clang-14'
+            packages: 'libclang-14-dev llvm-14-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -81,6 +82,7 @@ jobs:
           - name: 'clang 13'
             cxx: 'clang++-13'
             cc: 'clang-13'
+            packages: 'libclang-13-dev llvm-13-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -90,7 +92,7 @@ jobs:
           - name: 'clang 12'
             cxx: 'clang++-12'
             cc: 'clang-12'
-            packages: 'clang-12'
+            packages: 'clang-12 libclang-12-dev llvm-12-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -101,7 +103,7 @@ jobs:
           - name: 'clang 11'
             cxx: 'clang++-11'
             cc: 'clang-11'
-            packages: 'clang-11'
+            packages: 'clang-11 libclang-11-dev llvm-11-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -113,7 +115,7 @@ jobs:
           - name: 'clang 10'
             cxx: 'clang++-10'
             cc: 'clang-10'
-            packages: 'clang-10'
+            packages: 'clang-10 libclang-10-dev llvm-10-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -124,7 +126,7 @@ jobs:
           - name: 'clang 9'
             cxx: 'clang++-9'
             cc: 'clang-9'
-            packages: 'clang-9'
+            packages: 'clang-9 libclang-9-dev llvm-9-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -135,6 +137,7 @@ jobs:
             cxx: 'g++-13'
             cc: 'gcc-13'
             os: 'ubuntu-24.04'
+            packages: 'g++-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -144,6 +147,7 @@ jobs:
             cxx: 'g++-12'
             cc: 'gcc-12'
             os: 'ubuntu-latest'
+            packages: 'g++-12-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -153,6 +157,7 @@ jobs:
             cxx: 'g++-11'
             cc: 'gcc-11'
             os: 'ubuntu-latest'
+            packages: 'g++-11-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -198,7 +203,10 @@ jobs:
         uses: actions/checkout@v4.1.7
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install ninja-build ccache ${{matrix.packages}}
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install ninja-build ccache ${{matrix.packages}}
 
       - name: Install LLVM
         if: ${{matrix.install-llvm}}
@@ -232,6 +240,33 @@ jobs:
       - name: Check examples (Release)
         run: cmake --build build --config Release --target check-option-examples
 
+      - name: Configure CMake (x32)
+        env:
+          CXXFLAGS: ${{env.CXXFLAGS}} -m32
+          CFLAGS: ${{env.CFLAGS}} -m32
+        run: >-
+          cmake -B build-x32
+          -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
+          -DCMAKE_CXX_EXTENSIONS=FALSE
+          ${{matrix.cmake_options}}
+
+      - name: Build (Debug x32)
+        run: cmake --build build-x32 --config Debug --parallel `nproc`
+
+      - name: Run tests (Debug x32)
+        run: cmake --build build-x32 --config Debug --target run-option-test
+
+      - name: Check examples (Debug x32)
+        run: cmake --build build-x32 --config Debug --target check-option-examples
+
+      - name: Build (Release x32)
+        run: cmake --build build-x32 --config Release --parallel `nproc`
+
+      - name: Run tests (Release x32)
+        run: cmake --build build-x32 --config Release --target run-option-test
+
+      - name: Check examples (Release x32)
+        run: cmake --build build-x32 --config Release --target check-option-examples
       
   windows:
     name: 'Windows VS ${{matrix.compiler.toolset}} ${{matrix.platform}} (${{matrix.configuration}})'
