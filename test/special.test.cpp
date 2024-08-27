@@ -1526,6 +1526,37 @@ TEST_CASE("std::hash") {
 }
 // NOLINTEND(misc-const-correctness)
 
+TEST_CASE("std::string") {
+    opt::option<std::string> a;
+    CHECK_EQ(sizeof(a), sizeof(std::string));
+    CHECK_UNARY_FALSE(a.has_value());
+    a = "";
+    CHECK_UNARY(a.has_value());
+    CHECK_UNARY(a->empty());
+    for (std::size_t i = 1; i <= 100; ++i) {
+        CAPTURE(i);
+        a->append("a");
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a->size(), i);
+    }
+    for (std::size_t i = 99;; --i) {
+        CAPTURE(i);
+        a->pop_back();
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a->size(), i);
+        if (i == 0) { break; }
+    }
+    CHECK_UNARY(a.has_value());
+    CHECK_EQ(a->size(), 0);
+    a->shrink_to_fit();
+    CHECK_UNARY(a.has_value());
+    // not 0 because SSO
+    CHECK_GT(a->capacity(), 0);
+    a->clear();
+    a->clear();
+    CHECK_UNARY(a.has_value());
+}
+
 TEST_SUITE_END();
 
 struct struct1 {

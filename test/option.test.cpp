@@ -181,9 +181,12 @@ template<> struct sample_values<std::tuple<int, empty_struct, long>> {
 template<> struct sample_values<std::array<empty_struct, 2>> {
     std::array<empty_struct, 2> values[5]{};
 };
+template<> struct sample_values<std::string> {
+    std::string values[5]{"abc", "0123456789101112131415161718192021222324", "def", "2526272829303132333435363738394041424344", "ghi"};
+};
 
 
-TEST_CASE_TEMPLATE("opt::option", T, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, empty_struct, std::tuple<>, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, std::pair<empty_struct, int>, /*std::tuple<int, empty_struct, long>,*/ /*std::array<empty_struct, 2>,*/ /*aggregate_with_empty_struct,*/ int) {
+TEST_CASE_TEMPLATE("opt::option", T, std::string, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, empty_struct, std::tuple<>, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, std::pair<empty_struct, int>, /*std::tuple<int, empty_struct, long>,*/ /*std::array<empty_struct, 2>,*/ /*aggregate_with_empty_struct,*/ int) {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <initializer_list>
+#include <ciso646>
 
 #include <opt/option_fwd.hpp>
 
@@ -52,6 +53,28 @@
     #define OPTION_GCC   0
     #define OPTION_MSVC  0
     #define OPTION_INTEL 0
+#endif
+
+#if defined(_LIBCPP_VERSION)
+    #define OPTION_LIBCPP 1
+    #define OPTION_LIBSTDCPP 0
+    #define OPTION_STL 0
+    #define OPTION_UNKNOWN_STD 0
+#elif defined(__GLIBCXX__)
+    #define OPTION_LIBCPP 0
+    #define OPTION_LIBSTDCPP 1
+    #define OPTION_STL 0
+    #define OPTION_UNKNOWN_STD 0
+#elif defined(_MSC_VER)
+    #define OPTION_LIBCPP 0
+    #define OPTION_LIBSTDCPP 0
+    #define OPTION_STL 1
+    #define OPTION_UNKNOWN_STD 0
+#else
+    #define OPTION_LIBCPP 0
+    #define OPTION_LIBSTDCPP 0
+    #define OPTION_STL 0
+    #define OPTION_UNKNOWN_STD 1
 #endif
 
 #ifdef __has_attribute
@@ -546,6 +569,9 @@ namespace impl {
         empty,
         polymorphic,
         string_view,
+#if !OPTION_UNKNOWN_STD
+        string,
+#endif
         unique_ptr,
         member_pointer_32,
         member_pointer_64,
@@ -593,6 +619,13 @@ namespace impl {
     struct dispatch_specializations<std::basic_string_view<Elem, Traits>> {
         static constexpr option_strategy value = option_strategy::string_view;
     };
+#if !OPTION_UNKNOWN_STD
+    template<class Elem, class Traits, class Allocator>
+    struct dispatch_specializations<std::basic_string<Elem, Traits, Allocator>> {
+        static constexpr bool ebo_allocator = std::is_empty_v<Allocator> && !std::is_final_v<Allocator>;
+        static constexpr option_strategy value = ebo_allocator ? option_strategy::string : option_strategy::none;
+    };
+#endif
     template<class Elem>
     struct dispatch_specializations<std::unique_ptr<Elem>> {
         static constexpr option_strategy value = option_strategy::unique_ptr;
@@ -1290,6 +1323,94 @@ namespace impl {
             traits::after_assignment(std::addressof(tuple_like_get<index>(*value)));
         }
     };
+
+#if !OPTION_UNKNOWN_STD
+    template<class Elem, class Traits, class Allocator>
+    struct internal_option_traits<std::basic_string<Elem, Traits, Allocator>, option_strategy::string> {
+    private:
+#if OPTION_STL
+    #if _ITERATOR_DEBUG_LEVEL == 0
+        static constexpr std::size_t size_offset = 16;
+        static constexpr std::size_t capacity_offset = 24;
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 32);
+    #else
+        static constexpr std::size_t size_offset = 24;
+        static constexpr std::size_t capacity_offset = 32;
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 40);
+    #endif
+#elif OPTION_LIBCPP
+    #ifdef _LIBCPP_ABI_ALTERNATE_STRING_LAYOUT
+        static constexpr std::size_t size_offset = 8;
+        static constexpr std::size_t capacity_offset = 16;
+        // capacity is 0
+        // is_long is true
+        #ifdef _LIBCPP_BIG_ENDIAN
+        static constexpr std::size_t magic_capacity = 1;
+        #else
+        static constexpr std::size_t magic_capacity = std::size_t(1) << (sizeof(std::size_t) * CHAR_BIT - 1);
+        #endif
+    #else
+        static constexpr std::size_t size_offset = 8;
+        static constexpr std::size_t capacity_offset = 0;
+        // capacity is 0
+        // is_long is true
+        #ifdef _LIBCPP_BIG_ENDIAN
+        static constexpr std::size_t magic_capacity = std::size_t(1) << (sizeof(std::size_t) * CHAR_BIT - 1);
+        #else
+        static constexpr std::size_t magic_capacity = 1;
+        #endif
+    #endif
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 24);
+#elif OPTION_LIBSTDCPP
+        static constexpr std::size_t data_offset = 0;
+        static constexpr std::size_t size_offset = 8;
+        static_assert(sizeof(std::basic_string<Elem, Traits, Allocator>) == 32);
+#endif
+    public:
+        static constexpr std::uintmax_t max_level = 255;
+
+        static std::uintmax_t get_level(const std::basic_string<Elem, Traits, Allocator>* const value) noexcept {
+#if OPTION_STL
+            std::size_t size{};
+            std::memcpy(&size, reinterpret_cast<const std::byte*>(value) + size_offset, sizeof(std::size_t));
+            std::size_t capacity{};
+            std::memcpy(&capacity, reinterpret_cast<const std::byte*>(value) + capacity_offset, sizeof(std::size_t));
+            return capacity == 0 ? size : std::uintmax_t(-1);
+#elif OPTION_LIBCPP
+            std::size_t cap_and_is_long{};
+            std::memcpy(&cap_and_is_long, reinterpret_cast<const std::byte*>(value) + capacity_offset, sizeof(std::size_t));
+            std::size_t size{};
+            std::memcpy(&size, reinterpret_cast<const std::byte*>(value) + size_offset, sizeof(std::size_t));
+            return cap_and_is_long == magic_capacity ? size : std::uintmax_t(-1);
+#elif OPTION_LIBSTDCPP
+            const void* data{};
+            std::memcpy(&data, reinterpret_cast<const std::byte*>(value) + data_offset, sizeof(void*));
+            std::size_t size{};
+            std::memcpy(&size, reinterpret_cast<const std::byte*>(value) + size_offset, sizeof(std::size_t));
+            return data == nullptr ? size : std::uintmax_t(-1);
+#endif
+        }
+        static void set_level(std::basic_string<Elem, Traits, Allocator>* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
+#if OPTION_STL
+            const std::size_t size = static_cast<std::size_t>(level);
+            std::memcpy(reinterpret_cast<std::byte*>(value) + size_offset, &size, sizeof(std::size_t));
+            const std::size_t capacity = 0;
+            std::memcpy(reinterpret_cast<std::byte*>(value) + capacity_offset, &capacity, sizeof(std::size_t));
+#elif OPTION_LIBCPP
+            const std::size_t cap_and_is_long = magic_capacity;
+            std::memcpy(reinterpret_cast<std::byte*>(value) + capacity_offset, &cap_and_is_long, sizeof(std::size_t));
+            const std::size_t size = static_cast<std::size_t>(level);
+            std::memcpy(reinterpret_cast<std::byte*>(value) + size_offset, &size, sizeof(std::size_t));
+#elif OPTION_LIBSTDCPP
+            const void* const data = nullptr;
+            std::memcpy(reinterpret_cast<std::byte*>(value) + data_offset, &data, sizeof(void*));
+            const std::size_t size = static_cast<std::size_t>(level);
+            std::memcpy(reinterpret_cast<std::byte*>(value) + size_offset, &size, sizeof(std::size_t));
+#endif
+        }
+    };
+#endif
 
 #if OPTION_CLANG
     #pragma clang diagnostic pop

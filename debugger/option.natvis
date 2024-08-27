@@ -130,6 +130,49 @@
         </Expand>
     </Type>
 
+    <Type Name="opt::option&lt;std::basic_string&lt;*&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::enforce&lt;std::basic_string&lt;*&gt;&gt;&gt;"/>
+
+        <DisplayString Condition="
+        sizeof(base::value) == 40 ? (*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 32)) == 0
+                                  : (*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 24)) == 0
+        ">[none]</DisplayString>
+        <DisplayString>{base::value}</DisplayString>
+        <Expand HideRawView="true">
+            <ExpandedItem>base::value</ExpandedItem>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;std::basic_string&lt;*&gt;&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::enforce&lt;std::basic_string&lt;*&gt;&gt;&gt;&gt;"/>
+
+        <DisplayString Condition="
+        sizeof(base::value) == 40
+            ? ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 32)) == 0)
+   &amp;&amp; ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 24)) == 1)
+            : ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 24)) == 0)
+   &amp;&amp; ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 16)) == 1)
+        ">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <ExpandedItem>base::value</ExpandedItem>
+        </Expand>
+    </Type>
+    <Type Name="opt::option&lt;opt::option&lt;opt::option&lt;std::basic_string&lt;*&gt;&gt;&gt;&gt;">
+        <AlternativeType Name="opt::option&lt;opt::option&lt;opt::option&lt;opt::enforce&lt;std::basic_string&lt;*&gt;&gt;&gt;&gt;&gt;"/>
+
+        <DisplayString Condition="
+        sizeof(base::value) == 40
+            ? ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 32)) == 0)
+   &amp;&amp; ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 24)) == 2)
+            : ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 24)) == 0)
+   &amp;&amp; ((*(uint64_t*)(((uint8_t*)&amp;(base::value)) + 16)) == 2)
+        ">[none]</DisplayString>
+        <DisplayString>{{ {base::value} }}</DisplayString>
+        <Expand HideRawView="true">
+            <ExpandedItem>base::value</ExpandedItem>
+        </Expand>
+    </Type>
+
     <Type Name="opt::option&lt;*&gt;" Priority="MediumHigh">
         <AlternativeType Name="opt::option&lt;opt::enforce&lt;*&gt;&gt;"/>
         
