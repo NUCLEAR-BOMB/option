@@ -28,38 +28,38 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: 'clang 18.1.8'
+          - name: 'clang 18'
             cxx: 'clang++'
             cc: 'clang'
             packages: 'libncurses5 g++-multilib'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-            install-llvm: { version: '18.1.8', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz' }
+            # install-llvm: { version: '18.1.8', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz' }
 
-          - name: 'clang 17.0.6'
+          - name: 'clang 17'
             cxx: 'clang++'
             cc: 'clang'
             packages: 'g++-multilib'
-            os: 'ubuntu-22.04'
+            os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-            install-llvm: { version: '17.0.6', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
+            # install-llvm: { version: '17.0.6', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
 
-          - name: 'clang 16.0.4'
+          - name: 'clang 16'
             cxx: 'clang++'
             cc: 'clang'
             packages: 'g++-multilib'
-            os: 'ubuntu-22.04'
+            os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-            install-llvm: { version: '16.0.4', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.4/clang+llvm-16.0.4-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
+            # install-llvm: { version: '16.0.4', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.4/clang+llvm-16.0.4-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
 
           - name: 'clang 15'
             cxx: 'clang++-15'
