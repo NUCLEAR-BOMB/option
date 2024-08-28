@@ -87,9 +87,10 @@ jobs:
             packages: 'libclang-13-dev llvm-13-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
-              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+            x64_options: '-fsanitize=undefined'
             
           - name: 'clang 12'
             cxx: 'clang++-12'
@@ -218,6 +219,9 @@ jobs:
           force-url: ${{matrix.install-llvm.url}}
 
       - name: Configure CMake
+        env:
+          CXXFLAGS: ${{env.CXXFLAGS}} ${{matrix.x64_options}}
+          CFLAGS: ${{env.CFLAGS}} ${{matrix.x64_options}}
         run: >-
           cmake -B build
           -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
@@ -244,8 +248,8 @@ jobs:
 
       - name: Configure CMake (x32)
         env:
-          CXXFLAGS: ${{env.CXXFLAGS}} -m32
-          CFLAGS: ${{env.CFLAGS}} -m32
+          CXXFLAGS: ${{env.CXXFLAGS}} -m32 ${{matrix.x32_options}}
+          CFLAGS: ${{env.CFLAGS}} -m32 ${{matrix.x32_options}}
         run: >-
           cmake -B build-x32
           -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
