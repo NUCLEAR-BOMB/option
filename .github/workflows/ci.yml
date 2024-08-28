@@ -29,8 +29,8 @@ jobs:
       matrix:
         include:
           - name: 'clang 18'
-            cxx: 'clang++'
-            cc: 'clang'
+            cxx: 'clang++-18'
+            cc: 'clang-18'
             packages: 'g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
@@ -40,8 +40,8 @@ jobs:
             # install-llvm: { version: '18.1.8', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz' }
 
           - name: 'clang 17'
-            cxx: 'clang++'
-            cc: 'clang'
+            cxx: 'clang++-17'
+            cc: 'clang-17'
             packages: 'g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
@@ -51,8 +51,8 @@ jobs:
             # install-llvm: { version: '17.0.6', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
 
           - name: 'clang 16'
-            cxx: 'clang++'
-            cc: 'clang'
+            cxx: 'clang++-16'
+            cc: 'clang-16'
             packages: 'g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
