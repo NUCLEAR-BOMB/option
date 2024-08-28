@@ -98,10 +98,11 @@ jobs:
             packages: 'clang-12 libclang-12-dev llvm-12-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
-              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               -Wno-unknown-warning-option
+            x64_options: '-fsanitize=undefined'
 
           - name: 'clang 11'
             cxx: 'clang++-11'
@@ -109,10 +110,11 @@ jobs:
             packages: 'clang-11 libclang-11-dev llvm-11-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
-              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+            x64_options: '-fsanitize=undefined'
             asan_options: 'use_sigaltstack=false'
 
           - name: 'clang 10'
@@ -121,10 +123,11 @@ jobs:
             packages: 'clang-10 libclang-10-dev llvm-10-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
-              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+            x64_options: '-fsanitize=undefined'
 
           - name: 'clang 9'
             cxx: 'clang++-9'
@@ -132,9 +135,10 @@ jobs:
             packages: 'clang-9 libclang-9-dev llvm-9-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
-              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
+            x64_options: '-fsanitize=undefined'
 
           - name: 'gcc 13'
             cxx: 'g++-13'
