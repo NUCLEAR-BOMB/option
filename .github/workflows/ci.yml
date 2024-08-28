@@ -42,7 +42,7 @@ jobs:
           - name: 'clang 17'
             cxx: 'clang++-17'
             cc: 'clang-17'
-            packages: 'libclang-17-dev llvm-17-dev g++-multilib'
+            packages: 'clang-17 llvm-17 g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
