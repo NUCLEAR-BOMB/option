@@ -301,6 +301,18 @@ namespace impl {
     inline constexpr bool has_set_level_method<T, Traits, decltype(Traits::set_level(std::declval<T*>(), std::declval<std::uintmax_t>()))>
         = noexcept(Traits::set_level(std::declval<T*>(), std::declval<std::uintmax_t>()));
 
+    template<class T, class Traits, class = void>
+    inline constexpr bool has_after_constructor_method = false;
+    template<class T, class Traits>
+    inline constexpr bool has_after_constructor_method<T, Traits, decltype(Traits::after_constructor(std::declval<T*>()))>
+        = noexcept(Traits::after_constructor(std::declval<T*>()));
+
+    template<class T, class Traits, class = void>
+    inline constexpr bool has_after_assignment_method = false;
+    template<class T, class Traits>
+    inline constexpr bool has_after_assignment_method<T, Traits, decltype(Traits::after_assignment(std::declval<T*>()))>
+        = noexcept(Traits::after_assignment(std::declval<T*>()));
+
     template<class T, class = void>
     inline constexpr bool has_sentinel_member = false;
     template<class T>
@@ -905,8 +917,8 @@ namespace impl {
     struct internal_option_traits<std::pair<First, Second>, option_strategy::pair> {
     private:
         // for some reason option_traits_but_empty<T> is not needed
-        using first_traits = option_traits_but_empty<First>;
-        using second_traits = option_traits_but_empty<Second>;
+        using first_traits = opt::option_traits<First>;
+        using second_traits = opt::option_traits<Second>;
 
         struct selected_first { using traits = first_traits; using type = First; };
         struct selected_second { using traits = second_traits; using type = Second; };
@@ -932,6 +944,22 @@ namespace impl {
                 traits::set_level(std::addressof(value->second), level);
             }
         }
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<typename selected::type, traits>, U>>
+        static constexpr void after_constructor(std::pair<First, Second>* const value) noexcept {
+            if constexpr (first_is_max) {
+                traits::after_constructor(std::addressof(value->first));
+            } else {
+                traits::after_constructor(std::addressof(value->second));
+            }
+        }
+        template<class U = int, class = std::enable_if_t<has_after_assignment_method<typename selected::type, traits>, U>>
+        static constexpr void after_assignment(std::pair<First, Second>* const value) noexcept {
+            if constexpr (first_is_max) {
+                traits::after_assignment(std::addressof(value->first));
+            } else {
+                traits::after_assignment(std::addressof(value->second));
+            }
+        }
     };
     template<class... Ts>
     struct internal_option_traits<std::tuple<Ts...>, option_strategy::tuple> {
@@ -950,6 +978,14 @@ namespace impl {
         static constexpr void set_level(std::tuple<Ts...>* const value, const std::uintmax_t level) noexcept {
             traits::set_level(std::addressof(std::get<tuple_index>(*value)), level);
         }
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
+        static constexpr void after_constructor(std::tuple<Ts...>* const value) noexcept {
+            traits::after_constructor(std::addressof(std::get<tuple_index>(*value)));
+        }
+        template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
+        static constexpr void after_assignment(std::tuple<Ts...>* const value) noexcept {
+            traits::after_assignment(std::addressof(std::get<tuple_index>(*value)));
+        }
     };
 
     template<class T, std::size_t N>
@@ -964,6 +1000,14 @@ namespace impl {
         }
         static constexpr void set_level(std::array<T, N>* const value, const std::uintmax_t level) noexcept {
             traits::set_level(std::addressof((*value)[0]), level);
+        }
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<T, traits>, U>>
+        static constexpr void after_constructor(std::array<T, N>* const value) noexcept {
+            traits::after_constructor(std::addressof((*value)[0]));
+        }
+        template<class U = int, class = std::enable_if_t<has_after_assignment_method<T, traits>, U>>
+        static constexpr void after_assignment(std::array<T, N>* const value) noexcept {
+            traits::after_assignment(std::addressof((*value)[0]));
         }
     };
 
@@ -981,6 +1025,13 @@ namespace impl {
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy_least(value, uint_t(level + 1));
+        }
+
+        static void after_constructor(T* const value) noexcept {
+            impl::ptr_bit_copy_least(value, uint_t(0));
+        }
+        static void after_assignment(T* const value) noexcept {
+            impl::ptr_bit_copy_least(value, uint_t(0));
         }
     };
 #ifdef OPTION_HAS_PFR
@@ -1002,6 +1053,14 @@ namespace impl {
         }
         static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
             traits::set_level(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)), level);
+        }
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
+        static constexpr void after_constructor(T* const value) noexcept {
+            traits::after_constructor(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)));
+        }
+        template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
+        static constexpr void after_assignment(T* const value) noexcept {
+            traits::after_assignment(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)));
         }
     };
 #endif
@@ -1263,6 +1322,14 @@ namespace impl {
         static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
             traits::set_level(std::addressof(tuple_like_get<index>(*value)), level);
         }
+        template<class U = int, class = std::enable_if_t<has_after_constructor_method<type, traits>, U>>
+        static constexpr void after_constructor(T* const value) noexcept {
+            traits::after_constructor(std::addressof(tuple_like_get<index>(*value)));
+        }
+        template<class U = int, class = std::enable_if_t<has_after_assignment_method<type, traits>, U>>
+        static constexpr void after_assignment(T* const value) noexcept {
+            traits::after_assignment(std::addressof(tuple_like_get<index>(*value)));
+        }
     };
 
 #if !OPTION_UNKNOWN_STD
@@ -1372,6 +1439,13 @@ namespace impl {
     struct nontrivial_dummy_t {
         constexpr nontrivial_dummy_t() noexcept {}
     };
+    template<std::size_t Size>
+    struct nontrivial_dummy_with_size_t {
+        constexpr nontrivial_dummy_with_size_t() noexcept {}
+
+        std::byte storage[Size];
+    };
+
 
     struct construct_from_invoke_tag {
         explicit construct_from_invoke_tag() = default;
@@ -1432,8 +1506,7 @@ namespace impl {
 
     enum class base_strategy {
         has_traits             = 1,
-        trivially_destructible = 2,
-        empty                  = 4
+        trivially_destructible = 2
     };
 
     constexpr base_strategy operator|(const base_strategy left, const base_strategy right) {
@@ -1447,14 +1520,7 @@ namespace impl {
 
         constexpr bool trivially_destructible = std::is_trivially_destructible_v<T>;
         constexpr bool has_traits = has_option_traits<T>;
-        constexpr bool is_empty = std::is_empty_v<T>;
 
-        if constexpr (trivially_destructible && has_traits && is_empty) {
-            return st::trivially_destructible | st::has_traits | st::empty;
-        } else
-        if constexpr (has_traits && is_empty) {
-            return st::has_traits | st::empty;
-        } else
         if constexpr (has_traits && trivially_destructible) {
             return st::has_traits | st::trivially_destructible;
         } else
@@ -1505,11 +1571,6 @@ namespace impl {
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
-        }
     };
     template<class T>
     struct option_destruct_base<T,
@@ -1553,11 +1614,6 @@ namespace impl {
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
-        }
     };
 #if OPTION_GCC
     #pragma GCC diagnostic push
@@ -1568,7 +1624,7 @@ namespace impl {
         base_strategy::has_traits | base_strategy::trivially_destructible
     > {
         union {
-            nontrivial_dummy_t dummy;
+            nontrivial_dummy_with_size_t<sizeof(T)> dummy;
             T value;
         };
         using traits = opt::option_traits<T>;
@@ -1584,11 +1640,17 @@ namespace impl {
         template<class... Args>
         constexpr option_destruct_base(const std::in_place_t, Args&&... args)
             : value{std::forward<Args>(args)...} {
+            if constexpr (has_after_constructor_method<T, traits>) {
+                traits::after_constructor(std::addressof(value));
+            }
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            if constexpr (has_after_constructor_method<T, traits>) {
+                traits::after_constructor(std::addressof(value));
+            }
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
 
@@ -1605,12 +1667,10 @@ namespace impl {
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value(), "Value is non-empty");
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            if constexpr (has_after_constructor_method<T, traits>) {
+                traits::after_constructor(std::addressof(value));
+            }
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
         }
     };
     template<class T>
@@ -1618,7 +1678,7 @@ namespace impl {
         base_strategy::has_traits
     > {
         union {
-            nontrivial_dummy_t dummy;
+            nontrivial_dummy_with_size_t<sizeof(T)> dummy;
             T value;
         };
         using traits = opt::option_traits<T>;
@@ -1634,11 +1694,17 @@ namespace impl {
         template<class... Args>
         constexpr option_destruct_base(const std::in_place_t, Args&&... args)
             : value{std::forward<Args>(args)...} {
+            if constexpr (has_after_constructor_method<T, traits>) {
+                traits::after_constructor(std::addressof(value));
+            }
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            if constexpr (has_after_constructor_method<T, traits>) {
+                traits::after_constructor(std::addressof(value));
+            }
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
@@ -1663,125 +1729,10 @@ namespace impl {
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value(), "Value is non-empty");
             impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
-        }
-    };
-    template<class T>
-    struct option_destruct_base<T,
-        base_strategy::has_traits | base_strategy::trivially_destructible | base_strategy::empty
-    > {
-        union {
-            std::uint_least8_t dummy;
-            T value;
-        };
-        using traits = opt::option_traits<T>;
-
-        constexpr option_destruct_base() noexcept
-            : dummy{} {
-            traits::set_level(std::addressof(value), 0);
-            OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
-        }
-        template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
-            : value{std::forward<Args>(args)...} {
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-
-        constexpr void reset() noexcept {
-            traits::set_level(std::addressof(value), 0);
-            OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
-        }
-        OPTION_PURE constexpr bool has_value() const noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(value));
-            OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
-            return level == std::uintmax_t(-1);
-        }
-        template<class... Args>
-        constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
-        }
-    };
-    template<class T>
-    struct option_destruct_base<T,
-        base_strategy::has_traits | base_strategy::empty
-    > {
-        union {
-            std::uint_least8_t dummy;
-            T value;
-        };
-        using traits = opt::option_traits<T>;
-
-        static_assert(impl::has_get_level_method<T, traits>, "The static method 'get_level' in 'opt::option_traits' does not exist or has an invalid function signature");
-        static_assert(impl::has_set_level_method<T, traits>, "The static method 'set_level' in 'opt::option_traits' does not exist or has an invalid function signature");
-        
-        constexpr option_destruct_base() noexcept
-            : dummy{} {
-            traits::set_level(std::addressof(value), 0);
-            OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
-        }
-        template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
-            : value{std::forward<Args>(args)...} {
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
-            if (has_value()) {
-                impl::destroy_at(std::addressof(value));
+            if constexpr (has_after_constructor_method<T, traits>) {
+                traits::after_constructor(std::addressof(value));
             }
-        }
-
-        constexpr void reset() noexcept {
-            if (has_value()) {
-                impl::destroy_at(std::addressof(value));
-                traits::set_level(std::addressof(value), 0);
-                OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
-            }
-        }
-        OPTION_PURE constexpr bool has_value() const noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(value));
-            OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
-            return level == std::uintmax_t(-1);
-        }
-        template<class... Args>
-        constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            impl::ptr_bit_copy(std::addressof(value), std::uint_least8_t{0});
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
         }
     };
 #if OPTION_GCC
@@ -1797,7 +1748,6 @@ namespace impl {
         using base::has_value;
         using base::reset;
         using base::construct;
-        using base::assign;
 
         OPTION_PURE constexpr T& get() & noexcept { return base::value; }
         OPTION_PURE constexpr const T& get() const& noexcept { return base::value; }
@@ -1808,7 +1758,11 @@ namespace impl {
         template<class U>
         constexpr void assign_from_value(U&& other) {
             if (has_value()) {
-                assign(std::forward<U>(other));
+                get() = std::forward<U>(other);
+                if constexpr (has_after_assignment_method<T, traits>) {
+                    traits::after_assignment(std::addressof(base::value));
+                }
+                OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
             } else {
                 construct(std::forward<U>(other));
             }
@@ -1818,7 +1772,11 @@ namespace impl {
         constexpr void assign_from_option(Option&& other) {
             if (other.has_value()) {
                 if (has_value()) {
-                    assign(std::forward<Option>(other).get());
+                    get() = std::forward<Option>(other).get();
+                    if constexpr (has_after_assignment_method<T, traits>) {
+                        traits::after_assignment(std::addressof(base::value));
+                    }
+                    OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
                 } else {
                     construct(std::forward<Option>(other).get());
                 }
@@ -3442,6 +3400,14 @@ public:
     static constexpr void set_level(value_t* const value, const std::uintmax_t level) noexcept {
         traits::set_level(std::addressof(static_cast<T&>(*value).*MemberPtr), level);
     }
+    template<class U = int, class = std::enable_if_t<impl::has_after_constructor_method<member_t, traits>, U>>
+    static constexpr void after_constructor(value_t* const value) noexcept {
+        traits::after_constructor(std::addressof(static_cast<T&>(*value).*MemberPtr));
+    }
+    template<class U = int, class = std::enable_if_t<impl::has_after_assignment_method<member_t, traits>, U>>
+    static constexpr void after_assignment(value_t* const value) noexcept {
+        traits::after_assignment(std::addressof(static_cast<T&>(*value).*MemberPtr));
+    }
 };
 
 template<class T>
@@ -3461,6 +3427,14 @@ public:
     }
     static constexpr void set_level(enforce<T>* const value, const std::uintmax_t level) noexcept {
         traits::set_level(std::addressof(static_cast<T&>(*value)), level);
+    }
+    template<class U = int, class = std::enable_if_t<impl::has_after_constructor_method<T, traits>, U>>
+    static constexpr void after_constructor(enforce<T>* const value) noexcept {
+        traits::after_constructor(std::addressof(static_cast<T&>(*value)));
+    }
+    template<class U = int, class = std::enable_if_t<impl::has_after_assignment_method<T, traits>, U>>
+    static constexpr void after_assignment(enforce<T>* const value) noexcept {
+        traits::after_assignment(std::addressof(static_cast<T&>(*value)));
     }
 };
 
