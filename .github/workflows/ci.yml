@@ -31,7 +31,7 @@ jobs:
           - name: 'clang 18'
             cxx: 'clang++'
             cc: 'clang'
-            packages: 'libncurses5 g++-multilib'
+            packages: 'g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
