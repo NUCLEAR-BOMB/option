@@ -65,7 +65,7 @@ jobs:
             cxx: 'clang++-15'
             cc: 'clang-15'
             packages: 'libclang-15-dev llvm-15-dev g++-multilib'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
@@ -75,7 +75,7 @@ jobs:
             cxx: 'clang++-14'
             cc: 'clang-14'
             packages: 'libclang-14-dev llvm-14-dev g++-multilib'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
@@ -85,7 +85,7 @@ jobs:
             cxx: 'clang++-13'
             cc: 'clang-13'
             packages: 'libclang-13-dev llvm-13-dev g++-multilib'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
@@ -96,7 +96,7 @@ jobs:
             cxx: 'clang++-12'
             cc: 'clang-12'
             packages: 'clang-12 libclang-12-dev llvm-12-dev g++-multilib'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
@@ -108,7 +108,7 @@ jobs:
             cxx: 'clang++-11'
             cc: 'clang-11'
             packages: 'clang-11 libclang-11-dev llvm-11-dev g++-multilib'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
@@ -153,7 +153,7 @@ jobs:
           - name: 'gcc 12'
             cxx: 'g++-12'
             cc: 'gcc-12'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             packages: 'g++-12-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
@@ -163,7 +163,7 @@ jobs:
           - name: 'gcc 11'
             cxx: 'g++-11'
             cc: 'gcc-11'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             packages: 'g++-11-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
@@ -174,7 +174,7 @@ jobs:
           #   cxx: 'g++-10'
           #   cc: 'gcc-10'
           #   packages: 'g++-10'
-          #   os: 'ubuntu-latest'
+          #   os: 'ubuntu-22.04'
           #   options: >-
           #     -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
           #     -fno-sanitize-recover=all
@@ -184,7 +184,7 @@ jobs:
           #   cxx: 'g++-9'
           #   cc: 'gcc-9'
           #   packages: 'g++-9'
-          #   os: 'ubuntu-latest'
+          #   os: 'ubuntu-22.04'
           #   options: >-
           #     -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
           #     -fno-sanitize-recover=all
@@ -335,14 +335,14 @@ jobs:
       fail-fast: false
       matrix:
         configuration: ['Debug', 'Release']
-        os: ['ubuntu-latest', 'windows-latest']
+        os: ['ubuntu-22.04', 'windows-latest']
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.7
 
       - name: Install LLVM (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-22.04'
         uses: KyleMayes/install-llvm-action@v2.0.3
         with:
           version: '18.1.8'
@@ -356,7 +356,7 @@ jobs:
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
       - name: Install dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-22.04'
         run: sudo apt-get update && sudo apt-get install ninja-build libncurses5
 
       - name: Install dependencies (Windows)
@@ -390,7 +390,7 @@ jobs:
       matrix:
         include:
           - name: 'Linux GCC'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             cxx: 'g++'
             cc: 'gcc'
             options: >- 
@@ -404,7 +404,7 @@ jobs:
               -Wcast-align -Wunused -Wsign-conversion
 
           - name: 'Linux Clang'
-            os: 'ubuntu-latest'
+            os: 'ubuntu-22.04'
             cxx: 'clang++'
             cc: 'clang'
             options: '-Weverything -Werror'
@@ -422,7 +422,7 @@ jobs:
         run: cmake -B build -DINSTALL_OPTION=TRUE
 
       - name: Install project (main)
-        run: ${{matrix.os == 'ubuntu-latest' && 'sudo' || ''}} cmake --install build --verbose
+        run: ${{matrix.os == 'ubuntu-22.04' && 'sudo' || ''}} cmake --install build --verbose
 
       - name: Configure CMake (find_package)
         run: cmake -B find_package-build -S ./test/cmake/find_package/ -DCMAKE_FIND_DEBUG_MODE=TRUE
