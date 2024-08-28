@@ -64,7 +64,7 @@ jobs:
           - name: 'clang 15'
             cxx: 'clang++-15'
             cc: 'clang-15'
-            packages: 'clang-15 libclang-15-dev llvm-15-dev g++-multilib'
+            packages: 'libclang-15-dev llvm-15-dev g++-multilib'
             os: 'ubuntu-latest'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
