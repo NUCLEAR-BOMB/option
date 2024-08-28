@@ -42,12 +42,13 @@ jobs:
           - name: 'clang 17'
             cxx: 'clang++-17'
             cc: 'clang-17'
-            packages: 'clang-17 llvm-17 g++-multilib'
+            packages: 'g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
-              -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+            x64_options: '-fsanitize=address'
             # install-llvm: { version: '17.0.6', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
 
           - name: 'clang 16'
