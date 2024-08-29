@@ -266,8 +266,13 @@
         #define OPTION_STD_NAMESPACE_CXX11_BEGIN inline _GLIBCXX_BEGIN_NAMESPACE_CXX11
         #define OPTION_STD_NAMESPACE_CXX11_END _GLIBCXX_END_NAMESPACE_CXX11
     #elif OPTION_STL && defined(_STD_BEGIN) && defined(_STD_END)
-        #define OPTION_STD_NAMESPACE_BEGIN _STD_BEGIN
-        #define OPTION_STD_NAMESPACE_END _STD_END
+        #define OPTION_STD_NAMESPACE_BEGIN \
+            _STD_BEGIN \
+            _Pragma("warning(push)") \
+            _Pragma("warning(disable : 4099 4643)")
+        #define OPTION_STD_NAMESPACE_END \
+            _Pragma("warning(pop)") \
+            _STD_END
         #define OPTION_STD_NAMESPACE_CXX11_BEGIN
         #define OPTION_STD_NAMESPACE_CXX11_END
     #else
