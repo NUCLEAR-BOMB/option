@@ -27,6 +27,7 @@ add_executable(option-test
     "special.test.cpp"
     "lifetime.test.cpp"
     "special_traits.test.cpp"
+    "forward_std.test.cpp"
     "main.cpp"
     
     "utils.hpp"

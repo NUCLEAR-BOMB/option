@@ -7,6 +7,7 @@
 - [OPTION_USE_QUIET_NAN](#option_use_quiet_nan)
 - [OPTION_VERIFY](#option_verify)
 - [OPTION_USE_BUILTIN_TRAITS](#option_use_builtin_traits)
+- [OPTION_FORWARD_DECLARE_STD](#option_forward_declare_std)
 - [**boost.pfr**/**pfr** library related](#boostpfrpfr-library-related)
     - [OPTION_PFR_FILE](#option_pfr_file)
     - [OPTION_USE_PFR](#option_use_pfr)
@@ -35,6 +36,16 @@ In the debug configuration (`NDEBUG` is not defined), by default, [`std::fprintf
 If `true` enables [`opt::option_traits`][option-traits] to use library builtin optimizations; otherwise, only user defined [`opt::option_traits`][option-traits] will be used.
 
 [option-traits]: ./reference.md#option_traits
+
+### OPTION_FORWARD_DECLARE_STD
+*expects:* `boolean`, *default:* `true`
+
+If `true` provides a forward declaration of some standard library header (like `<string>`, `<vector>`, etc.).
+Otherwise just includes headers.
+
+> [!NOTE]
+> This kind of action is forbidden by the standard. 
+> If you have compilation error related to a forward declaration of standard library, set this macro to `1`.
 
 ## **boost.pfr**/**pfr** library related
 

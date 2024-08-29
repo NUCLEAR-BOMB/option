@@ -4,23 +4,14 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
+#include <cstring>
+#include <ciso646>
 #include <type_traits>
 #include <utility>
+#include <limits> // std::numeric_limits
+#include <exception> // std::exception
 #include <cstdint>
-#include <cstddef>
-#include <memory>
-#include <new>
-#include <functional>
-#include <exception>
-#include <cstring>
-#include <tuple>
-#include <array>
-#include <limits>
-#include <string_view>
-#include <string>
-#include <vector>
-#include <initializer_list>
-#include <ciso646>
+#include <functional> // std::invoke, std::hash
 
 #include <opt/option_fwd.hpp>
 
@@ -257,6 +248,58 @@
     #define OPTION_CAN_REFLECT_ENUM 1
 #else
     #define OPTION_CAN_REFLECT_ENUM 0
+#endif
+
+#ifndef OPTION_FORWARD_DECLARE_STD
+    #define OPTION_FORWARD_DECLARE_STD 1
+#endif
+
+#if OPTION_FORWARD_DECLARE_STD
+    #if OPTION_LIBCPP && defined(_LIBCPP_BEGIN_NAMESPACE_STD) && defined(_LIBCPP_END_NAMESPACE_STD)
+        #define OPTION_STD_NAMESPACE_BEGIN _LIBCPP_BEGIN_NAMESPACE_STD
+        #define OPTION_STD_NAMESPACE_END _LIBCPP_END_NAMESPACE_STD
+        #define OPTION_STD_NAMESPACE_CXX11_BEGIN
+        #define OPTION_STD_NAMESPACE_CXX11_END
+    #elif OPTION_LIBSTDCPP && defined(_GLIBCXX_VISIBILITY) && defined(_GLIBCXX_BEGIN_NAMESPACE_VERSION) && defined(_GLIBCXX_END_NAMESPACE_VERSION)
+        #define OPTION_STD_NAMESPACE_BEGIN namespace std _GLIBCXX_VISIBILITY(default) { _GLIBCXX_BEGIN_NAMESPACE_VERSION
+        #define OPTION_STD_NAMESPACE_END _GLIBCXX_END_NAMESPACE_VERSION }
+        #define OPTION_STD_NAMESPACE_CXX11_BEGIN inline _GLIBCXX_BEGIN_NAMESPACE_CXX11
+        #define OPTION_STD_NAMESPACE_CXX11_END _GLIBCXX_END_NAMESPACE_CXX11
+    #elif OPTION_STL && defined(_STD_BEGIN) && defined(_STD_END)
+        #define OPTION_STD_NAMESPACE_BEGIN _STD_BEGIN
+        #define OPTION_STD_NAMESPACE_END _STD_END
+        #define OPTION_STD_NAMESPACE_CXX11_BEGIN
+        #define OPTION_STD_NAMESPACE_CXX11_END
+    #else
+        #define OPTION_STD_NAMESPACE_BEGIN namespace std {
+        #define OPTION_STD_NAMESPACE_END }
+        #define OPTION_STD_NAMESPACE_CXX11_BEGIN
+        #define OPTION_STD_NAMESPACE_CXX11_END
+    #endif
+
+OPTION_STD_NAMESPACE_BEGIN
+    template<class CharT, class Traits>
+    class basic_string_view; // Defined in header <string_view>
+
+OPTION_STD_NAMESPACE_CXX11_BEGIN
+    template<class CharT, class Traits, class Allocator>
+    class basic_string; // Defined in header <string>
+OPTION_STD_NAMESPACE_CXX11_END
+
+    template<class T, class Allocator>
+    class vector; // Defined in header <vector>
+
+    template<class T, class Deleter>
+    class unique_ptr; // Defined in header <memory>
+
+    template<class T>
+    struct default_delete; // Defined in header <memory>
+OPTION_STD_NAMESPACE_END
+#else
+    #include <string_view>
+    #include <string>
+    #include <vector>
+    #include <memory>
 #endif
 
 namespace opt {
@@ -630,7 +673,7 @@ namespace impl {
     };
 #endif
     template<class Elem>
-    struct dispatch_specializations<std::unique_ptr<Elem>> {
+    struct dispatch_specializations<std::unique_ptr<Elem, std::default_delete<Elem>>> {
         static constexpr option_strategy value = option_strategy::unique_ptr;
     };
 
@@ -1081,18 +1124,18 @@ namespace impl {
         }
     };
     template<class Elem>
-    struct internal_option_traits<std::unique_ptr<Elem>, option_strategy::unique_ptr> {
+    struct internal_option_traits<std::unique_ptr<Elem, std::default_delete<Elem>>, option_strategy::unique_ptr> {
     private:
         static constexpr std::uintptr_t sentinel_ptr = std::uintptr_t(-1) - 46508;
     public:
         static constexpr std::uintmax_t max_level = 255;
 
-        static std::uintmax_t get_level(const std::unique_ptr<Elem>* const value) noexcept {
+        static std::uintmax_t get_level(const std::unique_ptr<Elem, std::default_delete<Elem>>* const value) noexcept {
             std::uintptr_t uint = reinterpret_cast<std::uintptr_t>(value->get());
             uint -= sentinel_ptr;
             return uint < max_level ? uint : std::uintmax_t(-1);
         }
-        static void set_level(std::unique_ptr<Elem>* const value, const std::uintmax_t level) noexcept {
+        static void set_level(std::unique_ptr<Elem, std::default_delete<Elem>>* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::construct_at(value, reinterpret_cast<Elem*>(sentinel_ptr + level));
         }
@@ -1352,21 +1395,21 @@ namespace impl {
         static std::uintmax_t get_level(const std::basic_string<Elem, Traits, Allocator>* const value) noexcept {
 #if OPTION_STL
             std::size_t size{};
-            std::memcpy(&size, reinterpret_cast<const std::byte*>(value) + size_offset, sizeof(std::size_t));
+            std::memcpy(&size, reinterpret_cast<const std::uint8_t*>(value) + size_offset, sizeof(std::size_t));
             std::size_t capacity{};
-            std::memcpy(&capacity, reinterpret_cast<const std::byte*>(value) + capacity_offset, sizeof(std::size_t));
+            std::memcpy(&capacity, reinterpret_cast<const std::uint8_t*>(value) + capacity_offset, sizeof(std::size_t));
             return capacity == 0 ? size : std::uintmax_t(-1);
 #elif OPTION_LIBCPP
             std::size_t cap_and_is_long{};
-            std::memcpy(&cap_and_is_long, reinterpret_cast<const std::byte*>(value) + capacity_offset, sizeof(std::size_t));
+            std::memcpy(&cap_and_is_long, reinterpret_cast<const std::uint8_t*>(value) + capacity_offset, sizeof(std::size_t));
             std::size_t size{};
-            std::memcpy(&size, reinterpret_cast<const std::byte*>(value) + size_offset, sizeof(std::size_t));
+            std::memcpy(&size, reinterpret_cast<const std::uint8_t*>(value) + size_offset, sizeof(std::size_t));
             return cap_and_is_long == magic_capacity ? size : std::uintmax_t(-1);
 #elif OPTION_LIBSTDCPP
             const void* data{};
-            std::memcpy(&data, reinterpret_cast<const std::byte*>(value) + data_offset, sizeof(void*));
+            std::memcpy(&data, reinterpret_cast<const std::uint8_t*>(value) + data_offset, sizeof(void*));
             std::size_t size{};
-            std::memcpy(&size, reinterpret_cast<const std::byte*>(value) + size_offset, sizeof(std::size_t));
+            std::memcpy(&size, reinterpret_cast<const std::uint8_t*>(value) + size_offset, sizeof(std::size_t));
             return data == nullptr ? size : std::uintmax_t(-1);
 #endif
         }
@@ -1374,19 +1417,19 @@ namespace impl {
             OPTION_VERIFY(level < max_level, "Level is out of range");
 #if OPTION_STL
             const std::size_t size = static_cast<std::size_t>(level);
-            std::memcpy(reinterpret_cast<std::byte*>(value) + size_offset, &size, sizeof(std::size_t));
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + size_offset, &size, sizeof(std::size_t));
             const std::size_t capacity = 0;
-            std::memcpy(reinterpret_cast<std::byte*>(value) + capacity_offset, &capacity, sizeof(std::size_t));
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + capacity_offset, &capacity, sizeof(std::size_t));
 #elif OPTION_LIBCPP
             const std::size_t cap_and_is_long = magic_capacity;
-            std::memcpy(reinterpret_cast<std::byte*>(value) + capacity_offset, &cap_and_is_long, sizeof(std::size_t));
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + capacity_offset, &cap_and_is_long, sizeof(std::size_t));
             const std::size_t size = static_cast<std::size_t>(level);
-            std::memcpy(reinterpret_cast<std::byte*>(value) + size_offset, &size, sizeof(std::size_t));
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + size_offset, &size, sizeof(std::size_t));
 #elif OPTION_LIBSTDCPP
             const void* const data = nullptr;
-            std::memcpy(reinterpret_cast<std::byte*>(value) + data_offset, &data, sizeof(void*));
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + data_offset, &data, sizeof(void*));
             const std::size_t size = static_cast<std::size_t>(level);
-            std::memcpy(reinterpret_cast<std::byte*>(value) + size_offset, &size, sizeof(std::size_t));
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + size_offset, &size, sizeof(std::size_t));
 #endif
         }
     };
@@ -1398,18 +1441,18 @@ namespace impl {
 
         static constexpr std::uintmax_t get_level(const std::vector<T, Allocator>* const value) noexcept {
             std::uintptr_t first{};
-            std::memcpy(&first, reinterpret_cast<const std::byte*>(value) + 0, ptr_size);
+            std::memcpy(&first, reinterpret_cast<const std::uint8_t*>(value) + 0, ptr_size);
             std::uintptr_t last{};
-            std::memcpy(&last, reinterpret_cast<const std::byte*>(value) + ptr_size, ptr_size);
+            std::memcpy(&last, reinterpret_cast<const std::uint8_t*>(value) + ptr_size, ptr_size);
             return first == 1 ? last : std::uintmax_t(-1);
         }
         static constexpr void set_level(std::vector<T, Allocator>* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
 
             const std::uintptr_t first = 1;
-            std::memcpy(reinterpret_cast<std::byte*>(value) + 0, &first, ptr_size);
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + 0, &first, ptr_size);
             const std::uintptr_t last = static_cast<std::uintptr_t>(level);
-            std::memcpy(reinterpret_cast<std::byte*>(value) + ptr_size, &last, ptr_size);
+            std::memcpy(reinterpret_cast<std::uint8_t*>(value) + ptr_size, &last, ptr_size);
         }
     };
 #endif
@@ -1436,7 +1479,7 @@ namespace impl {
     struct nontrivial_dummy_with_size {
         constexpr nontrivial_dummy_with_size() noexcept {}
 
-        std::byte storage[Size];
+        std::uint8_t storage[Size];
     };
 
     struct construct_from_invoke_tag {
@@ -2408,28 +2451,31 @@ namespace impl::option {
     template<class T, class Fn>
     using enable_inspect = std::enable_if_t<std::is_invocable_v<Fn, T>, int>; // ignore return value
 
-    template<class TupleOfOptions, class Tuple, std::size_t... Idx>
-    constexpr auto unzip_impl(std::index_sequence<Idx...>) {
-        return TupleOfOptions{opt::option<std::tuple_element_t<Idx, Tuple>>{}...};
+    template<class TupleLikeOfOptions, class Self, std::size_t... Idx>
+    constexpr auto unzip_impl(Self&& self, std::index_sequence<Idx...>) {
+        if (self.has_value()) {
+            return TupleLikeOfOptions{
+                opt::option{std::get<Idx>(std::forward<Self>(self).get())}...
+            };
+        } else {
+            return TupleLikeOfOptions{
+                opt::option<std::tuple_element_t<Idx, typename remove_cvref<Self>::value_type>>{opt::none}...
+            };
+        }
     }
 
     template<class Self>
     constexpr auto unzip(Self&& self) {
-        using tuple_type = impl::remove_cvref<typename impl::remove_cvref<Self>::value_type>;
-        static_assert(is_tuple_like<tuple_type>,
+        using tuple_like_type = impl::remove_cvref<typename impl::remove_cvref<Self>::value_type>;
+        static_assert(is_tuple_like<tuple_like_type>,
             "To unzip opt::option<T>, T must be tuple-like."
             "A type T that satisfies tuple-like must be a specialization of "
             "std::array, std::pair, std::tuple");
 
-        using tuple_of_options = impl::tuple_like_of_options<tuple_type>;
-        if (self.has_value()) {
-            return std::apply([&](auto&&... vals) {
-                return tuple_of_options{opt::option{std::forward<decltype(vals)>(vals)}...};
-            }, std::forward<Self>(self).get());
-        } else {
-            constexpr auto indexes = std::make_index_sequence<std::tuple_size_v<tuple_type>>{};
-            return unzip_impl<tuple_of_options, tuple_type>(indexes);
-        }
+        return unzip_impl<impl::tuple_like_of_options<tuple_like_type>>(
+            std::forward<Self>(self),
+            std::make_index_sequence<std::tuple_size<tuple_like_type>::value>{}
+        );
     }
 
     template<class T, class Fn, class = bool>

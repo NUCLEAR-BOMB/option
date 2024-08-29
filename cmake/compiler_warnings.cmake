@@ -26,6 +26,8 @@ function(target_add_warnings target)
         /wd5243 # 'type': using incomplete class 'class-name' can cause ODR violation due to ABI limitation. You can workaround the issue by specifying inheritance keyword on the forward declaration of the class.
         /wd4738 # storing 32-bit float result in memory, possible loss of performance
         /wd4121 # 'symbol' : alignment of a member was sensitive to packing
+        /wd4574 # 'identifier' is defined to be '0': did you mean to use '#if identifier'?
+        /wd4643 # Forward declaring 'identifier' in namespace std is not permitted by the C++ Standard.
         )
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
