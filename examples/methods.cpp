@@ -1,5 +1,6 @@
 #include <iostream>
 #include <opt/option.hpp>
+#include <array>
 
 void has_value_and() {
     opt::option<int> a = 3;

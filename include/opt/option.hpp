@@ -294,12 +294,16 @@ OPTION_STD_NAMESPACE_CXX11_END
 
     template<class T>
     struct default_delete; // Defined in header <memory>
+
+    template<class T, std::size_t N>
+    struct array; // Defined in header <array>
 OPTION_STD_NAMESPACE_END
 #else
     #include <string_view>
     #include <string>
     #include <vector>
     #include <memory>
+    #include <array>
 #endif
 
 namespace opt {
