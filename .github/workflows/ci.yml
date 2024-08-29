@@ -288,21 +288,19 @@ jobs:
         run: cmake --build build-x32 --config Release --target check-option-examples
       
   windows:
-    name: 'Windows VS ${{matrix.compiler.toolset}}'
+    name: 'Windows VS ${{matrix.toolset}}'
     runs-on: windows-latest
 
     env:
-      CFLAGS: ${{matrix.compiler.options}}
-      CXXFLAGS: ${{matrix.compiler.options}}
+      CFLAGS: ${{matrix.options}}
+      CXXFLAGS: ${{matrix.options}}
       VERBOSE: 1
       ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=0:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true'
 
     strategy:
       fail-fast: false
       matrix:
-        configuration: ['Debug', 'Release']
-        platform: ['x64', 'Win32']
-        compiler:
+        include:
           - { toolset: 'v143', options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO' }
           - { toolset: 'ClangCL', cmake_options: '"-DOPTION_DEV_CLANGCL_SANITIZERS=-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable"' }
 
@@ -317,32 +315,47 @@ jobs:
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
       - name: Configure CMake (Debug x64)
-        run: cmake -B build -A "${{matrix.platform}}" -T "${{matrix.compiler.toolset}}" -DCMAKE_BUILD_TYPE=${{matrix.configuration}} ${{matrix.compiler.cmake_options}}
+        run: cmake -B build -A x64 -T "${{matrix.toolset}}" ${{matrix.cmake_options}}
 
       - name: Build (Debug x64)
-        run: cmake --build build --config ${{matrix.configuration}} --parallel $env:NUMBER_OF_PROCESSORS
+        run: cmake --build build --config Debug --parallel $env:NUMBER_OF_PROCESSORS
 
       - name: Run tests (Debug x64)
-        run: cmake --build build --config ${{matrix.configuration}} --target run-option-test
+        run: cmake --build build --config Debug --target run-option-test
 
       - name: Check examples (Debug x64)
-        if: matrix.compiler.toolset != 'ClangCL'
-        run: cmake --build build --config ${{matrix.configuration}} --target check-option-examples
-
-      - name: Configure CMake (Release x64)
-        run: cmake -B build -A "${{matrix.platform}}" -T "${{matrix.compiler.toolset}}" -DCMAKE_BUILD_TYPE=${{matrix.configuration}} ${{matrix.compiler.cmake_options}}
+        run: cmake --build build --config Debug --target check-option-examples
 
       - name: Build (Release x64)
-        run: cmake --build build --config ${{matrix.configuration}} --parallel $env:NUMBER_OF_PROCESSORS
+        run: cmake --build build --config Release --parallel $env:NUMBER_OF_PROCESSORS
 
       - name: Run tests (Release x64)
-        run: cmake --build build --config ${{matrix.configuration}} --target run-option-test
+        run: cmake --build build --config Release --target run-option-test
 
-      - name: Check examples (Debug x64)
-        if: matrix.compiler.toolset != 'ClangCL'
-        run: cmake --build build --config ${{matrix.configuration}} --target check-option-examples
+      - name: Check examples (Release x64)
+        run: cmake --build build --config Release --target check-option-examples
 
+      - name: Configure CMake (Debug x32)
+        run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" ${{matrix.cmake_options}}
 
+      - name: Build (Debug x32)
+        run: cmake --build build-x32 --config Debug --parallel $env:NUMBER_OF_PROCESSORS
+
+      - name: Run tests (Debug x32)
+        run: cmake --build build-x32 --config Debug --target run-option-test
+
+      - name: Check examples (Debug x32)
+        run: cmake --build build-x32 --config Debug --target check-option-examples
+
+      - name: Build (Release x32)
+        run: cmake --build build-x32 --config Release --parallel $env:NUMBER_OF_PROCESSORS
+
+      - name: Run tests (Release x32)
+        if: matrix.toolset != 'ClangCL'
+        run: cmake --build build-x32 --config Release --target run-option-test
+
+      - name: Check examples (Release x32)
+        run: cmake --build build-x32 --config Release --target check-option-examples
 
   clang-tidy:
     name: 'Clang tidy on ${{matrix.os}} (${{matrix.configuration}})'
