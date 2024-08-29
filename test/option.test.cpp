@@ -382,7 +382,21 @@ TEST_CASE_TEMPLATE("opt::option", T, opt::sentinel<int, -1, -2, -3, -4, -5>, std
 
         T& b = *a;
         b = v0;
+        CHECK_UNARY(a.has_value());
         CHECK_EQ(a, v0);
+        CHECK_EQ(b, v0);
+        b = v1;
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v1);
+        CHECK_EQ(b, v1);
+        b = v0;
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v0);
+        CHECK_EQ(b, v0);
+        b = v2;
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v2);
+        CHECK_EQ(b, v2);
 
         const auto fn1 = [&](T& x) {
             x = v0;
@@ -397,6 +411,22 @@ TEST_CASE_TEMPLATE("opt::option", T, opt::sentinel<int, -1, -2, -3, -4, -5>, std
         a.emplace(v0);
         fn2(*a);
         CHECK_EQ(a, v1);
+
+        fn1(*a);
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v0);
+        fn2(*a);
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v1);
+        fn2(*a);
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v1);
+        fn1(*a);
+        fn1(*a);
+        fn2(*a);
+        fn1(*a);
+        CHECK_UNARY(a.has_value());
+        CHECK_EQ(a, v0);
     }
     SUBCASE(".reset") {
         opt::option<T> a;
