@@ -224,12 +224,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install ninja-build ${{matrix.packages}}
 
-      - name: Install LLVM
-        if: ${{matrix.install-llvm}}
-        uses: KyleMayes/install-llvm-action@v2.0.3
-        with:
-          version: ${{matrix.install-llvm.version}}
-          force-url: ${{matrix.install-llvm.url}}
+      # - name: Install LLVM
+      #   if: ${{matrix.install-llvm}}
+      #   uses: KyleMayes/install-llvm-action@v2.0.3
+      #   with:
+      #     version: ${{matrix.install-llvm.version}}
+      #     force-url: ${{matrix.install-llvm.url}}
 
       - name: Configure CMake
         env:
