@@ -193,8 +193,12 @@ template<> struct sample_values<opt::sentinel<int, -1, -2, -3, -4, -5>> {
 template<> struct sample_values<opt::enforce<empty_struct>> {
     opt::enforce<empty_struct> values[5]{{}, {}, {}, {}, {}};
 };
+template<> struct sample_values<std::vector<int>> {
+    using ilist = std::initializer_list<int>;
+    std::vector<int> values[5]{ilist{1}, ilist{2, 3}, ilist{4, 5, 6}, ilist{7, 8, 9, 10}, ilist{11, 12, 13, 14, 15}};
+};
 
-TEST_CASE_TEMPLATE("opt::option", T, opt::enforce<empty_struct>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, empty_struct, std::tuple<>, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, std::pair<empty_struct, int>, /*std::tuple<int, empty_struct, long>,*/ /*std::array<empty_struct, 2>,*/ /*aggregate_with_empty_struct,*/ int) {
+TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<empty_struct>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, empty_struct, std::tuple<>, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, std::pair<empty_struct, int>, /*std::tuple<int, empty_struct, long>,*/ /*std::array<empty_struct, 2>,*/ /*aggregate_with_empty_struct,*/ int) {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];

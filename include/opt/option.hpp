@@ -568,6 +568,7 @@ namespace impl {
         string_view,
 #if !OPTION_UNKNOWN_STD
         string,
+        vector,
 #endif
         unique_ptr,
         member_pointer_32,
@@ -621,6 +622,11 @@ namespace impl {
     struct dispatch_specializations<std::basic_string<Elem, Traits, Allocator>> {
         static constexpr bool ebo_allocator = std::is_empty_v<Allocator> && !std::is_final_v<Allocator>;
         static constexpr option_strategy value = ebo_allocator ? option_strategy::string : option_strategy::none;
+    };
+    template<class Elem, class Allocator>
+    struct dispatch_specializations<std::vector<Elem, Allocator>> {
+        static constexpr bool ebo_allocator = std::is_empty_v<Allocator> && !std::is_final_v<Allocator>;
+        static constexpr option_strategy value = ebo_allocator ? option_strategy::vector : option_strategy::none;
     };
 #endif
     template<class Elem>
@@ -1382,6 +1388,28 @@ namespace impl {
             const std::size_t size = static_cast<std::size_t>(level);
             std::memcpy(reinterpret_cast<std::byte*>(value) + size_offset, &size, sizeof(std::size_t));
 #endif
+        }
+    };
+    template<class T, class Allocator>
+    struct internal_option_traits<std::vector<T, Allocator>, option_strategy::vector> {
+        static constexpr std::size_t ptr_size = sizeof(std::uintptr_t);
+    public:
+        static constexpr std::uintmax_t max_level = 255;
+
+        static constexpr std::uintmax_t get_level(const std::vector<T, Allocator>* const value) noexcept {
+            std::uintptr_t first{};
+            std::memcpy(&first, reinterpret_cast<const std::byte*>(value) + 0, ptr_size);
+            std::uintptr_t last{};
+            std::memcpy(&last, reinterpret_cast<const std::byte*>(value) + ptr_size, ptr_size);
+            return first == 1 ? last : std::uintmax_t(-1);
+        }
+        static constexpr void set_level(std::vector<T, Allocator>* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
+
+            const std::uintptr_t first = 1;
+            std::memcpy(reinterpret_cast<std::byte*>(value) + 0, &first, ptr_size);
+            const std::uintptr_t last = static_cast<std::uintptr_t>(level);
+            std::memcpy(reinterpret_cast<std::byte*>(value) + ptr_size, &last, ptr_size);
         }
     };
 #endif
