@@ -139,11 +139,21 @@ jobs:
               -Wno-unknown-warning-option
             x64_options: '-fsanitize=undefined'
 
+          - name: 'gcc 14'
+            cxx: 'g++-14'
+            cc: 'gcc-14'
+            os: 'ubuntu-24.04'
+            packages: 'g++-multilib'
+            options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+
           - name: 'gcc 13'
             cxx: 'g++-13'
             cc: 'gcc-13'
             os: 'ubuntu-24.04'
-            packages: 'g++-multilib'
+            packages: 'g++-13-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
