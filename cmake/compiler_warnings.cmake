@@ -50,6 +50,7 @@ function(target_add_warnings target)
             set(gcc_opts
                 -Wno-stringop-overread # Warn for calls to string manipulation functions such as memchr, or strcpy that are determined to read past the end of the source sequence.
                 -Wno-maybe-uninitialized
+                -Wno-free-nonheap-object
             )
         endif()
 
