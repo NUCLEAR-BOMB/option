@@ -3345,7 +3345,7 @@ template<class T1, class T2>
 namespace impl {
     template<class T>
     class type_wrapper {
-        T value;
+        T value{};
     public:
         template<class... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, int> = 0>
         constexpr type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)

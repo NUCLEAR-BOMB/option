@@ -46,6 +46,12 @@ struct doctest::StringMaker<opt::none_t> {
         return "[empty]";
     }
 };
+template<class T, auto... Vals>
+struct doctest::StringMaker<opt::sentinel<T, Vals...>> {
+    static doctest::String convert(const opt::sentinel<T, Vals...>& value) {
+        return doctest::toString(static_cast<const T&>(value));
+    }
+};
 
 template<class T>
 constexpr std::remove_reference_t<T>&& as_rvalue(T&& x) noexcept {
