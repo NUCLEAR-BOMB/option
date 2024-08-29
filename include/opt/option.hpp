@@ -3432,7 +3432,7 @@ namespace impl {
     constexpr std::uintmax_t sentinel_f_get_level_impl(const T& value) noexcept {
         if (Compare{}(value, Value)) { return I; }
 
-        if constexpr (sizeof...(Values)) {
+        if constexpr (sizeof...(Values) > 0) {
             return sentinel_get_level_impl<T, Compare, I + 1, Values...>(value);
         } else {
             return std::uintmax_t(-1);
@@ -3442,7 +3442,7 @@ namespace impl {
     constexpr void sentinel_f_set_level_impl(T& value, const std::uintmax_t level) noexcept {
         if (level == I) { Set{}(value, Value); return; }
 
-        if constexpr (sizeof...(Values)) {
+        if constexpr (sizeof...(Values) > 0) {
             sentinel_set_level_impl<T, Set, I + 1, Values...>(value, level);
         } else {
             OPTION_VERIFY(false, "Level is out of range");
