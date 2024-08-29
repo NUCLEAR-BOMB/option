@@ -15,7 +15,6 @@ jobs:
 
     env:
       CMAKE_GENERATOR: 'Ninja Multi-Config'
-      CMAKE_CXX_COMPILER_LAUNCHER: ccache
       VERBOSE: 1
       CXX: ${{matrix.cxx}}
       CC: ${{matrix.cc}}
@@ -213,7 +212,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install ninja-build ccache ${{matrix.packages}}
+          sudo apt-get install ninja-build ${{matrix.packages}}
 
       - name: Install LLVM
         if: ${{matrix.install-llvm}}
