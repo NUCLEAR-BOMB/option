@@ -3347,7 +3347,7 @@ namespace impl {
     class type_wrapper {
         T value{};
     public:
-        template<class... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, int> = 0>
+        template<class... Args, std::enable_if_t<impl::is_direct_list_initializable_v<T, Args...>, int> = 0>
         constexpr type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             : value{std::forward<Args>(args)...} {}
 
