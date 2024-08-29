@@ -143,8 +143,8 @@ jobs:
             cxx: 'g++-14'
             cc: 'gcc-14'
             os: 'ubuntu-24.04'
-            packages: 'g++-multilib'
-            options: >-
+            packages: 'g++-14-multilib'
+            x64_options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
@@ -288,7 +288,7 @@ jobs:
         run: cmake --build build-x32 --config Release --target check-option-examples
       
   windows:
-    name: 'Windows VS ${{matrix.compiler.toolset}} ${{matrix.platform}} (${{matrix.configuration}})'
+    name: 'Windows VS ${{matrix.compiler.toolset}}'
     runs-on: windows-latest
 
     env:
@@ -316,19 +316,33 @@ jobs:
           version: '18.1.8'
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
-      - name: Configure CMake
+      - name: Configure CMake (Debug x64)
         run: cmake -B build -A "${{matrix.platform}}" -T "${{matrix.compiler.toolset}}" -DCMAKE_BUILD_TYPE=${{matrix.configuration}} ${{matrix.compiler.cmake_options}}
 
-      - name: Build
-        run: cmake --build build --config ${{matrix.configuration}} --parallel %NUMBER_OF_PROCESSORS%
-        shell: cmd
+      - name: Build (Debug x64)
+        run: cmake --build build --config ${{matrix.configuration}} --parallel $env:NUMBER_OF_PROCESSORS
 
-      - name: Run tests
+      - name: Run tests (Debug x64)
         run: cmake --build build --config ${{matrix.configuration}} --target run-option-test
 
-      - name: Check examples
-        if: matrix.configuration != 'Release' || matrix.compiler.toolset != 'ClangCL'
+      - name: Check examples (Debug x64)
+        if: matrix.compiler.toolset != 'ClangCL'
         run: cmake --build build --config ${{matrix.configuration}} --target check-option-examples
+
+      - name: Configure CMake (Release x64)
+        run: cmake -B build -A "${{matrix.platform}}" -T "${{matrix.compiler.toolset}}" -DCMAKE_BUILD_TYPE=${{matrix.configuration}} ${{matrix.compiler.cmake_options}}
+
+      - name: Build (Release x64)
+        run: cmake --build build --config ${{matrix.configuration}} --parallel $env:NUMBER_OF_PROCESSORS
+
+      - name: Run tests (Release x64)
+        run: cmake --build build --config ${{matrix.configuration}} --target run-option-test
+
+      - name: Check examples (Debug x64)
+        if: matrix.compiler.toolset != 'ClangCL'
+        run: cmake --build build --config ${{matrix.configuration}} --target check-option-examples
+
+
 
   clang-tidy:
     name: 'Clang tidy on ${{matrix.os}} (${{matrix.configuration}})'
