@@ -431,6 +431,24 @@ TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<empty_struct
         fn1(*a);
         CHECK_UNARY(a.has_value());
         CHECK_EQ(a, v0);
+
+        if constexpr (std::is_default_constructible_v<T>) {
+            const auto fn3 = [&] {
+                return T{};
+            };
+            *a = fn3();
+            CHECK_UNARY(a.has_value());
+            CHECK_EQ(a, T{});
+            *a = v1;
+            CHECK_UNARY(a.has_value());
+            CHECK_EQ(a, v1);
+            *a = fn3();
+            CHECK_UNARY(a.has_value());
+            CHECK_EQ(a, T{});
+            *a = T{};
+            CHECK_UNARY(a.has_value());
+            CHECK_EQ(a, T{});
+        }
     }
     SUBCASE(".reset") {
         opt::option<T> a;
