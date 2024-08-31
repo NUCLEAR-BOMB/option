@@ -391,6 +391,7 @@ jobs:
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               -Wno-unknown-warning-option
+              --stdlib=libc++
 
           - name: 'clang 11'
             cxx: 'clang++-11'
@@ -402,6 +403,7 @@ jobs:
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
             asan_options: 'use_sigaltstack=false'
 
           - name: 'clang 10'
@@ -414,6 +416,7 @@ jobs:
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
 
           - name: 'clang 9'
             cxx: 'clang++-9'
@@ -424,6 +427,7 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
+              --stdlib=libc++
 
     steps:
       - name: Checkout
