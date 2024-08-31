@@ -534,6 +534,7 @@ jobs:
         run: cmake --build build-x32 --config Release --target check-option-examples
 
   intel-compiler:
+    name: 'Intel LLVM-based compiler'
     runs-on: ubuntu-latest
 
     env:
