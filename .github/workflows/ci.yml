@@ -10,7 +10,7 @@ on:
 
 jobs:
   linux:
-    name: 'Linux ${{matrix.name}} (Debug/Release)'
+    name: 'Linux ${{matrix.name}}'
     runs-on: ${{matrix.os}}
 
     env:
