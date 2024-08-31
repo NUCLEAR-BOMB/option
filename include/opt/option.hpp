@@ -353,15 +353,6 @@ namespace impl {
     inline constexpr bool has_set_level_method<T, Traits, decltype(Traits::set_level(std::declval<T*>(), std::declval<std::uintmax_t>()))>
         = noexcept(Traits::set_level(std::declval<T*>(), std::declval<std::uintmax_t>()));
 
-    template<class T, class Traits, class = void>
-    inline constexpr bool has_on_modification = false;
-    template<class T, class Traits>
-    inline constexpr bool has_on_modification<T, Traits, decltype(Traits::on_modification(std::declval<T*>()))>
-        = noexcept(Traits::on_modification(std::declval<T*>()));
-
-    template<class T, class Traits, class Dummy>
-    using enable_on_modification = std::enable_if_t<has_on_modification<T, Traits>, Dummy>;
-
     template<class T, class = void>
     inline constexpr bool has_sentinel_member = false;
     template<class T>
@@ -987,14 +978,6 @@ namespace impl {
                 traits::set_level(std::addressof(value->second), level);
             }
         }
-        template<class D = int, enable_on_modification<typename selected::type, traits, D> = 0>
-        static constexpr void on_modification(std::pair<First, Second>* const value) noexcept {
-            if constexpr (first_is_max) {
-                traits::on_modification(std::addressof(value->first));
-            } else {
-                traits::on_modification(std::addressof(value->second));
-            }
-        }
     };
     template<class... Ts>
     struct internal_option_traits<std::tuple<Ts...>, option_strategy::tuple> {
@@ -1013,10 +996,6 @@ namespace impl {
         static constexpr void set_level(std::tuple<Ts...>* const value, const std::uintmax_t level) noexcept {
             traits::set_level(std::addressof(std::get<tuple_index>(*value)), level);
         }
-        template<class D = int, impl::enable_on_modification<type, traits, D> = 0>
-        static constexpr void on_modification(std::tuple<Ts...>* const value) noexcept {
-            traits::on_modification(std::addressof(std::get<tuple_index>(*value)));
-        }
     };
 
     template<class T, std::size_t N>
@@ -1031,10 +1010,6 @@ namespace impl {
         }
         static constexpr void set_level(std::array<T, N>* const value, const std::uintmax_t level) noexcept {
             traits::set_level(std::addressof((*value)[0]), level);
-        }
-        template<class D = int, impl::enable_on_modification<T, traits, D> = 0>
-        static constexpr void on_modification(std::array<T, N>* const value) noexcept {
-            traits::on_modification(std::addressof((*value)[0]));
         }
     };
 
@@ -1057,10 +1032,6 @@ namespace impl {
         }
         static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
             traits::set_level(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)), level);
-        }
-        template<class D = int, impl::enable_on_modification<type, traits, D> = 0>
-        static constexpr void on_modification(T* const value) noexcept {
-            traits::on_modification(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)));
         }
     };
 #endif
@@ -1453,12 +1424,6 @@ namespace impl {
     struct nontrivial_dummy {
         constexpr nontrivial_dummy() noexcept {}
     };
-    template<std::size_t Size>
-    struct nontrivial_dummy_with_size {
-        constexpr nontrivial_dummy_with_size() noexcept {}
-
-        std::uint8_t storage[Size];
-    };
 
     struct construct_from_invoke_tag {
         explicit construct_from_invoke_tag() = default;
@@ -1519,8 +1484,7 @@ namespace impl {
 
     enum class base_strategy {
         has_traits             = 1,
-        trivially_destructible = 2,
-        on_modification        = 4
+        trivially_destructible = 2
     };
 
     constexpr base_strategy operator|(const base_strategy left, const base_strategy right) {
@@ -1535,13 +1499,6 @@ namespace impl {
         constexpr bool trivially_destructible = std::is_trivially_destructible_v<T>;
 
         if constexpr (has_option_traits<T>) {
-            if constexpr (has_on_modification<T, opt::option_traits<T>>) {
-                if constexpr (trivially_destructible) {
-                    return st::has_traits | st::trivially_destructible | st::on_modification;
-                } else {
-                    return st::has_traits | st::on_modification;
-                }
-            } else
             if constexpr (trivially_destructible) {
                 return st::has_traits | st::trivially_destructible;
             } else {
@@ -1754,123 +1711,6 @@ namespace impl {
         template<class U>
         constexpr void assign(U&& other) {
             value = std::forward<U>(other);
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
-        }
-    };
-
-    template<class T>
-    struct option_destruct_base<T,
-        base_strategy::on_modification | base_strategy::has_traits | base_strategy::trivially_destructible
-    > {
-        union {
-            nontrivial_dummy_with_size<sizeof(T)> dummy;
-            T value;
-        };
-        using traits = opt::option_traits<T>;
-
-        static_assert(impl::has_get_level_method<T, traits>, "The static method 'get_level' in 'opt::option_traits' does not exist or has an invalid function signature");
-        static_assert(impl::has_set_level_method<T, traits>, "The static method 'set_level' in 'opt::option_traits' does not exist or has an invalid function signature");
-        
-        constexpr option_destruct_base() noexcept
-            : dummy{} {
-            traits::set_level(std::addressof(value), 0);
-            OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
-        }
-        template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
-            : value{std::forward<Args>(args)...} {
-            traits::on_modification(std::addressof(value));
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
-            traits::on_modification(std::addressof(value));
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-
-        constexpr void reset() noexcept {
-            traits::set_level(std::addressof(value), 0);
-            OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
-        }
-        OPTION_PURE constexpr bool has_value() const noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(value));
-            OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
-            return level == std::uintmax_t(-1);
-        }
-        template<class... Args>
-        constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            traits::on_modification(std::addressof(value));
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            traits::on_modification(std::addressof(value));
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
-        }
-    };
-    template<class T>
-    struct option_destruct_base<T,
-        base_strategy::on_modification | base_strategy::has_traits
-    > {
-        union {
-            nontrivial_dummy_with_size<sizeof(T)> dummy;
-            T value;
-        };
-        using traits = opt::option_traits<T>;
-
-        static_assert(impl::has_get_level_method<T, traits>, "The static method 'get_level' in 'opt::option_traits' does not exist or has an invalid function signature");
-        static_assert(impl::has_set_level_method<T, traits>, "The static method 'set_level' in 'opt::option_traits' does not exist or has an invalid function signature");
-        
-        constexpr option_destruct_base() noexcept
-            : dummy{} {
-            traits::set_level(std::addressof(value), 0);
-            OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
-        }
-        template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
-            : value{std::forward<Args>(args)...} {
-            traits::on_modification(std::addressof(value));
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
-            traits::on_modification(std::addressof(value));
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
-            if (has_value()) {
-                impl::destroy_at(std::addressof(value));
-            }
-        }
-
-        constexpr void reset() noexcept {
-            if (has_value()) {
-                impl::destroy_at(std::addressof(value));
-                traits::set_level(std::addressof(value), 0);
-                OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
-            }
-        }
-        OPTION_PURE constexpr bool has_value() const noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(value));
-            OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
-            return level == std::uintmax_t(-1);
-        }
-        template<class... Args>
-        constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
-            traits::on_modification(std::addressof(value));
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
-            traits::on_modification(std::addressof(value));
             OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
         }
     };
@@ -3535,10 +3375,6 @@ public:
     static constexpr void set_level(value_t* const value, const std::uintmax_t level) noexcept {
         traits::set_level(std::addressof(static_cast<T&>(*value).*MemberPtr), level);
     }
-    template<class D = int, impl::enable_on_modification<member_t, traits, D> = 0>
-    static void on_modification(value_t* const value) noexcept {
-        traits::on_modification(std::addressof(static_cast<T&>(*value).*MemberPtr));
-    }
 };
 
 template<class T>
@@ -3558,10 +3394,6 @@ public:
     }
     static constexpr void set_level(enforce<T>* const value, const std::uintmax_t level) noexcept {
         traits::set_level(std::addressof(static_cast<T&>(*value)), level);
-    }
-    template<class D = int, impl::enable_on_modification<T, traits, D> = 0>
-    static void on_modification(enforce<T>* const value) noexcept {
-        traits::on_modification(std::addressof(static_cast<T&>(*value)));
     }
 };
 
