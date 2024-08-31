@@ -533,6 +533,58 @@ jobs:
       - name: Check examples (Release x32)
         run: cmake --build build-x32 --config Release --target check-option-examples
 
+  intel-compiler:
+    runs-on: ubuntu-latest
+
+    env:
+      VERBOSE: 1
+      CMAKE_GENERATOR: 'Ninja Multi-Config'
+      CXX: 'icpx'
+      CC: 'icx'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.7
+
+      - name: Intel Apt repository
+        run: |
+          wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+          sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+          echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update
+      
+      - name: Install Intel oneAPI compiler
+        run: sudo apt-get install ninja-build intel-oneapi-compiler-dpcpp-cpp
+
+      - name: Setup Intel oneAPI environment
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          printenv >> $GITHUB_ENV
+
+      - name: Configure CMake
+        run: >-
+          cmake -B build
+          -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
+          -DCMAKE_CXX_EXTENSIONS=FALSE
+        
+      - name: Build (Debug)
+        run: cmake --build build --config Debug --parallel `nproc`
+
+      - name: Run tests (Debug)
+        run: cmake --build build --config Debug --target run-option-test
+
+      - name: Check examples (Debug)
+        run: cmake --build build --config Debug --target check-option-examples
+        
+      - name: Build (Release)
+        run: cmake --build build --config Release --parallel `nproc`
+
+      - name: Run tests (Release)
+        run: cmake --build build --config Release --target run-option-test
+
+      - name: Check examples (Release)
+        run: cmake --build build --config Release --target check-option-examples
+
   clang-tidy:
     name: 'Clang tidy on ${{matrix.os}} (${{matrix.configuration}})'
     runs-on: ${{matrix.os}}

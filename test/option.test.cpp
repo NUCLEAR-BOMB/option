@@ -18,7 +18,7 @@
 
 #if OPTION_MSVC
     #pragma fenv_access(on)
-#elif OPTION_CLANG
+#elif OPTION_CLANG && !defined(__INTEL_LLVM_COMPILER)
     #if __clang_major__ >= 12
         #pragma STDC FENV_ACCESS ON
     #endif
