@@ -547,15 +547,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4.1.7
 
-      - name: Intel Apt repository
+      - name: Cache Install Intel Compiler
+        id: cache-icx
+        uses: actions/cache@v4.0.2
+        with:
+          path: /opt/intel/oneapi
+          key: icx-2023
+
+      - name: Install Intel Compiler
+        if: steps.cache-icx.outputs.cache-hit != 'true'
         run: |
           wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
           sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
           echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
           sudo apt-get update
+          sudo apt-get install intel-oneapi-compiler-dpcpp-cpp
       
-      - name: Install Intel oneAPI compiler
-        run: sudo apt-get install ninja-build intel-oneapi-compiler-dpcpp-cpp
+      - name: Install Ninja
+        run: sudo apt-get install ninja-build 
 
       - name: Setup Intel oneAPI environment
         run: |
