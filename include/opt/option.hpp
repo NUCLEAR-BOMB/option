@@ -615,7 +615,6 @@ namespace impl {
         float64_qNaN,
         float32_sNaN,
         float32_qNaN,
-        empty,
         polymorphic,
         string_view,
 #if !OPTION_UNKNOWN_STD
@@ -747,9 +746,6 @@ namespace impl {
                 }
             } else
             return st::none;
-        } else
-        if constexpr (std::is_empty_v<T>) {
-            return st::empty;
         } else
         if constexpr (std::is_polymorphic_v<T> && sizeof(T) >= sizeof(std::uintptr_t)) {
             return st::polymorphic;
@@ -1050,25 +1046,6 @@ namespace impl {
         }
     };
 
-    template<class T>
-    struct internal_option_traits<T, option_strategy::empty> {
-    private:
-        using uint_t = std::uint_least8_t;
-    public:
-        static constexpr std::uintmax_t max_level = 255;
-
-        static std::uintmax_t get_level(const T* const value) noexcept {
-            const auto uint = impl::ptr_bit_cast_least<uint_t>(value);
-            return uint == 0 ? std::uintmax_t(-1) : uint - 1; 
-        }
-        static void set_level(T* const value, const std::uintmax_t level) noexcept {
-            OPTION_VERIFY(level < max_level, "Level is out of range");
-            impl::ptr_bit_copy_least(value, uint_t(level + 1));
-        }
-        static void on_modification(T* const value) noexcept {
-            impl::ptr_bit_copy_least(value, uint_t{0});
-        }
-    };
 #ifdef OPTION_HAS_PFR
     template<class T>
     struct internal_option_traits<T, option_strategy::reflectable> {
