@@ -26,7 +26,7 @@ for file_path, target_path in zip(files, targets):
     for (line, expected), received in zip(expected_lines, target_stdout):
         if expected == '[number]' and try_int(received) is not None:
             pass
-        elif expected == '[nullptr]' and try_int(received) == 0:
+        elif expected == '[nullptr]' and (try_int(received) == 0 or received == '(nil)'):
             pass
         elif expected != received:
             print(f'Expected: "{expected}", received: "{received}".\nAt line {line}, file: "{file_path}"\n', file=sys.stderr)
