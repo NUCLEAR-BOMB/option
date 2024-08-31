@@ -27,116 +27,126 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: 'clang 18'
+          - name: 'clang 18 libc++'
             cxx: 'clang++-18'
             cc: 'clang-18'
-            packages: 'g++-multilib'
+            packages: ' libc++-18-dev libc++abi-18-dev g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
             # install-llvm: { version: '18.1.8', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz' }
 
-          - name: 'clang 17'
+          - name: 'clang 17 libc++'
             cxx: 'clang++-17'
             cc: 'clang-17'
-            packages: 'g++-multilib'
+            packages: ' libc++-17-dev libc++abi-17-dev g++-multilib'
             os: 'ubuntu-24.04'
+            options: '--stdlib=libc++'
             x64_options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
             # install-llvm: { version: '17.0.6', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
 
-          - name: 'clang 16'
+          - name: 'clang 16 libc++'
             cxx: 'clang++-16'
             cc: 'clang-16'
-            packages: 'g++-multilib'
+            packages: ' libc++-16-dev libc++abi-16-dev g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
             # install-llvm: { version: '16.0.4', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.4/clang+llvm-16.0.4-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
 
-          - name: 'clang 15'
+          - name: 'clang 15 libc++'
             cxx: 'clang++-15'
             cc: 'clang-15'
-            packages: 'libclang-15-dev llvm-15-dev g++-multilib'
+            packages: ' libc++-15-dev libc++abi-15-dev libclang-15-dev llvm-15-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
 
-          - name: 'clang 14'
+          - name: 'clang 14 libc++'
             cxx: 'clang++-14'
             cc: 'clang-14'
-            packages: 'libclang-14-dev llvm-14-dev g++-multilib'
+            packages: ' libc++-14-dev libc++abi-14-dev libclang-14-dev llvm-14-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
 
-          - name: 'clang 13'
+          - name: 'clang 13 libc++'
             cxx: 'clang++-13'
             cc: 'clang-13'
-            packages: 'libclang-13-dev llvm-13-dev g++-multilib'
+            packages: ' libc++-13-dev libc++abi-13-dev libclang-13-dev llvm-13-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
             x64_options: '-fsanitize=undefined'
             
-          - name: 'clang 12'
+          - name: 'clang 12 libc++'
             cxx: 'clang++-12'
             cc: 'clang-12'
-            packages: 'clang-12 libclang-12-dev llvm-12-dev g++-multilib'
+            packages: ' libc++-12-dev libc++abi-12-dev clang-12 libclang-12-dev llvm-12-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               -Wno-unknown-warning-option
+              --stdlib=libc++
             x64_options: '-fsanitize=undefined'
 
-          - name: 'clang 11'
+          - name: 'clang 11 libc++'
             cxx: 'clang++-11'
             cc: 'clang-11'
-            packages: 'clang-11 libclang-11-dev llvm-11-dev g++-multilib'
+            packages: 'clang-11  libc++-11-dev libc++abi-11-dev libclang-11-dev llvm-11-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
             x64_options: '-fsanitize=undefined'
             asan_options: 'use_sigaltstack=false'
 
-          - name: 'clang 10'
+          - name: 'clang 10 libc++'
             cxx: 'clang++-10'
             cc: 'clang-10'
-            packages: 'clang-10 libclang-10-dev llvm-10-dev g++-multilib'
+            packages: 'clang-10  libc++-10-dev libc++abi-10-dev libclang-10-dev llvm-10-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+              --stdlib=libc++
             x64_options: '-fsanitize=undefined'
 
-          - name: 'clang 9'
+          - name: 'clang 9 libc++'
             cxx: 'clang++-9'
             cc: 'clang-9'
-            packages: 'clang-9 libclang-9-dev llvm-9-dev g++-multilib'
+            packages: 'clang-9  libc++-9-dev libc++abi-9-dev libclang-9-dev llvm-9-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
+              --stdlib=libc++
             x64_options: '-fsanitize=undefined'
 
           - name: 'gcc 14'
