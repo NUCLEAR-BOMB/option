@@ -437,13 +437,6 @@ namespace impl {
     #pragma warning(disable : 4296) // 'operator' : expression is always false
 #endif
 
-    template<class T, bool /*false*/ = std::is_empty_v<T>>
-    struct option_traits_but_empty : opt::option_traits<T> {};
-    template<class T>
-    struct option_traits_but_empty<T, true> {
-        static constexpr std::uintmax_t max_level = 0;
-    };
-
     template<
         std::uintmax_t level,
         class Type,
@@ -453,10 +446,10 @@ namespace impl {
     >
     struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
         : select_max_level_traits_impl<
-            (option_traits_but_empty<T>::max_level > level) ? option_traits_but_empty<T>::max_level : level,
-            std::conditional_t<(option_traits_but_empty<T>::max_level > level), T, Type>,
+            (opt::option_traits<T>::max_level > level) ? opt::option_traits<T>::max_level : level,
+            std::conditional_t<(opt::option_traits<T>::max_level > level), T, Type>,
             var_index + 1,
-            (option_traits_but_empty<T>::max_level > level) ? var_index : index,
+            (opt::option_traits<T>::max_level > level) ? var_index : index,
             Ts...
         >
     {};
@@ -967,7 +960,6 @@ namespace impl {
     template<class First, class Second>
     struct internal_option_traits<std::pair<First, Second>, option_strategy::pair> {
     private:
-        // for some reason option_traits_but_empty<T> is not needed
         using first_traits = opt::option_traits<First>;
         using second_traits = opt::option_traits<Second>;
 
@@ -1030,7 +1022,7 @@ namespace impl {
     template<class T, std::size_t N>
     struct internal_option_traits<std::array<T, N>, option_strategy::array> {
     private:
-        using traits = option_traits_but_empty<T>;
+        using traits = opt::option_traits<T>;
     public:
         static constexpr std::uintmax_t max_level = traits::max_level;
 
