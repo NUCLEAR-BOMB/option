@@ -36,6 +36,7 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libstdc++
             # install-llvm: { version: '18.1.8', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz' }
 
           - name: 'clang 17'
@@ -43,6 +44,7 @@ jobs:
             cc: 'clang-17'
             packages: 'g++-multilib'
             os: 'ubuntu-24.04'
+            options: '--stdlib=libstdc++'
             x64_options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
@@ -58,6 +60,7 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libstdc++
             # install-llvm: { version: '16.0.4', url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.4/clang+llvm-16.0.4-x86_64-linux-gnu-ubuntu-22.04.tar.xz' }
 
           - name: 'clang 15'
@@ -69,6 +72,7 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libstdc++
 
           - name: 'clang 14'
             cxx: 'clang++-14'
@@ -79,6 +83,7 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libstdc++
 
           - name: 'clang 13'
             cxx: 'clang++-13'
@@ -89,6 +94,7 @@ jobs:
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
+              --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
             
           - name: 'clang 12'
@@ -101,6 +107,7 @@ jobs:
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               -Wno-unknown-warning-option
+              --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
 
           - name: 'clang 11'
@@ -113,6 +120,7 @@ jobs:
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+              --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
             asan_options: 'use_sigaltstack=false'
 
@@ -126,6 +134,7 @@ jobs:
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
+              --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
 
           - name: 'clang 9'
@@ -137,6 +146,7 @@ jobs:
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
+              --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
 
           - name: 'gcc 14'
