@@ -3236,12 +3236,12 @@ template<class T1, class T2>
 
 namespace impl {
     template<class T>
-    class type_wrapper {
-        T value{};
-    public:
+    struct type_wrapper {
+        T m{};
+
         template<class... Args, std::enable_if_t<impl::is_direct_list_initializable_v<T, Args...>, int> = 0>
         constexpr type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-            : value{std::forward<Args>(args)...} {}
+            : m{std::forward<Args>(args)...} {}
 
         type_wrapper() = default;
         type_wrapper(const type_wrapper&) = default;
@@ -3250,28 +3250,23 @@ namespace impl {
         type_wrapper& operator=(type_wrapper&&) = default;
 
         constexpr type_wrapper(const T& x) noexcept(std::is_nothrow_copy_constructible_v<T>)
-            : value{x} {}
+            : m{x} {}
         constexpr type_wrapper(T&& x) noexcept(std::is_nothrow_move_constructible_v<T>)
-            : value{std::move(x)} {}
+            : m{std::move(x)} {}
 
         type_wrapper& operator=(const T& x) noexcept(std::is_nothrow_copy_assignable_v<T>) {
-            value = x;
+            m = x;
             return *this;
         }
         type_wrapper& operator=(T&& x) noexcept(std::is_nothrow_move_assignable_v<T>) {
-            value = std::move(x);
+            m = std::move(x);
             return *this;
         }
 
-        constexpr operator T&() & noexcept { return value; }
-        constexpr operator const T&() const& noexcept { return value; }
-        constexpr operator T&&() && noexcept { return std::move(value); }
-        constexpr operator const T&&() const&& noexcept { return std::move(value); }
-
-        constexpr T& unwrap() & noexcept { return value; }
-        constexpr const T& unwrap() const& noexcept { return value; }
-        constexpr T&& unwrap() && noexcept { return std::move(value); }
-        constexpr const T&& unwrap() const&& noexcept { return std::move(value); }
+        constexpr operator T&() & noexcept { return m; }
+        constexpr operator const T&() const& noexcept { return m; }
+        constexpr operator T&&() && noexcept { return std::move(m); }
+        constexpr operator const T&&() const&& noexcept { return std::move(m); }
     };
 }
 

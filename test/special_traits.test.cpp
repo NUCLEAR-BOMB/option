@@ -153,7 +153,7 @@ TEST_CASE("opt::member") {
     CHECK_EQ(sizeof(a), sizeof(my_type));
     CHECK_UNARY_FALSE(a.has_value());
     a = 1.f;
-    CHECK_EQ(a->unwrap().x, 2.f);
+    CHECK_EQ(a->m.x, 2.f);
     a.reset();
     CHECK_UNARY_FALSE(a.has_value());
 }

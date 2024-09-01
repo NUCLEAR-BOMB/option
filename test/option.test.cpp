@@ -188,7 +188,7 @@ template<> struct sample_values<opt::sentinel<int, -1, -2, -3, -4, -5>> {
     opt::sentinel<int, -1, -2, -3, -4, -5> values[5]{1, 2, 3, 4, 5};
 };
 [[maybe_unused]] bool operator==(const opt::enforce<float>& a, const opt::enforce<float>& b) noexcept {
-    return a.unwrap() == b.unwrap();
+    return a.m == b.m;
 }
 template<> struct sample_values<opt::enforce<float>> {
     opt::enforce<float> values[5]{1.f, 2.f, 3.f, 4.f, 5.f};
