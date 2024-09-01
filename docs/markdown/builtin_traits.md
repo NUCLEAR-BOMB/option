@@ -50,6 +50,7 @@
 | Enumeration `SENTINEL_START`                    | [*](#enumeration-sentinel_start) | [`::SENTINEL_START`,-1]                 |
 | Enumeration `SENTINEL_START` and `SENTINEL_END` | [*](#enumeration-sentinel_start-and-sentinel_end) | [`::SENTINEL_START`,`::SENTINEL_END`] |
 | Enumeration `SENTINEL_START` and `SENTINEL_END` | [*](#enumeration)                | [*](#enumeration)                       |
+| `opt::option`                                   | `max_level` - 1                  | [*](#optoption)                         |
 
 ## `bool`
 
@@ -69,26 +70,19 @@ Only enables when size of [`std::reference_wrapper<T>`][std::reference_wrapper] 
 
 Stores level value in [`std::pair`][std::pair] member with higher `max_level` value ([`.first`][std::pair members] or [`.second`][std::pair members]).
 
-This option trait simply wraps `get_level`, `set_level`, `after_constructor`, `after_assignment` static methods around selected [`std::pair`][std::pair] member.
+This option trait simply wraps `get_level`, `set_level` static methods around selected [`std::pair`][std::pair] member.
 
 Selected [`std::pair`][std::pair] member's option traits static methods are called with an argument `std::addressof(std::get<{index}>(*{pair}))`. \
 Where `{index}` - index of selected [`std::pair`][std::pair] member, `{pair}` - passed pointer to [`std::pair`][std::pair] argument.
-
-Enables `after_constructor` and `after_assignment` static methods's option trait only if selected member containes them correspondingly. 
 
 ## `std::tuple`
 
 Stores level value in one of [`std::tuple`][std::tuple] element with higher `max_level` one ([`std::get<0>({tuple})`][std::tuple get], [`std::get<1>({tuple})`][std::tuple get], ...).
 
-This option trait simply wraps `get_level`, `set_level`, `after_constructor`, `after_assignment` static methods around selected [`std::tuple`][std::tuple] element.
+This option trait simply wraps `get_level`, `set_level` static methods around selected [`std::tuple`][std::tuple] element.
 
 Selected [`std::tuple`][std::tuple] element's option traits static methods are called with an argument `std::addressof(std::get<{index}>(*{tuple}))`. \
 Where `{index}` - index of selected [`std::tuple`][std::tuple] element, `{tuple}` - passed pointer to [`std::tuple`][std::tuple] argument.
-
-Enables `after_constructor` and `after_assignment` static methods only if selected element's option trait containes them correspondingly.
-
-> [!NOTE]
-> Ignores elements with empty type ([`std::is_empty_v<T>`][std::is_empty])[^1].
 
 ## Tuple-like types
 
@@ -104,47 +98,29 @@ And references to them are from:
 `x` is (possible `const`) reference to `T`, which is the contained value of `opt::option`.
 `I` is `std:size_t` constant expression that denotes index of the tuple-like element.
 
-This option trait wraps `get_level`, `set_level`, `after_constructor`, `after_assignment` static methods around selected tuple-like type's element.
-
-Enables `after_constructor` and `after_assignment` static methods only if selected element's option trait containes them correspondingly.
+This option trait wraps `get_level`, `set_level`, static methods around selected tuple-like type's element.
 
 ## `std::array`
 
 Stores level value in first [`std::array`][std::array] element.
 
-This option trait simply wraps `get_level`, `set_level`, `after_constructor`, `after_assignment` static methods around first [`std::array`][std::array] element.
+This option trait simply wraps `get_level`, `set_level` static methods around first [`std::array`][std::array] element.
 
-First [`std::array`][std::tuple] element's option traits static methods are called with an argument `std::addressof((*{array})[0])`. \
-Where `{array}` - passed pointer to [`std::array`][std::tuple] argument.
-
-Enables `after_constructor` and `after_assignment` static methods only if first element's option trait containes them correspondingly.
+First [`std::array`][std::array] element's option traits static methods are called with an argument `std::addressof((*{array})[0])`. \
+Where `{array}` - passed pointer to [`std::array`][std::array] argument.
 
 > [!NOTE]
-> Ignores element with empty type ([`std::is_empty_v<T>`][std::is_empty])[^1].
-
-## Empty types
-
-Since C++ standard requires that size of a type must be at least 1 byte, we're storing level in unused space and indicate "in use" state when the value is 255.
-
-Compiler optimizations often not copy these empty types (because there nothing to copy), breaking `opt::option`'s copy/move assigning/consructors.
-This is avoided with `after_constructor` and `after_assignment` static methods in option trait, to force the compiler to copy option.
-To trivially copy `opt::option`, internally uses [`union`][union] that comes with dummy type with same size of `T`.
-This is forces the compiler to fully trivially copy stores empty type.
+> If `std::array`'s size is 0, this option trait is not used.
 
 ## Reflectable types
 
 Uses `boost.pfr` functions to search for maximum `max_level` value and correspondingly use that member.
 The type is considered "reflectable" only if `::boost::pfr::is_implicitly_reflectable_v<T, opt::option_tag>`, where `opt::option_tag` is a special tag.
 
-This option trait simply wraps `get_level`, `set_level`, `after_constructor`, `after_assignment` static methods around selected member element.
+This option trait simply wraps `get_level`, `set_level` static methods around selected member element.
 
 Selected member's option traits static methods are called with an argument `std::addressof(::boost::pfr::get<{index}>(*{value}))`. \
 Where `{index}` - index of selected member, `{value}` - passed pointer to `T` argument.
-
-Enables `after_constructor` and `after_assignment` static methods only if selected member's option trait containes them correspondingly.
-
-> [!NOTE]
-> Ignores members with empty type ([`std::is_empty_v<T>`][std::is_empty])[^1].
 
 ## Polymorphic types
 
@@ -286,8 +262,6 @@ Underlying `opt::option` uses option traits for it's value:
 
 Underlying `opt::option` uses seperate "has value" flag:
 - Stores it's level inside that "has value" flag.
-
-[^1]: GCC with -O0 optimization seems to copy the entire object, including an empty type contained in it, which is assigns a garbage data to it that breaks `opt::option` later.
 
 [basic.fundamental/10]: https://eel.is/c++draft/basic.fundamental#10
 [std::pair]: https://en.cppreference.com/w/cpp/utility/pair
