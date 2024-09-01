@@ -3271,7 +3271,7 @@ namespace impl {
 }
 
 template<class T, auto...>
-class sentinel : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
+struct sentinel : impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 
 namespace impl {
     template<class T, std::uintmax_t I, auto Value, auto... Values>
@@ -3312,7 +3312,7 @@ public:
 };
 
 template<class T, class Compare, class Set, auto...>
-class sentinel_f : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
+struct sentinel_f : impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 
 namespace impl {
     template<class T, class Compare, std::uintmax_t I, auto Value, auto... Values>
@@ -3353,7 +3353,7 @@ public:
 };
 
 template<class T, auto>
-class member : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
+struct member : impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 
 template<class T, auto MemberPtr>
 struct option_traits<member<T, MemberPtr>> {
@@ -3373,7 +3373,7 @@ public:
 };
 
 template<class T>
-class enforce : public impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
+struct enforce : impl::type_wrapper<T> { using impl::type_wrapper<T>::type_wrapper; };
 
 template<class T>
 struct option_traits<enforce<T>> {
