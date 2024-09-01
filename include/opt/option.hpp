@@ -480,11 +480,11 @@ namespace impl {
         const std::size_t size = __builtin_strlen(name);
 
         const char* const start = __builtin_char_memchr(name, '<', size) + 1;
-#if OPTION_CLANG && __clang_major__ <= 12
+    #if OPTION_CLANG && __clang_major__ <= 12
         if (*start < '0' || *start > '9') { return 0; }
-#else
+    #else
         if (*start != '(') { return 0; }
-#endif
+    #endif
 
         std::uintmax_t current = max;
         for (const char* it = start;;) {
@@ -492,20 +492,20 @@ namespace impl {
             it = __builtin_char_memchr(it, ',', size - std::size_t(it - name));
 
             if (it == nullptr) { return 0; }
-#if OPTION_CLANG
-    #if __clang_major__ <= 12
+    #if OPTION_CLANG
+        #if __clang_major__ <= 12
             it += 2;
             if (*it < '0' || *it > '9') { break; }
-    #else
+        #else
             it += 2;
             if (*it != '(') { break; }
             it = __builtin_char_memchr(it, ')', size - std::size_t(it - name));
             if (it[1] == ':') { break; }
-    #endif
-#else
+        #endif
+    #else
             it += 1;
             if (*it != '(') { break; }
-#endif
+    #endif
         }
 #else
         std::size_t start = 0;
