@@ -1,6 +1,7 @@
 
 # Reference
 
+- [Declaration](#declaration)
 - [Template parameters](#template-parameters)
 - [Member types](#member-types)
 - [Member functions](#member-functions)
@@ -31,10 +32,10 @@
     - [`unzip`](#unzip)
     - [`replace`](#replace)
 - [Non-member functions](#non-member-functions)
-    - [`zip`](#zip)
-    - [`zip_with`](#zip_with)
-    - [`option_cast`](#option_cast)
-    - [`from_nullable`](#from_nullable)
+    - [`zip`](#optzip)
+    - [`zip_with`](#optzip_with)
+    - [`option_cast`](#optoption_cast)
+    - [`from_nullable`](#optfrom_nullable)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
@@ -47,16 +48,23 @@
     - [`operator>=`](#operator-10)
 - [Helpers](#Helpers)
     - [`std::hash<opt::option>`](#stdhashoptoption)
-    - [`none_t`](#none_t)
-    - [`none`](#none)
-    - [`bad_access`](#bad_access)
-    - [`option_traits`](#option_traits)
-    - [`make_option`](#make_option)
-    - [`sentinel`](#sentinel)
-    - [`sentinel_f`](#sentinel_f)
-    - [`member`](#member)
-    - [`enforce`](#enforce)
+    - [`none_t`](#optnone_t)
+    - [`none`](#optnone)
+    - [`bad_access`](#optbad_access)
+    - [`option_traits`](#optoption_traits)
+    - [`make_option`](#optmake_option)
+    - [`sentinel`](#optsentinel)
+    - [`sentinel_f`](#optsentinel_f)
+    - [`member`](#optmember)
+    - [`enforce`](#optenforce)
 - [Deduction guides](#deduction-guides)
+
+## Declaration
+
+```cpp
+template<class T>
+class option;
+```
 
 ## Template parameters
 
@@ -952,7 +960,7 @@ std::cout << b.has_value() << '\n'; // false
 
 ## Non-member functions
 
-### `zip`
+### `opt::zip`
 
 ```cpp
 template<class Options>
@@ -982,7 +990,7 @@ std::cout << abc.has_value() << '\n'; // false
 
 ---
 
-### `zip_with`
+### `opt::zip_with`
 
 ```cpp
 template<class Fn, class... Options>
@@ -1008,7 +1016,7 @@ opt::zip_with(add_and_print, a, b); // will not call `add_and_print`
 
 ---
 
-### `option_cast`
+### `opt::option_cast`
 
 ```cpp
 template<class To, class From>
@@ -1035,7 +1043,7 @@ std::cout << b.has_value() << '\n'; // false
 ---
 
 
-### `from_nullable`
+### `opt::from_nullable`
 ```cpp
 template<class T>
 constexpr option<T> from_nullable(T* const nullable_ptr);
@@ -1460,7 +1468,7 @@ std::cout << std::hash<opt::option<int>>{}(a) << '\n'; // [some empty option has
 
 ---
 
-### `none_t`
+### `opt::none_t`
 
 ```cpp
 struct none_t;
@@ -1470,7 +1478,7 @@ The tag type used to indicate `opt::option` with the contained value in uninitia
 
 ---
 
-### `none`
+### `opt::none`
 
 ```cpp
 inline constexpr none_t none{/*special value*/};
@@ -1479,7 +1487,7 @@ The `opt::none` variable is a `constexpr` value of type [`opt::none_t`](#none_t)
 
 ---
 
-### `bad_access`
+### `opt::bad_access`
 
 ```cpp
 class bad_access;
@@ -1488,7 +1496,7 @@ The exception type of an object to be thrown by [`opt::option<T>::value`, `opt::
 
 ---
 
-### `option_traits`
+### `opt::option_traits`
 
 ```cpp
 template<class T, class = void>
@@ -1541,7 +1549,7 @@ and the provided `T*` pointer to the underlying object must be non-`nullptr`.
 
 Usually `set_level` is called after the original object is destructed/uninitialized, but also `set_level` can be called multiple times in a row.
 
-### `make_option`
+### `opt::make_option`
 
 ```cpp
 template<class T>
@@ -1565,7 +1573,7 @@ constexpr opt::option<T> make_option(std::initializer_list<U> ilist, Args&&... a
 ```
 Creates `opt::option` from `ilist` and `args...`. Returns `opt::option<T>{std::in_place, ilist, std::forward<Args>(args)...}`.
 
-### `sentinel`
+### `opt::sentinel`
 
 ```cpp
 template<class T, auto... Values>
@@ -1593,7 +1601,7 @@ opt::option<opt::sentinel<int, -1>> func1();
 opt::option<opt::option<opt::sentinel<int, -1, -2>>> func2();
 ```
 
-### `sentinel_f`
+### `opt::sentinel_f`
 
 ```cpp
 template<class T, class Compare, class Set, auto... Values>
@@ -1617,7 +1625,7 @@ The `Set` function object:
 - First argument, a non-`const` reference type to `T`.
 - Second argument, one value from the `Values`.
 
-### `member`
+### `opt::member`
 
 ```cpp
 template<class T, auto MemberPtr>
@@ -1647,7 +1655,7 @@ struct type {
 opt::option<opt::member<type, &type::x>> a;
 ```
 
-### `enforce`
+### `opt::enforce`
 
 ```cpp
 template<class T>
