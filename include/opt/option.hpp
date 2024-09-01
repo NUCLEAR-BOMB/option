@@ -625,6 +625,13 @@ namespace impl {
     struct dispatch_specializations {
         static constexpr option_strategy value = option_strategy::other;
     };
+    template<class T>
+    struct dispatch_specializations<opt::option<T>> {
+        static constexpr option_strategy value
+            = has_option_traits<typename opt::option<T>::value_type>
+                ? option_strategy::avaliable_option
+                : option_strategy::unavaliable_option;
+    };
     template<>
     struct dispatch_specializations<bool> {
         static constexpr option_strategy value = option_strategy::bool_;
@@ -674,13 +681,6 @@ namespace impl {
         using st = option_strategy;
         constexpr st dispatch_st = dispatch_specializations<T>::value;
 
-        if constexpr (is_option_v<T>) {
-            if constexpr (has_option_traits<typename T::value_type>) {
-                return st::avaliable_option;
-            } else {
-                return st::unavaliable_option;
-            }
-        } else
         if constexpr (dispatch_st != st::other) {
             return dispatch_st;
         } else
