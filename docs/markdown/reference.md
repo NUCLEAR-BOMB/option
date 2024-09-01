@@ -51,6 +51,11 @@
     - [`none`](#none)
     - [`bad_access`](#bad_access)
     - [`option_traits`](#option_traits)
+    - [`make_option`](#make_option)
+    - [`sentinel`](#sentinel)
+    - [`sentinel_f`](#sentinel_f)
+    - [`member`](#member)
+    - [`enforce`](#enforce)
 - [Deduction guides](#deduction-guides)
 
 ## Template parameters
@@ -1506,7 +1511,7 @@ See [guide](./custom_traits_guide.md) for creating custom option traits.
 ```cpp
 static *constexpr std::uintmax_t get_level(const T*) noexcept;
 ```
-Required. The `opt::option` uses the `get_level` to determine if the contained value is considered empty.
+The `opt::option` uses the `get_level` to determine if the contained value is considered empty.
 
 The return value should be less than `max_level` or equal to `std::uintmax_t(-1)`.
 The passed `const T*` pointer to the underlying object must be non-`nullptr`.
@@ -1529,49 +1534,14 @@ This function is called when `opt::option` is needed to check if it contains a v
 static *constexpr void set_level(T*, std::uintmax_t) noexcept;
 ```
 
-Required. The `opt::option` uses the `set_level` to set the level depth state inside `opt::option`.
+The `opt::option` uses the `set_level` to set the level depth state inside `opt::option`.
 
 The passed `std::uintmax_t` level argument must be strictly less than `max_level`,
 and the provided `T*` pointer to the underlying object must be non-`nullptr`.
 
 Usually `set_level` is called after the original object is destructed/uninitialized, but also `set_level` can be called multiple times in a row.
 
----
-
-#### `after_constructor`
-
-```cpp
-static *constexpr void after_constructor(T*) noexcept;
-```
-
-Optional. After the object is constructed (it is not empty), the `after_constructor` function is called to properly initialize contained value for later use in `opt::option`.
-
-The term "after the object is constructed" does not include `opt::option` trivially copy/move constructors.
-
-> [!TIP]
-> The compiler may be not properly initialize the contained value, use this function to do this manually.
-
----
-
-#### `after_assignment`
-
-```cpp
-static *constexpr void after_assignment(T*) noexcept;
-```
-
-Optional. After the object is assigned (it is not empty), the `after_assignment` function is called to properly initialize contained value for later use in `opt::option`.
-
-The term "after the object is assigned" does not include `opt::option` trivially copy/move assignment operators.
-
-> [!TIP]
-> The compiler may be not properly initialize the contained value after assignment, use this function to do this manually.
-
-*`constexpr` - optional `constexpr` specifiers. Without them many operations on `opt::option` can't be executed in constant expressions.
-
-> [!IMPORTANT]
-> The `noexcept` specifier is required.
-
-## `make_option`
+### `make_option`
 
 ```cpp
 template<class T>
@@ -1594,6 +1564,112 @@ template<class T, class U, class... Args>
 constexpr opt::option<T> make_option(std::initializer_list<U> ilist, Args&&... args);
 ```
 Creates `opt::option` from `ilist` and `args...`. Returns `opt::option<T>{std::in_place, ilist, std::forward<Args>(args)...}`.
+
+### `sentinel`
+
+```cpp
+template<class T, auto... Values>
+struct sentinel;
+```
+
+Type wrapper to specify the unused values for `opt::option`.
+
+It tries to mimic the underlying type (`T`) with convertion operators, constructors, assignment operators
+and non-static data member `m` to explicitly access reference type and to access data members/member functions.
+
+This type provides `opt::option_traits` that uses these values to specify level value.
+The `max_level` of it's `opt::option_traits` is equal to `sizeof...(Values)`.
+
+The option traits uses regular comparison operator (`==`) and assignment operator (`=`) to get and set level value.
+
+Example:
+```cpp
+// if func1() returns -1, it returns an empty option; otherwise, just a regular integer.
+opt::option<opt::sentinel<int, -1>> func1();
+
+// if func2() returns -1, it returns an option with empty option inside,
+// if func2() returns -2, it returns an empty option;
+// otherwise, just a regular integer.
+opt::option<opt::option<opt::sentinel<int, -1, -2>>> func2();
+```
+
+### `sentinel_f`
+
+```cpp
+template<class T, class Compare, class Set, auto... Values>
+struct sentinel_f;
+```
+
+Type wrapper to specify the unused values for `opt::option` using function object `Compare` to get and `Set` to set level values.
+
+It tries to mimic the underlying type (`T`) with convertion operators, constructors, assignment operators
+and non-static data member `m` to explicitly access reference type and to access data members/member functions.
+
+This type provides `opt::option_traits` that uses these values to specify level value.
+The `max_level` of it's `opt::option_traits` is equal to `sizeof...(Values)`.
+
+The `Compare` function object:
+- First argument, a `const` reference type to `T`.
+- Second argument, one value from the `Values`.
+- Returns `bool`.
+
+The `Set` function object:
+- First argument, a non-`const` reference type to `T`.
+- Second argument, one value from the `Values`.
+
+### `member`
+
+```cpp
+template<class T, auto MemberPtr>
+struct member;
+```
+
+Type wrapper to explicitly select the data member to use for `opt::option_traits` of the contained value for `opt::option`.
+
+It tries to mimic the underlying type (`T`) with convertion operators, constructors, assignment operators
+and non-static data member `m` to explicitly access reference type and to access data members/member functions.
+
+`MemberPtr` must be a pointer to the data member.
+
+This type provides `opt::option_traits` that clones the `opt::option_traits` of the specified `MemberPtr` pointer to data member value.
+
+Example:
+```cpp
+struct type {
+    float x;
+    int y;
+
+    // user-declared constructor, not an aggregate type
+    type(float x, int y) : x{x}, y{y} {}
+};
+
+// uses type::x data member to store the level value.
+opt::option<opt::member<type, &type::x>> a;
+```
+
+### `enforce`
+
+```cpp
+template<class T>
+struct enforce;
+```
+
+Type wrapper to ensure that the type `T` has avaliable `opt::option_traits` for `opt::option`.
+
+It tries to mimic the underlying type (`T`) with convertion operators, constructors, assignment operators
+and non-static data member `m` to explicitly access reference type and to access data members/member functions.
+
+If type `T` does not have a `opt::option_traits`, invokes `static_assert`.
+
+This type provides `opt::option_traits` that clones the `opt::option_traits` of the type `T`.
+
+Example:
+```cpp
+opt::option<opt::enforce<float>> a; // ok
+opt::option<opt::enforce<int>> b; // error
+opt::option<opt::enforce<std::pair<int, long>>> c; // error
+opt::option<opt::enforce<std::pair<int, float>>> d; // ok
+```
 
 ## Deduction guides
 
