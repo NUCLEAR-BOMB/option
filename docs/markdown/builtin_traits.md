@@ -8,7 +8,6 @@
   - [`std::tuple`](#stdtuple)
   - [Tuple-like types](#tuple-like-types)
   - [`std::array`](#stdarray)
-  - [Empty types](#empty-types)
   - [Reflectable types](#reflectable-types)
   - [Polymorphic types](#polymorphic-types)
   - [Pointers](#pointers)
@@ -16,27 +15,41 @@
   - [Reference](#reference)
   - [`std::basic_string_view`](#stdbasic_string_view)
   - [`std::unique_ptr<T, std::default_delete<T>>`](#stdunique_ptrt-stddefault_deletet)
+  - [`std::basic_string`](#stdbasic_string)
+  - [`std::vector`](#stdvector)
   - [Pointers to members](#pointers-to-members)
+  - [`SENTINEL` member](#sentinel-member)
+  - [Enumeration `SENTINEL`](#enumeration-sentinel)
+  - [Enumeration `SENTINEL_START`](#enumeration-sentinel_start)
+  - [Enumeration `SENTINEL_START` and `SENTINEL_END`](#enumeration-sentinel_start-and-sentinel_end)
+  - [Enumeration](#enumeration)
   - [`opt::option`](#optoption)
 
-| Type                                         | max_level | level range                             |
-| :------------------------------------------- | :-------- | :-------------------------------------- |
-| `bool`                                       | 254       | [2,255]                                 |
-| `std::reference_wrapper`                     | 256       | [0,255]                                 |
-| References                                   | 255       | [0,254]                                 |
-| Pointer (8 bytes)                            | 512       | [0xF8E1B1825D5D6C67,0xF8E1B1825D5D6E66] |
-| Pointer (4 bytes)                            | 256       | [0xFFFFFEE0,0xFFFFFFE0]                 |
-| Pointer (2 bytes)                            | 256       | [0xFEFF,0xFFFF]                         |
-| floating point (8 bytes, signaling NaN)      | 256       | [0xFFF6C79F55B0898F,0xFFF6C79F55B08A8E] |
-| floating point (8 bytes, quite NaN)          | 256       | [0xFFFBF26430BB3557,0xFFFBF26430BB3656] |
-| floating point (4 bytes, signaling NaN)      | 256       | [0xFFBF69AF,0xFFBF6AAE]                 |
-| floating point (4 bytes, quite NaN)          | 256       | [0xFFC3EFB5,0xFFC3F0B4]                 |
-| Empty type                                   | 255       | [1,255]                                 |
-| Polymorphic type                             | 255       | [-89152,-88898]                         |
-| `std::basic_string_view`                     | 255       | data(): -32186, size(): [0, 254]        |
-| `std::unique_ptr<T, std::default_delete<T>>` | 255       | [-46509,-46255]                         |
-| Pointers to members (4 bytes)                | 255       | [0xFFFFFC17,0xFFFFFD15]                 |
-| Pointers to members (8 bytes)                | 255       | [0xFFFFFFFFD3B2F9B2,0xFFFFFFFFD3B2FAB0] |
+| Type                                            | max_level                        | level range                             |
+| :---------------------------------------------- | :------------------------------- | :-------------------------------------- |
+| `bool`                                          | 254                              | [2,255]                                 |
+| `std::reference_wrapper`                        | 256                              | [0,255]                                 |
+| References                                      | 255                              | [0,254]                                 |
+| Pointer (8 bytes)                               | 512                              | [0xF8E1B1825D5D6C67,0xF8E1B1825D5D6E66] |
+| Pointer (4 bytes)                               | 256                              | [0xFFFFFEE0,0xFFFFFFE0]                 |
+| Pointer (2 bytes)                               | 256                              | [0xFEFF,0xFFFF]                         |
+| floating point (8 bytes, signaling NaN)         | 256                              | [0xFFF6C79F55B0898F,0xFFF6C79F55B08A8E] |
+| floating point (8 bytes, quite NaN)             | 256                              | [0xFFFBF26430BB3557,0xFFFBF26430BB3656] |
+| floating point (4 bytes, signaling NaN)         | 256                              | [0xFFBF69AF,0xFFBF6AAE]                 |
+| floating point (4 bytes, quite NaN)             | 256                              | [0xFFC3EFB5,0xFFC3F0B4]                 |
+| Empty type                                      | 255                              | [1,255]                                 |
+| Polymorphic type                                | 255                              | [-89152,-88898]                         |
+| `std::basic_string_view`                        | 255                              | data(): -32186, size(): [0,254]         |
+| `std::unique_ptr<T, std::default_delete<T>>`    | 255                              | [-46509,-46255]                         |
+| `std::basic_string`                             | 255                              | capacity(): 0, size(): [0,254]          |
+| `std::vector`                                   | 255                              | data(): 1, {data() + size()}: [0,245]   |
+| Pointers to members (4 bytes)                   | 255                              | [0xFFFFFC17,0xFFFFFD15]                 |
+| Pointers to members (8 bytes)                   | 255                              | [0xFFFFFFFFD3B2F9B2,0xFFFFFFFFD3B2FAB0] |
+| `SENTINEL` member                               | [*](#sentinel-member)            | [1,[*](#sentinel-member)]               |
+| Enumeration `SENTINEL`                          | 1                                | `::SENTINEL`                            |
+| Enumeration `SENTINEL_START`                    | [*](#enumeration-sentinel_start) | [`::SENTINEL_START`,-1]                 |
+| Enumeration `SENTINEL_START` and `SENTINEL_END` | [*](#enumeration-sentinel_start-and-sentinel_end) | [`::SENTINEL_START`,`::SENTINEL_END`] |
+| Enumeration `SENTINEL_START` and `SENTINEL_END` | [*](#enumeration)                | [*](#enumeration)                       |
 
 ## `bool`
 
@@ -180,6 +193,69 @@ Stores level value in [`std::unique_ptr`][std::unique_ptr] exposition only point
 
 Since "pointer" type is defined by `Deleter`, this option trait only used when `Deleter` is [`std::default_delete`][std::default_delete].
 Also custom `Deleter` may be not trivially copyable and could lead to unexpected behaviour inside `get_level`, `set_level` static methods (invocation of [`std::unique_ptr`][std::unique_ptr] constructor).
+
+## `std::basic_string`
+
+Stores level value in the internal (standard library defined) representation of the `std::basic_string`.
+
+The template parameter `Allocator` must satisfy `std::is_empty_v` and `!std::is_final_v` in order to enable this option trait.
+
+## `std::vector`
+
+Stores level value in the internal (standard library defined) representation of the `std::vector`.
+
+The template parameter `Allocator` must satisfy `std::is_empty_v` and `!std::is_final_v` in order to enable this option trait.
+
+## `SENTINEL` member
+
+Stores level value in the `.SENTINEL` data member inside provided type. 
+
+Requires an data member `SENTINEL`.
+It must be non-`const`, satisfy `std::is_unsigned_v` and be accessible outside the type (the expression `std::declval<T&>().SENTINEL` must be valid).
+
+The `max_level` is defined by the expression `~T(0)`, where `T` is type of `SENTINEL` member.
+
+## Enumeration `SENTINEL`
+
+Uses the `SENTINEL` enumerator to indicate an "is empty" state.
+
+Requires an enumerator named `SENTINEL`.
+
+The `max_level` value is 1 (since it only uses that particular value).
+
+## Enumeration `SENTINEL_START`
+
+Uses range that starts at (including) `SENTINEL_START` and ends at the maximum value of an underlying type of the enumeration.
+
+Requires an enumerator named `SENTINEL_START`.
+
+The `max_level` value is `(underlying max) - (sentinel start) + 1`,
+where `(underlying max)` is the maximum value of an underlying type of the enumeration,
+`(sentinel start)` is the `SENTINEL_START` but as underlying type.
+
+## Enumeration `SENTINEL_START` and `SENTINEL_END`
+
+Uses range that starts at (including) `SENTINEL_START` and ends at (including) `SENTINEL_END`
+
+Requires an enumerators named `SENTINEL_START` and `SENTINEL_END`.
+
+The `max_level` value is `(sentinel end) - (sentinel start) + 1`,
+where `(sentinel start)` is the `SENTINEL_START` but as underlying type,
+`(sentinel end)` is the `SENTINEL_END` but as underlying type.
+
+## Enumeration
+
+Uses range of unused enumeration values.
+
+Searches for the last defined enumerator:
+- If found, round the value to the next power of 2 (to avoid collision with flag enumerations) and use it as range beginning.
+- If not, assume that enumeration is used as an integral type (and therefore all the value are used), do not use it.
+
+The search starts from the value:
+- If size of enumeration is 1 byte, 255.
+- Otherwise, 1023.
+
+The `max_level` value is difference between search start and rounded the found value.
 
 ## Pointers to members
 
