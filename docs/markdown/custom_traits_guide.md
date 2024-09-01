@@ -151,83 +151,6 @@ a.get_unchecked().y = 0; // Modify unexisting value
 ```
 Yes, you can do that, but beware that it could trigger `OPTION_VERIFY` if you do this in some places (`.emplace`, constructors, etc.).
 
-## Optional static methods
-
-`opt::option_traits` also supports 2 optional static methods: `after_constructor`, `after_assignment`.
-
-- `after_constructor`: called after object is constructed. Used to prepare object for later use for `opt::option`.
-- `after_assignment`: called after object is assigned. Used to prepare object for later use for `otp::option`.
-
-> [!NOTE]
-> Usually these static methods are used to force the compiler to complete object initialization for later use in option.
-
-> [!IMPORTANT]
-> These static methods are not called if `opt::option` uses direct copy/move assignment operators/constructors. It allows `opt::option` to have trivially copy/move assignment operators/constructors.
-
-```cpp
-struct my_type_2 {
-    int x;
-};
-
-template<>
-struct opt::option_traits<my_type_2> {
-    static constexpr std::uintmax_t max_level = 10;
-
-    static std::uintmax_t get_level(const my_type_2* value) noexcept {
-        return value->x != 1 ? value->x - 2 : std::uintmax_t(-1);
-    }
-    static void set_level(my_type_2* value, std::uintmax_t level) noexcept {
-        value->x = level + 2;
-    }
-    static void after_constructor(my_type_2* value) noexcept {
-        value->x = 1;
-    }
-    static void after_assignment(my_type_2* value) noexcept {
-        value->x = 1;
-    }
-};
-```
-Only when `my_type_2::x` is equal 1, `opt::option<my_type_2>` is not empty, otherwise, it is empty.
-Level value is denoted by `my_type_2::x - 2`.
-
-```cpp
-opt::option<my_type_2> a;
-// a.has_value() == false
-// a.my_type_2::x == 2
-
-a = my_type_2{5};
-// Call perfect-forwarded assignment of `opt::option`, invoke `after_assignment`
-// a.has_value() == true
-// a.my_type_2::x == 1
-
-opt::option<my_type_2> b = my_type_2{123};
-// b.has_value() == true
-// b.my_type_2::x == 1
-
-b->x = 10;
-// b.has_value() == false
-// b.my_type_2::x == 10
-
-a = b;
-// Trivially copy, no `after_assignment` invocation
-// a.has_value() == false
-// a.my_type_2::x == 10
-
-a.emplace(6);
-// Call `emplace` method of `opt::option`, invoke `after_constructor`
-// a.has_value() == true
-// a.my_type_2::x == 1
-
-a->x = 20;
-// a.has_value() == false
-// a.my_type_2::x == 20
-
-opt::option<my_type_2> c{a};
-// Trivially construct, no `after_constructor` invocation
-// c.has_value() == false
-// c.my_type_2::x == 20
-```
-
 ## SFINAE
 
 You can use [SFINAE][sfinae] with second template parameter `opt::option_traits`.
@@ -283,23 +206,18 @@ b.reset()
 
 If you have problems with `opt::option` size optimizations, you can always disable specific specializations of `opt::option_traits`.
 
-There is two ways of doing that:
-1. Declare but not to define `opt::option_traits` specialization.
-2. Set the static constexpr `max_value` variable to 0.
+To do that, set the static constexpr `max_value` variable to 0.
 
 ```cpp
-template<>
-struct opt::option_traits<float>;
-
 template<>
 struct opt::option_traits<double> {
     static constexpr std::uintmax_t max_level = 0;
 }
 ```
 
-Disable size optimization for `float` (`opt::option<float>`) and `double` (`opt::option<double>`).
+Disable size optimization for `double` (`opt::option<double>`).
 
-After this specialization the size of `opt::option<float>`/`opt::option<double>` will be greater than `float`/`double` (`opt::option` will store "has value" flag).
+After this specialization the size of`opt::option<double>` will be greater than `double` (`opt::option` will store "has value" flag).
 
 > [!TIP]
 > This could be useful if `opt::option` behaves incorrectly (compiler optimizations, platform specific stuff).
