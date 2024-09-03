@@ -31,6 +31,7 @@
     - [`assume_has_value`](#assume_has_value)
     - [`unzip`](#unzip)
     - [`replace`](#replace)
+    - [`swap`](#swap)
 - [Non-member functions](#non-member-functions)
     - [`zip`](#optzip)
     - [`zip_with`](#optzip_with)
@@ -955,6 +956,24 @@ std::cout << *a << '\n'; // 3
 std::cout << b.has_value() << '\n'; // false
 ```
 
+---
+
+### `swap`
+
+```cpp
+template<class U>
+constexpr void swap(option<U>& other) noexcept(/*see below*/);
+```
+Swaps the options.
+- `!this->has_value()` and `!other.has_value()` are true, do nothing.
+- `this->has_value()` and `other.has_value()` are true, swap the contained values by calling `using std::swap; swap(this->get(), other.get())`.
+- `this->has_value()` and `!other.has_value()` are true, construct the `other` with `std::move(this->get())` and destruct the contained value of `*this`.
+- `!this->has_value()` and `other.has_value()` are true, construct the `*this` with `std::move(other.get())` and destruct the contained value of `other`.
+
+---
+
+- *`noexcept`* when `std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_constructible_v<U> && std::is_nothrow_swappable_with_v<T, U>`.
+
 ## Non-member functions
 
 ### `opt::zip`
@@ -1046,6 +1065,18 @@ template<class T>
 constexpr option<T> from_nullable(T* const nullable_ptr);
 ```
 Constructs `opt::option<T>` from dereferenced value of proveded pointer if it is not equal to 'nullptr'; otherwise, returns empty `opt::option<T>`.
+
+---
+
+### `opt::swap`
+
+```cpp
+template<class T, class U>
+constexpr void swap(option<T>& left, option<U>& right) noexcept(/*see below*/);
+```
+Exchanges the state of `left` with that of `right`. Calls `left.swap(right)`.
+- *Enabled* when `std::is_move_constructible_v<T>`, `std::is_move_constructible_v<U>` and `std::is_swappable_with_v<T, U>` are true.
+- *`noexcept`* when `std::is_nothrow_move_constructible_v<T>`, `std::is_nothrow_move_constructible_v<U>` and `std::is_nothrow_swappable_with_v<T, U>` are true.
 
 ---
 

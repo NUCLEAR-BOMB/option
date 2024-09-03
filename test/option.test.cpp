@@ -936,6 +936,28 @@ skip_zip_with:
         const opt::option<T> c = opt::from_nullable(ptr);
         CHECK_UNARY_FALSE(c.has_value());
     }
+    SUBCASE("swap") {
+        opt::option<T> a = v0;
+        opt::option<T> b = v1;
+        CHECK_EQ(a, v0);
+        CHECK_EQ(b, v1);
+        a.swap(b);
+        CHECK_EQ(a, v1);
+        CHECK_EQ(b, v0);
+        a.reset();
+        CHECK_EQ(a, opt::none);
+        CHECK_EQ(b, v0);
+        a.swap(b);
+        CHECK_EQ(a, v0);
+        CHECK_EQ(b, opt::none);
+        b.swap(a);
+        CHECK_EQ(a, opt::none);
+        CHECK_EQ(b, v0);
+        b.reset();
+        a.swap(b);
+        CHECK_EQ(a, opt::none);
+        CHECK_EQ(b, opt::none);
+    }
 }
 
 }

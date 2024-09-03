@@ -2308,6 +2308,21 @@ namespace impl::option {
         }
         return opt::none;
     }
+
+    template<class T, class U>
+    using enable_swap = std::enable_if_t<
+        std::conjunction_v<
+            std::is_move_constructible<T>,
+            std::is_move_constructible<U>,
+            std::is_swappable_with<T, U>
+        >
+    >;
+    template<class T, class U>
+    inline constexpr bool nothrow_swap = std::conjunction_v<
+        std::is_nothrow_move_constructible<T>,
+        std::is_nothrow_move_constructible<U>,
+        std::is_nothrow_swappable_with<T, U>
+    >;
 }
 
 template<class T>
@@ -2316,6 +2331,7 @@ class option : private impl::option_move_assign_base<T>
     using base = impl::option_move_assign_base<T>;
 
     template<class, impl::option_strategy> friend struct impl::internal_option_traits;
+    template<class> friend class option;
 public:
     static_assert(!std::is_same_v<impl::remove_cvref<T>, opt::none_t>,
         "In opt::option<T>, T cannot be opt::none_t."
@@ -2831,6 +2847,25 @@ public:
         base::construct(std::forward<U>(val));
         return tmp;
     }
+
+    template<class U>
+    constexpr void swap(option<U>& other) noexcept(impl::option::nothrow_swap<T, U>) {
+        using std::swap;
+        if (!has_value() && !other.has_value()) {
+            return;
+        }
+        if (has_value() && other.has_value()) {
+            swap(get(), other.get());
+            return;
+        }
+        if (has_value()) {
+            other.base::construct(std::move(get()));
+            base::reset();
+            return;
+        }
+        base::construct(std::move(other.get()));
+        other.base::reset();
+    }
 };
 
 template<class T>
@@ -2962,6 +2997,11 @@ template<class T>
 [[nodiscard]] constexpr opt::option<T> from_nullable(T* const nullable_ptr) {
     if (nullable_ptr == nullptr) { return {}; }
     return {*nullable_ptr};
+}
+
+template<class T, class U>
+constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>) {
+    left.swap(right);
 }
 
 // Returns the `left` `opt::option` if it contains a value, otherwise return `right` value
