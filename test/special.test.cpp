@@ -247,6 +247,24 @@ TEST_CASE("tuple like") {
         a.reset();
         CHECK_UNARY_FALSE(a.has_value());
 
+        CHECK_EQ(opt::get<0>(a), opt::none);
+        CHECK_EQ(opt::get<1>(a), opt::none);
+        CHECK_EQ(opt::get<int>(a), opt::none);
+        CHECK_EQ(opt::get<float>(a), opt::none);
+        a.emplace(1, 2.f);
+        CHECK_EQ(opt::get<0>(a), 1);
+        CHECK_EQ(opt::get<1>(a), 2.f);
+        CHECK_EQ(opt::get<int>(a), 1);
+        CHECK_EQ(opt::get<float>(a), 2.f);
+        *opt::get<0>(a) = 2;
+        CHECK_EQ(std::get<0>(*a), 2);
+        *opt::get<1>(a) = 10.f;
+        CHECK_EQ(std::get<1>(*a), 10.f);
+        *opt::get<int>(a) = 123;
+        CHECK_EQ(std::get<0>(*a), 123);
+        *opt::get<float>(a) = 32.f;
+        CHECK_EQ(std::get<1>(*a), 32.f);
+
         opt::option<std::tuple<float, double>> b{2.56f, 3.1415};
         CHECK(sizeof(b) == sizeof(std::tuple<float, double>));
         CHECK(b.has_value());
@@ -292,6 +310,22 @@ TEST_CASE("tuple like") {
         CHECK_EQ(std::get<1>(*a), 2.f);
         a.reset();
         CHECK_UNARY_FALSE(a.has_value());
+
+        CHECK_EQ(opt::get<0>(a), opt::none);
+        CHECK_EQ(opt::get<1>(a), opt::none);
+        a.emplace(10, 20.f);
+        CHECK_EQ(opt::get<0>(a), 10);
+        CHECK_EQ(opt::get<1>(a), 20.f);
+        CHECK_EQ(opt::get<int>(a), 10);
+        CHECK_EQ(opt::get<float>(a), 20.f);
+        *opt::get<0>(a) = 100;
+        CHECK_EQ(std::get<0>(*a), 100);
+        *opt::get<1>(a) = 200.f;
+        CHECK_EQ(std::get<1>(*a), 200.f);
+        *opt::get<int>(a) = 300;
+        CHECK_EQ(std::get<0>(*a), 300);
+        *opt::get<float>(a) = 400.f;
+        CHECK_EQ(std::get<1>(*a), 400.f);
 
         opt::option<std::pair<float, int>> b{3.f, -1};
         CHECK(sizeof(b) == sizeof(std::pair<float, int>));

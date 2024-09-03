@@ -1080,6 +1080,47 @@ Exchanges the state of `left` with that of `right`. Calls `left.swap(right)`.
 
 ---
 
+### `opt::get`
+
+```cpp
+template<std::size_t I, class T>
+constexpr auto get(opt::option<T>& x) noexcept;
+template<std::size_t I, class T>
+constexpr auto get(const opt::option<T>& x) noexcept;
+template<std::size_t I, class T>
+constexpr auto get(opt::option<T>&& x) noexcept;
+template<std::size_t I, class T>
+constexpr auto get(const opt::option<T>&& x) noexcept;
+```
+Returns the result of `using std::get; get<I>` (ADL) in an reference option (e.g. `opt::option<T&>`) if it does contain one; otherwise, returns `opt::none`.
+
+---
+
+```cpp
+template<class T, class OptT>
+constexpr auto get(opt::option<OptT>& x) noexcept;
+template<class T, class OptT>
+constexpr auto get(const opt::option<OptT>& x) noexcept;
+template<class T, class OptT>
+constexpr auto get(opt::option<OptT>&& x) noexcept;
+template<class T, class OptT>
+constexpr auto get(const opt::option<OptT>&& x) noexcept;
+```
+Returns the result of `using std::get; get<T>` (ADL) in an reference option (e.g. `opt::option<T&>`) if it does contain one; otherwise, returns `opt::none`.
+
+Example:
+```cpp
+opt::option<std::tuple<int, float>> a{1, 2.f};
+
+if (auto b = opt::get<0>(a)) {
+    std::cout << *b << '\n'; // 1
+    *b = 2;
+}
+std::cout << *opt::get<int>(a) << '\n'; // 2
+```
+
+---
+
 ### `operator|`
 
 ```cpp

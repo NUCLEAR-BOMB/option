@@ -41,6 +41,16 @@ void option_cast() {
     std::cout << b.has_value() << '\n'; //$ false
 }
 
+void get() {
+    opt::option<std::tuple<int, float>> a{1, 2.f};
+
+    if (auto b = opt::get<0>(a)) {
+        std::cout << *b << '\n'; //$ 1
+        *b = 2;
+    }
+    std::cout << *opt::get<int>(a) << '\n'; //$ 2
+}
+
 void hash() {
     opt::option<int> a{12345};
 
@@ -55,5 +65,6 @@ int main() {
     zip();
     zip_with();
     option_cast();
+    get();
     hash();
 }

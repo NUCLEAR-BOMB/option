@@ -2649,11 +2649,11 @@ public:
     }
     [[nodiscard]] OPTION_PURE constexpr T&& operator*() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return std::move(get());
+        return static_cast<T&&>(get());
     }
     [[nodiscard]] OPTION_PURE constexpr const T&& operator*() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return std::move(get());
+        return static_cast<const T&&>(get());
     }
 
     // Returns a reference to the contained value.
@@ -3003,6 +3003,47 @@ template<class T, class U>
 constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>) {
     left.swap(right);
 }
+
+namespace impl {
+    template<std::size_t I, class Self>
+    constexpr auto get_impl(Self&& self) noexcept {
+        using std::get;
+        using result_type = decltype(get<I>(std::forward<Self>(self).get()));
+
+        if (self.has_value()) {
+            return opt::option<result_type>{get<I>(std::forward<Self>(self).get())};
+        }
+        return opt::option<result_type>{opt::none};
+    }
+    template<class T, class Self>
+    constexpr auto get_impl(Self&& self) noexcept {
+        using std::get;
+        using result_type = decltype(get<T>(std::forward<Self>(self).get()));
+
+        if (self.has_value()) {
+            return opt::option<result_type>{get<T>(std::forward<Self>(self).get())};
+        }
+        return opt::option<result_type>{opt::none};
+    }
+}
+
+template<std::size_t I, class T>
+constexpr auto get(opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
+template<std::size_t I, class T>
+constexpr auto get(const opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
+template<std::size_t I, class T>
+constexpr auto get(opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
+template<std::size_t I, class T>
+constexpr auto get(const opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
+
+template<class T, class OptT>
+constexpr auto get(opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
+template<class T, class OptT>
+constexpr auto get(const opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
+template<class T, class OptT>
+constexpr auto get(opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
+template<class T, class OptT>
+constexpr auto get(const opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
 
 // Returns the `left` `opt::option` if it contains a value, otherwise return `right` value
 // x = left option value
