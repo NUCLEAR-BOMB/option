@@ -26,6 +26,7 @@ Checks: >
   -clang-analyzer-core.uninitialized.Assign,
   -clang-analyzer-core.uninitialized.UndefReturn,
   -misc-include-cleaner,
+  -readability-function-size,
 WarningsAsErrors: '*'
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: lower_case }
