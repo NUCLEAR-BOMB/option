@@ -571,9 +571,6 @@ constexpr const std::remove_reference_t<T>&& get_unchecked() const&& noexcept;
 Access the contained value, without checking for it existence. \
 Returns a reference to the contained value. *Does not* calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value. Note that this method does not have the `lifetimebound` attribute. Considered for accessing type, that specified in user defined `opt::option_traits`.
 
-> [!CAUTION]
-> Using this method on an empty `opt::option` will cause [Undefined Behavior][UB].
-
 ---
 
 ### `value`, `value_or_throw`
@@ -1548,6 +1545,9 @@ The passed `std::uintmax_t` level argument must be strictly less than `max_level
 and the provided `T*` pointer to the underlying object must be non-`nullptr`.
 
 Usually `set_level` is called after the original object is destructed/uninitialized, but also `set_level` can be called multiple times in a row.
+
+> [!IMPORTANT]
+> The `noexcept` specifier is required (without it the program will not compile).
 
 ### `opt::make_option`
 
