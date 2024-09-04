@@ -2635,11 +2635,11 @@ public:
     }
     [[nodiscard]] OPTION_PURE constexpr T&& get() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return std::move(base::get());
+        return static_cast<T&&>(base::get());
     }
     [[nodiscard]] OPTION_PURE constexpr const T&& get() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return std::move(base::get());
+        return static_cast<const T&&>(base::get());
     }
     // Returns a pointer to the contained value.
     // Calls the `OPTION_VERIFY` macro if this `opt::option` does not contain the value
@@ -2680,8 +2680,8 @@ public:
     // No OPTION_LIFETIMEBOUND
     [[nodiscard]] OPTION_PURE constexpr T& get_unchecked() & noexcept { return base::get(); }
     [[nodiscard]] OPTION_PURE constexpr const T& get_unchecked() const& noexcept { return base::get(); }
-    [[nodiscard]] OPTION_PURE constexpr T&& get_unchecked() && noexcept { return std::move(base::get()); }
-    [[nodiscard]] OPTION_PURE constexpr const T&& get_unchecked() const&& noexcept { return std::move(base::get()); }
+    [[nodiscard]] OPTION_PURE constexpr T&& get_unchecked() && noexcept { return static_cast<T&&>(base::get()); }
+    [[nodiscard]] OPTION_PURE constexpr const T&& get_unchecked() const&& noexcept { return static_cast<const T&&>(base::get()); }
 
     // Returns a reference to the contained value.
     // Throws a `opt::bad_access` if this `opt::option` does not contain the value.
@@ -2696,8 +2696,8 @@ public:
     // Similar to `std::optional<T>::value`.
     [[nodiscard]] constexpr T& value() & OPTION_LIFETIMEBOUND { return value_or_throw(); }
     [[nodiscard]] constexpr const T& value() const& OPTION_LIFETIMEBOUND { return value_or_throw(); }
-    [[nodiscard]] constexpr T&& value() && OPTION_LIFETIMEBOUND { return std::move(value_or_throw()); }
-    [[nodiscard]] constexpr const T&& value() const&& OPTION_LIFETIMEBOUND { return std::move(value_or_throw()); }
+    [[nodiscard]] constexpr T&& value() && OPTION_LIFETIMEBOUND { return static_cast<T&&>(value_or_throw()); }
+    [[nodiscard]] constexpr const T&& value() const&& OPTION_LIFETIMEBOUND { return static_cast<const T&&>(value_or_throw()); }
 
     // Returns the contained value if this `opt::option` contains the value;
     // otherwise returns a forwarded `default_value`.

@@ -236,6 +236,28 @@ TEST_CASE("reference") {
     }
 }
 
+TEST_CASE("rvalue reference") {
+    int a = 1;
+    opt::option<int&&> b{std::move(a)};
+    CHECK_EQ(b.get(), 1);
+    CHECK_EQ(*b, 1);
+    CHECK_EQ(std::as_const(b).get(), 1);
+    CHECK_EQ(*std::as_const(b), 1);
+    CHECK_EQ(as_rvalue(b).get(), 1);
+    CHECK_EQ(*as_rvalue(b), 1);
+    CHECK_EQ(as_const_rvalue(b).get(), 1);
+    CHECK_EQ(*as_const_rvalue(b), 1);
+    opt::option<const int&&> c{std::move(a)};
+    CHECK_EQ(c.get(), 1);
+    CHECK_EQ(*c, 1);
+    CHECK_EQ(std::as_const(c).get(), 1);
+    CHECK_EQ(*std::as_const(c), 1);
+    CHECK_EQ(as_rvalue(c).get(), 1);
+    CHECK_EQ(*as_rvalue(c), 1);
+    CHECK_EQ(as_const_rvalue(c).get(), 1);
+    CHECK_EQ(*as_const_rvalue(c), 1);
+}
+
 TEST_CASE("tuple like") {
     SUBCASE("std::tuple") {
         CHECK(sizeof(opt::option<std::tuple<int, float>>) == sizeof(std::tuple<int, float>));
