@@ -3047,22 +3047,22 @@ namespace impl {
 }
 
 template<std::size_t I, class T>
-constexpr auto get(opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
+[[nodiscard]] constexpr auto get(opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
 template<std::size_t I, class T>
-constexpr auto get(const opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
+[[nodiscard]] constexpr auto get(const opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
 template<std::size_t I, class T>
-constexpr auto get(opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
+[[nodiscard]] constexpr auto get(opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
 template<std::size_t I, class T>
-constexpr auto get(const opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
+[[nodiscard]] constexpr auto get(const opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
 
 template<class T, class OptT>
-constexpr auto get(opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
+[[nodiscard]] constexpr auto get(opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
 template<class T, class OptT>
-constexpr auto get(const opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
+[[nodiscard]] constexpr auto get(const opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
 template<class T, class OptT>
-constexpr auto get(opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
+[[nodiscard]] constexpr auto get(opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
 template<class T, class OptT>
-constexpr auto get(const opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
+[[nodiscard]] constexpr auto get(const opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
 
 namespace impl {
     template<std::size_t I, class Variant>
@@ -3084,22 +3084,22 @@ namespace impl {
 }
 
 template<std::size_t I, class... Ts>
-constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
 template<std::size_t I, class... Ts>
-constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
 template<std::size_t I, class... Ts>
-constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
 template<std::size_t I, class... Ts>
-constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
 
 template<class T, class... Ts>
-constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
-constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
-constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
+OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
 template<class T, class... Ts>
-constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
+OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
 
 namespace impl {
     template<class T>
@@ -3145,20 +3145,20 @@ namespace impl {
     }
 }
 template<class T>
-constexpr auto io(const opt::option<T>& x) noexcept {
+OPTION_PURE [[nodiscard]] constexpr auto io(const opt::option<T>& x) noexcept {
     return impl::io_helper1<const opt::option<T>&>{x};
 }
 template<class T>
-constexpr auto io(opt::option<T>& x) noexcept {
+OPTION_PURE [[nodiscard]] constexpr auto io(opt::option<T>& x) noexcept {
     return impl::io_helper1<opt::option<T>&>{x};
 }
 
 template<class T, class NoneCase>
-constexpr auto io(const opt::option<T>& x, const NoneCase& none_case) noexcept {
+OPTION_PURE [[nodiscard]] constexpr auto io(const opt::option<T>& x, const NoneCase& none_case) noexcept {
     return impl::io_helper2<const opt::option<T>&, const NoneCase&>(x, none_case);
 }
 template<class T, class NoneCase>
-constexpr auto io(opt::option<T>& x, NoneCase& none_case) noexcept {
+OPTION_PURE [[nodiscard]] constexpr auto io(opt::option<T>& x, NoneCase& none_case) noexcept {
     return impl::io_helper2<opt::option<T>&, NoneCase&>(x, none_case);
 }
 
