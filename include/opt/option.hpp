@@ -3101,6 +3101,67 @@ constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<
 template<class T, class... Ts>
 constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
 
+namespace impl {
+    template<class T>
+    struct io_helper1 {
+        T value;
+
+        explicit constexpr io_helper1(T value_) noexcept
+            : value{value_} {}
+    };
+    template<class Stream, class T>
+    Stream& operator<<(Stream& ostream, io_helper1<T> x) {
+        if (x.value.has_value()) {
+            ostream << x.value.get();
+        }
+        return ostream;
+    }
+
+    template<class T, class NoneCase>
+    struct io_helper2 {
+        T value;
+        NoneCase none_case;
+
+        explicit constexpr io_helper2(T value_, NoneCase none_case_) noexcept
+            : value{value_}, none_case{none_case_} {}
+    };
+    template<class Stream, class T, class NoneCase>
+    Stream& operator<<(Stream& ostream, io_helper2<T, NoneCase> x) {
+        if (x.value.has_value()) {
+            ostream << x.value.get();
+        } else {
+            ostream << x.none_case;
+        }
+        return ostream;
+    }
+    template<class Stream, class T, class NoneCase>
+    Stream& operator>>(Stream& istream, io_helper2<T, NoneCase> x) {
+        if (x.value.has_value()) {
+            istream >> x.value.get();
+        } else {
+            istream >> x.none_case;
+        }
+        return istream;
+    }
+}
+template<class T>
+constexpr auto io(const opt::option<T>& x) noexcept {
+    return impl::io_helper1<const opt::option<T>&>{x};
+}
+template<class T>
+constexpr auto io(opt::option<T>& x) noexcept {
+    return impl::io_helper1<opt::option<T>&>{x};
+}
+
+template<class T, class NoneCase>
+constexpr auto io(const opt::option<T>& x, const NoneCase& none_case) noexcept {
+    return impl::io_helper2<const opt::option<T>&, const NoneCase&>(x, none_case);
+}
+template<class T, class NoneCase>
+constexpr auto io(opt::option<T>& x, NoneCase& none_case) noexcept {
+    return impl::io_helper2<opt::option<T>&, NoneCase&>(x, none_case);
+}
+
 // Returns the `left` `opt::option` if it contains a value, otherwise return `right` value
 // x = left option value
 // y = right value

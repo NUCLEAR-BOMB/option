@@ -39,6 +39,7 @@
     - [`from_nullable`](#optfrom_nullable)
     - [`swap`](#optswap)
     - [`get`](#optget)
+    - [`io`](#optio)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
@@ -1169,6 +1170,50 @@ c = 2.f;
 if (auto d = opt::get<float>(c)) {
     std::cout << *d << '\n'; // 2
 }
+```
+
+---
+
+### `opt::io`
+
+```cpp
+template<class T>
+constexpr /*unspecified*/ io(const opt::option<T>& x) noexcept;
+template<class T>
+constexpr /*unspecified*/ io(opt::option<T>& x) noexcept;
+```
+Constructs the implementation detail return type with a reference to the `opt::option`.
+
+The return type has `operator<<` to write to stream.
+These overloads accept a template stream parameter and uses `operator<<` on them if option contains a value; otherwise, does nothing.
+Returns a non-`const` reference to the passed stream argument.
+
+---
+
+```cpp
+template<class T, class NoneCase>
+constexpr /*unspecified*/ io(const opt::option<T>& x, const NoneCase& none_case) noexcept;
+template<class T, class NoneCase>
+constexpr /*unspecified*/ io(opt::option<T>& x, NoneCase& none_case) noexcept;
+```
+Constructs the implementation detail return type with a reference to the `opt::option` and a reference to the `none_case`.
+
+The return type has `operator<<` and `operator>>` to write/read to/from stream.
+These overloads accept a template stream parameter and uses `operator<<` and `operator>>` on them if option contains a value;
+otherwise, uses `none_case` instead of option.
+Returns a non-`const` reference to the passed stream argument.
+
+---
+
+Example:
+```cpp
+opt::option<int> a;
+std::cout << opt::io(a) << '\n'; //
+std::cout << opt::io(a, "empty") << '\n'; // empty
+
+a = 1;
+std::cout << opt::io(a) << '\n'; // 1
+std::cout << opt::io(a, "empty") << '\n'; // 1
 ```
 
 ---

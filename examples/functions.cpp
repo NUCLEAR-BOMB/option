@@ -72,6 +72,16 @@ void hash() {
     std::cout << std::hash<opt::option<int>>{}(a) << '\n'; //$ [number]
 }
 
+void io() {
+    opt::option<int> a;
+    std::cout << opt::io(a) << '\n'; //$
+    std::cout << opt::io(a, "empty") << '\n'; //$ empty
+
+    a = 1;
+    std::cout << opt::io(a) << '\n'; //$ 1
+    std::cout << opt::io(a, "empty") << '\n'; //$ 1
+}
+
 int main() {
     std::cout << std::boolalpha;
     zip();
@@ -79,4 +89,5 @@ int main() {
     option_cast();
     get();
     hash();
+    io();
 }

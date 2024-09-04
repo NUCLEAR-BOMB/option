@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <variant>
+#include <sstream>
 
 #include "utils.hpp"
 
@@ -1633,6 +1634,43 @@ TEST_CASE("std::variant") {
     CHECK_UNARY(std::is_same_v<decltype(opt::get<int>(std::as_const(a))), opt::option<const int&>>);
     CHECK_UNARY(std::is_same_v<decltype(opt::get<int>(as_rvalue(a))), opt::option<int&&>>);
     CHECK_UNARY(std::is_same_v<decltype(opt::get<int>(as_const_rvalue(a))), opt::option<const int&&>>);
+}
+
+TEST_CASE("opt::io") {
+    std::stringstream str;
+    opt::option<int> a = 1;
+    str << opt::io(a);
+    CHECK_EQ(str.str(), "1");
+    str << opt::io(std::as_const(a));
+    CHECK_EQ(str.str(), "11");
+    str << opt::io(a, "a");
+    CHECK_EQ(str.str(), "111");
+    str << opt::io(std::as_const(a), "a");
+    CHECK_EQ(str.str(), "1111");
+    a = opt::none;
+    str << opt::io(a, "2");
+    CHECK_EQ(str.str(), "11112");
+    str << opt::io(std::as_const(a), "2");
+    CHECK_EQ(str.str(), "111122");
+
+    a.emplace(0);
+    str >> *a;
+    str.seekg(0);
+    CHECK_EQ(a, 111122);
+
+    int b{};
+    a.emplace(0);
+    str >> opt::io(a, b);
+    str.seekg(0);
+    CHECK_EQ(a, 111122);
+    CHECK_EQ(b, 0);
+
+    a.reset();
+    b = 0;
+    str >> opt::io(a, b);
+    str.seekg(0);
+    CHECK_EQ(a, opt::none);
+    CHECK_EQ(b, 111122);
 }
 
 TEST_SUITE_END();
