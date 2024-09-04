@@ -17,6 +17,7 @@
 #include <memory>
 #include <cstdint>
 #include <cstddef>
+#include <variant>
 
 #include "utils.hpp"
 
@@ -264,6 +265,11 @@ TEST_CASE("tuple like") {
         CHECK_EQ(std::get<0>(*a), 123);
         *opt::get<float>(a) = 32.f;
         CHECK_EQ(std::get<1>(*a), 32.f);
+
+        CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(a)), opt::option<int&>>);
+        CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(std::as_const(a))), opt::option<const int&>>);
+        CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(as_rvalue(a))), opt::option<int&&>>);
+        CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(as_const_rvalue(a))), opt::option<const int&&>>);
 
         opt::option<std::tuple<float, double>> b{2.56f, 3.1415};
         CHECK(sizeof(b) == sizeof(std::tuple<float, double>));
@@ -1589,6 +1595,44 @@ TEST_CASE("std::string") {
     a->clear();
     a->clear();
     CHECK_UNARY(a.has_value());
+}
+
+TEST_CASE("std::variant") {
+    std::variant<int, float, unsigned> a{1};
+    CHECK_EQ(opt::get<0>(a), 1);
+    CHECK_EQ(opt::get<1>(a), opt::none);
+    CHECK_EQ(opt::get<2>(a), opt::none);
+    a = 1.f;
+    CHECK_EQ(opt::get<0>(a), opt::none);
+    CHECK_EQ(opt::get<1>(a), 1.f);
+    CHECK_EQ(opt::get<2>(a), opt::none);
+    a.emplace<unsigned>(2u);
+    CHECK_EQ(opt::get<0>(a), opt::none);
+    CHECK_EQ(opt::get<1>(a), opt::none);
+    CHECK_EQ(opt::get<2>(a), 2u);
+
+    *opt::get<2>(a) = 10u;
+    CHECK_EQ(std::get<2>(a), 10u);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(a)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(std::as_const(a))), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(as_rvalue(a))), opt::option<int&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<0>(as_const_rvalue(a))), opt::option<const int&&>>);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<1>(a)), opt::option<float&>>);
+
+    CHECK_EQ(opt::get<unsigned>(a), 10u);
+    a.emplace<int>(1);
+    CHECK_EQ(opt::get<int>(a), 1);
+    *opt::get<int>(a) = 2;
+    CHECK_EQ(std::get<0>(a), 2);
+    CHECK_EQ(opt::get<float>(a), opt::none);
+    CHECK_EQ(opt::get<unsigned>(a), opt::none);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<int>(a)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<int>(std::as_const(a))), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<int>(as_rvalue(a))), opt::option<int&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::get<int>(as_const_rvalue(a))), opt::option<const int&&>>);
 }
 
 TEST_SUITE_END();

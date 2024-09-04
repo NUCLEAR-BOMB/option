@@ -302,6 +302,24 @@ OPTION_STD_NAMESPACE_CXX11_END
 
     template<class T, std::size_t N>
     struct array; // Defined in header <array>
+
+    template<class... Types>
+    class variant; // Defined in header <variant>
+
+#if OPTION_MSVC
+    template<std::size_t I, class... Types>
+    constexpr auto get_if(variant<Types...>*) noexcept;
+    template<std::size_t I, class... Types>
+    constexpr auto get_if(const variant<Types...>*) noexcept;
+#else
+    template<std::size_t N, class T>
+    struct variant_alternative;
+
+    template<std::size_t I, class... Types>
+    constexpr add_pointer_t<typename variant_alternative<I, variant<Types...>>::type> get_if(variant<Types...>*) noexcept;
+    template<std::size_t I, class... Types>
+    constexpr add_pointer_t<const typename variant_alternative<I, variant<Types...>>::type> get_if(const variant<Types...>*) noexcept;
+#endif
 OPTION_STD_NAMESPACE_END
 #else
     #include <string_view>
@@ -309,6 +327,7 @@ OPTION_STD_NAMESPACE_END
     #include <vector>
     #include <memory>
     #include <array>
+    #include <variant>
 #endif
 
 namespace opt {
@@ -3044,6 +3063,43 @@ template<class T, class OptT>
 constexpr auto get(opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
 template<class T, class OptT>
 constexpr auto get(const opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
+
+namespace impl {
+    template<std::size_t I, class Variant>
+    constexpr auto variant_get(Variant&& v) noexcept {
+        auto* const ptr = std::get_if<I>(&v);
+        using type = std::conditional_t<std::is_lvalue_reference_v<Variant>,
+            decltype(*ptr), std::remove_reference_t<decltype(*ptr)>&&
+        >;
+        return ptr == nullptr ? opt::none : opt::option<type>{static_cast<type>(*ptr)};
+    }
+    template<class T, class Variant>
+    constexpr auto variant_get(Variant&& v) noexcept {
+        auto* const ptr = std::get_if<T>(&v);
+        using type = std::conditional_t<std::is_lvalue_reference_v<Variant>,
+            decltype(*ptr), std::remove_reference_t<decltype(*ptr)>&&
+        >;
+        return ptr == nullptr ? opt::none : opt::option<type>{static_cast<type>(*ptr)};
+    }
+}
+
+template<std::size_t I, class... Ts>
+constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+template<std::size_t I, class... Ts>
+constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+template<std::size_t I, class... Ts>
+constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+template<std::size_t I, class... Ts>
+constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+
+template<class T, class... Ts>
+constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+template<class T, class... Ts>
+constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+template<class T, class... Ts>
+constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
+template<class T, class... Ts>
+constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
 
 // Returns the `left` `opt::option` if it contains a value, otherwise return `right` value
 // x = left option value
