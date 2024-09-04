@@ -2988,26 +2988,17 @@ template<class Fn, class... Options, std::enable_if_t<
     }
 }
 
-namespace impl {
-    template<class To, class From>
-    struct static_cast_functor {
-        OPTION_PURE constexpr To operator()(From&& from) const noexcept(std::is_nothrow_constructible_v<To, From&&>) {
-            return static_cast<To>(std::forward<From>(from));
-        }
-    };
-}
-
 // Constructs 'opt::option<To>' using 'const From&', if passed 'opt::option<From>' has value
 // else return 'opt::none'
 template<class To, class From>
 [[nodiscard]] constexpr opt::option<To> option_cast(const opt::option<From>& value) {
-    return value.map(impl::static_cast_functor<To, const From&>{});
+    return value.map([](const From& x) { return To(x); });
 }
 // Constructs 'opt::option<To>' using 'From&&', if passed 'opt::option<From>' has value
 // else return 'opt::none'
 template<class To, class From>
 [[nodiscard]] constexpr opt::option<To> option_cast(opt::option<From>&& value) {
-    return std::move(value).map(impl::static_cast_functor<To, From&&>{});
+    return std::move(value).map([](From&& x) { return To(std::move(x)); });
 }
 
 // Constructs 'opt::option<T>' from dereferenced value of proveded pointer if it is not equal to 'nullptr';
@@ -3084,22 +3075,22 @@ namespace impl {
 }
 
 template<std::size_t I, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
 template<std::size_t I, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
 template<std::size_t I, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
 template<std::size_t I, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
 
 template<class T, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
 template<class T, class... Ts>
-OPTION_PURE [[nodiscard]] constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
 
 namespace impl {
     template<class T>
@@ -3145,20 +3136,20 @@ namespace impl {
     }
 }
 template<class T>
-OPTION_PURE [[nodiscard]] constexpr auto io(const opt::option<T>& x) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(const opt::option<T>& x) noexcept {
     return impl::io_helper1<const opt::option<T>&>{x};
 }
 template<class T>
-OPTION_PURE [[nodiscard]] constexpr auto io(opt::option<T>& x) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(opt::option<T>& x) noexcept {
     return impl::io_helper1<opt::option<T>&>{x};
 }
 
 template<class T, class NoneCase>
-OPTION_PURE [[nodiscard]] constexpr auto io(const opt::option<T>& x, const NoneCase& none_case) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(const opt::option<T>& x, const NoneCase& none_case) noexcept {
     return impl::io_helper2<const opt::option<T>&, const NoneCase&>(x, none_case);
 }
 template<class T, class NoneCase>
-OPTION_PURE [[nodiscard]] constexpr auto io(opt::option<T>& x, NoneCase& none_case) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(opt::option<T>& x, NoneCase& none_case) noexcept {
     return impl::io_helper2<opt::option<T>&, NoneCase&>(x, none_case);
 }
 
