@@ -37,6 +37,8 @@
     - [`zip_with`](#optzip_with)
     - [`option_cast`](#optoption_cast)
     - [`from_nullable`](#optfrom_nullable)
+    - [`swap`](#optswap)
+    - [`get`](#optget)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
@@ -1094,6 +1096,8 @@ constexpr auto get(const opt::option<T>&& x) noexcept;
 ```
 Returns the result of `using std::get; get<I>` (ADL) in an reference option (e.g. `opt::option<T&>`) if it does contain one; otherwise, returns `opt::none`.
 
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
 ---
 
 ```cpp
@@ -1108,6 +1112,44 @@ constexpr auto get(const opt::option<OptT>&& x) noexcept;
 ```
 Returns the result of `using std::get; get<T>` (ADL) in an reference option (e.g. `opt::option<T&>`) if it does contain one; otherwise, returns `opt::none`.
 
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+---
+
+```cpp
+template<std::size_t I, class... Ts>
+constexpr auto get(std::variant<Ts...>& v) noexcept;
+template<std::size_t I, class... Ts>
+constexpr auto get(const std::variant<Ts...>& v) noexcept;
+template<std::size_t I, class... Ts>
+constexpr auto get(std::variant<Ts...>&& v) noexcept;
+template<std::size_t I, class... Ts>
+constexpr auto get(const std::variant<Ts...>&& v) noexcept;
+```
+Returns the reference option (e.g. `opt::option<T&>`) to an holded value of the `std::variant` at index `I` if `std::variant` contain it.
+Otherwise, returns `opt::none`.
+
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+---
+
+```cpp
+template<class T, class... Ts>
+constexpr auto get(std::variant<Ts...>& v) noexcept;
+template<class T, class... Ts>
+constexpr auto get(const std::variant<Ts...>& v) noexcept;
+template<class T, class... Ts>
+constexpr auto get(std::variant<Ts...>&& v) noexcept;
+template<class T, class... Ts>
+constexpr auto get(const std::variant<Ts...>&& v) noexcept;
+```
+Returns the reference option (e.g. `opt::option<T&>`) to an holded value of the `std::variant` with type `T` if `std::variant` contain it.
+Otherwise, returns `opt::none`.
+
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+---
+
 Example:
 ```cpp
 opt::option<std::tuple<int, float>> a{1, 2.f};
@@ -1117,6 +1159,16 @@ if (auto b = opt::get<0>(a)) {
     *b = 2;
 }
 std::cout << *opt::get<int>(a) << '\n'; // 2
+
+opt::option<std::variant<int, float>> c{123};
+
+if (auto d = opt::get<int>(c)) {
+    std::cout << *d << '\n'; // 123
+}
+c = 2.f;
+if (auto d = opt::get<float>(c)) {
+    std::cout << *d << '\n'; // 2
+}
 ```
 
 ---

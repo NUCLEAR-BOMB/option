@@ -1,5 +1,7 @@
 #include <iostream>
 #include <opt/option.hpp>
+#include <variant>
+#include <tuple>
 
 void zip() {
     opt::option<int> a{1};
@@ -49,6 +51,16 @@ void get() {
         *b = 2;
     }
     std::cout << *opt::get<int>(a) << '\n'; //$ 2
+
+    opt::option<std::variant<int, float>> c{123};
+
+    if (auto d = opt::get<int>(c)) {
+        std::cout << *d << '\n'; //$ 123
+    }
+    c = 2.f;
+    if (auto d = opt::get<float>(c)) {
+        std::cout << *d << '\n'; //$ 2
+    }
 }
 
 void hash() {
