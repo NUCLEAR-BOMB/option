@@ -236,6 +236,7 @@ TEST_CASE("reference") {
     }
 }
 
+// NOLINTBEGIN(performance-move-const-arg,bugprone-use-after-move)
 TEST_CASE("rvalue reference") {
     int a = 1;
     opt::option<int&&> b{std::move(a)};
@@ -257,6 +258,7 @@ TEST_CASE("rvalue reference") {
     CHECK_EQ(as_const_rvalue(c).get(), 1);
     CHECK_EQ(*as_const_rvalue(c), 1);
 }
+// NOLINTEND(performance-move-const-arg,bugprone-use-after-move)
 
 TEST_CASE("tuple like") {
     SUBCASE("std::tuple") {
