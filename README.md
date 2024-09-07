@@ -10,7 +10,7 @@ Replacement for [`std::optional`][std::optional] with efficient memory usage and
 - Custom size optimizations for your own types (`opt::option_traits`). See [option traits guide](./docs/markdown/custom_traits_guide.md).
 - Allows reference types.
 
-Table of contents:
+**Table of contents**:
 
 - [Overview](#overview)
 - [Why `opt::option`?](#why-optoption)
@@ -26,7 +26,7 @@ Table of contents:
 
 # Overview
 
-Types with unused states.
+**Types with unused states.**
 
 ```cpp
 opt::option<float> a = 123.456f;
@@ -58,7 +58,7 @@ std::cout << opt::io(d, "empty option") << '\n';
 
 ---
 
-Complex types that contain unused states.
+**Complex types that contain unused states.**
 
 ```cpp
 opt::option<std::tuple<int, unsigned, float>> a;
@@ -95,7 +95,7 @@ std::cout << c->x.x << '\n';
 
 ---
 
-Nested `opt::option`s.
+**Nested `opt::option`s.**
 
 ```cpp
 opt::option<opt::option<bool>> a{true};
@@ -162,7 +162,7 @@ But the option library has its own functionality:
 - `opt::io` (read from/write to stream)
 - `opt::swap`
 
-See [reference](./docs/markdown/reference.md) for more details.
+See [**reference**](./docs/markdown/reference.md) for more details.
 
 # Compiler support
 
@@ -323,21 +323,21 @@ That's provide a way to store an empty state in a `opt::option` without using ad
 `opt::option_traits` also defines recursively `opt::option` type optimization and allows nested `opt::option` to have same size as the contained value.
 
 Quick list of built-in size optimizations:
-- `bool`: `bool` only uses `false` and `true` values, the remaining ones are used.
-- References and `std::reference_wrapper`: around zero values are used.
-- Pointers: for x64 noncanonical addresses, for x32 slightly less than maximum address (16-bit also supported).
-- Floating point: negative signaling NaN with some payload values are used (other values are supported).
-- Polymorphic types: unused vtable pointer values are used.
-- Reflectable types (aggregate types)[^2]: the member with maximum number of unused value are used.
-- Pointers to members (`T U::*`): some special offset range is used.
-- `std::tuple`, `std::pair`, `std::array` and any other tuple-like type: the member with maximum number of unused value are used.
-- `std::basic_string_view` and `std::unique_ptr<T, std::default_delete<T>>`: special values are used.
-- `std::basic_string` and `std::vector`: uses internal implementation of the containers (supports [`libc++`][libc++], [`libstdc++`][libstdc++] and [`MSVC STL`][MSVC STL]).
-- Enumeration reflection[^3]: automatic finds unused values (empty enums and flag enums are taken into account).
-- Manual reflection: sentinel non-static data member (`.SENTINEL`), enumeration sentinel (`::SENTINEL`, `::SENTINEL_START`, `::SENTINEL_END`).
-- `opt::sentinel`, `opt::sentinel_f`, `opt::member`: user-defined unused values.
+- **`bool`**: `bool` only uses `false` and `true` values, the remaining ones are used.
+- **References and `std::reference_wrapper`**: around zero values are used.
+- **Pointers**: for x64 noncanonical addresses, for x32 slightly less than maximum address (16-bit also supported).
+- **Floating point**: negative signaling NaN with some payload values are used (other values are supported).
+- **Polymorphic types**: unused vtable pointer values are used.
+- **Reflectable types** (aggregate types)[^2]: the member with maximum number of unused value are used.
+- **Pointers to members** (`T U::*`): some special offset range is used.
+- **`std::tuple`, `std::pair`, `std::array` and any other tuple-like type**: the member with maximum number of unused value are used.
+- **`std::basic_string_view` and `std::unique_ptr<T, std::default_delete<T>>`**: special values are used.
+- **`std::basic_string` and `std::vector`**: uses internal implementation of the containers (supports [`libc++`][libc++], [`libstdc++`][libstdc++] and [`MSVC STL`][MSVC STL]).
+- **Enumeration reflection**[^3]: automatic finds unused values (empty enums and flag enums are taken into account).
+- **Manual reflection**: sentinel non-static data member (`.SENTINEL`), enumeration sentinel (`::SENTINEL`, `::SENTINEL_START`, `::SENTINEL_END`).
+- **`opt::sentinel`, `opt::sentinel_f`, `opt::member`**: user-defined unused values.
 
-See [built-in traits](./docs/markdown/builtin_traits.md) for more information.
+See [**built-in traits**](./docs/markdown/builtin_traits.md) for more information.
 
 # Compatibility with `std::optional`
 
@@ -357,7 +357,7 @@ You can replace `std::optional` with `opt::option`, taking into account that the
 
 The library actively uses platform-dependent behavior to exploit unused object states.
 
-Recommended using sanitizers (`AddressSanitizer` and `UndefinedBehaviorSanitizer`) to catch unexpected behavior.
+Recommended using sanitizers (*`AddressSanitizer`* and *`UndefinedBehaviorSanitizer`*) to catch unexpected behavior.
 
 > [!NOTE]
 > The library doesn't break the strict aliasing rules. It uses `std::memcpy` to copy object bits instead of `reinterpret_cast`.
@@ -365,10 +365,10 @@ Recommended using sanitizers (`AddressSanitizer` and `UndefinedBehaviorSanitizer
 You can disable individual built-in traits to avoid using platform specific behavior for specific types.
 Or you can disable built-in traits entirely with a macro definition.
 
-[^1]: When possible uses [Address Sanitizers][AddressSanitizer] and [Undefined Behavior Sanitizer][UndefinedSanitizer].
+[^1]: When possible uses [*Address Sanitizers*][AddressSanitizer] and [*Undefined Behavior Sanitizer*][UndefinedSanitizer].
 Note that some compilers/versions have unstable sanitizer support, so the CI tests are disables that options.
 
-[^2]: Requires either [`boost.pfr`][boost.pfr] or [`ptr`][pfr] library.
+[^2]: Requires either [**`boost.pfr`**][boost.pfr] or [**`ptr`**][pfr] library.
 
 [^3]: Requires identifier `__PRETTY_FUNCTION__` or compiler built-in `__builtin_FUNCSIG()`.
 
