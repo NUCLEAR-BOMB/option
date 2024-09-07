@@ -647,7 +647,7 @@ namespace impl {
     template<class T>
     struct dispatch_specializations<opt::option<T>> {
         static constexpr option_strategy value
-            = has_option_traits<typename opt::option<T>::value_type>
+            = opt::option_traits<T>::max_level >= 1
                 ? option_strategy::avaliable_option
                 : option_strategy::unavaliable_option;
     };
@@ -657,10 +657,7 @@ namespace impl {
     };
     template<class T>
     struct dispatch_specializations<std::reference_wrapper<T>> {
-        static constexpr option_strategy value =
-            sizeof(std::reference_wrapper<T>) == sizeof(T*)
-                ? option_strategy::reference_wrapper
-                : option_strategy::other;
+        static constexpr option_strategy value = option_strategy::reference_wrapper;
     };
     template<class First, class Second>
     struct dispatch_specializations<std::pair<First, Second>> {
@@ -715,9 +712,8 @@ namespace impl {
             } else
             if constexpr (sizeof(T) == 2) {
                 return st::pointer_16;
-            } else {
-                return st::none;
-            }
+            } else
+            return st::none;
         } else
         if constexpr (std::is_member_pointer_v<T>) {
             if constexpr (sizeof(T) == 4) {
@@ -725,9 +721,8 @@ namespace impl {
             } else
             if constexpr (sizeof(T) >= 8) {
                 return st::member_pointer_64;
-            } else {
-                return st::none;
-            }
+            } else
+            return st::none;
         } else
         if constexpr (std::is_floating_point_v<T>) {
             using limits = std::numeric_limits<T>;
