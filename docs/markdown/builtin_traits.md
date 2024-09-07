@@ -1,29 +1,28 @@
 
 # Size optimizations
 
-- [Size optimizations](#size-optimizations)
-  - [`bool`](#bool)
-  - [`std::reference_wrapper`](#stdreference_wrapper)
-  - [`std::pair`](#stdpair)
-  - [`std::tuple`](#stdtuple)
-  - [Tuple-like types](#tuple-like-types)
-  - [`std::array`](#stdarray)
-  - [Reflectable types](#reflectable-types)
-  - [Polymorphic types](#polymorphic-types)
-  - [Pointers](#pointers)
-  - [Floating point](#floating-point)
-  - [Reference](#reference)
-  - [`std::basic_string_view`](#stdbasic_string_view)
-  - [`std::unique_ptr<T, std::default_delete<T>>`](#stdunique_ptrt-stddefault_deletet)
-  - [`std::basic_string`](#stdbasic_string)
-  - [`std::vector`](#stdvector)
-  - [Pointers to members](#pointers-to-members)
-  - [`SENTINEL` member](#sentinel-member)
-  - [Enumeration `SENTINEL`](#enumeration-sentinel)
-  - [Enumeration `SENTINEL_START`](#enumeration-sentinel_start)
-  - [Enumeration `SENTINEL_START` and `SENTINEL_END`](#enumeration-sentinel_start-and-sentinel_end)
-  - [Enumeration](#enumeration)
-  - [`opt::option`](#optoption)
+- [`bool`](#bool)
+- [`std::reference_wrapper`](#stdreference_wrapper)
+- [`std::pair`](#stdpair)
+- [`std::tuple`](#stdtuple)
+- [Tuple-like types](#tuple-like-types)
+- [`std::array`](#stdarray)
+- [Reflectable types](#reflectable-types)
+- [Polymorphic types](#polymorphic-types)
+- [Pointers](#pointers)
+- [Floating point](#floating-point)
+- [Reference](#reference)
+- [`std::basic_string_view`](#stdbasic_string_view)
+- [`std::unique_ptr<T, std::default_delete<T>>`](#stdunique_ptrt-stddefault_deletet)
+- [`std::basic_string`](#stdbasic_string)
+- [`std::vector`](#stdvector)
+- [`SENTINEL` member](#sentinel-member)
+- [Enumeration `SENTINEL`](#enumeration-sentinel)
+- [Enumeration `SENTINEL_START`](#enumeration-sentinel_start)
+- [Enumeration `SENTINEL_START` and `SENTINEL_END`](#enumeration-sentinel_start-and-sentinel_end)
+- [Enumeration](#enumeration)
+- [Pointers to members](#pointers-to-members)
+- [`opt::option`](#optoption)
 
 | Type                                            | max_level                        | level range                             |
 | :---------------------------------------------- | :------------------------------- | :-------------------------------------- |
@@ -144,11 +143,16 @@ When size of pointer is:
 
 Stores level value in very unlikely floating point's states.
 
-Exploits a huge range in the majority mostly unused NaN payload.
+Exploits a range of values in the majority mostly unused NaN payload.
 This option trait tries to use negative [signaling NaN][signaling NaN] payload range which is almost impossible to reproduce externally.
-Otherwise, tries to use negative [quite NaN][quite NaN] payload range. If that is not possible too, not uses this trait entirely.
+Otherwise, tries to use negative [quiet NaN][quiet NaN] payload range. If that is not possible too, not uses this trait entirely.
 
-Under normal circumstances, it is impossible to recreate level values: manipulating with [signaling NaNs][signaling NaN] causes floating point exception, hardware only generate [quite NaN][quite NaN] with pre-set payload.
+Under normal circumstances, it is impossible to recreate level values: manipulating with [signaling NaNs][signaling NaN] causes floating point exception, hardware only generate [quiet NaN][quiet NaN] with pre-set payload.
+
+> [!NOTE]
+> On x32, it is always uses quiet NaN to avoid producing floating point hardware exceptions (although not sure why).
+
+These is also an assumption that copying NaN does preserve its bit representation (which is not guaranteed by the [IEEE 754][IEEE 754] standard).
 
 ## Reference
 
@@ -273,7 +277,7 @@ Underlying `opt::option` uses seperate "has value" flag:
 [vtable]: https://en.wikipedia.org/wiki/Virtual_method_table
 [canonical address]: https://en.wikipedia.org/wiki/X86-64#Canonical_form_addresses
 [pseudo handle]: https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess
-[quite NaN]: https://en.wikipedia.org/wiki/NaN#Quiet_NaN
+[quiet NaN]: https://en.wikipedia.org/wiki/NaN#Quiet_NaN
 [signaling NaN]: https://en.wikipedia.org/wiki/NaN#Signaling_NaN
 [std::string_view]: https://en.cppreference.com/w/cpp/string/basic_string_view
 [std::unique_ptr]: https://en.cppreference.com/w/cpp/memory/unique_ptr
@@ -286,3 +290,4 @@ Underlying `opt::option` uses seperate "has value" flag:
 [bool]: https://en.cppreference.com/w/cpp/language/types#Boolean_type
 [bool literals]: https://en.cppreference.com/w/cpp/language/bool_literal
 [std::is_empty]: https://en.cppreference.com/w/cpp/types/is_empty
+[IEEE 754]: https://en.wikipedia.org/wiki/IEEE_754
