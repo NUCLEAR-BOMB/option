@@ -1,7 +1,7 @@
 
 # option
 
-Replacent for [`std::optional`][std::optional] without wasting memory and with additional features.
+Replacement for [`std::optional`][std::optional] with efficient memory usage and additional features.
 
 - Functionality from [C++23 `std::optional`][std::optional monadic], Rust's [`std::option::Option`][Rust Option] and other `opt::option`'s own stuff. See [reference](./docs/markdown/reference.md).
 - Zero memory overhead with types that have unused values. See [builtin traits](./docs/markdown/builtin_traits.md).
