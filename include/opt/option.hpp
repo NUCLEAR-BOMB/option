@@ -2712,8 +2712,7 @@ public:
     // otherwise returns a forwarded `default_value`.
     // Same as `std::optional<T>::value_or`
     template<class U>
-    [[nodiscard]] constexpr T value_or(U&& default_value) const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>)
-        OPTION_LIFETIMEBOUND {
+    [[nodiscard]] constexpr T value_or(U&& default_value) const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>) {
         static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
         static_assert(std::is_convertible_v<U&&, T>, "U&& must be convertible to T");
         if (has_value()) {
@@ -2722,8 +2721,7 @@ public:
         return static_cast<T>(std::forward<U>(default_value));
     }
     template<class U>
-    [[nodiscard]] constexpr T value_or(U&& default_value) && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>)
-        OPTION_LIFETIMEBOUND {
+    [[nodiscard]] constexpr T value_or(U&& default_value) && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>) {
         static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
         static_assert(std::is_convertible_v<U&&, T>, "U&& must be convertible to T");
         if (has_value()) {
