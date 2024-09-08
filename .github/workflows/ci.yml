@@ -163,6 +163,17 @@ jobs:
               --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
 
+          - name: 'gcc 14 C++20'
+            cxx: 'g++-14'
+            cc: 'gcc-14'
+            os: 'ubuntu-24.04'
+            packages: 'g++-14-multilib'
+            x64_options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+            cxx_options: '-std=c++20'
+
           - name: 'gcc 14'
             cxx: 'g++-14'
             cc: 'gcc-14'
