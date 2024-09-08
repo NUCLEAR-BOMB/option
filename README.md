@@ -248,7 +248,7 @@ target_link_libraries(<target> PRIVATE option)
 ```
 
 > [!TIP]
-> You could specify the `SYSTEM` (since CMake 3.25) and `EXCLUDE_FROM_ALL` (since CMake 3.28) arguments to `FetcnhContet_Declare` but the library already uses `target_include_directories` with `SYSTEM` and it is header-only library.
+> You could specify the `SYSTEM` (since CMake 3.25) and `EXCLUDE_FROM_ALL` (since CMake 3.28) arguments to `FetchContent_Declare` but the library already uses `target_include_directories` with `SYSTEM` and it is header-only library.
 
 Using URL to the archive:
 
