@@ -1496,6 +1496,21 @@ namespace impl {
     template<class C, class T>
     struct member_type<T C::*> { using type = T; };
 
+    template<class T, class U>
+    struct copy_reference {
+        using type = std::remove_reference_t<T>&&;
+    };
+    template<class T, class U>
+    struct copy_reference<T&, U&&> {
+        using type = T&&;
+    };
+    template<class T, class U>
+    struct copy_reference<T, U&> {
+        using type = T&;
+    };
+    template<class T, class U>
+    using copy_reference_t = typename copy_reference<T, U>::type;
+
     enum class base_strategy {
         has_traits             = 1,
         trivially_destructible = 2
@@ -3146,6 +3161,14 @@ template<class T, class NoneCase>
 template<class T, class NoneCase>
 [[nodiscard]] OPTION_PURE constexpr auto io(opt::option<T>& x, NoneCase& none_case) noexcept {
     return impl::io_helper2<opt::option<T>&, NoneCase&>(x, none_case);
+}
+
+template<class T>
+[[nodiscard]] OPTION_PURE constexpr auto at(T&& container OPTION_LIFETIMEBOUND, const std::size_t index) noexcept {
+    using type = impl::copy_reference_t<decltype(std::forward<T>(container)[index]), T>;
+
+    if (index >= container.size()) { return opt::option<type>{opt::none}; }
+    return opt::option<type>{static_cast<type>(std::forward<T>(container)[index])};
 }
 
 // Returns the `left` `opt::option` if it contains a value, otherwise return `right` value

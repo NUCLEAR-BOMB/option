@@ -1697,6 +1697,42 @@ TEST_CASE("opt::io") {
     CHECK_EQ(b, 111122);
 }
 
+TEST_CASE("opt::at") {
+    std::vector<int> a{{1, 2, 3}};
+    CHECK_EQ(a.size(), 3);
+
+    CHECK_EQ(opt::at(a, 0), 1);
+    CHECK_EQ(opt::at(a, 1), 2);
+    CHECK_EQ(opt::at(a, 2), 3);
+    CHECK_EQ(opt::at(a, 3), opt::none);
+    CHECK_EQ(opt::at(a, 4), opt::none);
+
+    *opt::at(a, 0) = 10;
+    CHECK_EQ(a[0], 10);
+    *opt::at(a, 2) = 20;
+    CHECK_EQ(a[2], 20);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(a, 1)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(std::as_const(a), 1)), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(as_rvalue(a), 1)), opt::option<int&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(as_const_rvalue(a), 1)), opt::option<const int&&>>);
+
+    std::string b = "abcdefg";
+    CHECK_EQ(b.size(), 7);
+
+    CHECK_EQ(opt::at(b, 0), 'a');
+    CHECK_EQ(opt::at(b, 1), 'b');
+    CHECK_EQ(opt::at(b, 2), 'c');
+    CHECK_EQ(opt::at(b, 3), 'd');
+    CHECK_EQ(opt::at(b, 4), 'e');
+    CHECK_EQ(opt::at(b, 5), 'f');
+    CHECK_EQ(opt::at(b, 6), 'g');
+    CHECK_EQ(opt::at(b, 7), opt::none);
+
+    *opt::at(b, 0) = 'z';
+    CHECK_EQ(b[0], 'z');
+}
+
 TEST_SUITE_END();
 
 struct struct1 {
