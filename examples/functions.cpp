@@ -2,6 +2,7 @@
 #include <opt/option.hpp>
 #include <variant>
 #include <tuple>
+#include <vector>
 
 void zip() {
     opt::option<int> a{1};
@@ -82,6 +83,18 @@ void io() {
     std::cout << opt::io(a, "empty") << '\n'; //$ 1
 }
 
+void at() {
+    std::vector<int> a{{10, 11, 12, 13, 14}};
+
+    std::cout << (opt::at(a, 0) == 10) << '\n'; //$ true
+    std::cout << (opt::at(a, 5) == 15) << '\n'; //$ false
+
+    a = {1, 2};
+    std::cout << (opt::at(a, 0) == 1) << '\n'; //$ true
+    std::cout << (opt::at(a, 1) == 2) << '\n'; //$ true
+    std::cout << (opt::at(a, 2) == 3) << '\n'; //$ false
+}
+
 int main() {
     std::cout << std::boolalpha;
     zip();
@@ -90,4 +103,5 @@ int main() {
     get();
     hash();
     io();
+    at();
 }

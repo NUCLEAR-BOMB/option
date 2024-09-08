@@ -40,6 +40,7 @@
     - [`swap`](#optswap)
     - [`get`](#optget)
     - [`io`](#optio)
+    - [`at`](#optat)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
@@ -1214,6 +1215,37 @@ std::cout << opt::io(a, "empty") << '\n'; // empty
 a = 1;
 std::cout << opt::io(a) << '\n'; // 1
 std::cout << opt::io(a, "empty") << '\n'; // 1
+```
+
+---
+
+### `opt::at`
+
+```cpp
+template<class T>
+constexpr auto at(T&& container /*lifetimebound*/, std::size_t index) noexcept;
+```
+Returns the reference option (e.g. `opt::option<T&>`) to an holded value at `index` of the `container` if `index` is a valid index (bounds checking is performed).
+Otherwise, returns `opt::none`.
+
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+Uses the `.size()` to check if index is in a valid range (`index < container.size()`)
+and `.operator[]` to access specified element at `index` (`std::forward<T>(container)[index]`).
+
+None of these function should throw any exceptions.
+
+Example:
+```cpp
+std::vector<int> a{{10, 11, 12, 13, 14}};
+
+std::cout << (opt::at(a, 0) == 10) << '\n'; // true
+std::cout << (opt::at(a, 5) == 15) << '\n'; // false
+
+a = {1, 2};
+std::cout << (opt::at(a, 0) == 1) << '\n'; // true
+std::cout << (opt::at(a, 1) == 2) << '\n'; // true
+std::cout << (opt::at(a, 2) == 3) << '\n'; // false
 ```
 
 ---
