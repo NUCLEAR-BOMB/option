@@ -330,6 +330,10 @@ OPTION_STD_NAMESPACE_END
     #include <variant>
 #endif
 
+#if OPTION_IS_CXX20
+    #include <memory> // for std::construct_at
+#endif
+
 namespace opt {
 
 template<class T>
@@ -342,18 +346,18 @@ template<>
 struct option_traits<impl::dummy_type_for_traits> {};
 
 namespace impl {
-#if OPTION_IS_CXX20
-    using std::construct_at;
-#else
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
         if constexpr (std::is_trivially_move_assignable_v<T>) {
             *ptr = T{std::forward<Args>(args)...};
         } else {
+#if OPTION_IS_CXX20
+            std::construct_at(ptr, std::forward<Args>(args)...);
+#else
             ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
+#endif
         }
     }
-#endif
 
     template<class T>
     constexpr void destroy_at(T* ptr) {
