@@ -425,7 +425,7 @@ Returns `true` if this `opt::option` contains a value, and the contained value m
 If this `opt::option` contains a value, return the result of invocation of `predicate` with the contained value as an argument. If this `opt::option` does not contain a value, return `false`.
 - *Enabled* when `std::is_invocable_r_v<bool, P, T>`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 3;
 
@@ -449,7 +449,7 @@ Takes the value out of the `opt::option`. \
 Copy construct temporary value using the contained value in the `opt::option`, destroy which is left in the contained value in the `opt::option`, and return that temporary value with copy elision.
 - *Postcondition:* `has_value() == false`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 1;
 
@@ -478,7 +478,7 @@ Takes the value out of the `opt::option`, but only if the `predicate` evaluates 
 Returns an empty `opt::option` if this `opt::option` does not contain a value or `predicate` evaluates to `false` with the non-const contained value as an argument; otherwise, return the expression `take()`.
 - *Enabled* when `std::is_invocable_r_v<bool, P, T&>`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 1;
 
@@ -513,7 +513,7 @@ constexpr const option&& inspect(F&& fn) const&&;
 ```
 Invokes `fn` with a reference (possible `const`) to the contained value if the `opt::option` contains one. If it does not, there are no effects. Returns a reference to the this `opt::option`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 1;
 
@@ -655,7 +655,7 @@ Returns the provided `default` value if `opt::option` does not contain a value, 
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
 - *Enabled* when `std::is_invocable_r_v<remove_cvref<U>, Fn, T>` is `true`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 2;
 
@@ -683,7 +683,7 @@ Returns the result of `default` function with no arguments if `opt::option` does
 - *Enabled* when `std::is_invocable_v<D>` and `std::is_invocable_v<Fn, T>` are `true`.
 - *Requirements:* the return type of `default` function must be the same as the return type of `function` function.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 3;
 
@@ -711,7 +711,7 @@ constexpr void ptr_or_null() const&& = delete;
 ```
 Returns a pointer to the contained value (`std::addressof(get())`) if `opt::option` contains one. If it does not, returns `nullptr` instead.
 
-Example:
+**Example:**
 ```cpp
 int a = 2;
 
@@ -746,7 +746,7 @@ The returned value is constructed with forwarded contained value.
 > [!NOTE]
 > `opt::option` does not modify value inside function (despite having non-const reference). You can modify contained value inside function via passed reference to it.
 
-Example:
+**Example:**
 ```cpp
 const auto is_odd = [](auto x) {
     return x % 2 != 0;
@@ -806,7 +806,7 @@ This operation is also sometimes called *flatmap*.
 - *Enabled* when `std::is_invocable_v<Fn, T>`.
 - *Requirements:* the result type of `function` must be a specialization of `opt::option`.
 
-Example:
+**Example:**
 ```cpp
 const auto do_something = [](int x) {
     return x == 0 ? opt::option<float>{1.5f} : opt::none;
@@ -842,7 +842,7 @@ If `opt::option` contains a value, invokes `function` function with the containe
 Similar to [`std::optional<T>::transform`](https://en.cppreference.com/w/cpp/utility/optional/transform).
 - *Enabled* when `std::is_invocable_v<Fn, T>` is `true`.
 
-Example:
+**Example:**
 ```cpp
 const auto to_float = [](int x) {
     return float(x) / 2.f;
@@ -871,7 +871,7 @@ Similar to [`std::optional<T>::or_else`](https://en.cppreference.com/w/cpp/utili
 - *Enabled* when `std::is_invocable_v<Fn>`.
 - *Requirements:* the result type of `function` (without any cv-qualifiers) must be the same as `opt::option<T>`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 2;
 
@@ -915,7 +915,7 @@ If `opt::option` contains the value, return *tuple like* object that contains `o
 
 Where *tuple like* object is a type of specialization of `std::array`, `std::pair` or `std::tuple`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<std::tuple<int, float>> a{1, 2.5f};
 
@@ -944,7 +944,7 @@ constexpr option<T> replace(U&& value) &;
 Replaces the contained value by a provided `value` and returns the old `opt::option` contained value.
 - *Enabled* when `std::is_constructible_v<T, U&&>` is `true`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 1;
 
@@ -993,7 +993,7 @@ If every `options...` contains the values, returns the `std::tuple` wrapped in `
 The return type of `zip` is `opt::option<std::tuple<typename remove_cvref<Options>::value_type...>>`. \
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a{1};
 opt::option<float> b{2.f};
@@ -1019,7 +1019,7 @@ constexpr auto zip_with(Fn&& fn, Options&&... options);
 If every `options...` contains the values, returns the result of `fn` function with every `options...` containing values as the `fn` arguments. If any of `options...` does not contain a value, returns an empty `opt::option`.
 - *Enabled* when every `Options...` (without cv-qualifiers) is the specializations of `opt::option`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a{10};
 opt::option<float> b{5.f};
@@ -1047,7 +1047,7 @@ constexpr option<To> option_cast(option<From>&& value);
 Casts `opt::option<From>` to `opt::option<To>`. \
 If `opt::option<From>` contains a value, `static_cast`s it to the type `To` and wraps it into `opt::option<To>`. If `opt::option<From>` does not contain a value, returns an empty `opt::option<To>`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<float> a{2.5f};
 opt::option<int> b;
@@ -1152,7 +1152,7 @@ In return type, a `T` in `opt::option<T>` has the same reference qualifiers as f
 
 ---
 
-Example:
+**Example:**
 ```cpp
 opt::option<std::tuple<int, float>> a{1, 2.f};
 
@@ -1206,7 +1206,7 @@ Returns a non-`const` reference to the passed stream argument.
 
 ---
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a;
 std::cout << opt::io(a) << '\n'; //
@@ -1235,7 +1235,7 @@ and `.operator[]` to access specified element at `index` (`std::forward<T>(conta
 
 None of these function should throw any exceptions.
 
-Example:
+**Example:**
 ```cpp
 std::vector<int> a{{10, 11, 12, 13, 14}};
 
@@ -1283,7 +1283,7 @@ constexpr option<T> operator|(none_t, const option<T>& right);
 ```
 Returns `right`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 1;
 opt::option<int> b = 2;
@@ -1342,7 +1342,7 @@ constexpr option<U> operator&(const option<T>& left, const option<U>& right);
 ```
 Returns an empty `opt::option` if `left` does not contain a value, or if `left` does, returns `right`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 1;
 opt::option<float> b = 2.5f;
@@ -1367,7 +1367,7 @@ constexpr option<T> operator^(const option<T>& left, const option<T>& right);
 ```
 Returns `opt::option` that contains a value if exactly one of `left` and `right` contains a value, otherwise, returns an empty `opt::option`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a = 2;
 opt::option<int> b = 10;
@@ -1654,7 +1654,7 @@ If `opt::option` contains the value, returns hash of that value. If `opt::option
 - *Enabled* when `std::is_default_constructible_v<std::hash<std::remove_const_t<T>>>` is `true`.
 - *`noexcept`* when the expression `noexcept(std::hash<std::remove_const_t<T>>{}(std::declval<const T&>()))` is `true`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<int> a{12345};
 
@@ -1791,7 +1791,7 @@ The `max_level` of it's `opt::option_traits` is equal to `sizeof...(Values)`.
 
 The option traits uses regular comparison operator (`==`) and assignment operator (`=`) to get and set level value.
 
-Example:
+**Example:**
 ```cpp
 // if func1() returns -1, it returns an empty option; otherwise, just a regular integer.
 opt::option<opt::sentinel<int, -1>> func1();
@@ -1842,7 +1842,7 @@ and non-static data member `m` to explicitly access reference type and to access
 
 This type provides `opt::option_traits` that clones the `opt::option_traits` of the specified `MemberPtr` pointer to data member value.
 
-Example:
+**Example:**
 ```cpp
 struct type {
     float x;
@@ -1872,7 +1872,7 @@ If type `T` does not have a `opt::option_traits`, invokes `static_assert`.
 
 This type provides `opt::option_traits` that clones the `opt::option_traits` of the type `T`.
 
-Example:
+**Example:**
 ```cpp
 opt::option<opt::enforce<float>> a; // ok
 opt::option<opt::enforce<int>> b; // error
@@ -1887,7 +1887,7 @@ template<class T>
 option(T) -> option<T>;
 ```
 
-Example:
+**Example:**
 ```cpp
 opt::option a{1};
 static_assert(std::is_same_v<decltype(a), opt::option<int>>);
