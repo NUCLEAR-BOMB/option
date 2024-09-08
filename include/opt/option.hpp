@@ -2264,16 +2264,15 @@ namespace impl::option {
         return *std::forward<Self>(self);
     }
 
-    template<class Self>
+    template<class ValueType, class Self>
     constexpr auto flatten(Self&& self) {
-        using pure_self = impl::remove_cvref<Self>;
         // this is for a nice error message if Self is not an opt::option<opt::option<T>>
-        constexpr bool is_option_option = opt::is_option_v<typename pure_self::value_type>;
+        constexpr bool is_option_option = opt::is_option_v<ValueType>;
         if constexpr (is_option_option) {
             if (self.has_value() && self->has_value()) {
-                return typename pure_self::value_type{std::forward<Self>(self)->get()};
+                return ValueType{std::forward<Self>(self)->get()};
             }
-            return typename pure_self::value_type{opt::none};
+            return ValueType{opt::none};
         } else {
             static_assert(is_option_option, "To flatten opt::option<T>, T must be opt::option<U>");
         }
@@ -2810,8 +2809,8 @@ public:
     // Where `U` is `typename T::value_type`.
     // Example: opt::option<opt::option<int>> -> flatten() -> opt::option<int>
     // Same as Rust's `std::option::Option<T>::flatten`
-    [[nodiscard]] constexpr auto flatten() const& { return impl::option::flatten(*this); }
-    [[nodiscard]] constexpr auto flatten() && { return impl::option::flatten(std::move(*this)); }
+    [[nodiscard]] constexpr auto flatten() const& { return impl::option::flatten<T>(*this); }
+    [[nodiscard]] constexpr auto flatten() && { return impl::option::flatten<T>(std::move(*this)); }
 
     // Returns an empty `opt::option` if this `opt::option` does not contain a value;
     // otherwise invokes `f` with the contained value as an argument and returns the result.
