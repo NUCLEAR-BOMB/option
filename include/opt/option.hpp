@@ -352,8 +352,8 @@ namespace impl {
         } else {
             ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
         }
-#endif
     }
+#endif
 
     template<class T>
     constexpr void destroy_at(T* ptr) {
