@@ -1088,13 +1088,13 @@ Exchanges the state of `left` with that of `right`. Calls `left.swap(right)`.
 
 ```cpp
 template<std::size_t I, class T>
-constexpr auto get(opt::option<T>& x) noexcept;
+constexpr auto get(opt::option<T>& x /*lifetimebound*/) noexcept;
 template<std::size_t I, class T>
-constexpr auto get(const opt::option<T>& x) noexcept;
+constexpr auto get(const opt::option<T>& x /*lifetimebound*/) noexcept;
 template<std::size_t I, class T>
-constexpr auto get(opt::option<T>&& x) noexcept;
+constexpr auto get(opt::option<T>&& x /*lifetimebound*/) noexcept;
 template<std::size_t I, class T>
-constexpr auto get(const opt::option<T>&& x) noexcept;
+constexpr auto get(const opt::option<T>&& x /*lifetimebound*/) noexcept;
 ```
 Returns the result of `using std::get; get<I>` (ADL) in an reference option (e.g. `opt::option<T&>`) if it does contain one; otherwise, returns `opt::none`.
 
@@ -1104,13 +1104,13 @@ In return type, a `T` in `opt::option<T>` has the same reference qualifiers as f
 
 ```cpp
 template<class T, class OptT>
-constexpr auto get(opt::option<OptT>& x) noexcept;
+constexpr auto get(opt::option<OptT>& x /*lifetimebound*/) noexcept;
 template<class T, class OptT>
-constexpr auto get(const opt::option<OptT>& x) noexcept;
+constexpr auto get(const opt::option<OptT>& x /*lifetimebound*/) noexcept;
 template<class T, class OptT>
-constexpr auto get(opt::option<OptT>&& x) noexcept;
+constexpr auto get(opt::option<OptT>&& x /*lifetimebound*/) noexcept;
 template<class T, class OptT>
-constexpr auto get(const opt::option<OptT>&& x) noexcept;
+constexpr auto get(const opt::option<OptT>&& x /*lifetimebound*/) noexcept;
 ```
 Returns the result of `using std::get; get<T>` (ADL) in an reference option (e.g. `opt::option<T&>`) if it does contain one; otherwise, returns `opt::none`.
 
@@ -1120,13 +1120,13 @@ In return type, a `T` in `opt::option<T>` has the same reference qualifiers as f
 
 ```cpp
 template<std::size_t I, class... Ts>
-constexpr auto get(std::variant<Ts...>& v) noexcept;
+constexpr auto get(std::variant<Ts...>& v /*lifetimebound*/) noexcept;
 template<std::size_t I, class... Ts>
-constexpr auto get(const std::variant<Ts...>& v) noexcept;
+constexpr auto get(const std::variant<Ts...>& v /*lifetimebound*/) noexcept;
 template<std::size_t I, class... Ts>
-constexpr auto get(std::variant<Ts...>&& v) noexcept;
+constexpr auto get(std::variant<Ts...>&& v /*lifetimebound*/) noexcept;
 template<std::size_t I, class... Ts>
-constexpr auto get(const std::variant<Ts...>&& v) noexcept;
+constexpr auto get(const std::variant<Ts...>&& v /*lifetimebound*/) noexcept;
 ```
 Returns the reference option (e.g. `opt::option<T&>`) to an holded value of the `std::variant` at index `I` if `std::variant` contain it.
 Otherwise, returns `opt::none`.
@@ -1137,13 +1137,13 @@ In return type, a `T` in `opt::option<T>` has the same reference qualifiers as f
 
 ```cpp
 template<class T, class... Ts>
-constexpr auto get(std::variant<Ts...>& v) noexcept;
+constexpr auto get(std::variant<Ts...>& v /*lifetimebound*/) noexcept;
 template<class T, class... Ts>
-constexpr auto get(const std::variant<Ts...>& v) noexcept;
+constexpr auto get(const std::variant<Ts...>& v /*lifetimebound*/) noexcept;
 template<class T, class... Ts>
-constexpr auto get(std::variant<Ts...>&& v) noexcept;
+constexpr auto get(std::variant<Ts...>&& v /*lifetimebound*/) noexcept;
 template<class T, class... Ts>
-constexpr auto get(const std::variant<Ts...>&& v) noexcept;
+constexpr auto get(const std::variant<Ts...>&& v /*lifetimebound*/) noexcept;
 ```
 Returns the reference option (e.g. `opt::option<T&>`) to an holded value of the `std::variant` with type `T` if `std::variant` contain it.
 Otherwise, returns `opt::none`.
@@ -1179,9 +1179,9 @@ if (auto d = opt::get<float>(c)) {
 
 ```cpp
 template<class T>
-constexpr /*unspecified*/ io(const opt::option<T>& x) noexcept;
+constexpr /*unspecified*/ io(const opt::option<T>& x /*lifetimebound*/) noexcept;
 template<class T>
-constexpr /*unspecified*/ io(opt::option<T>& x) noexcept;
+constexpr /*unspecified*/ io(opt::option<T>& x /*lifetimebound*/) noexcept;
 ```
 Constructs the implementation detail return type with a reference to the `opt::option`.
 
@@ -1193,9 +1193,9 @@ Returns a non-`const` reference to the passed stream argument.
 
 ```cpp
 template<class T, class NoneCase>
-constexpr /*unspecified*/ io(const opt::option<T>& x, const NoneCase& none_case) noexcept;
+constexpr /*unspecified*/ io(const opt::option<T>& x /*lifetimebound*/, const NoneCase& none_case /*lifetimebound*/) noexcept;
 template<class T, class NoneCase>
-constexpr /*unspecified*/ io(opt::option<T>& x, NoneCase& none_case) noexcept;
+constexpr /*unspecified*/ io(opt::option<T>& x /*lifetimebound*/, NoneCase& none_case /*lifetimebound*/) noexcept;
 ```
 Constructs the implementation detail return type with a reference to the `opt::option` and a reference to the `none_case`.
 

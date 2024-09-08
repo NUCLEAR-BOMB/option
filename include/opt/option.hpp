@@ -3028,79 +3028,75 @@ namespace impl {
     template<std::size_t I, class Self>
     constexpr auto get_impl(Self&& self) noexcept {
         using std::get;
-        using result_type = decltype(get<I>(std::forward<Self>(self).get()));
+        using type = impl::copy_reference_t<decltype(get<I>(std::forward<Self>(self).get())), Self>;
 
         if (self.has_value()) {
-            return opt::option<result_type>{get<I>(std::forward<Self>(self).get())};
+            return opt::option<type>{static_cast<type>(get<I>(std::forward<Self>(self).get()))};
         }
-        return opt::option<result_type>{opt::none};
+        return opt::option<type>{opt::none};
     }
     template<class T, class Self>
     constexpr auto get_impl(Self&& self) noexcept {
         using std::get;
-        using result_type = decltype(get<T>(std::forward<Self>(self).get()));
+        using type = impl::copy_reference_t<decltype(get<T>(std::forward<Self>(self).get())), Self>;
 
         if (self.has_value()) {
-            return opt::option<result_type>{get<T>(std::forward<Self>(self).get())};
+            return opt::option<type>{static_cast<type>(get<T>(std::forward<Self>(self).get()))};
         }
-        return opt::option<result_type>{opt::none};
+        return opt::option<type>{opt::none};
     }
 }
 
 template<std::size_t I, class T>
-[[nodiscard]] constexpr auto get(opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
+[[nodiscard]] constexpr auto get(opt::option<T>& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(x); }
 template<std::size_t I, class T>
-[[nodiscard]] constexpr auto get(const opt::option<T>& x) noexcept { return impl::get_impl<I>(x); }
+[[nodiscard]] constexpr auto get(const opt::option<T>& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(x); }
 template<std::size_t I, class T>
-[[nodiscard]] constexpr auto get(opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
+[[nodiscard]] constexpr auto get(opt::option<T>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(std::move(x)); }
 template<std::size_t I, class T>
-[[nodiscard]] constexpr auto get(const opt::option<T>&& x) noexcept { return impl::get_impl<I>(std::move(x)); }
+[[nodiscard]] constexpr auto get(const opt::option<T>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(std::move(x)); }
 
 template<class T, class OptT>
-[[nodiscard]] constexpr auto get(opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
+[[nodiscard]] constexpr auto get(opt::option<OptT>& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(x); }
 template<class T, class OptT>
-[[nodiscard]] constexpr auto get(const opt::option<OptT>& x) noexcept { return impl::get_impl<T>(x); }
+[[nodiscard]] constexpr auto get(const opt::option<OptT>& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(x); }
 template<class T, class OptT>
-[[nodiscard]] constexpr auto get(opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
+[[nodiscard]] constexpr auto get(opt::option<OptT>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(std::move(x)); }
 template<class T, class OptT>
-[[nodiscard]] constexpr auto get(const opt::option<OptT>&& x) noexcept { return impl::get_impl<T>(std::move(x)); }
+[[nodiscard]] constexpr auto get(const opt::option<OptT>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(std::move(x)); }
 
 namespace impl {
     template<std::size_t I, class Variant>
     constexpr auto variant_get(Variant&& v) noexcept {
         auto* const ptr = std::get_if<I>(&v);
-        using type = std::conditional_t<std::is_lvalue_reference_v<Variant>,
-            decltype(*ptr), std::remove_reference_t<decltype(*ptr)>&&
-        >;
+        using type = impl::copy_reference_t<decltype(*ptr), Variant>;
         return ptr == nullptr ? opt::none : opt::option<type>{static_cast<type>(*ptr)};
     }
     template<class T, class Variant>
     constexpr auto variant_get(Variant&& v) noexcept {
         auto* const ptr = std::get_if<T>(&v);
-        using type = std::conditional_t<std::is_lvalue_reference_v<Variant>,
-            decltype(*ptr), std::remove_reference_t<decltype(*ptr)>&&
-        >;
+        using type = impl::copy_reference_t<decltype(*ptr), Variant>;
         return ptr == nullptr ? opt::none : opt::option<type>{static_cast<type>(*ptr)};
     }
 }
 
 template<std::size_t I, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(v); }
 template<std::size_t I, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<I>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(v); }
 template<std::size_t I, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(std::move(v)); }
 template<std::size_t I, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<I>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(std::move(v)); }
 
 template<class T, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v) noexcept { return impl::variant_get<T>(v); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(std::move(v)); }
 template<class T, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v) noexcept { return impl::variant_get<T>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(std::move(v)); }
 
 namespace impl {
     template<class T>
@@ -3146,20 +3142,20 @@ namespace impl {
     }
 }
 template<class T>
-[[nodiscard]] OPTION_PURE constexpr auto io(const opt::option<T>& x) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(const opt::option<T>& x OPTION_LIFETIMEBOUND) noexcept {
     return impl::io_helper1<const opt::option<T>&>{x};
 }
 template<class T>
-[[nodiscard]] OPTION_PURE constexpr auto io(opt::option<T>& x) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(opt::option<T>& x OPTION_LIFETIMEBOUND) noexcept {
     return impl::io_helper1<opt::option<T>&>{x};
 }
 
 template<class T, class NoneCase>
-[[nodiscard]] OPTION_PURE constexpr auto io(const opt::option<T>& x, const NoneCase& none_case) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(const opt::option<T>& x OPTION_LIFETIMEBOUND, const NoneCase& none_case OPTION_LIFETIMEBOUND) noexcept {
     return impl::io_helper2<const opt::option<T>&, const NoneCase&>(x, none_case);
 }
 template<class T, class NoneCase>
-[[nodiscard]] OPTION_PURE constexpr auto io(opt::option<T>& x, NoneCase& none_case) noexcept {
+[[nodiscard]] OPTION_PURE constexpr auto io(opt::option<T>& x OPTION_LIFETIMEBOUND, NoneCase& none_case OPTION_LIFETIMEBOUND) noexcept {
     return impl::io_helper2<opt::option<T>&, NoneCase&>(x, none_case);
 }
 
