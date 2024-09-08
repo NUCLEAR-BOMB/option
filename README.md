@@ -1,16 +1,16 @@
 
-# option
+# opt::option
 
-Replacement for [`std::optional`][std::optional] with efficient memory usage and additional features.
+Replacement for [`std::optional`][std::optional] with efficient memory usage and additional features for C++17.
 
 - Functionality from [C++23 `std::optional`][std::optional monadic], Rust's [`std::option::Option`][Rust Option] and other `opt::option`'s own stuff. See [reference](./docs/markdown/reference.md).
 - Zero memory overhead with types that have unused values. See [builtin traits](./docs/markdown/builtin_traits.md).
 - Support for nested `opt::option`s with zero memory overhead.
 - Simpler interface than `std::optional` (constructors without [`std::in_place`][std::in_place]), allows [direct list initialization][direct-list-initialization].
-- Custom size optimizations for your own types (`opt::option_traits`). See [option traits guide](./docs/markdown/custom_traits_guide.md).
+- Custom size optimizations for your own types ([`opt::option_traits`](./docs/markdown/reference.md#optoption_traits)). See [option traits guide](./docs/markdown/custom_traits_guide.md).
 - Allows reference types.
 
-**Table of contents**:
+**Table of contents:**
 
 - [Overview](#overview)
 - [Why `opt::option`?](#why-optoption)
@@ -25,6 +25,10 @@ Replacement for [`std::optional`][std::optional] with efficient memory usage and
 - [About undefined behavior](#about-undefined-behavior)
 
 # Overview
+
+Use `#include <opt/option.hpp>` to include the library header file.
+
+The contents of the library are available in the `opt` namespace.
 
 **Types with unused states.**
 
@@ -119,48 +123,54 @@ b.reset();
 
 # Why `opt::option`?
 
-`opt::option` allows to minimize the type size to a minimum.
+[`opt::option`](./docs/markdown/reference.md#declaration) allows to minimize the type size to a minimum.
 
 Minimizing the type size is always a good thing.
 [Cache locality][cache locality] can often improve performance of the program even more than any other performed optimization.
 
 It supports reference types, so you can avoid using inconvenient `std::reference_wrapper` and dangerous nullable pointers.
 
+Allows [direct-list-initialization][direct-list-initialization] and constructors without `std::in_place` (but they are still supported).
+
 Features taken from Rust's [`std::option::Option`][Rust Option] (`.take`, `.map_or(_else)`, `.flatten`, `.unzip`, etc.), [monadic operations from C++23][std::optional monadic] (`.and_then`, `.map` (renamed `.transform`), `.or_else`) and custom ones (`.ptr_or_null`, `opt::option_cast`, `opt::from_nullable`, operators equivalent to methods, etc.).
+
+Extended `constexpr` support for trivially move assignable types.
+Note that size optimizations prevent `opt::option` being `constexpr`-compatible.
 
 # Additional functionality
 
 The option library provides extended functionality over standard `std::optional`, which can lead to the use of more efficient and cleaner code.
 
 Most methods/functions are inspired from Rust's [`std::option::Option`][Rust Option]:
-- `opt::option<T>::has_value_and`
-- `opt::option<T>::take`
-- `opt::option<T>::take_if`
-- `opt::option<T>::inspect`
-- `opt::option<T>::get_unchecked`
-- `opt::option<T>::value_or_default`
-- `opt::option<T>::map_or`
-- `opt::option<T>::map_or_else`
-- `opt::option<T>::filter`
-- `opt::option<T>::flatten`
-- `opt::option<T>::unzip`
-- `opt::option<T>::replace`
-- `opt::zip`
-- `opt::zip_with`
-- `opt::operator|`
-- `opt::operator|=`
-- `opt::operator&`
-- `opt::operator^`
+- [`opt::option<T>::has_value_and`](./docs/markdown/reference.md#has_value_and)
+- [`opt::option<T>::take`](./docs/markdown/reference.md#take)
+- [`opt::option<T>::take_if`](./docs/markdown/reference.md#take_if)
+- [`opt::option<T>::inspect`](./docs/markdown/reference.md#inspect)
+- [`opt::option<T>::get_unchecked`](./docs/markdown/reference.md#get_unchecked)
+- [`opt::option<T>::value_or_default`](./docs/markdown/reference.md#value_or_default)
+- [`opt::option<T>::map_or`](./docs/markdown/reference.md#map_or)
+- [`opt::option<T>::map_or_else`](./docs/markdown/reference.md#map_or_else)
+- [`opt::option<T>::filter`](./docs/markdown/reference.md#filter)
+- [`opt::option<T>::flatten`](./docs/markdown/reference.md#flatten)
+- [`opt::option<T>::unzip`](./docs/markdown/reference.md#flatten)
+- [`opt::option<T>::replace`](./docs/markdown/reference.md#replace)
+- [`opt::zip`](./docs/markdown/reference.md#optzip)
+- [`opt::zip_with`](./docs/markdown/reference.md#optzip_with)
+- [`opt::operator|`](./docs/markdown/reference.md#operator-1)
+- [`opt::operator|=`](./docs/markdown/reference.md#operator-2)
+- [`opt::operator&`](./docs/markdown/reference.md#operator-3)
+- [`opt::operator^`](./docs/markdown/reference.md#operator-4)
 
 But the option library has its own functionality:
-- `opt::option<T>::value_or_throw` (explicit `opt::option<T>::value`)
-- `opt::option<T>::ptr_or_null`
-- `opt::option<T>::assume_has_value`
-- `opt::option_cast`
-- `opt::from_nullable`
-- `opt::get` (from tuple-like or `std::variant`)
-- `opt::io` (read from/write to stream)
-- `opt::swap`
+- [`opt::option<T>::value_or_throw`](./docs/markdown/reference.md#value-value_or_throw) (explicit `opt::option<T>::value`)
+- [`opt::option<T>::ptr_or_null`](./docs/markdown/reference.md#ptr_or_null)
+- [`opt::option<T>::assume_has_value`](./docs/markdown/reference.md#assume_has_value)
+- [`opt::option_cast`](./docs/markdown/reference.md#assume_has_value)
+- [`opt::from_nullable`](./docs/markdown/reference.md#optfrom_nullable)
+- [`opt::get`](./docs/markdown/reference.md#optget) (from tuple-like or `std::variant`)
+- [`opt::io`](./docs/markdown/reference.md#optio) (read from/write to stream)
+- [`opt::at`](./docs/markdown/reference.md#optat)
+- [`opt::swap`](./docs/markdown/reference.md#optswap)
 
 See [**reference**](./docs/markdown/reference.md) for more details.
 
@@ -344,11 +354,9 @@ See [**built-in traits**](./docs/markdown/builtin_traits.md) for more informatio
 The library is fully compatible with `std::optional`[^4], except:
 - [`std::optional<T>::transform`][std::optional<T>::transform] is called `opt::option<T>::map`.
 - Size of `std::optional` is not always the same as `opt::option`.
-- `opt::option` supports reference types in contrast of `std::optional`.
 - Some operations on types are not always `constexpr` depending on the option traits.
 - [`std::bad_optional_access`][std::bad_optional_access] is `opt::bad_access`.
 - [`std::nullopt`][std::nullopt]/[`std::nullopt_t`][std::nullopt_t] is `opt::none`/`opt::none_t`.
-- `opt::option` supports [direct list initialization][direct-list-initialization] in it's constructors.
 - Some methods/functions may not be `noexcept`.
 
 You can replace `std::optional` with `opt::option`, taking into account that there are these exceptions.
