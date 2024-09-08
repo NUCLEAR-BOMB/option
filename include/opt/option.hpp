@@ -2778,14 +2778,12 @@ public:
 
     // Returns a pointer to the contained value if this `opt::option` contains the value;
     // otherwise, return `nullptr`.
-    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T>* ptr_or_null() noexcept OPTION_LIFETIMEBOUND {
         return has_value() ? std::addressof(get()) : nullptr;
     }
-    [[nodiscard]] OPTION_PURE constexpr const std::remove_reference_t<T>* ptr_or_null() const& noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr const std::remove_reference_t<T>* ptr_or_null() const noexcept OPTION_LIFETIMEBOUND {
         return has_value() ? std::addressof(get()) : nullptr;
     }
-    constexpr void ptr_or_null() && = delete;
-    constexpr void ptr_or_null() const&& = delete;
 
     // Returns an empty `opt::option` if this `opt::option` does not contain a value;
     // otherwise, invoke `f` with the contained value as an argument and return:
