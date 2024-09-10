@@ -335,7 +335,7 @@ Quick list of built-in size optimizations:
 - **`bool`**: `bool` only uses `false` and `true` values, the remaining ones are used.
 - **References and `std::reference_wrapper`**: around zero values are used.
 - **Pointers**: for x64 noncanonical addresses, for x32 slightly less than maximum address (16-bit also supported).
-- **Floating point**: negative signaling NaN with some payload values are used (other values are supported).
+- **Floating point**: negative signaling NaN with some payload values are used (quiet NaN is available).
 - **Polymorphic types**: unused vtable pointer values are used.
 - **Reflectable types** (aggregate types)[^2]: the member with maximum number of unused value are used.
 - **Pointers to members** (`T U::*`): some special offset range is used.
