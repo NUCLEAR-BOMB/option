@@ -23,6 +23,7 @@ Replacement for [`std::optional`][std::optional] with efficient memory usage and
 - [How it works](#how-it-works)
 - [Compatibility with `std::optional`](#compatibility-with-stdoptional)
 - [About undefined behavior](#about-undefined-behavior)
+- [Examples](#examples)
 
 # Overview
 
@@ -371,6 +372,17 @@ Recommended using sanitizers (*`AddressSanitizer`* and *`UndefinedBehaviorSaniti
 
 You can disable individual built-in traits to avoid using platform specific behavior for specific types.
 Or you can disable built-in traits entirely with a macro definition.
+
+# Examples
+
+You can find examples in the `examples/` directory.
+
+- `functions.cpp`: functions that are defined in the `opt` namespace.
+- `methods.cpp`: unique methods for the library.
+- `operators.cpp`: unique operators for the library.
+- `option_traits.cpp`: creating custom option trait.
+
+The output of all the examples is checked using script at `examples/check.py`.
 
 [^1]: When possible uses [*Address Sanitizers*][AddressSanitizer] and [*Undefined Behavior Sanitizer*][UndefinedSanitizer].
 Note that some compilers/versions have unstable sanitizer support, so the CI tests are disables that options.
