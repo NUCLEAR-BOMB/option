@@ -58,6 +58,8 @@
     - [`bad_access`](#optbad_access)
     - [`option_traits`](#optoption_traits)
     - [`make_option`](#optmake_option)
+    - [`is_option`](#optis_option)
+    - [`option_tag`](#optoption_tag)
     - [`sentinel`](#optsentinel)
     - [`sentinel_f`](#optsentinel_f)
     - [`member`](#optmember)
@@ -1772,6 +1774,28 @@ constexpr opt::option<T> make_option(std::initializer_list<U> ilist, Args&&... a
 ```
 Creates `opt::option` from `ilist` and `args...`. Returns `opt::option<T>{std::in_place, ilist, std::forward<Args>(args)...}`.
 
+### `opt::is_option`
+
+```cpp
+template<class T>
+struct is_option;
+
+template<class T>
+inline constexpr bool is_option_v = is_option<T>::value;
+```
+Checks whether `T` is a specialization of the `opt::option` type.
+
+Provides the member constant `value` of type `bool` that is equal to `true`, if `T` is a specialization of the `opt::option` type. Otherwise, value is equal to `false`.
+
+### `opt::option_tag`
+
+```cpp
+struct option_tag;
+```
+Tag used in [`boost::pfr::is_reflectable`][pfr is_reflectable] (`pfr::is_reflectable`) for second template parameter `WhatFor`.
+
+Does not do anything when the `boost.pfr` or `pfr` library is not used.
+
 ### `opt::sentinel`
 
 ```cpp
@@ -1899,3 +1923,4 @@ static_assert(std::is_same_v<decltype(c), opt::option<double>>);
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub
 [option-verify]: ./macros.md#option_verify
+[pfr is_reflectable]: https://www.boost.org/doc/libs/1_86_0/doc/html/doxygen/reference_section_of_pfr/structboost_1_1pfr_1_1is__reflectable.html
