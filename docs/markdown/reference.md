@@ -889,16 +889,6 @@ std::cout << a.or_else(
 ).has_value() << '\n'; // will print false
 ```
 
-### `assume_has_value`
-
-```cpp
-constexpr void assume_has_value() const noexcept;
-```
-Specifies that `opt::option` will always contain a value at a given point.
-
-> [!CAUTION]
-> Will cause [Undefined Behavior][UB] if `opt::option` does not contain a value.
-
 ---
 
 ### `unzip`

@@ -164,8 +164,7 @@ Most methods/functions are inspired from Rust's [`std::option::Option`][Rust Opt
 But the option library has its own functionality:
 - [`opt::option<T>::value_or_throw`](./docs/markdown/reference.md#value-value_or_throw) (explicit `opt::option<T>::value`)
 - [`opt::option<T>::ptr_or_null`](./docs/markdown/reference.md#ptr_or_null)
-- [`opt::option<T>::assume_has_value`](./docs/markdown/reference.md#assume_has_value)
-- [`opt::option_cast`](./docs/markdown/reference.md#assume_has_value)
+- [`opt::option_cast`](./docs/markdown/reference.md#optoption_cast)
 - [`opt::from_nullable`](./docs/markdown/reference.md#optfrom_nullable)
 - [`opt::get`](./docs/markdown/reference.md#optget) (from tuple-like or `std::variant`)
 - [`opt::io`](./docs/markdown/reference.md#optio) (read from/write to stream)

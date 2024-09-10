@@ -774,11 +774,6 @@ skip_take_if:
         CHECK_EQ(a, v3);
     }
 skip_inspect:
-    SUBCASE(".assume_has_value") {
-        opt::option a{v0};
-        a.assume_has_value();
-        CHECK_EQ(*a, v0);
-    }
     SUBCASE(".unzip") {
         SUBCASE("std::tuple") {
             opt::option a{std::tuple{v0, v1, v2, v3}};

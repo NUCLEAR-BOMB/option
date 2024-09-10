@@ -2846,12 +2846,6 @@ public:
     template<class F, impl::option::enable_or_else<F> = 0>
     [[nodiscard]] constexpr option<T> or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
 
-    // Specifies that this `opt::option` will always contains value at a given point.
-    // Will cause undefined behavior if this `opt::option` does not contain a value.
-    constexpr void assume_has_value() const noexcept {
-        OPTION_VERIFY(has_value(), "Assumption 'has_value()' failed");
-    }
-
     // Unzips this `opt::option` containing a tuple like object to the tuple like object of `opt::option`s
     // If this `opt::option` contains a value, return tuple like object that contains
     // `opt::option`s of the current `opt::option` underlying values;
