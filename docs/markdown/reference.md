@@ -111,6 +111,15 @@ constexpr option(const option& other) noexcept(/*see below*/);
 Copy constructor.
 
 Copy constructs an object of type `T` using *direct-list-initialization* with the expression `other.get()` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    {construct}(other.get());
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 - *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>`.
 - *Deleted* when `!std::is_copy_constructible_v<T>`.
 - *Trivial* when `std::is_trivially_copy_constructible_v<T>`.
@@ -124,6 +133,15 @@ constexpr option(option&& other) noexcept(/*see below*/);
 Move constructor.
 
 Move constructs an object of type `T` using *direct-list-initialization* with the expression `std::move(other.get())` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    {construct}(std::move(other.get()));
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 - *`noexcept`* when `std::is_nothrow_move_constructible_v<T>`.
 - *Deleted* when `!std::is_move_constructible_v<T>`
 - *Trivial* when `std::is_trivially_move_constructible_v<T>`.
@@ -187,6 +205,15 @@ constexpr explicit(/*see below*/) option(const option<U>& other) noexcept(/*see 
 ```
 Converting copy constructor. \
 Constructs an object of type `T` using *direct-list-initialization* with the expression `other.get()` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    {construct}(other.get());
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 - *`noexpect`* when `std::is_nothrow_constructible_v<T, const U&>`.
 - *`explicit`* when `!std::is_convertible_v<const U&, T>`.
 - *Enabled* when the following conditions are true:
@@ -213,6 +240,15 @@ constexpr explicit(/*see below*/) option(option<U>&& other) noexcept(/*see below
 ```
 Converting move constructor. \
 Constructs an object of type `T` using *direct-list-initialization* with the expression `std::move(other.get())` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    {construct}(std::move(other.get()));
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 - *`noexcept`* when `std::is_nothrow_constructible_v<T, U&&>`.
 - *`explicit`* when `!std::is_convertible_v<U&&, T>`.
 - *Enabled* when the following conditions are true:
@@ -250,7 +286,7 @@ Destructs the contained object of type `T` if the `opt::option` object contains 
 ```cpp
 constexpr option& operator=(opt::none_t) noexcept(/*see below*/);
 ```
-The contained value is destroyed if this `opt::option` contains a value.
+The contained value is destroyed if this `opt::option` contains a value. Same as [`.reset()`](#reset).
 - *`noexcept`* when `std::is_nothrow_destructible_v<T>`.
 - *Postcondition:* `has_value() == false`.
 
@@ -264,7 +300,21 @@ Copy assigns this `opt::option` from `other`.
 - If this `opt::option` contains a value, but `other` does not, the contained value is destroyed.
 - If this `opt::option` do not contain a value, but `other` does, the contained value of type `T` is constructed using *direct-list-initialization* with the expression `other.get()`.
 - If this `opt::option` contains a value, and `other` does too, the contained value of type `T` is assigned with the expression `other.get()`.
-<!-- -->
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    if (has_value()) {
+        get() = other.get();
+    } else {
+        {construct}(other.get());
+    }
+} else {
+    reset();
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 - *`noexcept`* when `std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>`.
 - *Deleted* when `!std::is_reference_v<T>` and `!std::is_copy_constructible_v<T> || !std::is_copy_assignable_v<T>`.
 - *Trivial* when `std::is_reference_v<T>` or the following are all `true`:
@@ -283,6 +333,20 @@ Move assigns this `opt::option` from `other`.
 - If this `opt::option` contains a value, but `other` does not, the contained value is destroyed.
 - If this `opt::option` do not contain a value, but `other` does, the contained value of type `T` is constructed using *direct-list-initialization* with the expression `std::move(other.get())`.
 - If this `opt::option` contains a value, and `other` does too, the contained value of type `T` is assigned with the expression `std::move(other.get())`.
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    if (has_value()) {
+        get() = std::move(other.get());
+    } else {
+        {construct}(std::move(other.get()));
+    }
+} else {
+    reset();
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
 
 > [!IMPORTANT]
 > After move, `other` still holds a value (if it had before), but the value itself is moved from.
@@ -303,6 +367,17 @@ constexpr option& operator=(U&& value) noexcept(/*see below*/);
 ```
 Perfect-forwarded assignment. \
 If this `opt::option` contains a value before the call, it is assigned from the expression `std::forward<U>(value)`. If does not, the contained object of type `T` is constructed using *direct-list-initialization* with the expression `std::forward<U>(value)`.
+
+Description in the code equivalent:
+```cpp
+if (has_value()) {
+    get() = std::forward<U>(value);
+} else {
+    {construct}(std::forward<U>(value));
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 - *`noexcept`* when the following are all `true`:
     - `std::is_nothrow_assignable_v<T&, U&&>`.
     - `std::is_nothrow_constructible_v<T, U&&>`.
@@ -324,7 +399,21 @@ Assigns this `opt::option` from `other`. \
 - If this `opt::option` contains a value, but `other` does not, the contained value is destroyed.
 - If this `opt::option` do not contain a value, but `other` does, the contained value of type `T` is constructed using *direct-list-initialization* with the expression `other.get()`.
 - If this `opt::option` contains a value, and `other` does too, the contained value of type `T` is assigned with the expression `other.get()`.
-<!-- -->
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    if (has_value()) {
+        get() = other.get();
+    } else {
+        {construct}(other.get());
+    }
+} else {
+    reset();
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 - *Enabled* when `!is_constructible_from_option<T, U> && !is_assignable_from_option<T, U>` and `std::is_reference_v<T> || (std::is_constructible_v<T, const U&> && std::is_assignable_v<T&, const U&>)`.
 - Where `is_constructible_from_option<X, Y>` is a metafunction, that checks if type `X` is constructible or convertible from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following there is at least one `true`:
     - `std::is_constructible_v<X, opt::option<Y>&>`.
@@ -353,6 +442,20 @@ Assigns this `opt::option` from `other`.
 - If this `opt::option` contains a value, but `other` does not, the contained value is destroyed.
 - If this `opt::option` do not contain a value, but `other` does, the contained value of type `T` is constructed using *direct-list-initialization* with the expression `std::move(other.get())`.
 - If this `opt::option` contains a value, and `other` does too, the contained value of type `T` is assigned with the expression `std::move(other.get())`.
+
+Description in the code equivalent:
+```cpp
+if (other.has_value()) {
+    if (has_value()) {
+        get() = std::move(other.get());
+    } else {
+        {construct}(std::move(other.get()));
+    }
+} else {
+    reset();
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
 
 > [!IMPORTANT]
 > After move, `other` still holds a value (if it had before), but the value itself is moved from.
@@ -399,6 +502,13 @@ If this `opt::option` already contains a value, the contained value is destroyed
 - *`noexcept`* when `std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>`.
 - *Enabled* when `std::is_constructible_v<T, Args...>`.
 
+Description in the code equivalent:
+```cpp
+reset();
+{construct}(std::forward<Args>(args)...);
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 ### `has_value`, `operator bool`
 
 ```cpp
@@ -427,6 +537,14 @@ Returns `true` if this `opt::option` contains a value, and the contained value m
 If this `opt::option` contains a value, return the result of invocation of `predicate` with the contained value as an argument. If this `opt::option` does not contain a value, return `false`.
 - *Enabled* when `std::is_invocable_r_v<bool, P, T>`.
 
+Description in the simplified code equivalent:
+```cpp
+if (has_value()) {
+    return predicate(get());
+}
+return false;
+```
+
 **Example:**
 ```cpp
 opt::option<int> a = 3;
@@ -450,6 +568,13 @@ constexpr option take();
 Takes the value out of the `opt::option`. \
 Copy construct temporary value using the contained value in the `opt::option`, destroy which is left in the contained value in the `opt::option`, and return that temporary value with copy elision.
 - *Postcondition:* `has_value() == false`.
+
+Description in the code equivalent:
+```cpp
+option tmp{std::move(*this)};
+reset();
+return tmp;
+```
 
 **Example:**
 ```cpp
@@ -479,6 +604,14 @@ constexpr option take_if(P&& predicate);
 Takes the value out of the `opt::option`, but only if the `predicate` evaluates to `true` with a non-const contained value as an argument. \
 Returns an empty `opt::option` if this `opt::option` does not contain a value or `predicate` evaluates to `false` with the non-const contained value as an argument; otherwise, return the expression `take()`.
 - *Enabled* when `std::is_invocable_r_v<bool, P, T&>`.
+
+Description in the simplified code equivalent:
+```cpp
+if (has_value() && predicate(get())) {
+    return take();
+}
+return opt::none;
+```
 
 **Example:**
 ```cpp
@@ -514,6 +647,14 @@ template<class F>
 constexpr const option&& inspect(F&& fn) const&&;
 ```
 Invokes `fn` with a reference (possible `const`) to the contained value if the `opt::option` contains one. If it does not, there are no effects. Returns a reference to the this `opt::option`.
+
+Description in the simplified code equivalent:
+```cpp
+if (has_value()) {
+    fn(get());
+}
+return *this;
+```
 
 **Example:**
 ```cpp
@@ -645,17 +786,25 @@ Returns the contained value if `opt::option` contains one, otherwise returns a d
 
 ```cpp
 template<class U, class Fn>
-constexpr remove_cvref<U> map_or(U&& default, Fn&& function) &;
+constexpr remove_cvref<U> map_or(U&& def, Fn&& fn) &;
 template<class U, class Fn>
-constexpr remove_cvref<U> map_or(U&& default, Fn&& function) const&;
+constexpr remove_cvref<U> map_or(U&& def, Fn&& fn) const&;
 template<class U, class Fn>
-constexpr remove_cvref<U> map_or(U&& default, Fn&& function) &&;
+constexpr remove_cvref<U> map_or(U&& def, Fn&& fn) &&;
 template<class U, class Fn>
-constexpr remove_cvref<U> map_or(U&& default, Fn&& function) const&&;
+constexpr remove_cvref<U> map_or(U&& def, Fn&& fn) const&&;
 ```
-Returns the provided `default` value if `opt::option` does not contain a value, or invokes the `function` with the contained value as an argument. \
+Returns the provided `def` value if `opt::option` does not contain a value, or invokes the `fn` with the contained value as an argument. \
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
 - *Enabled* when `std::is_invocable_r_v<remove_cvref<U>, Fn, T>` is `true`.
+
+Description in the simplified code equivalent:
+```cpp
+if (has_value()) {
+    return fn(get());
+}
+return def;
+```
 
 **Example:**
 ```cpp
@@ -673,17 +822,25 @@ std::cout << a.map_or(0, [](int x) { return x * 2; }) << '\n'; // 0
 
 ```cpp
 template<class D, class Fn>
-constexpr auto map_or_else(D&& default, Fn&& function) &;
+constexpr auto map_or_else(D&& def, Fn&& fn) &;
 template<class D, class Fn>
-constexpr auto map_or_else(D&& default, Fn&& function) const&;
+constexpr auto map_or_else(D&& def, Fn&& fn) const&;
 template<class D, class Fn>
-constexpr auto map_or_else(D&& default, Fn&& function) &&;
+constexpr auto map_or_else(D&& def, Fn&& fn) &&;
 template<class D, class Fn>
-constexpr auto map_or_else(D&& default, Fn&& function) const&&;
+constexpr auto map_or_else(D&& def, Fn&& fn) const&&;
 ```
-Returns the result of `default` function with no arguments if `opt::option` does not contain a value; otherwise, returns the result of `function` function with the contained value as an first argument.
+Returns the result of `def` fn with no arguments if `opt::option` does not contain a value; otherwise, returns the result of `fn` function with the contained value as an first argument.
 - *Enabled* when `std::is_invocable_v<D>` and `std::is_invocable_v<Fn, T>` are `true`.
-- *Requirements:* the return type of `default` function must be the same as the return type of `function` function.
+- *Requirements:* the return type of `def` function must be the same as the return type of `fn` function.
+
+Description in the simplified code equivalent:
+```cpp
+if (has_value()) {
+    return fn(get());
+}
+return def();
+```
 
 **Example:**
 ```cpp
@@ -729,16 +886,25 @@ std::cout << b.ptr_or_null() << '\n'; // 0000000000000000 (nullptr)
 
 ```cpp
 template<class Fn>
-constexpr option filter(Fn&& function) &;
+constexpr option filter(Fn&& fn) &;
 template<class Fn>
-constexpr option filter(Fn&& function) const&;
+constexpr option filter(Fn&& fn) const&;
 template<class Fn>
-constexpr option filter(Fn&& function) &&;
+constexpr option filter(Fn&& fn) &&;
 template<class Fn>
-constexpr option filter(Fn&& function) const&&;
+constexpr option filter(Fn&& fn) const&&;
 ```
-Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, returns the contained value if `function` returns `true`, and an empty `opt::option` if `function` returns `false`.
-- *Enabled* when `bool(std::invoke(std::forward<Fn>(function), {value}))` is a valid expression. `{value}` is a reference (possible `const`) to the contained value.
+Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, returns the contained value if `fn` returns `true`, and an empty `opt::option` if `fn` returns `false`.
+
+Description in the simplified code equivalent:
+```cpp
+if (has_value() && fn(get())) {
+    return get();
+}
+return opt::none;
+```
+
+- *Enabled* when `bool(std::invoke(std::forward<Fn>(fn), {value}))` is a valid expression. `{value}` is a reference (possible `const`) to the contained value.
 
 The function is called with reference (possible `const`), and the result of it converted to `bool`.
 The returned value is constructed with forwarded contained value.
@@ -774,6 +940,14 @@ Converts `opt::option<opt::option<X>>` to `opt::option<X>`. \
 If this `opt::option` contains a value and the contained `opt::option` contains the values, return the underlying `opt::option` that contains a value. If they does not, returns an empty `opt::option`.
 - *Requirements:* the `opt::option` must contain a value of specialization of `opt::option`.
 
+Description in the simplified code equivalent:
+```cpp
+if (has_value() && get().has_value()) {
+    return get().get();
+}
+return opt::none;
+```
+
 ```cpp
 opt::option<opt::option<int>> a = 1;
 
@@ -793,18 +967,26 @@ std::cout << a.flatten().has_value() << '\n'; // false
 
 ```cpp
 template<class Fn>
-constexpr option<U> and_then(Fn&& function) &;
+constexpr option<U> and_then(Fn&& fn) &;
 template<class Fn>
-constexpr option<U> and_then(Fn&& function) const&;
+constexpr option<U> and_then(Fn&& fn) const&;
 template<class Fn>
-constexpr option<U> and_then(Fn&& function) &&;
+constexpr option<U> and_then(Fn&& fn) &&;
 template<class Fn>
-constexpr option<U> and_then(Fn&& function) const&&;
+constexpr option<U> and_then(Fn&& fn) const&&;
 ```
-Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, invokes `function` function with the contained value as an first argument, and then returns the result of that invocation. \
+Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, invokes `fn` function with the contained value as an first argument, and then returns the result of that invocation. \
 This operation is also sometimes called *flatmap*.
 - *Enabled* when `std::is_invocable_v<Fn, T>`.
-- *Requirements:* the result type of `function` must be a specialization of `opt::option`.
+- *Requirements:* the result type of `fn` must be a specialization of `opt::option`.
+
+Description in the simplified code equivalent:
+```cpp
+if (has_value()) {
+    return fn(get());
+}
+return opt::none;
+```
 
 **Example:**
 ```cpp
@@ -842,6 +1024,14 @@ If `opt::option` contains a value, invokes `function` function with the containe
 Similar to [`std::optional<T>::transform`](https://en.cppreference.com/w/cpp/utility/optional/transform).
 - *Enabled* when `std::is_invocable_v<Fn, T>` is `true`.
 
+Description in the simplified code equivalent:
+```cpp
+if (has_value()) {
+    return opt::option{fn(get())};
+}
+return opt::none;
+```
+
 **Example:**
 ```cpp
 const auto to_float = [](int x) {
@@ -862,14 +1052,22 @@ std::cout << a.map(to_float).has_value() << '\n'; // false
 
 ```cpp
 template<class Fn>
-constexpr option or_else(Fn&& function) const&;
+constexpr option or_else(Fn&& fn) const&;
 template<class Fn>
-constexpr option or_else(Fn&& function) &&;
+constexpr option or_else(Fn&& fn) &&;
 ```
-If `opt::option` contains a value, returns it. If does not, returns the result of `function` function with *no arguments*. \
+If `opt::option` contains a value, returns it. If does not, returns the result of `fn` function with *no arguments*. \
 Similar to [`std::optional<T>::or_else`](https://en.cppreference.com/w/cpp/utility/optional/or_else).
 - *Enabled* when `std::is_invocable_v<Fn>`.
-- *Requirements:* the result type of `function` (without any cv-qualifiers) must be the same as `opt::option<T>`.
+- *Requirements:* the result type of `fn` (without any cv-qualifiers) must be the same as `opt::option<T>`.
+
+Description in the simplified code equivalent:
+```cpp
+if (has_value()) {
+    return *this;
+}
+return fn();
+```
 
 **Example:**
 ```cpp
@@ -934,6 +1132,15 @@ constexpr option<T> replace(U&& value) &;
 Replaces the contained value by a provided `value` and returns the old `opt::option` contained value.
 - *Enabled* when `std::is_constructible_v<T, U&&>` is `true`.
 
+Description in the code equivalent:
+```cpp
+option tmp{std::move(*this)};
+reset();
+{construct}(std::forward<U>(value));
+return tmp;
+```
+Where `{construct}` is a function that constructs contained object in place.
+
 **Example:**
 ```cpp
 opt::option<int> a = 1;
@@ -964,9 +1171,28 @@ Swaps the options.
 - `this->has_value()` and `!other.has_value()` are true, construct the `other` with `std::move(this->get())` and destruct the contained value of `*this`.
 - `!this->has_value()` and `other.has_value()` are true, construct the `*this` with `std::move(other.get())` and destruct the contained value of `other`.
 
----
+Description in the code equivalent:
+```cpp
+if (!has_value() && !other.has_value()) {
+    return;
+}
+if (has_value() && other.has_value()) {
+    swap(get(), other.get());
+    return;
+}
+if (has_value()) {
+    other.{construct}(std::move(get()));
+    reset();
+    return;
+}
+{construct}(std::move(other.get()));
+other.reset();
+```
+Where `{construct}` is a function that constructs contained object in place.
 
 - *`noexcept`* when `std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_constructible_v<U> && std::is_nothrow_swappable_with_v<T, U>`.
+- 
+---
 
 ## Non-member functions
 
@@ -982,6 +1208,15 @@ If every `options...` contains the values, returns the `std::tuple` wrapped in `
 
 The return type of `zip` is `opt::option<std::tuple<typename remove_cvref<Options>::value_type...>>`. \
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
+
+Description in the simplified code equivalent:
+```cpp
+if ((options.has_value() && ...)) {
+    return std::tuple{options.get()...};
+} else {
+    return opt::none;
+}
+```
 
 **Example:**
 ```cpp
@@ -1008,6 +1243,15 @@ constexpr auto zip_with(Fn&& fn, Options&&... options);
 ```
 If every `options...` contains the values, returns the result of `fn` function with every `options...` containing values as the `fn` arguments. If any of `options...` does not contain a value, returns an empty `opt::option`.
 - *Enabled* when every `Options...` (without cv-qualifiers) is the specializations of `opt::option`.
+
+Description in the simplified code equivalent:
+```cpp
+if ((options.has_value() && ...)) {
+    return fn(options.get()...);
+} else {
+    return opt::none;
+}
+```
 
 **Example:**
 ```cpp
@@ -1037,6 +1281,11 @@ constexpr option<To> option_cast(option<From>&& value);
 Casts `opt::option<From>` to `opt::option<To>`. \
 If `opt::option<From>` contains a value, `static_cast`s it to the type `To` and wraps it into `opt::option<To>`. If `opt::option<From>` does not contain a value, returns an empty `opt::option<To>`.
 
+Description in the simplified code equivalent:
+```cpp
+return value.map([](const From& x) { return To(x); });
+```
+
 **Example:**
 ```cpp
 opt::option<float> a{2.5f};
@@ -1060,6 +1309,14 @@ constexpr option<T> from_nullable(T* const nullable_ptr);
 ```
 Constructs `opt::option<T>` from dereferenced value of proveded pointer if it is not equal to 'nullptr'; otherwise, returns empty `opt::option<T>`.
 
+Description in the simplified code equivalent:
+```cpp
+if (nullable_ptr == nullptr) {
+    return opt::none;
+}
+return *nullable_ptr;
+```
+
 ---
 
 ### `opt::swap`
@@ -1071,6 +1328,11 @@ constexpr void swap(option<T>& left, option<U>& right) noexcept(/*see below*/);
 Exchanges the state of `left` with that of `right`. Calls `left.swap(right)`.
 - *Enabled* when `std::is_move_constructible_v<T>`, `std::is_move_constructible_v<U>` and `std::is_swappable_with_v<T, U>` are true.
 - *`noexcept`* when `std::is_nothrow_move_constructible_v<T>`, `std::is_nothrow_move_constructible_v<U>` and `std::is_nothrow_swappable_with_v<T, U>` are true.
+
+Description in the code equivalent:
+```cpp
+left.swap(right);
+```
 
 ---
 
@@ -1090,6 +1352,14 @@ Returns the result of `using std::get; get<I>` (ADL) in an reference option (e.g
 
 In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
 
+Description in the simplified code equivalent:
+```cpp
+if (x.has_value()) {
+    return get<I>(x.get());
+}
+return opt::none;
+```
+
 ---
 
 ```cpp
@@ -1105,6 +1375,14 @@ constexpr auto get(const opt::option<OptT>&& x /*lifetimebound*/) noexcept;
 Returns the result of `using std::get; get<T>` (ADL) in an reference option (e.g. `opt::option<T&>`) if it does contain one; otherwise, returns `opt::none`.
 
 In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+Description in the simplified code equivalent:
+```cpp
+if (x.has_value()) {
+    return get<T>(x.get());
+}
+return opt::none;
+```
 
 ---
 
@@ -1123,6 +1401,15 @@ Otherwise, returns `opt::none`.
 
 In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
 
+Description in the simplified code equivalent:
+```cpp
+auto ptr = std::get_if<I>(v);
+if (ptr == nullptr) {
+    return opt::none;
+}
+return *ptr;
+```
+
 ---
 
 ```cpp
@@ -1139,6 +1426,15 @@ Returns the reference option (e.g. `opt::option<T&>`) to an holded value of the 
 Otherwise, returns `opt::none`.
 
 In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+Description in the simplified code equivalent:
+```cpp
+auto ptr = std::get_if<T>(v);
+if (ptr == nullptr) {
+    return opt::none;
+}
+return *ptr;
+```
 
 ---
 
@@ -1225,6 +1521,14 @@ and `.operator[]` to access specified element at `index` (`std::forward<T>(conta
 
 None of these function should throw any exceptions.
 
+Description in the simplified code equivalent:
+```cpp
+if (index >= container.size()) {
+    return opt::none;
+}
+return container[index];
+```
+
 **Example:**
 ```cpp
 std::vector<int> a{{10, 11, 12, 13, 14}};
@@ -1256,6 +1560,14 @@ template<class T>
 constexpr option<T> operator|(const option<T>& left, const option<T>& right);
 ```
 Returns `left` if it does contains a value, or returns `right` if `left` does not.
+
+Description in the code equivalent:
+```cpp
+if (left.has_value()) {
+    return left.get();
+}
+return right;
+```
 
 ---
 
@@ -1310,6 +1622,14 @@ constexpr option<T>& operator|=(option<T>& left, const T& right);
 Copy assigns `right` to `left` if the `left` does not contain a value. \
 Returns a reference to `left`.
 
+Description in the code equivalent:
+```cpp
+if (!left.has_value()) {
+    left = right;
+}
+return left;
+```
+
 ---
 
 ```cpp
@@ -1322,6 +1642,14 @@ constexpr option<T>& operator|=(option<T>& left, T&& right);
 Move assigns `right` to `left` if the `left` does not contain a value, \
 Returns a reference to `left`.
 
+Description in the code equivalent:
+```cpp
+if (!left.has_value()) {
+    left = std::move(right);
+}
+return left;
+```
+
 ---
 
 ### `operator&`
@@ -1331,6 +1659,14 @@ template<class T, class U>
 constexpr option<U> operator&(const option<T>& left, const option<U>& right);
 ```
 Returns an empty `opt::option` if `left` does not contain a value, or if `left` does, returns `right`.
+
+Description in the code equivalent:
+```cpp
+if (left.has_value()) {
+    return right;
+}
+return opt::none;
+```
 
 **Example:**
 ```cpp
@@ -1356,6 +1692,17 @@ template<class T>
 constexpr option<T> operator^(const option<T>& left, const option<T>& right);
 ```
 Returns `opt::option` that contains a value if exactly one of `left` and `right` contains a value, otherwise, returns an empty `opt::option`.
+
+Description in the code equivalent:
+```cpp
+if (left.has_value() && !right.has_value()) {
+    return left;
+}
+if (!left.has_value() && right.has_value()) {
+    return right;
+}
+return opt::none;
+```
 
 **Example:**
 ```cpp
@@ -1643,6 +1990,15 @@ The template specialization of `std::hash` for the `opt::option` gives users a a
 If `opt::option` contains the value, returns hash of that value. If `opt::option` does not, returns the expression `static_cast<std::size_t>(-96391)` as an empty value hash.
 - *Enabled* when `std::is_default_constructible_v<std::hash<std::remove_const_t<T>>>` is `true`.
 - *`noexcept`* when the expression `noexcept(std::hash<std::remove_const_t<T>>{}(std::declval<const T&>()))` is `true`.
+
+Description in the code equivalent:
+```cpp
+if (value.has_value()) {
+    return std::hash<T>{}(value.get());
+}
+return {disengaged_hash};
+```
+Where `{disengaged_hash}` is a magic hash value.
 
 **Example:**
 ```cpp
