@@ -718,7 +718,7 @@ jobs:
 
       - name: Configure CMake for installation project (main)
         env: { CXXFLAGS: '', CFLAGS: '' }
-        run: cmake -B build -DINSTALL_OPTION=TRUE
+        run: cmake -B build -DOPTION_INSTALL=TRUE
 
       - name: Install project (main)
         run: ${{matrix.os == 'ubuntu-22.04' && 'sudo' || ''}} cmake --install build --verbose

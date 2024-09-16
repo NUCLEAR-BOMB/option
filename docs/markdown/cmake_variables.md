@@ -5,16 +5,16 @@ CMake variables that controls build system. See [option][cmake-option].
 
 You can define these variables by providing [`-D`][cmake-d] CMake argument.
 
-- [`BUILD_TEST`](#build_test)
-- [`BUILD_EXAMPLES`](#build_examples)
+- [`OPTION_TEST`](#option_test)
+- [`OPTION_EXAMPLES`](#option_examples)
 - [`USE_SANITIZER`](#use_sanitizer)
 - [`USE_CLANG_TIDY`](#use_clang_tidy)
-- [`INSTALL_OPTION`](#install_option)
-- [`USE_NATVIS`](#use_natvis)
-- [`USE_NATSTEPFILTER`](#use_natstepfilter)
+- [`OPTION_INSTALL`](#option_install)
+- [`OPTION_USE_NATVIS`](#option_use_natvis)
+- [`OPTION_USE_NATSTEPFILTER`](#option_use_natstepfilter)
 - [`USE_LIBASSERT`](#use_libassert)
 
-## `BUILD_TEST`
+## `OPTION_TEST`
 
 **default:** [`${PROJECT_IS_TOP_LEVEL}`][is-project-top-level]
 
@@ -25,7 +25,7 @@ Use custom target `run-option-test` to run test.
 
 Uses [`USE_SANITIZER`](#use_sanitizer) and [`USE_CLANG_TIDY`](#use_clang_tidy) variables to enable sanitizers and clang-tidy testing on `option-test` target.
 
-## `BUILD_EXAMPLES`
+## `OPTION_EXAMPLES`
 
 **default:** [`${PROJECT_IS_TOP_LEVEL}`][is-project-top-level]
 
@@ -51,19 +51,19 @@ The only supported generators are "Unix Makefiles" and "Ninja (Multi-Config)". S
 
 If the generator is not supported, then the custom target [`clang-tidy`][clang-tidy] will not be added.
 
-## `INSTALL_OPTION`
+## `OPTION_INSTALL`
 
 **default:** `FALSE`
 
 Allows CMake to install this project with [`--install`][cmake-install] argument.
 
-## `USE_NATVIS`
+## `OPTION_USE_NATVIS`
 
 **default:** `TRUE`
 
 Adds the "debugger/option.natvis" file to depended targets, which enables Visual Studio natvis for them. See [natvis][natvis].
 
-## `USE_NATSTEPFILTER`
+## `OPTION_USE_NATSTEPFILTER`
 
 **default:** `TRUE`
 

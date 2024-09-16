@@ -2,19 +2,13 @@ cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
 project(option VERSION 1.0 LANGUAGES CXX)
 
-if (PROJECT_IS_TOP_LEVEL)
-    set(not_project_is_top_level FALSE)
-else()
-    set(not_project_is_top_level TRUE)
-endif()
-
-option(BUILD_TEST "Enable 'option-test' target" ${PROJECT_IS_TOP_LEVEL})
-option(BUILD_EXAMPLES "Enable 'option-examples' target" ${PROJECT_IS_TOP_LEVEL})
+option(OPTION_TEST "Enable 'option-test' target" ${PROJECT_IS_TOP_LEVEL})
+option(OPTION_EXAMPLES "Enable 'option-examples' target" ${PROJECT_IS_TOP_LEVEL})
 option(USE_SANITIZER "Enable sanitizers for test target" TRUE)
 option(USE_CLANG_TIDY "Enable clang-tidy for test target" FALSE)
-option(INSTALL_OPTION "Enable --install for 'option' project" FALSE)
-option(USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
-option(USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" ${not_project_is_top_level})
+option(OPTION_INSTALL "Enable --install for 'option' project" FALSE)
+option(OPTION_USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
+option(OPTION_USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" FALSE)
 option(USE_LIBASSERT "Enable libassert library integration" TRUE)
 
 add_library(option INTERFACE
@@ -33,26 +27,26 @@ target_include_directories(option ${include_as_system} INTERFACE
 
 target_compile_features(option INTERFACE cxx_std_17)
 
-if (USE_NATVIS)
+if (OPTION_USE_NATVIS)
     target_sources(option INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natvis>)
 endif()
-if (USE_NATSTEPFILTER)
+if (OPTION_USE_NATSTEPFILTER)
     target_sources(option INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter>)
 endif()
 
-if(INSTALL_OPTION)
+if(OPTION_INSTALL)
     set(exclude_from_all EXCLUDE_FROM_ALL)
 endif()
 
-if (BUILD_TEST)
+if (OPTION_TEST)
     add_subdirectory(test ${exclude_from_all})
 endif()
 
-if (BUILD_EXAMPLES)
+if (OPTION_EXAMPLES)
     add_subdirectory(examples ${exclude_from_all})
 endif()
 
-if (INSTALL_OPTION)
+if (OPTION_INSTALL)
     include(CMakePackageConfigHelpers)
     include(GNUInstallDirs)
 

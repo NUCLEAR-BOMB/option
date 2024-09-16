@@ -205,10 +205,10 @@ See [project cmake variables](./docs/markdown/cmake_variables.md) for more infor
 
 To use [`find_package`][find_package] command you need to firstly install the `option` project.
 
-Generate the `option` project with the variable `INSTALL_OPTION` defined to `TRUE`:
+Generate the `option` project with the variable `OPTION_INSTALL` defined to `TRUE`:
 
 ```shell
-cmake -B build -DINSTALL_OPTION=TRUE
+cmake -B build -DOPTION_INSTALL=TRUE
 ```
 > Generate project into `build` directory, and allow to install it.
 
