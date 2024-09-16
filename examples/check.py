@@ -18,12 +18,13 @@ for file_path, target_path in zip(files, targets):
         print(f'Error while running "{target_path}":\n{target_result.stderr}', file=sys.stderr)
         has_error = True
         continue
-    target_stdout = target_result.stdout.splitlines()
+    target_stdout = [line.strip() for line in target_result.stdout.splitlines()]
 
     with open(file_path) as example_file:
         expected_lines = [(idx + 1, exp.strip()) for idx, line in enumerate(example_file.readlines()) if (exp := line.partition(prefix)[2])]
 
     for (line, expected), received in zip(expected_lines, target_stdout):
+        
         if expected == '[number]' and try_int(received) is not None:
             pass
         elif expected == '[nullptr]' and (try_int(received) == 0 or received == '(nil)'):
@@ -41,3 +42,5 @@ for file_path, target_path in zip(files, targets):
 
 if has_error:
     sys.exit(1)
+else:
+    print('Completed successfully')
