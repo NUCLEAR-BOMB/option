@@ -348,6 +348,14 @@ OPTION_STD_NAMESPACE_CXX11_END
     template<std::size_t I, class... Types>
     constexpr add_pointer_t<const typename variant_alternative<I, variant<Types...>>::type> get_if(const variant<Types...>*) noexcept;
 #endif
+    struct input_iterator_tag; // Defined in header <iterator>
+    struct output_iterator_tag; // Defined in header <iterator>
+    struct forward_iterator_tag; // Defined in header <iterator>
+    struct bidirectional_iterator_tag; // Defined in header <iterator>
+    struct random_access_iterator_tag; // Defined in header <iterator>
+#if OPTION_IS_CXX20
+    struct contiguous_iterator_tag; // Defined in header <iterator>
+#endif
 OPTION_STD_NAMESPACE_END
 #else
     #include <string_view>
@@ -2040,6 +2048,110 @@ namespace impl {
 
         option_move_assign_base& operator=(option_move_assign_base&&) = delete;
     };
+
+    template<class T>
+    class option_iterator {
+    public:
+#if OPTION_IS_CXX20
+        using iterator_concept = std::contiguous_iterator_tag;
+#endif
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = std::remove_cv_t<T>;
+        using reference = T&;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+    private:
+        pointer ptr{};
+    public:
+        option_iterator() = default;
+        explicit constexpr option_iterator(const pointer ptr_) noexcept : ptr{ptr_} {}
+
+        [[nodiscard]] constexpr operator option_iterator<const T>() const noexcept {
+            return option_iterator<const T>{ptr};
+        }
+
+        [[nodiscard]] constexpr reference operator*() const noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot dereference value-initialized option iterator");
+            return *ptr;
+        }
+        [[nodiscard]] constexpr pointer operator->() const noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot dereference value-initialized option iterator");
+            return ptr;
+        }
+        constexpr option_iterator& operator++() noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot increment value-initialized option iterator");
+            ++ptr;
+            return *this;
+        }
+        constexpr option_iterator operator++(int) noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot increment value-initialized option iterator");
+            auto tmp{*this};
+            ++ptr;
+            return tmp;
+        }
+        constexpr option_iterator& operator--() noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot decrement value-initialized option iterator");
+            --ptr;
+            return *this;
+        }
+        constexpr option_iterator operator--(int) noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot decrement value-initialized option iterator");
+            auto tmp{*this};
+            --ptr;
+            return tmp;
+        }
+        constexpr option_iterator& operator+=(const difference_type offset) noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot seek value-initialized option iterator");
+            ptr += offset;
+            return *this;
+        }
+        [[nodiscard]] constexpr option_iterator operator+(const difference_type offset) const noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot seek value-initialized option iterator");
+            return option_iterator{ptr + offset};
+        }
+        [[nodiscard]] friend constexpr option_iterator operator+(const difference_type offset, const option_iterator& it) noexcept {
+            OPTION_VERIFY(it.ptr != nullptr, "Cannot seek value-initialized option iterator");
+            return option_iterator{it.ptr + offset};
+        }
+        constexpr option_iterator& operator-=(const difference_type offset) noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot seek value-initialized option iterator");
+            ptr -= offset;
+            return *this;
+        }
+        [[nodiscard]] constexpr option_iterator operator-(const difference_type offset) const noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot seek value-initialized option iterator");
+            return option_iterator{ptr - offset};
+        }
+        [[nodiscard]] constexpr difference_type operator-(const option_iterator& right) const noexcept {
+            return static_cast<difference_type>(ptr - right.ptr);
+        }
+        [[nodiscard]] constexpr reference operator[](const difference_type offset) const noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot dereference value-initialized option iterator");
+            return *(ptr + offset);
+        }
+        [[nodiscard]] constexpr bool operator==(const option_iterator& right) const noexcept {
+            return ptr == right.ptr;
+        }
+        [[nodiscard]] constexpr bool operator!=(const option_iterator& right) const noexcept {
+            return ptr != right.ptr;
+        }
+        [[nodiscard]] constexpr bool operator<(const option_iterator& right) const noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot compare value-initialized option iterator");
+            OPTION_VERIFY(right.ptr != nullptr, "Cannot compare value-initialized option iterator");
+            return ptr < right.ptr;
+        }
+        [[nodiscard]] constexpr bool operator>(const option_iterator& right) const noexcept {
+            OPTION_VERIFY(ptr != nullptr, "Cannot compare value-initialized option iterator");
+            OPTION_VERIFY(right.ptr != nullptr, "Cannot compare value-initialized option iterator");
+            return ptr > right.ptr;
+        }
+        [[nodiscard]] constexpr bool operator<=(const option_iterator& right) const noexcept {
+            return ptr <= right.ptr;
+        }
+        [[nodiscard]] constexpr bool operator>=(const option_iterator& right) const noexcept {
+            return ptr >= right.ptr;
+        }
+    };
 }
 
 class bad_access : public std::exception {
@@ -2387,6 +2499,8 @@ public:
         "T must be destructible");
 
     using value_type = T;
+    using iterator = impl::option_iterator<T>;
+    using const_iterator = impl::option_iterator<const T>;
 
     // Default constructor.
     // Constructors an object that does not contain a value.
@@ -2552,6 +2666,19 @@ public:
     constexpr option& operator=(option<U>&& other) {
         base::assign_from_option(std::move(other));
         return *this;
+    }
+
+    [[nodiscard]] constexpr iterator begin() noexcept {
+        return iterator{has_value() ? std::addressof(base::value) : nullptr};
+    }
+    [[nodiscard]] constexpr const_iterator begin() const noexcept {
+        return const_iterator{has_value() ? std::addressof(base::value) : nullptr};
+    }
+    [[nodiscard]] constexpr iterator end() noexcept {
+        return iterator{has_value() ? (std::addressof(base::value) + 1) : nullptr};
+    }
+    [[nodiscard]] constexpr const_iterator end() const noexcept {
+        return const_iterator{has_value() ? (std::addressof(base::value) + 1) : nullptr};
     }
 
     // Destroys the contained value.

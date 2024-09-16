@@ -206,6 +206,42 @@ void replace() {
     std::cout << b.has_value() << '\n'; //$ false
 }
 
+void begin() {
+    opt::option<int> a = 1;
+
+    std::cout << *(a.begin()) << '\n'; //$ 1
+
+    for (int& x : a) {
+        std::cout << x << '\n'; //$ 1
+        x = 2;
+        std::cout << x << '\n'; //$ 2
+    }
+
+    a = opt::none;
+    for (const int& x : a) {
+        std::cout << x << '\n';
+    }
+
+    opt::option<std::array<int, 3>> b{{1, 2, 3}};
+    for (const auto& v : b) {
+        for (const int& x : v) {
+            std::cout << x << ' '; //$ 1 2 3
+        }
+        std::cout << '\n';
+    }
+}
+
+void end() {
+    opt::option<int> a = 1;
+    std::cout << *(a.begin()) << '\n'; //$ 1
+    std::cout << *(--(a.end())) << '\n'; //$ 1
+    std::cout << (a.begin() == a.end()) << '\n'; //$ false
+    std::cout << (a.begin() + 1 == a.end()) << '\n'; //$ true
+
+    a = opt::none;
+    std::cout << (a.begin() == a.end()) << '\n'; //$ true
+}
+
 int main() {
     std::cout << std::boolalpha;
 
@@ -223,4 +259,6 @@ int main() {
     or_else();
     unzip();
     replace();
+    begin();
+    end();
 }

@@ -844,6 +844,68 @@ skip_inspect:
             CHECK_UNARY_FALSE(c3.has_value());
         }
     }
+    SUBCASE(".begin") {
+        opt::option<T> a;
+        for ([[maybe_unused]] T& x : a) {
+            CHECK_UNARY(false);
+        }
+        for ([[maybe_unused]] const T& x : a) {
+            CHECK_UNARY(false);
+        }
+        for ([[maybe_unused]] const T& x : as_const(a)) {
+            CHECK_UNARY(false);
+        }
+
+        a = v0;
+        CHECK_EQ(a.begin(), --(++(a.begin())));
+        CHECK_EQ(a.begin(), ++(--(a.begin())));
+        CHECK_EQ(*(a.begin()), v0);
+        *(a.begin()) = v1;
+        CHECK_EQ(a, v1);
+
+        for (T& x : a) {
+            CHECK_EQ(x, v1);
+            x = v2;
+        }
+        CHECK_EQ(a, v2);
+        for (const T& x : a) {
+            CHECK_EQ(x, v2);
+        }
+        a = v3;
+        for (const T& x : as_const(a)) {
+            CHECK_EQ(x, v3);
+        }
+    }
+    SUBCASE(".end") {
+        opt::option<T> a;
+        CHECK_EQ(a.begin(), a.end());
+        a = v0;
+        CHECK_EQ(++(a.begin()), a.end());
+        CHECK_LT(a.begin(), a.end());
+        CHECK_GT(a.end(), a.begin());
+        CHECK_NE(a.begin(), a.end());
+        *(--(a.end())) = v1;
+        CHECK_EQ(a, v1);
+
+        auto it = a.begin();
+        CHECK_EQ(*it, v1);
+        it = a.end();
+
+        it += 2;
+        it -= 3;
+        CHECK_EQ(it, a.begin());
+        CHECK_EQ(*it, v1);
+
+        auto cit = as_const(a).begin();
+        CHECK_EQ(*cit, v1);
+        cit = as_const(a).end();
+        CHECK_EQ(cit, a.end());
+        cit = a.begin();
+        CHECK_EQ(*cit, v1);
+        CHECK_NE(cit, as_const(a).end());
+        cit = a.end();
+        CHECK_EQ(cit, a.end());
+    }
     SUBCASE("opt::zip") {
         opt::option<T> a{v0};
         opt::option<T> b{v1};

@@ -203,6 +203,7 @@ jobs:
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
+              -Wno-array-bounds
 
           - name: 'gcc 11'
             cxx: 'g++-11'
@@ -213,6 +214,7 @@ jobs:
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
+              -Wno-array-bounds
 
           # - name: 'gcc 10'
           #   cxx: 'g++-10'

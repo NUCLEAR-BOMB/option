@@ -32,6 +32,8 @@
     - [`unzip`](#unzip)
     - [`replace`](#replace)
     - [`swap`](#swap)
+    - [`begin`](#begin)
+    - [`end`](#end)
 - [Non-member functions](#non-member-functions)
     - [`zip`](#optzip)
     - [`zip_with`](#optzip_with)
@@ -80,9 +82,11 @@ The type must be not `opt::none_t`, not `void`, and be destructible.
 
 ## Member types
 
-| Member type | Definition |
-| ----------- | ---------- |
-| value_type  | T          |
+| Member type    | Definition                            |
+| -------------- | ------------------------------------- |  
+| value_type     | T                                     |
+| iterator       | *unspecified*, random access iterator |
+| const_iterator | *unspecified*, random access iterator |
 
 ## Member functions
 
@@ -1193,6 +1197,68 @@ Where `{construct}` is a function that constructs contained object in place.
 - *`noexcept`* when `std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_constructible_v<U> && std::is_nothrow_swappable_with_v<T, U>`.
 - 
 ---
+
+### `begin`
+
+```cpp
+constexpr iterator begin() noexcept;
+constexpr const_iterator begin() const noexcept;
+```
+If contains a value, returns an iterator to the contained value. Otherwise, a past-the-end iterator.
+
+The returned iterator is pointing to the range with a single element, which is the contained value inside option.
+
+Implements the [P1255R12: Give `std::optional` Range Support](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2.html) proposal.
+
+**Example:**
+```cpp
+opt::option<int> a = 1;
+
+std::cout << *(a.begin()) << '\n'; // 1
+
+for (int& x : a) {
+    std::cout << x << '\n'; // 1
+    x = 2;
+    std::cout << x << '\n'; // 2
+}
+
+a = opt::none;
+for (const int& x : a) {
+    std::cout << x << '\n';
+}
+
+opt::option<std::array<int, 3>> b{{1, 2, 3}};
+for (const auto& v : b) {
+    for (const int& x : v) {
+        std::cout << x << ' '; // 1 2 3
+    }
+    std::cout << '\n';
+}
+```
+
+---
+
+### `end`
+
+```cpp
+constexpr iterator end() noexcept;
+constexpr const_iterator end() const noexcept;
+```
+Returns a past-the-end iterator. Equivalent to `begin() + has_value()`.
+
+Implements the [P1255R12: Give `std::optional` Range Support](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2.html) proposal.
+
+**Example:**
+```cpp
+opt::option<int> a = 1;
+std::cout << *(a.begin()) << '\n'; // 1
+std::cout << *(--(a.end())) << '\n'; // 1
+std::cout << (a.begin() == a.end()) << '\n'; // false
+std::cout << (a.begin() + 1 == a.end()) << '\n'; // true
+
+a = opt::none;
+std::cout << (a.begin() == a.end()) << '\n'; // true
+```
 
 ## Non-member functions
 
