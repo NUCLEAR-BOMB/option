@@ -53,6 +53,9 @@ function(target_add_warnings target)
                 -Wno-maybe-uninitialized
                 -Wno-free-nonheap-object
             )
+            if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS_EQUAL "12.0")
+                list(APPEND gcc_opts -Wno-array-bounds)
+            endif()
         endif()
 
         target_compile_options(${target} PRIVATE
