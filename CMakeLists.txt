@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24 FATAL_ERROR)
 
-project(option VERSION 1.0 LANGUAGES CXX)
+project(option VERSION 1.1.0 LANGUAGES CXX)
 
 option(OPTION_TEST "Enable 'option-test' target" ${PROJECT_IS_TOP_LEVEL})
 option(OPTION_EXAMPLES "Enable 'option-examples' target" ${PROJECT_IS_TOP_LEVEL})
