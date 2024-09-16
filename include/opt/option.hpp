@@ -13,7 +13,35 @@
 #include <cstdint>
 #include <functional> // std::invoke, std::hash
 
-#include <opt/option_fwd.hpp>
+#if __has_include(<opt/option_fwd.hpp>)
+    #include <opt/option_fwd.hpp>
+#else
+namespace opt {
+template<class T>
+class option;
+
+template<class T, class = void>
+struct option_traits;
+
+template<class>
+struct is_option { static constexpr bool value = false; };
+template<class T>
+struct is_option<option<T>> { static constexpr bool value = true; };
+
+template<class T>
+inline constexpr bool is_option_v = is_option<T>::value;
+
+struct option_tag {};
+
+namespace impl {
+    struct none_tag {};
+}
+struct none_t {
+    constexpr explicit none_t(impl::none_tag) {}
+};
+inline constexpr none_t none{impl::none_tag{}};
+}
+#endif
 
 #ifdef __INTEL_COMPILER
     #define OPTION_CLANG 0
