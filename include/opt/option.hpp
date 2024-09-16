@@ -2325,8 +2325,6 @@ namespace impl::option {
             return invoke_res{opt::none};
         }
     }
-    template<class T, class Fn>
-    using enable_and_then = std::enable_if_t<std::is_invocable_v<Fn, T>, int>;
 
     // implementation of opt::option<T>::map(F&&)
     // map(F&&) -> option<U> : F(T&&) -> U
@@ -2338,8 +2336,6 @@ namespace impl::option {
         }
         return opt::option<f_result>{opt::none};
     }
-    template<class T, class Fn>
-    using enable_map = std::enable_if_t<std::is_invocable_v<Fn, T>, int>;
 
     // implementation of opt::option<T>::map_or(U&&, F&&)
     template<class T, class Self, class U, class F>
@@ -2349,8 +2345,6 @@ namespace impl::option {
         }
         return std::forward<U>(default_value);
     }
-    template<class T, class U, class Fn>
-    using enable_map_or = std::enable_if_t<std::is_invocable_r_v<impl::remove_cvref<U>, Fn, T>, int>;
 
     template<class T, class Self, class D, class F>
     constexpr auto map_or_else(Self&& self, D&& d, F&& f) {
@@ -2363,8 +2357,6 @@ namespace impl::option {
         }
         return std::invoke(std::forward<D>(d));
     }
-    template<class T, class D, class Fn>
-    using enable_map_or_else = std::enable_if_t<std::is_invocable_v<D> && std::is_invocable_v<Fn, T>, int>;
 
     // implementation of opt::option<T>::or_else(F&&)
     template<class T, class Self, class F>
@@ -2377,8 +2369,6 @@ namespace impl::option {
         }
         return std::invoke(std::forward<F>(f));
     }
-    template<class Fn>
-    using enable_or_else = std::enable_if_t<std::is_invocable_v<Fn>, int>;
 
     // implementation of opt::option<T>::value_or_throw()
     template<class Self>
@@ -2407,8 +2397,6 @@ namespace impl::option {
         }
         return false;
     }
-    template<class T, class P>
-    using enable_has_value_and = std::enable_if_t<std::is_invocable_r_v<bool, P, T>, int>;
 
     template<class Self, class F>
     constexpr Self&& inspect(Self&& self, F&& f) {
@@ -2417,8 +2405,6 @@ namespace impl::option {
         }
         return std::forward<Self>(self);
     }
-    template<class T, class Fn>
-    using enable_inspect = std::enable_if_t<std::is_invocable_v<Fn, T>, int>; // ignore return value
 
     template<class TupleLikeOfOptions, class Self, std::size_t... Idx>
     constexpr auto unzip_impl(Self&& self, std::index_sequence<Idx...>) {
@@ -2446,11 +2432,6 @@ namespace impl::option {
             std::make_index_sequence<std::tuple_size<tuple_like_type>::value>{}
         );
     }
-
-    template<class T, class Fn, class = bool>
-    inline constexpr bool is_filter_fn_invocable = false;
-    template<class T, class Fn>
-    inline constexpr bool is_filter_fn_invocable<T, Fn, decltype(bool(std::invoke(std::declval<Fn>(), std::declval<T>())))> = true;
 
     template<class Self, class F>
     constexpr impl::remove_cvref<Self> filter(Self&& self, F&& f) {
@@ -2717,13 +2698,13 @@ public:
     // and invocation of the `predicate` with the contained as an argument value evaluates to `true`;
     // otherwise return `false`
     // Same as Rust's `std::option::Option<T>::is_some_and`
-    template<class P, impl::option::enable_has_value_and<T&, P> = 0>
+    template<class P>
     [[nodiscard]] constexpr bool has_value_and(P&& predicate) & { return impl::option::has_value_and(*this, std::forward<P>(predicate)); }
-    template<class P, impl::option::enable_has_value_and<const T&, P> = 0>
+    template<class P>
     [[nodiscard]] constexpr bool has_value_and(P&& predicate) const& { return impl::option::has_value_and(*this, std::forward<P>(predicate)); }
-    template<class P, impl::option::enable_has_value_and<T&&, P> = 0>
+    template<class P>
     [[nodiscard]] constexpr bool has_value_and(P&& predicate) && { return impl::option::has_value_and(std::move(*this), std::forward<P>(predicate)); }
-    template<class P, impl::option::enable_has_value_and<const T&&, P> = 0>
+    template<class P>
     [[nodiscard]] constexpr bool has_value_and(P&& predicate) const&& { return impl::option::has_value_and(std::move(*this), std::forward<P>(predicate)); }
 
     // Takes the value out of the `opt::option`.
@@ -2742,7 +2723,7 @@ public:
     // if invocation of the `predicate` with the contained value as an argument evaluates to `true`.
     // This method similar to conditional `opt::option<T>::take`
     // Same as Rust's `std::option::Option<T>::take_if`
-    template<class P, std::enable_if_t<std::is_invocable_r_v<bool, P, T&>, int> = 0>
+    template<class P>
     [[nodiscard]] constexpr option<T> take_if(P&& predicate) {
         static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
         if (has_value() && bool(std::invoke(std::forward<P>(predicate), get()))) {
@@ -2757,13 +2738,13 @@ public:
     // Returns `*this`.
     // Does not modify the contained value inside.
     // Same as Rust's `std::option::Option<T>::inspect`
-    template<class F, impl::option::enable_inspect<T&, F> = 0>
+    template<class F>
     constexpr option& inspect(F&& f) & { return impl::option::inspect(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_inspect<const T&, F> = 0>
+    template<class F>
     constexpr const option& inspect(F&& f) const& { return impl::option::inspect(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_inspect<T&, F> = 0>
+    template<class F>
     constexpr option&& inspect(F&& f) && { return impl::option::inspect(std::move(*this), std::forward<F>(f)); }
-    template<class F, impl::option::enable_inspect<const T&, F> = 0>
+    template<class F>
     constexpr const option&& inspect(F&& f) const&& { return impl::option::inspect(std::move(*this), std::forward<F>(f)); }
 
     // Returns a reference to the contained value.
@@ -2850,18 +2831,14 @@ public:
     // otherwise returns a forwarded `default_value`.
     // Same as `std::optional<T>::value_or`
     template<class U>
-    [[nodiscard]] constexpr T value_or(U&& default_value) const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>) {
-        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
-        static_assert(std::is_convertible_v<U&&, T>, "U&& must be convertible to T");
+    [[nodiscard]] constexpr T value_or(U&& default_value) const& {
         if (has_value()) {
             return *(*this);
         }
         return static_cast<T>(std::forward<U>(default_value));
     }
     template<class U>
-    [[nodiscard]] constexpr T value_or(U&& default_value) && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_constructible_v<T, U&&>) {
-        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
-        static_assert(std::is_convertible_v<U&&, T>, "U&& must be convertible to T");
+    [[nodiscard]] constexpr T value_or(U&& default_value) && {
         if (has_value()) {
             return std::move(*(*this));
         }
@@ -2871,18 +2848,13 @@ public:
     // Returns the contained value if `opt::option` contains the value;
     // otherwise return a default constructed `T` (expression `T{}`).
     // Similar to Rust's `std::option::Option<T>::value_or_default`
-    [[nodiscard]] constexpr T value_or_default() const& noexcept(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_default_constructible_v<T>) {
-        static_assert(std::is_default_constructible_v<T>, "T must be default constructible");
-        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
-        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
+    [[nodiscard]] constexpr T value_or_default() const& {
         if (has_value()) {
             return get();
         }
         return T{};
     }
-    [[nodiscard]] constexpr T value_or_default() && noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_default_constructible_v<T>) {
-        static_assert(std::is_default_constructible_v<T>, "T must be default constructible");
-        static_assert(std::is_move_constructible_v<T>, "T must be move constructible");
+    [[nodiscard]] constexpr T value_or_default() && {
         if (has_value()) {
             return std::move(get());
         }
@@ -2893,25 +2865,25 @@ public:
     // otherwise, return result of a `f` invocation with this `opt::option` contained value as an argument.
     // Use `opt::option<T>::map_or_else` to lazy evaluate the default value
     // Same as Rust's `std::option::Option<T>::map_or`
-    template<class U, class F, impl::option::enable_map_or<T&, U, F> = 0>
+    template<class U, class F>
     [[nodiscard]] constexpr auto map_or(U&& def, F&& f) & { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
-    template<class U, class F, impl::option::enable_map_or<const T&, U, F> = 0>
+    template<class U, class F>
     [[nodiscard]] constexpr auto map_or(U&& def, F&& f) const& { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
-    template<class U, class F, impl::option::enable_map_or<T&&, U, F> = 0>
+    template<class U, class F>
     [[nodiscard]] constexpr auto map_or(U&& def, F&& f) && { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
-    template<class U, class F, impl::option::enable_map_or<const T&&, U, F> = 0>
+    template<class U, class F>
     [[nodiscard]] constexpr auto map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
 
     // Returns a `def` default function result if this `opt::option` does not contain a value;
     // otherwise, returns result of a 'f' invocation with this `opt::option` contained value as an argument
     // Same as Rust's `std::option::Option<T>::map_or_else`
-    template<class D, class F, impl::option::enable_map_or_else<T&, D, F> = 0>
+    template<class D, class F>
     [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) & { return impl::option::map_or_else<T>(*this, std::forward<D>(def), std::forward<F>(f)); }
-    template<class D, class F, impl::option::enable_map_or_else<const T&, D, F> = 0>
+    template<class D, class F>
     [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const& { return impl::option::map_or_else<T>(*this, std::forward<D>(def), std::forward<F>(f)); }
-    template<class D, class F, impl::option::enable_map_or_else<T&&, D, F> = 0>
+    template<class D, class F>
     [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) && { return impl::option::map_or_else<T>(std::move(*this), std::forward<D>(def), std::forward<F>(f)); }
-    template<class D, class F, impl::option::enable_map_or_else<const T&&, D, F> = 0>
+    template<class D, class F>
     [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const&& { return impl::option::map_or_else<T>(std::move(*this), std::forward<D>(def), std::forward<F>(f)); }
 
     // Returns a pointer to the contained value if this `opt::option` contains the value;
@@ -2928,13 +2900,13 @@ public:
     //     `opt::option` that containes current contained value if `f` return `true`
     //     an empty `opt::option` if `f` returns `false`
     // Same as Rust's `std::option::Option<T>::filter`
-    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<T&, F>, int> = 0>
+    template<class F>
     [[nodiscard]] constexpr option<T> filter(F&& f) & { return impl::option::filter(*this, std::forward<F>(f)); }
-    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<const T&, F>, int> = 0>
+    template<class F>
     [[nodiscard]] constexpr option<T> filter(F&& f) const& { return impl::option::filter(*this, std::forward<F>(f)); }
-    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<T&, F>, int> = 0>
+    template<class F>
     [[nodiscard]] constexpr option<T> filter(F&& f) && { return impl::option::filter(std::move(*this), std::forward<F>(f)); }
-    template<class F, std::enable_if_t<impl::option::is_filter_fn_invocable<const T&, F>, int> = 0>
+    template<class F>
     [[nodiscard]] constexpr option<T> filter(F&& f) const&& { return impl::option::filter(std::move(*this), std::forward<F>(f)); }
 
     // Converts `opt::option<opt::option<U>>` to `opt::option<U>`.
@@ -2950,34 +2922,34 @@ public:
     // otherwise invokes `f` with the contained value as an argument and returns the result.
     // This operation is also sometimes called flatmap.
     // Same as `std::optional<T>::and_then` or Rust's `std::option::Option<T>::and_then`
-    template<class F, impl::option::enable_and_then<T&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_and_then<const T&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto and_then(F&& f) const& { return impl::option::and_then(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_and_then<T&&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto and_then(F&& f) && { return impl::option::and_then(std::move(*this), std::forward<F>(f)); }
-    template<class F, impl::option::enable_and_then<const T&&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto and_then(F&& f) const&& { return impl::option::and_then(std::move(*this), std::forward<F>(f)); }
 
     // Maps an `opt::option<T>` to `opt::option<U>` by applying a function to a contained value, otherwise returns `opt::none`
     // If this `opt::option` contains a value, invokes `f` with the contained value as an argument,
     // then returns an `opt::option` that contains the result of invocation; otherwise, return an empty `opt::option`
     // Same as `std::optional<T>::transform` or Rust's `std::option::Option<T>::map`
-    template<class F, impl::option::enable_map<T&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto map(F&& f) & { return impl::option::map<T>(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_map<const T&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto map(F&& f) const& { return impl::option::map<T>(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_map<T&&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto map(F&& f) && { return impl::option::map<T>(std::move(*this), std::forward<F>(f)); }
-    template<class F, impl::option::enable_map<const T&&, F> = 0>
+    template<class F>
     [[nodiscard]] constexpr auto map(F&& f) const&& { return impl::option::map<T>(std::move(*this), std::forward<F>(f)); }
 
     // Returns a contained value if this `opt::option` contains a value;
     // otherwise, return the result of `f`.
     // Same as `std::optional<T>::or_else`
-    template<class F, impl::option::enable_or_else<F> = 0>
+    template<class F>
     [[nodiscard]] constexpr option<T> or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
-    template<class F, impl::option::enable_or_else<F> = 0>
+    template<class F>
     [[nodiscard]] constexpr option<T> or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
 
     // Unzips this `opt::option` containing a tuple like object to the tuple like object of `opt::option`s
@@ -2995,7 +2967,7 @@ public:
     // Replaces the value in this `opt::option` by a provided `val`
     // and returns the old `opt::option` value
     // Similar to Rust's `std::option::Option<T>::replace`
-    template<class U, std::enable_if_t<std::is_constructible_v<T, U&&>, int> = 0>
+    template<class U>
     [[nodiscard]] constexpr option<T> replace(U&& val) {
         option<T> tmp{std::move(*this)};
         // should call the destructor after moving, because moving does not end lifetime
@@ -3085,9 +3057,7 @@ template<class T, class U, class... Args>
 // Example: opt::zip(option1, option2)
 // will return `opt::option<std::tuple<option1::value_type, option2::value_type>>`
 // if `option1.has_value()` and `option2.has_value()`; otherwise will return an empty `opt::option`
-template<class... Options, std::enable_if_t<
-    (opt::is_option_v<impl::remove_cvref<Options>> && ...)
-, int> = 0>
+template<class... Options, std::enable_if_t<std::conjunction_v<opt::is_option<impl::remove_cvref<Options>>...>, int> = 0>
 [[nodiscard]] constexpr auto zip(Options&&... options)
     -> opt::option<std::tuple<typename impl::remove_cvref<Options>::value_type...>>
 {
@@ -3105,9 +3075,7 @@ template<class... Options, std::enable_if_t<
 // Example: opt::zip_with(func, option1, option2)
 // will return invocation of `func` with (`option1.get()`, `option2.get()`) as arguments
 // if `option1.has_value()` and `option2.has_value()`; otherwise will return an empty `opt::option`
-template<class Fn, class... Options, std::enable_if_t<
-    (opt::is_option_v<impl::remove_cvref<Options>> && ...)
-, int> = 0>
+template<class Fn, class... Options, std::enable_if_t<std::conjunction_v<opt::is_option<impl::remove_cvref<Options>>...>, int> = 0>
 [[nodiscard]] constexpr auto zip_with(Fn&& fn, Options&&... options)
 {
     using fn_result = std::invoke_result_t<Fn, decltype(std::declval<Options>().get())...>;

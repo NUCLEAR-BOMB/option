@@ -504,7 +504,6 @@ constexpr T& emplace(Args&&... args) noexcept(/*see below*/) /*lifetimebound*/;
 Constructs the contained from `args...`. \
 If this `opt::option` already contains a value, the contained value is destroyed. Initializes the contained value of type `T` using *direct-list-initialization* with `std::forward<Args>(args)...` as parameters.
 - *`noexcept`* when `std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>`.
-- *Enabled* when `std::is_constructible_v<T, Args...>`.
 
 Description in the code equivalent:
 ```cpp
@@ -539,7 +538,6 @@ constexpr bool has_value_and(P&& predicate) const&&;
 ```
 Returns `true` if this `opt::option` contains a value, and the contained value matches a predicate. \
 If this `opt::option` contains a value, return the result of invocation of `predicate` with the contained value as an argument. If this `opt::option` does not contain a value, return `false`.
-- *Enabled* when `std::is_invocable_r_v<bool, P, T>`.
 
 Description in the simplified code equivalent:
 ```cpp
@@ -607,7 +605,6 @@ constexpr option take_if(P&& predicate);
 ```
 Takes the value out of the `opt::option`, but only if the `predicate` evaluates to `true` with a non-const contained value as an argument. \
 Returns an empty `opt::option` if this `opt::option` does not contain a value or `predicate` evaluates to `false` with the non-const contained value as an argument; otherwise, return the expression `take()`.
-- *Enabled* when `std::is_invocable_r_v<bool, P, T&>`.
 
 Description in the simplified code equivalent:
 ```cpp
@@ -800,7 +797,6 @@ constexpr remove_cvref<U> map_or(U&& def, Fn&& fn) const&&;
 ```
 Returns the provided `def` value if `opt::option` does not contain a value, or invokes the `fn` with the contained value as an argument. \
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
-- *Enabled* when `std::is_invocable_r_v<remove_cvref<U>, Fn, T>` is `true`.
 
 Description in the simplified code equivalent:
 ```cpp
@@ -835,7 +831,6 @@ template<class D, class Fn>
 constexpr auto map_or_else(D&& def, Fn&& fn) const&&;
 ```
 Returns the result of `def` fn with no arguments if `opt::option` does not contain a value; otherwise, returns the result of `fn` function with the contained value as an first argument.
-- *Enabled* when `std::is_invocable_v<D>` and `std::is_invocable_v<Fn, T>` are `true`.
 - *Requirements:* the return type of `def` function must be the same as the return type of `fn` function.
 
 Description in the simplified code equivalent:
@@ -908,8 +903,6 @@ if (has_value() && fn(get())) {
 return opt::none;
 ```
 
-- *Enabled* when `bool(std::invoke(std::forward<Fn>(fn), {value}))` is a valid expression. `{value}` is a reference (possible `const`) to the contained value.
-
 The function is called with reference (possible `const`), and the result of it converted to `bool`.
 The returned value is constructed with forwarded contained value.
 
@@ -981,7 +974,6 @@ constexpr option<U> and_then(Fn&& fn) const&&;
 ```
 Returns an empty `opt::option` if this `opt::option` does not contain a value. If it does, invokes `fn` function with the contained value as an first argument, and then returns the result of that invocation. \
 This operation is also sometimes called *flatmap*.
-- *Enabled* when `std::is_invocable_v<Fn, T>`.
 - *Requirements:* the result type of `fn` must be a specialization of `opt::option`.
 
 Description in the simplified code equivalent:
@@ -1026,7 +1018,6 @@ constexpr option<U> map(Fn&& function) const&&;
 Maps the `opt::option` to `opt::option<U>` by applying a function to a contained value, or if `opt::option` does not contain the value, returns an empty `opt::option` otherwise. \
 If `opt::option` contains a value, invokes `function` function with the contained value as an first argument, then wraps the function result into `opt::option<U>` and returns it. If `opt::option` does not contain the value, returns an empty `opt::option<U>`. \
 Similar to [`std::optional<T>::transform`](https://en.cppreference.com/w/cpp/utility/optional/transform).
-- *Enabled* when `std::is_invocable_v<Fn, T>` is `true`.
 
 Description in the simplified code equivalent:
 ```cpp
@@ -1062,7 +1053,6 @@ constexpr option or_else(Fn&& fn) &&;
 ```
 If `opt::option` contains a value, returns it. If does not, returns the result of `fn` function with *no arguments*. \
 Similar to [`std::optional<T>::or_else`](https://en.cppreference.com/w/cpp/utility/optional/or_else).
-- *Enabled* when `std::is_invocable_v<Fn>`.
 - *Requirements:* the result type of `fn` (without any cv-qualifiers) must be the same as `opt::option<T>`.
 
 Description in the simplified code equivalent:
@@ -1134,7 +1124,6 @@ template<class U>
 constexpr option<T> replace(U&& value) &;
 ```
 Replaces the contained value by a provided `value` and returns the old `opt::option` contained value.
-- *Enabled* when `std::is_constructible_v<T, U&&>` is `true`.
 
 Description in the code equivalent:
 ```cpp
@@ -1270,7 +1259,7 @@ constexpr /*see below*/ zip(Options&&... options);
 ```
 Zips `options...` into `opt::option<std::tuple<...>>`. \
 If every `options...` contains the values, returns the `std::tuple` wrapped in `opt::option` with the forwarded containing value from `options...`. If any `options...` does not contain the value, return an empty `opt::option`.
-- *Enabled* when every `Options...` (without cv-qualifiers) is the specializations of `opt::option`.
+- *Enabled* when every `Options...` (possible with cv-qualifiers) is the specializations of `opt::option`.
 
 The return type of `zip` is `opt::option<std::tuple<typename remove_cvref<Options>::value_type...>>`. \
 Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
@@ -1308,7 +1297,7 @@ template<class Fn, class... Options>
 constexpr auto zip_with(Fn&& fn, Options&&... options);
 ```
 If every `options...` contains the values, returns the result of `fn` function with every `options...` containing values as the `fn` arguments. If any of `options...` does not contain a value, returns an empty `opt::option`.
-- *Enabled* when every `Options...` (without cv-qualifiers) is the specializations of `opt::option`.
+- *Enabled* when every `Options...` (possible with cv-qualifiers) is the specializations of `opt::option`.
 
 Description in the simplified code equivalent:
 ```cpp
