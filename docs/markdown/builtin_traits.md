@@ -31,7 +31,6 @@
 | References                                      | 255                              | [0,254]                                 |
 | Pointer (8 bytes)                               | 512                              | [0xF8E1B1825D5D6C67,0xF8E1B1825D5D6E66] |
 | Pointer (4 bytes)                               | 256                              | [0xFFFFFEE0,0xFFFFFFE0]                 |
-| Pointer (2 bytes)                               | 256                              | [0xFEFF,0xFFFF]                         |
 | floating point (8 bytes, signaling NaN)         | 256                              | [0xFFF6C79F55B0898F,0xFFF6C79F55B08A8E] |
 | floating point (8 bytes, quite NaN)             | 256                              | [0xFFFBF26430BB3557,0xFFFBF26430BB3656] |
 | floating point (4 bytes, signaling NaN)         | 256                              | [0xFFBF69AF,0xFFBF6AAE]                 |
@@ -136,8 +135,7 @@ Stores level value in unused or very unlikely addresses.
 When size of pointer is:
 - 8 bytes, this option trait uses [noncanonical addresses][canonical address] (address that is unused by hardware implementations).
 - 4 bytes, a little bit lower address than maximun address (top addresses are usually kernel mapped) to avoid colliding window's [pseudo handlers][pseudo handle].
-- 2 bytes, just maximun address.
-- 1 byte, not supported (will use external "has value" flag).
+- Otherwise, not supported (will use external "has value" flag).
 
 ## Floating point
 

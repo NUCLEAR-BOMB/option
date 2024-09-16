@@ -645,7 +645,6 @@ namespace impl {
         reference,
         pointer_64,
         pointer_32,
-        pointer_16,
         float64_sNaN,
         float64_qNaN,
         float32_sNaN,
@@ -741,9 +740,6 @@ namespace impl {
             } else
             if constexpr (sizeof(T) == 4) {
                 return st::pointer_32;    
-            } else
-            if constexpr (sizeof(T) == 2) {
-                return st::pointer_16;
             } else
             return st::none;
         } else
@@ -900,23 +896,6 @@ namespace impl {
 
         static std::uintmax_t get_level(const T* const value) noexcept {
             auto uint = impl::ptr_bit_cast<std::uint32_t>(value);
-            uint -= (ptr_offset - max_level);
-            return uint <= max_level ? max_level - uint : std::uintmax_t(-1);
-        }
-        static void set_level(T* const value, const std::uintmax_t level) noexcept {
-            OPTION_VERIFY(level < max_level, "Level is out of range");
-            impl::ptr_bit_copy(value, ptr_offset - std::uintptr_t(level));
-        }
-    };
-    template<class T>
-    struct internal_option_traits<T, option_strategy::pointer_16> {
-    private:
-        static constexpr std::uint16_t ptr_offset = 0xFFFF;
-    public:
-        static constexpr std::uintmax_t max_level = 256;
-
-        static std::uintmax_t get_level(const T* const value) noexcept {
-            auto uint = impl::ptr_bit_cast<std::uint16_t>(value);
             uint -= (ptr_offset - max_level);
             return uint <= max_level ? max_level - uint : std::uintmax_t(-1);
         }
