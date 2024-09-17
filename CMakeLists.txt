@@ -4,6 +4,7 @@ project(option VERSION 1.1.0 LANGUAGES CXX)
 
 option(OPTION_TEST "Enable 'option-test' target" ${PROJECT_IS_TOP_LEVEL})
 option(OPTION_EXAMPLES "Enable 'option-examples' target" ${PROJECT_IS_TOP_LEVEL})
+option(OPTION_BENCHMARK "Enable benchmarks targets" FALSE)
 option(USE_SANITIZER "Enable sanitizers for test target" TRUE)
 option(USE_CLANG_TIDY "Enable clang-tidy for test target" FALSE)
 option(OPTION_INSTALL "Enable --install for 'option' project" FALSE)
@@ -44,6 +45,10 @@ endif()
 
 if (OPTION_EXAMPLES)
     add_subdirectory(examples ${exclude_from_all})
+endif()
+
+if (OPTION_BENCHMARK)
+    add_subdirectory(benchmark ${exclude_from_all})
 endif()
 
 if (OPTION_INSTALL)
