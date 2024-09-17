@@ -437,6 +437,43 @@ namespace impl {
     template<class T>
     inline constexpr bool is_custom_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> = true;
 
+    template<class...>
+    using expand_to_true = std::true_type;
+    template<class...>
+    using expand_to_false = std::false_type;
+
+    template<class... Pred>
+    expand_to_true<std::enable_if_t<Pred::value>...> and_helper(int);
+    template<class...>
+    std::false_type and_helper(...);
+
+    template<class... Pred>
+    using and_ = decltype(and_helper<Pred...>(0));
+
+    template<class... Pred>
+    expand_to_false<std::enable_if_t<!Pred::value>...> or_helper(int);
+    template<class...>
+    std::true_type or_helper(...);
+
+    template<class... Pred>
+    using or_ = decltype(or_helper<Pred...>(0));
+
+    template<class Pred>
+    using not_ = std::bool_constant<!Pred::value>;
+
+    template<bool>
+    struct if_impl {
+        template<class If, class Else>
+        using type = If;
+    };
+    template<>
+    struct if_impl<false> {
+        template<class If, class Else>
+        using type = Else;
+    };
+    template<bool Condition, class If, class Else>
+    using if_ = typename if_impl<Condition>::template type<If, Else>;
+
 #if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
@@ -497,7 +534,7 @@ namespace impl {
     struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
         : select_max_level_traits_impl<
             (opt::option_traits<T>::max_level > level) ? opt::option_traits<T>::max_level : level,
-            std::conditional_t<(opt::option_traits<T>::max_level > level), T, Type>,
+            if_<(opt::option_traits<T>::max_level > level), T, Type>,
             var_index + 1,
             (opt::option_traits<T>::max_level > level) ? var_index : index,
             Ts...
@@ -992,7 +1029,7 @@ namespace impl {
 
         static constexpr bool first_is_max = first_traits::max_level > second_traits::max_level;
 
-        using selected = std::conditional_t<first_is_max, selected_first, selected_second>;
+        using selected = if_<first_is_max, selected_first, selected_second>;
         using traits = typename selected::traits;
     public:
         static constexpr std::uintmax_t max_level = traits::max_level;
@@ -1450,6 +1487,8 @@ template<class T, class>
 struct option_traits : impl::internal_option_traits<T> {};
 
 namespace impl {
+
+
     template<class T>
     using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
 
@@ -1966,15 +2005,15 @@ namespace impl {
     };
 
     template<class T,
-        bool /*true*/ = std::disjunction_v<
+        bool /*true*/ = or_<
             std::is_reference<T>,
-            std::conjunction<
+            and_<
                 std::is_trivially_copy_assignable<T>,
                 std::is_trivially_copy_constructible<T>,
                 std::is_trivially_destructible<T>
             >
-        >,
-        bool = std::disjunction_v<std::is_reference<T>, std::conjunction<std::is_copy_constructible<T>, std::is_copy_assignable<T>>>
+        >::value,
+        bool = or_<std::is_reference<T>, and_<std::is_copy_constructible<T>, std::is_copy_assignable<T>>>::value
     >
     struct option_copy_assign_base : option_move_base<T> {
         using option_move_base<T>::option_move_base;
@@ -2008,15 +2047,15 @@ namespace impl {
     };
 
     template<class T,
-        bool /*true*/ = std::disjunction_v<
+        bool /*true*/ = or_<
             std::is_reference<T>,
-            std::conjunction<
+            and_<
                 std::is_trivially_move_assignable<T>,
                 std::is_trivially_move_constructible<T>,
                 std::is_trivially_destructible<T>
             >
-        >,
-        bool = std::disjunction_v<std::is_reference<T>, std::conjunction<std::is_move_constructible<T>, std::is_move_assignable<T>>>
+        >::value,
+        bool = or_<std::is_reference<T>, and_<std::is_move_constructible<T>, std::is_move_assignable<T>>>::value
     >
     struct option_move_assign_base : option_copy_assign_base<T> {
         using option_copy_assign_base<T>::option_copy_assign_base;
@@ -2181,46 +2220,42 @@ namespace impl::option {
     struct is_not_same<T, T> { static constexpr bool value = false; };
 
     template<class T1, class T2>
-    struct exclusive_disjunction
-        : std::bool_constant<bool(T1::value) != bool(T2::value)> {};
+    using exclusive_disjunction = std::bool_constant<bool(T1::value) != bool(T2::value)>;
 
     template<class T, class U, class is_explicit>
     using enable_constructor_5 = std::enable_if_t<
-        std::conjunction_v<
+        and_<
             std::is_constructible<T, U&&>,
             is_not_same<impl::remove_cvref<U>, opt::option<T>>,
-            std::negation<std::conjunction<
+            not_<and_<
                 std::is_same<impl::remove_cvref<T>, bool>,
                 opt::is_option<impl::remove_cvref<U>>
             >>,
             exclusive_disjunction<is_explicit, std::is_convertible<U&&, T>>
-        >
+        >::value
     , int>;
 
     template<class T, class First, class... Args>
     using enable_constructor_6 = std::enable_if_t<
-        std::conjunction_v<
+        and_<
             is_direct_list_initializable<T, First, Args...>,
             is_not_same<remove_cvref<First>, opt::option<T>>
-        >
+        >::value
     , int>;
 
     template<class T, class U>
     using enable_assigment_operator_4 = std::enable_if_t<
-        std::conjunction_v<
+        and_<
             is_not_same<remove_cvref<U>, opt::option<T>>,
             std::is_constructible<T, U>,
             std::is_assignable<T&, U>,
-            std::negation<std::conjunction<
-                std::is_scalar<T>,
-                std::is_same<T, std::decay_t<U>>
-            >>
-        >
+            not_<and_<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>>>
+        >::value
     , int>;
 
     template<class T, class U, class UOpt = opt::option<U>>
     using is_constructible_from_option =
-        std::disjunction<
+        or_<
             std::is_constructible<T, UOpt&>,
             std::is_constructible<T, const UOpt&>,
             std::is_constructible<T, UOpt&&>,
@@ -2233,7 +2268,7 @@ namespace impl::option {
 
     template<class T, class U, class UOpt = opt::option<U>>
     using is_assignable_from_option =
-        std::disjunction<
+        or_<
             std::is_assignable<T&, UOpt&>,
             std::is_assignable<T&, const UOpt&>,
             std::is_assignable<T&, UOpt&&>,
@@ -2242,77 +2277,77 @@ namespace impl::option {
 
     template<class T, class U, class is_explicit>
     using enable_constructor_8 = std::enable_if_t<
-        std::conjunction_v<
+        and_<
             std::is_convertible<T, const U&>,
-            std::negation<std::disjunction<
+            not_<or_<
                 std::is_same<std::remove_cv_t<T>, bool>,
                 is_constructible_from_option<T, U>
             >>,
             exclusive_disjunction<is_explicit, std::is_convertible<const U&, T>>
-        >
+        >::value
     , int>;
 
     template<class T, class U, class is_explicit>
     using enable_constructor_9 = std::enable_if_t<
-        std::conjunction_v<
+        and_<
             std::is_convertible<T, U&&>,
-            std::negation<std::disjunction<
+            not_<or_<
                 std::is_same<std::remove_const_t<T>, bool>,
                 is_constructible_from_option<T, U>
             >>,
             exclusive_disjunction<is_explicit, std::is_convertible<U&&, T>>
-        >
+        >::value
     , int>;
 
     template<class T, class U>
     using enable_assigment_operator_5 = std::enable_if_t<
-        std::conjunction_v<
-            std::negation<std::disjunction<
+        and_<
+            not_<or_<
                 is_constructible_from_option<T, U>,
                 is_assignable_from_option<T, U>
             >>,
-            std::disjunction<std::is_reference<T>, std::conjunction<
+            or_<std::is_reference<T>, and_<
                 std::is_constructible<T, const U&>,
                 std::is_assignable<T&, const U&>
             >>
-        >
+        >::value
     , int>;
 
     template<class T, class U>
     using enable_assigment_operator_6 = std::enable_if_t<
-        std::conjunction_v<
-            std::negation<std::disjunction<
+        and_<
+            not_<or_<
                 is_constructible_from_option<T, U>,
                 is_assignable_from_option<T, U>
             >>,
-            std::disjunction<std::is_reference<T>, std::conjunction<
+            or_<std::is_reference<T>, and_<
                 std::is_constructible<T, U&&>,
                 std::is_assignable<T&, U&&>
             >>
-        >
+        >::value
     , int>;
 
     template<class T>
     inline constexpr bool nothrow_assigment_operator_2 =
-        std::conjunction_v<
+        and_<
             std::is_nothrow_copy_constructible<T>,
             std::is_nothrow_copy_assignable<T>,
             std::is_nothrow_destructible<T>
-        >;
+        >::value;
     template<class T>
     inline constexpr bool nothrow_assigment_operator_3 =
-        std::conjunction_v<
+        and_<
             std::is_nothrow_move_constructible<T>,
             std::is_nothrow_move_assignable<T>,
             std::is_nothrow_destructible<T>
-        >;
+        >::value;
     template<class T, class U>
     inline constexpr bool nothrow_assigment_operator_4 =
-        std::conjunction_v<
+        and_<
             std::is_nothrow_assignable<T&, U&&>,
             std::is_nothrow_constructible<T, U&&>,
             std::is_nothrow_destructible<T>
-        >;
+        >::value;
 
     // implementation of opt::option<T>::and_then(F&&)
     template<class Self, class F>
@@ -2443,14 +2478,14 @@ namespace impl::option {
 
     template<class T, class U>
     using enable_swap = std::enable_if_t<
-        std::conjunction_v<
+        and_<
             std::is_move_constructible<T>,
             std::is_move_constructible<U>,
             std::is_swappable_with<T, U>
-        >
+        >::value
     >;
     template<class T, class U>
-    inline constexpr bool nothrow_swap = std::conjunction_v<
+    using nothrow_swap = and_<
         std::is_nothrow_move_constructible<T>,
         std::is_nothrow_move_constructible<U>,
         std::is_nothrow_swappable_with<T, U>
@@ -2977,7 +3012,7 @@ public:
     }
 
     template<class U>
-    constexpr void swap(option<U>& other) noexcept(impl::option::nothrow_swap<T, U>) {
+    constexpr void swap(option<U>& other) noexcept(impl::option::nothrow_swap<T, U>::value) {
         using std::swap;
         if (!has_value() && !other.has_value()) {
             return;
@@ -3115,7 +3150,7 @@ template<class T>
 }
 
 template<class T, class U>
-constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>) {
+constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>::value) {
     left.swap(right);
 }
 
@@ -3697,13 +3732,13 @@ namespace impl {
 
     template<class T, class Hash = std::hash<T>>
     using enable_hash_helper2 = std::enable_if_t<
-        std::conjunction_v<
+        and_<
             std::is_default_constructible<Hash>,
             std::is_copy_constructible<Hash>,
             std::is_move_constructible<Hash>,
             std::is_destructible<Hash>,
             std::is_invocable_r<std::size_t, Hash, const T&>
-        >
+        >::value
     >;
 }
 
