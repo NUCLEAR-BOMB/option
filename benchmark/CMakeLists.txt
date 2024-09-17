@@ -6,7 +6,7 @@ if (Python3_Interpreter_FOUND)
         COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/benchmark/generate.py"
             "opt::option"
             "${CMAKE_CURRENT_BINARY_DIR}/benchmark_opt_option_src.cpp"
-            "1000"
+            "2000"
         VERBATIM
     )
     add_library(build-benchmark-opt-option EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/benchmark_opt_option_src.cpp")
@@ -18,7 +18,7 @@ if (Python3_Interpreter_FOUND)
         COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/benchmark/generate.py"
             "std::optional"
             "${CMAKE_CURRENT_BINARY_DIR}/benchmark_std_optional_src.cpp"
-            "1000"
+            "2000"
         VERBATIM
     )
     add_library(build-benchmark-std-optional EXCLUDE_FROM_ALL "${CMAKE_CURRENT_BINARY_DIR}/benchmark_std_optional_src.cpp")
