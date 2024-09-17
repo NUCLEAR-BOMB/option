@@ -437,6 +437,12 @@ namespace impl {
     template<class T>
     inline constexpr bool is_custom_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> = true;
 
+    template<class, class>
+    struct is_not_same { static constexpr bool value = true; };
+    template<class T>
+    struct is_not_same<T, T> { static constexpr bool value = false; };
+
+#if !OPTION_MSVC
     template<class...>
     using expand_to_true = std::true_type;
     template<class...>
@@ -457,6 +463,13 @@ namespace impl {
 
     template<class... Pred>
     using or_ = decltype(or_helper<Pred...>(0));
+#else
+    template<class... Pred>
+    using and_ = std::conjunction<Pred...>;
+
+    template<class... Pred>
+    using or_ = std::disjunction<Pred...>;
+#endif
 
     template<class Pred>
     using not_ = std::bool_constant<!Pred::value>;
@@ -2214,11 +2227,6 @@ namespace impl {
 }
 
 namespace impl::option {
-    template<class, class>
-    struct is_not_same { static constexpr bool value = true; };
-    template<class T>
-    struct is_not_same<T, T> { static constexpr bool value = false; };
-
     template<class T1, class T2>
     using exclusive_disjunction = std::bool_constant<bool(T1::value) != bool(T2::value)>;
 
