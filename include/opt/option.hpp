@@ -102,6 +102,12 @@ inline constexpr none_t none{impl::none_tag{}};
     #define OPTION_HAS_ATTRIBUTE(x) (0)
 #endif
 
+#ifdef __has_builtin
+    #define OPTION_HAS_BUILTIN(x) __has_builtin(x)
+#else
+    #define OPTION_HAS_BUILTIN(x) (0)
+#endif
+
 #ifndef __has_cpp_attribute
     #define OPTION_LIFETIMEBOUND
 #elif __has_cpp_attribute(msvc::lifetimebound)
@@ -272,6 +278,12 @@ inline constexpr none_t none{impl::none_tag{}};
     #define OPTION_CURRENT_FUNCTION() __builtin_FUNCSIG()
 #endif
 
+#if OPTION_MSVC
+    #define OPTION_DECLSPEC_EMPTY_BASES __declspec(empty_bases)
+#else
+    #define OPTION_DECLSPEC_EMPTY_BASES
+#endif
+
 #ifdef OPTION_CURRENT_FUNCTION
     #define OPTION_CAN_REFLECT_ENUM 1
 #else
@@ -382,9 +394,41 @@ template<>
 struct option_traits<impl::dummy_type_for_traits> {};
 
 namespace impl {
+#if OPTION_HAS_BUILTIN(__is_trivially_destructible) || OPTION_MSVC
+    template<class T>
+    struct is_trivially_destructible : std::bool_constant<__is_trivially_destructible(T)> {};
+#elif OPTION_HAS_BUILTIN(__has_trivial_destructor)
+    template<class T>
+    struct is_trivially_destructible : std::bool_constant<__has_trivial_destructor(T)> {};
+#else
+    using std::is_trivially_destructible;
+#endif
+
+#if false && (OPTION_HAS_BUILTIN(__is_trivially_assignable) && OPTION_HAS_BUILTIN(__add_lvalue_reference) && OPTION_HAS_BUILTIN(__add_rvalue_reference))
+    template<class T>
+    struct is_trivially_copy_assignable : std::bool_constant<__is_trivially_assignable(__add_lvalue_reference(T), __add_lvalue_reference(const T))> {};
+
+    template<class T>
+    struct is_trivially_move_assignable : std::bool_constant<__is_trivially_assignable(__add_lvalue_reference(T), __add_rvalue_reference(T))> {};
+#elif false && (OPTION_HAS_BUILTIN(__is_trivially_assignable) || OPTION_MSVC)
+    template<class T, class = void>
+    struct is_trivially_copy_assignable : std::bool_constant<__is_trivially_assignable(T, const T)> {};
+    template<class T>
+    struct is_trivially_copy_assignable<T, std::void_t<T&>> : std::bool_constant<__is_trivially_assignable(T&, const T&)> {};
+
+    template<class T, class = void>
+    struct is_trivially_move_assignable : std::bool_constant<__is_trivially_assignable(T, T)> {};
+    template<class T>
+    struct is_trivially_move_assignable<T, std::void_t<T&>> : std::bool_constant<__is_trivially_assignable(T&, T)> {};
+#else
+    using std::is_trivially_copy_assignable;
+
+    using std::is_trivially_move_assignable;
+#endif
+
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
-        if constexpr (std::is_trivially_move_assignable_v<T>) {
+        if constexpr (impl::is_trivially_move_assignable<T>::value) {
             *ptr = T{std::forward<Args>(args)...};
         } else {
 #if OPTION_IS_CXX20
@@ -1501,7 +1545,6 @@ struct option_traits : impl::internal_option_traits<T> {};
 
 namespace impl {
 
-
     template<class T>
     using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
 
@@ -1582,7 +1625,7 @@ namespace impl {
     template<class T, class U>
     using copy_reference_t = typename copy_reference<T, U>::type;
 
-    enum class base_strategy {
+enum class base_strategy {
         has_traits             = 1,
         trivially_destructible = 2
     };
@@ -1818,57 +1861,235 @@ namespace impl {
     #pragma GCC diagnostic pop
 #endif
 
-    template<class T, bool is_reference /*false*/ = std::is_reference_v<T>>
-    class option_storage_base : public option_destruct_base<std::remove_const_t<T>> {
+    template<class Self, class U>
+    constexpr void option_assign_from_value(Self& self, U&& value) {
+        if (self.has_value()) {
+            self.assign(std::forward<U>(value));
+        } else {
+            self.construct(std::forward<U>(value));
+        }
+    }
+    template<class Self, class Option>
+    constexpr void option_assign_from_option(Self& self, Option&& other) {
+        if (other.has_value()) {
+            if (self.has_value()) {
+                self.assign(std::forward<Option>(other).value);
+            } else {
+                self.construct(std::forward<Option>(other).value);
+            }
+        } else {
+            self.reset();
+        }
+    }
+    template<class Self, class Option>
+    constexpr void option_construct_from_option(Self& self, Option&& other) {
+        if (other.has_value()) {
+            self.construct(std::forward<Option>(other).value);
+        }
+    }
+
+    template<class T>
+    using nothrow_option_copy_constructor = std::is_nothrow_copy_constructible<T>;
+    template<class T>
+    using nothrow_option_copy_assignment = and_<std::is_nothrow_copy_assignable<T>, std::is_nothrow_copy_constructible<T>>;
+    template<class T>
+    using nothrow_option_move_constructor = std::is_nothrow_move_constructible<T>;
+    template<class T>
+    using nothrow_option_move_assignment = and_<std::is_nothrow_move_assignable<T>, std::is_nothrow_move_constructible<T>>;
+
+#if OPTION_GCC
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wextra" // A base class is not initialized in the copy constructor of a derived class
+#endif
+    template<class T,
+        bool TrivialCopyCtor = std::is_trivially_copy_constructible_v<T>,
+        bool TrivialCopyAssignment = and_<impl::is_trivially_copy_assignable<T>, impl::is_trivially_destructible<T>>::value,
+        bool TrivialMoveCtor = std::is_trivially_move_constructible_v<T>,
+        bool TrivialMoveAssignment = and_<impl::is_trivially_move_assignable<T>, impl::is_trivially_destructible<T>>::value,
+        bool is_reference = std::is_reference_v<T>
+    >
+    struct option_base : public option_destruct_base<std::remove_const_t<T>> {
         using base = option_destruct_base<std::remove_const_t<T>>;
-        using traits = opt::option_traits<T>;
-    public:
+
         using base::base;
-        using base::has_value;
-        using base::reset;
-        using base::construct;
-        using base::assign;
-
-        OPTION_PURE constexpr T& get() & noexcept { return base::value; }
-        OPTION_PURE constexpr const T& get() const& noexcept { return base::value; }
-        OPTION_PURE constexpr T&& get() && noexcept { return std::move(base::value); }
-        OPTION_PURE constexpr const T&& get() const&& noexcept { return std::move(base::value); }
-
-        // logic of assigning opt::option<T&> from a value
-        template<class U>
-        constexpr void assign_from_value(U&& other) {
-            if (has_value()) {
-                assign(std::forward<U>(other));
-            } else {
-                construct(std::forward<U>(other));
-            }
-        }
-        // logic of assigning opt::option<T&> from another opt::option<U&>
-        template<class Option>
-        constexpr void assign_from_option(Option&& other) {
-            if (other.has_value()) {
-                if (has_value()) {
-                    assign(std::forward<Option>(other).get());
-                } else {
-                    construct(std::forward<Option>(other).get());
-                }
-            } else {
-                reset();
-            }
-        }
-        // Precondition: has_value() == false
-        template<class Option>
-        constexpr void construct_from_option(Option&& other) {
-            if (other.has_value()) {
-                construct(std::forward<Option>(other).get());
-            }
-        }
     };
 
-    // "specialization" of opt::option<T&>
-    // std::option<T&> is currently ill-formed, but opt::option<T&> allows it
+    // If TrivialCopyCtor is false, then always do not enable the trivial copy assignment operator
+    template<class T, bool TrivialCopyAssignment>
+    struct option_base<T, false, TrivialCopyAssignment, true, true, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
+            impl::option_construct_from_option(*this, other);
+        }
+        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+            impl::option_assign_from_option(*this, other);
+            return *this;
+        }
+        option_base(option_base&&) = default;
+        option_base& operator=(option_base&&) = default;
+    };
     template<class T>
-    class option_storage_base<T, /*is_reference=*/true> {
+    struct option_base<T, true, false, true, true, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        option_base(const option_base&) = default;
+        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+            impl::option_assign_from_option(*this, other);
+            return *this;
+        }
+        option_base(option_base&&) = default;
+        option_base& operator=(option_base&&) = default;
+    };
+    // If TrivialMoveAssignment is false, then always do not enable the trivial move assignment operator
+    template<class T, bool TrivialMoveAssignment>
+    struct option_base<T, true, true, false, TrivialMoveAssignment, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        option_base(const option_base&) = default;
+        option_base& operator=(const option_base&) = default;
+        constexpr option_base(option_base&& other) noexcept(nothrow_option_move_constructor<T>::value) {
+            impl::option_construct_from_option(*this, static_cast<option_base&&>(other));
+        }
+        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+            impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
+            return *this;
+        }
+    };
+    // If TrivialMoveAssignment is false, then always do not enable the trivial move assignment operator
+    // If TrivialCopyCtor is false, then always do not enable the trivial copy assignment operator
+    template<class T, bool TrivialCopyAssignment, bool TrivialMoveAssignment>
+    struct option_base<T, false, TrivialCopyAssignment, false, TrivialMoveAssignment, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
+            impl::option_construct_from_option(*this, other);
+        }
+        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+            impl::option_assign_from_option(*this, other);
+            return *this;
+        }
+        constexpr option_base(option_base&& other) noexcept(nothrow_option_move_constructor<T>::value) {
+            impl::option_construct_from_option(*this, static_cast<option_base&&>(other));
+        }
+        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+            impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
+            return *this;
+        }
+    };
+    // If TrivialMoveAssignment is false, then always do not enable the trivial move assignment operator
+    template<class T, bool TrivialMoveAssignment>
+    struct option_base<T, true, false, false, TrivialMoveAssignment, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        option_base(const option_base&) = default;
+        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+            impl::option_assign_from_option(*this, other);
+            return *this;
+        }
+        constexpr option_base(option_base&& other) noexcept(nothrow_option_move_constructor<T>::value) {
+            impl::option_construct_from_option(*this, static_cast<option_base&&>(other));
+        }
+        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+            impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
+            return *this;
+        }
+    };
+    template<class T>
+    struct option_base<T, true, true, true, false, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        option_base(const option_base&) = default;
+        option_base& operator=(const option_base&) = default;
+        option_base(option_base&&) = default;
+        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+            impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
+            return *this;
+        }
+    };
+    // If TrivialCopyCtor is false, then always do not enable the trivial copy assignment operator
+    template<class T, bool TrivialCopyAssignment>
+    struct option_base<T, false, TrivialCopyAssignment, true, false, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
+            impl::option_construct_from_option(*this, other);
+        }
+        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+            impl::option_assign_from_option(*this, other);
+            return *this;
+        }
+        option_base(option_base&&) = default;
+        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+            impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
+            return *this;
+        }
+    };
+    template<class T>
+    struct option_base<T, true, false, true, false, false>
+        : public option_destruct_base<std::remove_const_t<T>>
+    {
+        using base = option_destruct_base<std::remove_const_t<T>>;
+    public:
+        using base::base;
+
+        option_base() = default;
+        option_base(const option_base&) = default;
+        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+            impl::option_assign_from_option(*this, other);
+            return *this;
+        }
+        option_base(option_base&&) = default;
+        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+            impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
+            return *this;
+        }
+    };
+#if OPTION_GCC
+    #pragma GCC diagnostic pop
+#endif
+
+    template<class T,
+        bool TrivialCopyCtor,
+        bool TrivialCopyAssignment,
+        bool TrivialMoveCtor,
+        bool TrivialMoveAssignment>
+    struct option_base<T, TrivialCopyCtor, TrivialCopyAssignment, TrivialMoveCtor, TrivialMoveAssignment, /*is_reference=*/true> {
         using raw_type = std::remove_reference_t<T>;
 
         template<class U>
@@ -1892,18 +2113,17 @@ namespace impl {
                 return std::addressof(other);
             }
         }
-    public:
         raw_type* value;
 
-        constexpr option_storage_base() noexcept
+        constexpr option_base() noexcept
             : value{nullptr} {}
 
         template<class Arg>
-        constexpr option_storage_base(const std::in_place_t, Arg&& arg) noexcept
+        constexpr option_base(const std::in_place_t, Arg&& arg) noexcept
             : value{ref_to_ptr(std::forward<Arg>(arg))} {}
 
         template<class F, class Arg>
-        constexpr option_storage_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+        constexpr option_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{ref_to_ptr(std::invoke(std::forward<F>(f), std::forward<Arg>(arg)))} {}
 
         OPTION_PURE constexpr bool has_value() const noexcept {
@@ -1913,26 +2133,9 @@ namespace impl {
             value = nullptr;
         }
 
-        OPTION_PURE constexpr T& get() const& noexcept { return *value; }
-        OPTION_PURE constexpr T&& get() const&& noexcept { return std::move(*value); }
-
-        // Precondition: has_value() == false
         template<class Arg>
         constexpr void construct(Arg&& arg) noexcept {
             value = ref_to_ptr(std::forward<Arg>(arg));
-        }
-        // Precondition: has_value() == false
-        template<class Option>
-        constexpr void construct_from_option(Option&& other) {
-            if (other.has_value()) {
-                construct(std::forward<Option>(other).get());
-            }
-        }
-
-        template<class U>
-        constexpr void assign_from_value(U&& other) {
-            // always assign as reference
-            construct(std::forward<U>(other));
         }
 
         template<class Option>
@@ -1951,154 +2154,74 @@ namespace impl {
         }
     };
 
-    template<class T,
-        bool /*true*/ = std::is_trivially_copy_constructible_v<T>,
-        bool = std::is_copy_constructible_v<T>
-    >
-    struct option_copy_base : option_storage_base<T> {
-        using option_storage_base<T>::option_storage_base;
+    // Tag is to distinguish between derived `enable_copy_move` and derived `enable_copy_move` inside contained nested `opt::option`.
+    // Without it, the empty base optimization will fail and it will take extra space to store `enable_copy_move`.
+    template<class Tag, bool CopyCtor, bool CopyAssignment, bool MoveCtor, bool MoveAssignment, bool IsReference>
+    struct enable_copy_move {};
+
+    template<class Tag>
+    struct enable_copy_move<Tag, true, false, true, true, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = default;
+        enable_copy_move& operator=(const enable_copy_move&) = delete;
+        enable_copy_move(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = default;
     };
-    template<class T>
-    struct option_copy_base<T, false, true> : option_storage_base<T> {
-        using option_storage_base<T>::option_storage_base;
-        using value_type = T;
-
-        option_copy_base() = default;
-        option_copy_base(option_copy_base&&) = default;
-        option_copy_base& operator=(const option_copy_base&) = default;
-        option_copy_base& operator=(option_copy_base&&) = default;
-
-        constexpr option_copy_base(const option_copy_base& other) noexcept(std::is_nothrow_copy_constructible_v<T>) {
-            this->construct_from_option(other);
-        }
+    template<class Tag, bool CopyAssignment>
+    struct enable_copy_move<Tag, false, CopyAssignment, true, true, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = delete;
+        enable_copy_move& operator=(const enable_copy_move&) = delete;
+        enable_copy_move(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = default;
     };
-    template<class T, bool ignore>
-    struct option_copy_base<T, ignore, false> : option_storage_base<T> {
-        using option_storage_base<T>::option_storage_base;
-
-        option_copy_base() = default;
-        option_copy_base(option_copy_base&&) = default;
-        option_copy_base& operator=(const option_copy_base&) = default;
-        option_copy_base& operator=(option_copy_base&&) = default;
-
-        option_copy_base(const option_copy_base&) = delete;
+    template<class Tag, bool MoveAssignment>
+    struct enable_copy_move<Tag, true, true, false, MoveAssignment, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = default;
+        enable_copy_move& operator=(const enable_copy_move&) = default;
+        enable_copy_move(enable_copy_move&&) = delete;
+        enable_copy_move& operator=(enable_copy_move&&) = default;
     };
-
-    template<class T,
-        bool /*true*/ = std::is_trivially_move_constructible_v<T>,
-        bool = std::is_move_constructible_v<T>
-    >
-    struct option_move_base : option_copy_base<T> {
-        using option_copy_base<T>::option_copy_base;
+    template<class Tag, bool CopyAssignment, bool MoveAssignment>
+    struct enable_copy_move<Tag, false, CopyAssignment, false, MoveAssignment, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = delete;
+        enable_copy_move& operator=(const enable_copy_move&) = default;
+        enable_copy_move(enable_copy_move&&) = delete;
+        enable_copy_move& operator=(enable_copy_move&&) = default;
     };
-    template<class T>
-    struct option_move_base<T, false, true> : option_copy_base<T> {
-        using option_copy_base<T>::option_copy_base;
-        using value_type = T;
-
-        option_move_base() = default;
-        option_move_base(const option_move_base&) = default;
-        option_move_base& operator=(const option_move_base&) = default;
-        option_move_base& operator=(option_move_base&&) = default;
-
-        constexpr option_move_base(option_move_base&& other) noexcept(std::is_nothrow_move_constructible_v<T>) {
-            this->construct_from_option(std::move(other));
-        }
+    template<class Tag, bool MoveAssignment>
+    struct enable_copy_move<Tag, true, false, false, MoveAssignment, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = default;
+        enable_copy_move& operator=(const enable_copy_move&) = delete;
+        enable_copy_move(enable_copy_move&&) = delete;
+        enable_copy_move& operator=(enable_copy_move&&) = default;
     };
-    template<class T, bool ignore>
-    struct option_move_base<T, ignore, false> : option_copy_base<T> {
-        using option_copy_base<T>::option_copy_base;
-
-        option_move_base() = default;
-        option_move_base(const option_move_base&) = default;
-        option_move_base& operator=(const option_move_base&) = default;
-        option_move_base& operator=(option_move_base&&) = default;
-
-        option_move_base(option_move_base&&) = delete;
+    template<class Tag>
+    struct enable_copy_move<Tag, true, true, true, false, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = default;
+        enable_copy_move& operator=(const enable_copy_move&) = default;
+        enable_copy_move(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
-
-    template<class T,
-        bool /*true*/ = or_<
-            std::is_reference<T>,
-            and_<
-                std::is_trivially_copy_assignable<T>,
-                std::is_trivially_copy_constructible<T>,
-                std::is_trivially_destructible<T>
-            >
-        >::value,
-        bool = or_<std::is_reference<T>, and_<std::is_copy_constructible<T>, std::is_copy_assignable<T>>>::value
-    >
-    struct option_copy_assign_base : option_move_base<T> {
-        using option_move_base<T>::option_move_base;
+    template<class Tag, bool CopyAssignment>
+    struct enable_copy_move<Tag, false, CopyAssignment, true, false, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = delete;
+        enable_copy_move& operator=(const enable_copy_move&) = default;
+        enable_copy_move(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
-    template<class T>
-    struct option_copy_assign_base<T, false, true> : option_move_base<T> {
-        using option_move_base<T>::option_move_base;
-        using value_type = T;
-
-        option_copy_assign_base() = default;
-        option_copy_assign_base(const option_copy_assign_base&) = default;
-        option_copy_assign_base(option_copy_assign_base&&) = default;
-        option_copy_assign_base& operator=(option_copy_assign_base&&) = default;
-
-        constexpr option_copy_assign_base& operator=(const option_copy_assign_base& other)
-            noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
-            this->assign_from_option(other);
-            return *this;
-        }
-    };
-    template<class T, bool ignore>
-    struct option_copy_assign_base<T, ignore, false> : option_move_base<T> {
-        using option_move_base<T>::option_move_base;
-
-        option_copy_assign_base() = default;
-        option_copy_assign_base(const option_copy_assign_base&) = default;
-        option_copy_assign_base(option_copy_assign_base&&) = default;
-        option_copy_assign_base& operator=(option_copy_assign_base&&) = default;
-
-        option_copy_assign_base& operator=(const option_copy_assign_base&) = delete;
-    };
-
-    template<class T,
-        bool /*true*/ = or_<
-            std::is_reference<T>,
-            and_<
-                std::is_trivially_move_assignable<T>,
-                std::is_trivially_move_constructible<T>,
-                std::is_trivially_destructible<T>
-            >
-        >::value,
-        bool = or_<std::is_reference<T>, and_<std::is_move_constructible<T>, std::is_move_assignable<T>>>::value
-    >
-    struct option_move_assign_base : option_copy_assign_base<T> {
-        using option_copy_assign_base<T>::option_copy_assign_base;
-    };
-    template<class T>
-    struct option_move_assign_base<T, false, true> : option_copy_assign_base<T> {
-        using option_copy_assign_base<T>::option_copy_assign_base;
-        using value_type = T;
-
-        option_move_assign_base() = default;
-        option_move_assign_base(const option_move_assign_base&) = default;
-        option_move_assign_base(option_move_assign_base&&) = default;
-        option_move_assign_base& operator=(const option_move_assign_base&) = default;
-
-        constexpr option_move_assign_base& operator=(option_move_assign_base&& other)
-            noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
-            this->assign_from_option(std::move(other));
-            return *this;
-        }
-    };
-    template<class T, bool ignore>
-    struct option_move_assign_base<T, ignore, false> : option_copy_assign_base<T> {
-        using option_copy_assign_base<T>::option_copy_assign_base;
-
-        option_move_assign_base() = default;
-        option_move_assign_base(const option_move_assign_base&) = default;
-        option_move_assign_base(option_move_assign_base&&) = default;
-        option_move_assign_base& operator=(const option_move_assign_base&) = default;
-
-        option_move_assign_base& operator=(option_move_assign_base&&) = delete;
+    template<class Tag>
+    struct enable_copy_move<Tag, true, false, true, false, false> {
+        enable_copy_move() = default;
+        enable_copy_move(const enable_copy_move&) = default;
+        enable_copy_move& operator=(const enable_copy_move&) = delete;
+        enable_copy_move(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
 
     template<class T>
@@ -2501,9 +2624,18 @@ namespace impl::option {
 }
 
 template<class T>
-class option : private impl::option_move_assign_base<T>
+class OPTION_DECLSPEC_EMPTY_BASES option
+    : private impl::option_base<T>
+    , private impl::enable_copy_move<
+        /*Tag=*/T,
+        std::is_copy_constructible_v<T>,
+        std::is_copy_assignable_v<T>,
+        std::is_move_constructible_v<T>,
+        std::is_move_assignable_v<T>,
+        std::is_reference_v<T>
+    >
 {
-    using base = impl::option_move_assign_base<T>;
+    using base = impl::option_base<T>;
 
     template<class, impl::option_strategy> friend struct impl::internal_option_traits;
     template<class> friend class option;
@@ -2602,11 +2734,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        base::construct_from_option(other);
+        impl::option_construct_from_option(*static_cast<base*>(this), other);
     }
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        base::construct_from_option(other);
+        impl::option_construct_from_option(*static_cast<base*>(this), other);
     }
     // Converting move constructor.
     // If `other` containes a value, move constructs a contained value.
@@ -2615,11 +2747,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        base::construct_from_option(std::move(other));
+        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<option<U>&&>(other));
     }
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        base::construct_from_option(std::move(other));
+        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<option<U>&&>(other));
     }
 
     // If this `opt::option` containes a value, the contained value is destroyed by calling `reset()`.
@@ -2641,7 +2773,7 @@ public:
     //          && std::is_trivially_destructible_v<T>`.
     // Postcondition: has_value() == other.has_value()
     option& operator=(const option&) = default;
-
+    
     // Move assigment operator.
     // If contains a value:
     // this | other | action
@@ -2661,7 +2793,11 @@ public:
     // Postcondition: has_value() == true
     template<class U = T, impl::option::enable_assigment_operator_4<T, U> = 0>
     constexpr option& operator=(U&& val) noexcept(impl::option::nothrow_assigment_operator_4<T, U>) {
-        base::assign_from_value(std::forward<U>(val));
+        if constexpr (std::is_reference_v<T>) {
+            base::value = base::ref_to_ptr(std::forward<U>(val));
+        } else {
+            impl::option_assign_from_value(*static_cast<base*>(this), std::forward<U>(val));
+        }
         return *this;
     }
 
@@ -2675,7 +2811,19 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_assigment_operator_5<T, U> = 0>
     constexpr option& operator=(const option<U>& other) {
-        base::assign_from_option(other);
+        if constexpr (std::is_reference_v<T>) {
+            base::assign_from_option(other);
+        } else {
+            if (other.has_value()) {
+                if (has_value()) {
+                    base::assign(other.get());
+                } else {
+                    base::construct(other.get());
+                }
+            } else {
+                reset();
+            }
+        }
         return *this;
     }
     // Assigns the `opt::option` from an moved `other` `opt::option` (first parameter).
@@ -2688,21 +2836,33 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_assigment_operator_6<T, U> = 0>
     constexpr option& operator=(option<U>&& other) {
-        base::assign_from_option(std::move(other));
+        if constexpr (std::is_reference_v<T>) {
+            base::assign_from_option(std::move(other));
+        } else {
+            if (other.has_value()) {
+                if (has_value()) {
+                    base::assign(static_cast<option<U>&&>(other).get());
+                } else {
+                    base::construct(static_cast<option<U>&&>(other).get());
+                }
+            } else {
+                reset();
+            }
+        }
         return *this;
     }
 
     [[nodiscard]] constexpr iterator begin() noexcept {
-        return iterator{has_value() ? std::addressof(base::value) : nullptr};
+        return iterator{has_value() ? std::addressof(get()) : nullptr};
     }
     [[nodiscard]] constexpr const_iterator begin() const noexcept {
-        return const_iterator{has_value() ? std::addressof(base::value) : nullptr};
+        return const_iterator{has_value() ? std::addressof(get()) : nullptr};
     }
     [[nodiscard]] constexpr iterator end() noexcept {
-        return iterator{has_value() ? (std::addressof(base::value) + 1) : nullptr};
+        return iterator{has_value() ? (std::addressof(get()) + 1) : nullptr};
     }
     [[nodiscard]] constexpr const_iterator end() const noexcept {
-        return const_iterator{has_value() ? (std::addressof(base::value) + 1) : nullptr};
+        return const_iterator{has_value() ? (std::addressof(get()) + 1) : nullptr};
     }
 
     // Destroys the contained value.
@@ -2798,19 +2958,35 @@ public:
     // Precondition: has_value() == true
     [[nodiscard]] OPTION_PURE constexpr T& get() & noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return base::get();
+        if constexpr (std::is_reference_v<T>) {
+            return *base::value;
+        } else {
+            return base::value;
+        }
     }
     [[nodiscard]] OPTION_PURE constexpr const T& get() const& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return base::get();
+        if constexpr (std::is_reference_v<T>) {
+            return *base::value;
+        } else {
+            return base::value;
+        }
     }
     [[nodiscard]] OPTION_PURE constexpr T&& get() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return static_cast<T&&>(base::get());
+        if constexpr (std::is_reference_v<T>) {
+            return static_cast<T&&>(*base::value);
+        } else {
+            return static_cast<T&&>(base::value);
+        }
     }
     [[nodiscard]] OPTION_PURE constexpr const T&& get() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return static_cast<const T&&>(base::get());
+        if constexpr (std::is_reference_v<T>) {
+            return static_cast<const T&&>(*base::value);
+        } else {
+            return static_cast<const T&&>(base::value);
+        }
     }
     // Returns a pointer to the contained value.
     // Calls the `OPTION_VERIFY` macro if this `opt::option` does not contain the value
@@ -2849,10 +3025,34 @@ public:
     // Returns a reference to the contained value.
     // Does not call the `OPTION_VERIFY` macro.
     // No OPTION_LIFETIMEBOUND
-    [[nodiscard]] OPTION_PURE constexpr T& get_unchecked() & noexcept { return base::get(); }
-    [[nodiscard]] OPTION_PURE constexpr const T& get_unchecked() const& noexcept { return base::get(); }
-    [[nodiscard]] OPTION_PURE constexpr T&& get_unchecked() && noexcept { return static_cast<T&&>(base::get()); }
-    [[nodiscard]] OPTION_PURE constexpr const T&& get_unchecked() const&& noexcept { return static_cast<const T&&>(base::get()); }
+    [[nodiscard]] OPTION_PURE constexpr T& get_unchecked() & noexcept {
+        if constexpr (std::is_reference_v<T>) {
+            return *base::value;
+        } else {
+            return base::value;
+        }
+    }
+    [[nodiscard]] OPTION_PURE constexpr const T& get_unchecked() const& noexcept {
+        if constexpr (std::is_reference_v<T>) {
+            return *base::value;
+        } else {
+            return base::value;
+        }
+    }
+    [[nodiscard]] OPTION_PURE constexpr T&& get_unchecked() && noexcept {
+        if constexpr (std::is_reference_v<T>) {
+            return static_cast<T&&>(*base::value);
+        } else {
+            return static_cast<T&&>(base::value);
+        }
+    }
+    [[nodiscard]] OPTION_PURE constexpr const T&& get_unchecked() const&& noexcept {
+        if constexpr (std::is_reference_v<T>) {
+            return static_cast<const T&&>(*base::value);
+        } else {
+            return static_cast<const T&&>(base::value);
+        }
+    }
 
     // Returns a reference to the contained value.
     // Throws a `opt::bad_access` if this `opt::option` does not contain the value.
