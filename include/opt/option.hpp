@@ -1625,45 +1625,23 @@ namespace impl {
     template<class T, class U>
     using copy_reference_t = typename copy_reference<T, U>::type;
 
-enum class base_strategy {
-        has_traits             = 1,
-        trivially_destructible = 2
-    };
-
-    constexpr base_strategy operator|(const base_strategy left, const base_strategy right) {
-        using type = std::underlying_type_t<base_strategy>;
-        return base_strategy(type(left) | type(right));
-    }
-
-    template<class T>
-    constexpr base_strategy detemine_base_strategy() noexcept {
-        using st = base_strategy;
-
-        constexpr bool trivially_destructible = std::is_trivially_destructible_v<T>;
-
-        if constexpr (has_option_traits<T>) {
-            if constexpr (trivially_destructible) {
-                return st::has_traits | st::trivially_destructible;
-            } else {
-                return st::has_traits;
-            }
-        } else
-        if constexpr (trivially_destructible) {
-            return st::trivially_destructible;
-        } else {
-            return st{};
-        }
-    }
+#if OPTION_MSVC
+    #pragma warning(push)
+    #pragma warning(disable : 4296) // 'operator' : expression is always false
+#endif
 
     template<class T,
-        base_strategy strategy = detemine_base_strategy<T>()
+        bool TriviallyDestructible = impl::is_trivially_destructible<T>::value,
+        bool HasTraits = (opt::option_traits<T>::max_level > 0)
     >
     struct option_destruct_base;
 
+#if OPTION_MSVC
+    #pragma warning(pop)
+#endif
+
     template<class T>
-    struct option_destruct_base<T,
-        base_strategy::trivially_destructible
-    > {
+    struct option_destruct_base<T, /*TriviallyDestructible=*/true, /*HasTraits=*/false> {
         union {
             nontrivial_dummy dummy;
             T value;
@@ -1699,9 +1677,7 @@ enum class base_strategy {
         }
     };
     template<class T>
-    struct option_destruct_base<T,
-        base_strategy{}
-    > {
+    struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/false> {
         union {
             nontrivial_dummy dummy;
             T value;
@@ -1750,9 +1726,7 @@ enum class base_strategy {
     #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
     template<class T>
-    struct option_destruct_base<T,
-        base_strategy::has_traits | base_strategy::trivially_destructible
-    > {
+    struct option_destruct_base<T, /*TriviallyDestructible=*/true, /*HasTraits=*/true> {
         union {
             nontrivial_dummy dummy;
             T value;
@@ -1800,9 +1774,7 @@ enum class base_strategy {
         }
     };
     template<class T>
-    struct option_destruct_base<T,
-        base_strategy::has_traits
-    > {
+    struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/true> {
         union {
             nontrivial_dummy dummy;
             T value;
