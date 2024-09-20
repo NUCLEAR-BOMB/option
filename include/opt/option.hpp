@@ -429,8 +429,17 @@ namespace impl {
 #endif
 
 #if OPTION_HAS_BUILTIN(__remove_cvref)
-    template<class T>
-    using remove_cvref = __remove_cvref(T);
+    #if OPTION_GCC
+        template<class T>
+        struct remove_cvref_gcc_workaround {
+            using type = __remove_cvref(T);
+        };
+        template<class T>
+        using remove_cvref = typename remove_cvref_gcc_workaround<T>::type;
+    #else
+        template<class T>
+        using remove_cvref = __remove_cvref(T);
+    #endif
 #else
     template<class T>
     struct remove_cvref_impl { using type = T; };
