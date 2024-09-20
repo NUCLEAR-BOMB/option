@@ -395,35 +395,73 @@ struct option_traits<impl::dummy_type_for_traits> {};
 
 namespace impl {
 #if OPTION_HAS_BUILTIN(__is_trivially_destructible) || OPTION_MSVC
+    // Don't check for std::is_destructible because non-destructible types are anyway not allowed inside opt::option
     template<class T>
-    struct is_trivially_destructible : std::bool_constant<__is_trivially_destructible(T)> {};
+    using is_trivially_destructible = std::bool_constant<__is_trivially_destructible(T)>;
 #elif OPTION_HAS_BUILTIN(__has_trivial_destructor)
     template<class T>
-    struct is_trivially_destructible : std::bool_constant<__has_trivial_destructor(T)> {};
+    using is_trivially_destructible = std::bool_constant<__has_trivial_destructor(T)>;
 #else
     using std::is_trivially_destructible;
 #endif
 
-#if false && (OPTION_HAS_BUILTIN(__is_trivially_assignable) && OPTION_HAS_BUILTIN(__add_lvalue_reference) && OPTION_HAS_BUILTIN(__add_rvalue_reference))
+#if OPTION_HAS_BUILTIN(__is_trivially_assignable) || OPTION_MSVC
+    // Don't uses std::add_lvalue_reference and std::add_rvalue_reference because non-referenceable types are anyway not allowed inside opt::option
     template<class T>
-    struct is_trivially_copy_assignable : std::bool_constant<__is_trivially_assignable(__add_lvalue_reference(T), __add_lvalue_reference(const T))> {};
+    using is_trivially_copy_assignable = std::bool_constant<__is_trivially_assignable(T&, const T&)>;
 
     template<class T>
-    struct is_trivially_move_assignable : std::bool_constant<__is_trivially_assignable(__add_lvalue_reference(T), __add_rvalue_reference(T))> {};
-#elif false && (OPTION_HAS_BUILTIN(__is_trivially_assignable) || OPTION_MSVC)
-    template<class T, class = void>
-    struct is_trivially_copy_assignable : std::bool_constant<__is_trivially_assignable(T, const T)> {};
-    template<class T>
-    struct is_trivially_copy_assignable<T, std::void_t<T&>> : std::bool_constant<__is_trivially_assignable(T&, const T&)> {};
-
-    template<class T, class = void>
-    struct is_trivially_move_assignable : std::bool_constant<__is_trivially_assignable(T, T)> {};
-    template<class T>
-    struct is_trivially_move_assignable<T, std::void_t<T&>> : std::bool_constant<__is_trivially_assignable(T&, T)> {};
+    using is_trivially_move_assignable = std::bool_constant<__is_trivially_assignable(T&, T&&)>;
 #else
     using std::is_trivially_copy_assignable;
 
     using std::is_trivially_move_assignable;
+#endif
+
+#if OPTION_HAS_BUILTIN(__is_same)
+    template<class T1, class T2>
+    using is_not_same = std::bool_constant<!__is_same(T1, T2)>;
+#else
+    template<class T1, class T2>
+    struct is_not_same : std::true_type {};
+    template<class T>
+    struct is_not_same<T, T> : std::false_type {};
+#endif
+
+#if OPTION_HAS_BUILTIN(__remove_cvref)
+    template<class T>
+    using remove_cvref = __remove_cvref(T);
+#else
+    template<class T>
+    struct remove_cvref_impl { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<T&> { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<T&&> { using type = T; };
+
+    template<class T>
+    struct remove_cvref_impl<const T> { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<const T&> { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<const T&&> { using type = T; };
+
+    template<class T>
+    struct remove_cvref_impl<volatile T> { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<volatile T&> { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<volatile T&&> { using type = T; };
+
+    template<class T>
+    struct remove_cvref_impl<const volatile T> { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<const volatile T&> { using type = T; };
+    template<class T>
+    struct remove_cvref_impl<const volatile T&&> { using type = T; };
+
+    template<class T>
+    using remove_cvref = typename remove_cvref_impl<T>::type;
 #endif
 
     template<class T, class... Args>
@@ -480,11 +518,6 @@ namespace impl {
     inline constexpr bool is_custom_tuple_like = false;
     template<class T>
     inline constexpr bool is_custom_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> = true;
-
-    template<class, class>
-    struct is_not_same { static constexpr bool value = true; };
-    template<class T>
-    struct is_not_same<T, T> { static constexpr bool value = false; };
 
 #if !OPTION_MSVC
     template<class...>
@@ -1544,10 +1577,6 @@ template<class T, class>
 struct option_traits : impl::internal_option_traits<T> {};
 
 namespace impl {
-
-    template<class T>
-    using remove_cvref = std::remove_cv_t<std::remove_reference_t<T>>;
-
     // See https://github.com/microsoft/STL/pull/878#issuecomment-639696118
     struct nontrivial_dummy {
         constexpr nontrivial_dummy() noexcept {}
