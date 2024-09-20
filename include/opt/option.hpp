@@ -1724,7 +1724,7 @@ namespace impl {
         constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
 
-        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
+        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value_flag) {
                 impl::destroy_at(std::addressof(value));
             }
@@ -1828,7 +1828,7 @@ namespace impl {
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
-        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() noexcept(std::is_nothrow_destructible_v<T>) {
+        OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value()) {
                 impl::destroy_at(std::addressof(value));
             }
@@ -2463,22 +2463,19 @@ namespace impl::option {
     inline constexpr bool nothrow_assigment_operator_2 =
         and_<
             std::is_nothrow_copy_constructible<T>,
-            std::is_nothrow_copy_assignable<T>,
-            std::is_nothrow_destructible<T>
+            std::is_nothrow_copy_assignable<T>
         >::value;
     template<class T>
     inline constexpr bool nothrow_assigment_operator_3 =
         and_<
             std::is_nothrow_move_constructible<T>,
-            std::is_nothrow_move_assignable<T>,
-            std::is_nothrow_destructible<T>
+            std::is_nothrow_move_assignable<T>
         >::value;
     template<class T, class U>
     inline constexpr bool nothrow_assigment_operator_4 =
         and_<
             std::is_nothrow_assignable<T&, U&&>,
-            std::is_nothrow_constructible<T, U&&>,
-            std::is_nothrow_destructible<T>
+            std::is_nothrow_constructible<T, U&&>
         >::value;
 
     // implementation of opt::option<T>::and_then(F&&)
@@ -2652,8 +2649,8 @@ public:
 
     static_assert(!std::is_void_v<T>,
         "T cannot be (possibly cv-qualified) `void`");
-    static_assert(std::is_destructible_v<T>,
-        "T must be destructible");
+    // static_assert(std::is_destructible_v<T>,
+    //     "T must be destructible");
 
     using value_type = T;
     using iterator = impl::option_iterator<T>;
@@ -2757,7 +2754,7 @@ public:
 
     // If this `opt::option` containes a value, the contained value is destroyed by calling `reset()`.
     // Postcondition: has_value() == false
-    constexpr option& operator=(opt::none_t) noexcept(std::is_nothrow_destructible_v<T>) {
+    constexpr option& operator=(opt::none_t) noexcept {
         reset();
         return *this;
     }
@@ -2870,7 +2867,7 @@ public:
     // If this `opt::option` contains a value, destroy the contained value; otherwise, do nothing
     // Same as `std::optional`
     // Postcondition: has_value() == false
-    constexpr void reset() noexcept(std::is_nothrow_destructible_v<T>) {
+    constexpr void reset() noexcept {
         base::reset();
     }
 
@@ -2880,7 +2877,7 @@ public:
     // Same as `std::optional`
     // Postcondition: has_value() == true
     template<class... Args>
-    constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
+    constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
         OPTION_LIFETIMEBOUND {
         reset();
         base::construct(std::forward<Args>(args)...);

@@ -276,10 +276,9 @@ Where `{construct}` is a function that constructs contained object in place.
 ### Destructor
 
 ```cpp
-~option() noexcept(/*see below*/);
+~option();
 ```
-Destructs the contained object of type `T` if the `opt::option` object contains it. If the `opt::option` object does not contain the value, do nothing.
-- *`noexcept`* when `std::is_nothrow_destructible_v<T>`.
+Destructs the contained object of type `T` if the `opt::option` object contains it. If the `opt::option` object does not contain the value, do nothing. Always `noexcept`.
 - *Trivial* when `std::is_trivially_destructible_v<T>`.
 - *`constexpr`* for non-`std::is_trivially_destructible_v<T>` types when C++20.
 
@@ -288,10 +287,9 @@ Destructs the contained object of type `T` if the `opt::option` object contains 
 ### `operator=`
 
 ```cpp
-constexpr option& operator=(opt::none_t) noexcept(/*see below*/);
+constexpr option& operator=(opt::none_t) noexcept;
 ```
 The contained value is destroyed if this `opt::option` contains a value. Same as [`.reset()`](#reset).
-- *`noexcept`* when `std::is_nothrow_destructible_v<T>`.
 - *Postcondition:* `has_value() == false`.
 
 ---
@@ -385,7 +383,6 @@ Where `{construct}` is a function that constructs contained object in place.
 - *`noexcept`* when the following are all `true`:
     - `std::is_nothrow_assignable_v<T&, U&&>`.
     - `std::is_nothrow_constructible_v<T, U&&>`.
-    - `std::is_nothrow_destructible_v<T>`.
 - *Enabled* when the following are all `true`:
     - `!opt::is_option<U>`.
     - `!(std::is_scalar_v<T> && std::is_same_v<T, std::decay_t<U>>)`.
@@ -486,11 +483,10 @@ Where `{construct}` is a function that constructs contained object in place.
 ### `reset`
 
 ```cpp
-constexpr void reset() noexcept(/*see below*/);
+constexpr void reset() noexcept;
 ```
 Destroys the contained value. \
 If this `opt::option` contains a value, destroy that contained value. If does not, do nothing.
-- *`noexcept`* when `std::is_nothrow_destructible_v<T>`.
 - *Postcondition:* `has_value() == false`
 
 ---
@@ -503,7 +499,7 @@ constexpr T& emplace(Args&&... args) noexcept(/*see below*/) /*lifetimebound*/;
 ```
 Constructs the contained from `args...`. \
 If this `opt::option` already contains a value, the contained value is destroyed. Initializes the contained value of type `T` using *direct-list-initialization* with `std::forward<Args>(args)...` as parameters.
-- *`noexcept`* when `std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>`.
+- *`noexcept`* when `std::is_nothrow_constructible_v<T, Args...>`.
 
 Description in the code equivalent:
 ```cpp
