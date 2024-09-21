@@ -1733,6 +1733,21 @@ TEST_CASE("opt::at") {
     CHECK_EQ(b[0], 'z');
 }
 
+TEST_CASE("option<bool>") {
+    opt::option<bool> a{false};
+    opt::option<int> b{a};
+    CHECK_EQ(b, 0);
+
+    // Test for LWG 3836
+    struct bool_convertible {
+        operator bool() const { return false; }
+    };
+    opt::option<bool_convertible> c{std::in_place};
+    CHECK_UNARY(c.has_value());
+    opt::option<bool> d{c};
+    CHECK_EQ(d, false);
+}
+
 TEST_SUITE_END();
 
 struct struct1 {

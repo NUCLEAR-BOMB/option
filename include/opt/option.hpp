@@ -2191,15 +2191,15 @@ namespace impl {
         enable_copy_move(const enable_copy_move&) = default;
         enable_copy_move& operator=(const enable_copy_move&) = default;
         enable_copy_move(enable_copy_move&&) = delete;
-        enable_copy_move& operator=(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
     template<class Tag, bool CopyAssignment, bool MoveAssignment>
     struct enable_copy_move<Tag, false, CopyAssignment, false, MoveAssignment, false> {
         enable_copy_move() = default;
         enable_copy_move(const enable_copy_move&) = delete;
-        enable_copy_move& operator=(const enable_copy_move&) = default;
+        enable_copy_move& operator=(const enable_copy_move&) = delete;
         enable_copy_move(enable_copy_move&&) = delete;
-        enable_copy_move& operator=(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
     template<class Tag, bool MoveAssignment>
     struct enable_copy_move<Tag, true, false, false, MoveAssignment, false> {
@@ -2207,7 +2207,7 @@ namespace impl {
         enable_copy_move(const enable_copy_move&) = default;
         enable_copy_move& operator=(const enable_copy_move&) = delete;
         enable_copy_move(enable_copy_move&&) = delete;
-        enable_copy_move& operator=(enable_copy_move&&) = default;
+        enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
     template<class Tag>
     struct enable_copy_move<Tag, true, true, true, false, false> {
@@ -2221,7 +2221,7 @@ namespace impl {
     struct enable_copy_move<Tag, false, CopyAssignment, true, false, false> {
         enable_copy_move() = default;
         enable_copy_move(const enable_copy_move&) = delete;
-        enable_copy_move& operator=(const enable_copy_move&) = default;
+        enable_copy_move& operator=(const enable_copy_move&) = delete;
         enable_copy_move(enable_copy_move&&) = default;
         enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
@@ -2366,8 +2366,9 @@ namespace impl::option {
     template<class T, class U, class is_explicit>
     using enable_constructor_5 = std::enable_if_t<
         and_<
-            std::is_constructible<T, U&&>,
+            or_<std::is_reference<T>, is_direct_list_initializable<T, U&&>>,
             is_not_same<impl::remove_cvref<U>, opt::option<T>>,
+            is_not_same<impl::remove_cvref<U>, std::in_place_t>,
             not_<and_<
                 std::is_same<impl::remove_cvref<T>, bool>,
                 opt::is_option<impl::remove_cvref<U>>
@@ -2376,11 +2377,12 @@ namespace impl::option {
         >::value
     , int>;
 
-    template<class T, class First, class... Args>
+    template<class T, class First, class Second, class... Args>
     using enable_constructor_6 = std::enable_if_t<
         and_<
-            is_direct_list_initializable<T, First, Args...>,
-            is_not_same<remove_cvref<First>, opt::option<T>>
+            is_direct_list_initializable<T, First, Second, Args...>,
+            is_not_same<remove_cvref<First>, opt::option<T>>,
+            is_not_same<remove_cvref<First>, std::in_place_t>
         >::value
     , int>;
 
@@ -2390,7 +2392,7 @@ namespace impl::option {
             is_not_same<remove_cvref<U>, opt::option<T>>,
             std::is_constructible<T, U>,
             std::is_assignable<T&, U>,
-            not_<and_<std::is_scalar<T>, std::is_same<T, std::decay_t<U>>>>
+            or_<is_not_same<remove_cvref<U>, T>, not_<std::is_scalar<T>>>
         >::value
     , int>;
 
@@ -2419,11 +2421,12 @@ namespace impl::option {
     template<class T, class U, class is_explicit>
     using enable_constructor_8 = std::enable_if_t<
         and_<
-            std::is_convertible<T, const U&>,
-            not_<or_<
+            std::is_constructible<T, const U&>,
+            is_not_same<T, U>,
+            or_<
                 std::is_same<std::remove_cv_t<T>, bool>,
-                is_constructible_from_option<T, U>
-            >>,
+                not_<is_constructible_from_option<T, U>>
+            >,
             exclusive_disjunction<is_explicit, std::is_convertible<const U&, T>>
         >::value
     , int>;
@@ -2431,11 +2434,12 @@ namespace impl::option {
     template<class T, class U, class is_explicit>
     using enable_constructor_9 = std::enable_if_t<
         and_<
-            std::is_convertible<T, U&&>,
-            not_<or_<
-                std::is_same<std::remove_const_t<T>, bool>,
-                is_constructible_from_option<T, U>
-            >>,
+            std::is_constructible<T, U&&>,
+            is_not_same<T, U>,
+            or_<
+                std::is_same<std::remove_cv_t<T>, bool>,
+                not_<is_constructible_from_option<T, U>>
+            >,
             exclusive_disjunction<is_explicit, std::is_convertible<U&&, T>>
         >::value
     , int>;
@@ -2642,6 +2646,7 @@ class OPTION_DECLSPEC_EMPTY_BASES option
         std::is_reference_v<T>
     >
 {
+
     using base = impl::option_base<T>;
 
     template<class, impl::option_strategy> friend struct impl::internal_option_traits;
@@ -2668,11 +2673,11 @@ public:
     // Default constructor.
     // Constructors an object that does not contain a value.
     // Postcondition: has_value() == false
-    option() = default;
+    constexpr option() noexcept {}
 
     // Constructors an object that does not contain a value.
     // Postcondition: has_value() == false
-    constexpr option(opt::none_t) noexcept : base() {}
+    constexpr option(opt::none_t) noexcept {}
 
     // Copy constructor.
     // If other `opt::option` (first parameter) contains a value, initializes current contained value
@@ -2703,25 +2708,25 @@ public:
     // Constructs the `opt::option` that contains a value,
     // initialized from the arguments `first`, `args...`.
     // Postcondition: has_value() == true
-    template<class First, class... Args, impl::option::enable_constructor_6<T, First, Args...> = 0>
-    constexpr option(First&& first, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Args...>)
-        : base(std::in_place, std::forward<First>(first), std::forward<Args>(args)...) {}
+    template<class First, class Second, class... Args, impl::option::enable_constructor_6<T, First, Second, Args...> = 0>
+    constexpr explicit option(First&& first, Second&& second, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Second, Args...>)
+        : base(std::in_place, std::forward<First>(first), std::forward<Second>(second), std::forward<Args>(args)...) {}
 
 #if !OPTION_GCC
-    template<class... Args>
+    template<class... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, int> = 0>
     constexpr explicit option(const std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
         : base(std::in_place, std::forward<Args>(args)...) {}
 
-    template<class U, class... Args>
+    template<class U, class... Args, std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U>&, Args...>, int> = 0>
     constexpr explicit option(const std::in_place_t, std::initializer_list<U> ilist, Args&&... args)
         noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
         : base(std::in_place, ilist, std::forward<Args>(args)...) {}
 #else
-    template<class InPlaceT, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t>, int> = 0>
+    template<class InPlaceT, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t> && std::is_constructible_v<T, Args...>, int> = 0>
     constexpr explicit option(const InPlaceT, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
         : base(std::in_place, std::forward<Args>(args)...) {}
 
-    template<class InPlaceT, class U, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t>, int> = 0>
+    template<class InPlaceT, class U, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t> && std::is_constructible_v<T, std::initializer_list<U>&, Args...>, int> = 0>
     constexpr explicit option(const InPlaceT, std::initializer_list<U> ilist, Args&&... args)
         noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
         : base(std::in_place, ilist, std::forward<Args>(args)...) {}
@@ -2741,11 +2746,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        impl::option_construct_from_option(*static_cast<base*>(this), other);
+        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<const impl::option_base<U>&>(other));
     }
     template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
-        impl::option_construct_from_option(*static_cast<base*>(this), other);
+        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<const impl::option_base<U>&>(other));
     }
     // Converting move constructor.
     // If `other` containes a value, move constructs a contained value.
@@ -2754,11 +2759,11 @@ public:
     // Postcondition: has_value() == other.has_value()
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::false_type> = 0>
     constexpr option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<option<U>&&>(other));
+        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<impl::option_base<U>&&>(other));
     }
     template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::true_type> = 0>
     constexpr explicit option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
-        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<option<U>&&>(other));
+        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<impl::option_base<U>&&>(other));
     }
 
     // If this `opt::option` containes a value, the contained value is destroyed by calling `reset()`.
