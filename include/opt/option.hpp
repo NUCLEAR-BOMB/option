@@ -1637,8 +1637,13 @@ namespace impl {
     struct is_initializable_from_impl<true, false, decltype(T{std::declval<Args>()...}, void()), T, Args...>
         : std::true_type {};
 
+#if !OPTION_MSVC
     template<class T, class... Args>
     using is_initializable_from = is_initializable_from_impl<std::is_aggregate_v<T>, std::is_constructible_v<T, Args...>, void, T, Args...>;
+#else
+    template<class T, class... Args>
+    using is_initializable_from = is_initializable_from_impl<__is_aggregate(T), __is_constructible(T, Args...), void, T, Args...>;
+#endif
 #else
     template<class T, class... Args>
     using is_initializable_from = std::is_constructible<T, Args...>;
