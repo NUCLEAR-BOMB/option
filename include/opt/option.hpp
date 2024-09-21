@@ -2316,137 +2316,6 @@ namespace impl {
 }
 
 namespace impl::option {
-    template<class T1, class T2>
-    using exclusive_disjunction = std::bool_constant<bool(T1::value) != bool(T2::value)>;
-
-    template<class T, class U, class is_explicit>
-    using enable_constructor_5 = std::enable_if_t<
-        and_<
-            or_<std::is_reference<T>, is_direct_list_initializable<T, U&&>>,
-            is_not_same<impl::remove_cvref<U>, opt::option<T>>,
-            is_not_same<impl::remove_cvref<U>, std::in_place_t>,
-            not_<and_<
-                std::is_same<impl::remove_cvref<T>, bool>,
-                opt::is_option<impl::remove_cvref<U>>
-            >>,
-            exclusive_disjunction<is_explicit, std::is_convertible<U&&, T>>
-        >::value
-    , int>;
-
-    template<class T, class First, class Second, class... Args>
-    using enable_constructor_6 = std::enable_if_t<
-        and_<
-            is_direct_list_initializable<T, First, Second, Args...>,
-            is_not_same<remove_cvref<First>, opt::option<T>>,
-            is_not_same<remove_cvref<First>, std::in_place_t>
-        >::value
-    , int>;
-
-    template<class T, class U>
-    using enable_assigment_operator_4 = std::enable_if_t<
-        and_<
-            is_not_same<remove_cvref<U>, opt::option<T>>,
-            std::is_constructible<T, U>,
-            std::is_assignable<T&, U>,
-            or_<is_not_same<remove_cvref<U>, T>, not_<std::is_scalar<T>>>
-        >::value
-    , int>;
-
-    template<class T, class U, class UOpt = opt::option<U>>
-    using is_constructible_from_option =
-        or_<
-            std::is_constructible<T, UOpt&>,
-            std::is_constructible<T, const UOpt&>,
-            std::is_constructible<T, UOpt&&>,
-            std::is_constructible<T, const UOpt&&>,
-            std::is_convertible<UOpt&, T>,
-            std::is_convertible<const UOpt&, T>,
-            std::is_convertible<UOpt&&, T>,
-            std::is_convertible<const UOpt&&, T>
-        >;
-
-    template<class T, class U, class UOpt = opt::option<U>>
-    using is_assignable_from_option =
-        or_<
-            std::is_assignable<T&, UOpt&>,
-            std::is_assignable<T&, const UOpt&>,
-            std::is_assignable<T&, UOpt&&>,
-            std::is_assignable<T&, const UOpt&&>
-        >;
-
-    template<class T, class U, class is_explicit>
-    using enable_constructor_8 = std::enable_if_t<
-        and_<
-            std::is_constructible<T, const U&>,
-            is_not_same<T, U>,
-            or_<
-                std::is_same<std::remove_cv_t<T>, bool>,
-                not_<is_constructible_from_option<T, U>>
-            >,
-            exclusive_disjunction<is_explicit, std::is_convertible<const U&, T>>
-        >::value
-    , int>;
-
-    template<class T, class U, class is_explicit>
-    using enable_constructor_9 = std::enable_if_t<
-        and_<
-            std::is_constructible<T, U&&>,
-            is_not_same<T, U>,
-            or_<
-                std::is_same<std::remove_cv_t<T>, bool>,
-                not_<is_constructible_from_option<T, U>>
-            >,
-            exclusive_disjunction<is_explicit, std::is_convertible<U&&, T>>
-        >::value
-    , int>;
-
-    template<class T, class U>
-    using enable_assigment_operator_5 = std::enable_if_t<
-        and_<
-            not_<or_<
-                is_constructible_from_option<T, U>,
-                is_assignable_from_option<T, U>
-            >>,
-            or_<std::is_reference<T>, and_<
-                std::is_constructible<T, const U&>,
-                std::is_assignable<T&, const U&>
-            >>
-        >::value
-    , int>;
-
-    template<class T, class U>
-    using enable_assigment_operator_6 = std::enable_if_t<
-        and_<
-            not_<or_<
-                is_constructible_from_option<T, U>,
-                is_assignable_from_option<T, U>
-            >>,
-            or_<std::is_reference<T>, and_<
-                std::is_constructible<T, U&&>,
-                std::is_assignable<T&, U&&>
-            >>
-        >::value
-    , int>;
-
-    template<class T>
-    inline constexpr bool nothrow_assigment_operator_2 =
-        and_<
-            std::is_nothrow_copy_constructible<T>,
-            std::is_nothrow_copy_assignable<T>
-        >::value;
-    template<class T>
-    inline constexpr bool nothrow_assigment_operator_3 =
-        and_<
-            std::is_nothrow_move_constructible<T>,
-            std::is_nothrow_move_assignable<T>
-        >::value;
-    template<class T, class U>
-    inline constexpr bool nothrow_assigment_operator_4 =
-        and_<
-            std::is_nothrow_assignable<T&, U&&>,
-            std::is_nothrow_constructible<T, U&&>
-        >::value;
-
     // implementation of opt::option<T>::and_then(F&&)
     template<class Self, class F>
     constexpr auto and_then(Self&& self, F&& f) {
@@ -2600,7 +2469,40 @@ namespace impl {
         template<bool Condition>
         using is_explicit = std::enable_if<std::is_convertible_v<U, T> != Condition, int>;
     };
+    template<class T, class U, class QualU>
+    struct check_option_like_ctor {
+        using UOpt = opt::option<U>;
 
+        using is_constructible_from_option =
+            or_<std::is_constructible<T, UOpt&>,
+                std::is_constructible<T, const UOpt&>,
+                std::is_constructible<T, UOpt&&>,
+                std::is_constructible<T, const UOpt&&>,
+                std::is_convertible<UOpt&, T>,
+                std::is_convertible<const UOpt&, T>,
+                std::is_convertible<UOpt&&, T>,
+                std::is_convertible<const UOpt&&, T>>;
+
+        using is_assignable_from_option =
+            or_<std::is_assignable<T&, UOpt&>,
+                std::is_assignable<T&, const UOpt&>,
+                std::is_assignable<T&, UOpt&&>,
+                std::is_assignable<T&, const UOpt&&>>;
+
+        template<bool Condition>
+        using constructor_is_explicit = std::enable_if<
+            (std::is_convertible_v<QualU, T> != Condition)
+            && (std::is_same_v<std::remove_cv_t<T>, bool> || !is_constructible_from_option::value)
+        , int>;
+
+        using assignment = std::enable_if<
+            !is_constructible_from_option::value && !is_assignable_from_option::value>;
+    };
+    struct always_assign {
+        using assignment = std::enable_if<true>;
+    };
+
+    template<class = void>
     struct option_check_fail {};
 
     template<bool IsReference/*=false*/>
@@ -2611,10 +2513,41 @@ namespace impl {
             && is_not_same<remove_cvref<U>, opt::option<T>>::value
             && is_not_same<remove_cvref<U>, std::in_place_t>::value
             && (!std::is_same_v<std::remove_cv_t<T>, bool> || !opt::is_option_v<remove_cvref<U>>),
-            explicit_if_convertible<T, U>, option_check_fail>;
+            explicit_if_convertible<T, U>, option_check_fail<>>;
+
+        template<class T, class First, class... Args>
+        using from_args_ctor = std::enable_if<
+            is_direct_list_initializable<T, First, Args...>::value
+            && is_not_same<remove_cvref<First>, opt::option<T>>::value
+            && is_not_same<remove_cvref<First>, std::in_place_t>::value
+        >;
+
+        template<class T, class InPlaceT, class... Args>
+        using from_in_place_args_ctor = std::enable_if<
+            and_<std::is_same<InPlaceT, std::in_place_t>, is_direct_list_initializable<T, Args...>>::value
+        >;
+
+        template<class T, class U, class QualU>
+        using from_option_like_ctor = if_<
+            is_not_same<U, T>::value
+            && is_direct_list_initializable<T, QualU>::value,
+            check_option_like_ctor<T, U, QualU>, option_check_fail<>
+        >;
+        template<class T, class U, class QualU>
+        using from_option_like_assign = if_<
+            is_not_same<U, T>::value
+            && is_direct_list_initializable<T, QualU>::value
+            && std::is_assignable_v<T&, QualU>,
+            check_option_like_ctor<T, U, QualU>, option_check_fail<>
+        >;
 
         template<class T, class U>
-        using from_value_ctor_noexcept = std::is_nothrow_constructible<T, U>;
+        using from_value_assign = std::enable_if<
+            is_not_same<remove_cvref<U>, opt::option<T>>::value
+            && (is_not_same<remove_cvref<U>, T>::value || !std::is_scalar_v<T>)
+            && is_direct_list_initializable<T, U>::value
+            && std::is_assignable_v<T&, U>
+        >;
     };
     template<>
     struct option_checks_base</*IsReference=*/true> {
@@ -2641,10 +2574,33 @@ namespace impl {
             && is_not_same<remove_cvref<U>, std::in_place_t>::value
             && !opt::is_option_v<remove_cvref<U>>
             && can_bind_reference<T, U>(),
-            always_non_explicit, option_check_fail>;
+            always_non_explicit, option_check_fail<>>;
+
+        template<class T, class First, class... Args>
+        using from_args_ctor = option_check_fail<First>;
+
+        template<class T, class InPlaceT, class... Args>
+        using from_in_place_args_ctor = option_check_fail<InPlaceT>;
+
+        template<class T, class U, class QualU>
+        using from_option_like_ctor = if_<
+            is_not_same<U, T>::value
+            && can_bind_reference<T, U>(),
+            always_non_explicit, option_check_fail<>
+        >;
+        template<class T, class U, class QualU>
+        using from_option_like_assign = if_<
+            is_not_same<U, T>::value
+            && can_bind_reference<T, U>(),
+            always_assign, option_check_fail<>
+        >;
 
         template<class T, class U>
-        using from_value_ctor_noexcept = std::true_type;
+        using from_value_assign = std::enable_if<
+            is_not_same<remove_cvref<U>, opt::option<T>>::value
+            && (is_not_same<remove_cvref<U>, T>::value || !std::is_scalar_v<T>)
+            && can_bind_reference<T, U>()
+        >;
     };
 }
 
@@ -2694,54 +2650,49 @@ public:
     option(option&&) = default;
 
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<true>::type = 0>
-    constexpr explicit option(U&& val) noexcept(checks::template from_value_ctor_noexcept<T, U>::value)
+    constexpr explicit option(U&& val)
         : base(std::in_place, std::forward<U>(val)) {}
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<false>::type = 0>
-    constexpr option(U&& val) noexcept(checks::template from_value_ctor_noexcept<T, U>::value)
+    constexpr option(U&& val)
         : base(std::in_place, std::forward<U>(val)) {}
 
-    template<class First, class Second, class... Args, impl::option::enable_constructor_6<T, First, Second, Args...> = 0>
-    constexpr explicit option(First&& first, Second&& second, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, First, Second, Args...>)
+    template<class First, class Second, class... Args,
+        class = typename checks::template from_args_ctor<T, First, Second, Args...>::type>
+    constexpr explicit option(First&& first, Second&& second, Args&&... args)
         : base(std::in_place, std::forward<First>(first), std::forward<Second>(second), std::forward<Args>(args)...) {}
 
-#if !OPTION_GCC
-    template<class... Args, std::enable_if_t<std::is_constructible_v<T, Args...>, int> = 0>
-    constexpr explicit option(const std::in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    template<class InPlaceT, class... Args,
+        class = typename checks::template from_in_place_args_ctor<T, InPlaceT, Args...>::type>
+    constexpr explicit option(const InPlaceT, Args&&... args)
         : base(std::in_place, std::forward<Args>(args)...) {}
 
-    template<class U, class... Args, std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U>&, Args...>, int> = 0>
-    constexpr explicit option(const std::in_place_t, std::initializer_list<U> ilist, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
-        : base(std::in_place, ilist, std::forward<Args>(args)...) {}
-#else
-    template<class InPlaceT, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t> && std::is_constructible_v<T, Args...>, int> = 0>
-    constexpr explicit option(const InPlaceT, Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-        : base(std::in_place, std::forward<Args>(args)...) {}
-
-    template<class InPlaceT, class U, class... Args, std::enable_if_t<std::is_same_v<InPlaceT, std::in_place_t> && std::is_constructible_v<T, std::initializer_list<U>&, Args...>, int> = 0>
+    template<class InPlaceT, class U, class... Args,
+        class = typename checks::template from_in_place_args_ctor<T, InPlaceT, std::initializer_list<U>&, Args...>::type>
     constexpr explicit option(const InPlaceT, std::initializer_list<U> ilist, Args&&... args)
-        noexcept(std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>)
         : base(std::in_place, ilist, std::forward<Args>(args)...) {}
-#endif
 
     template<class F, class Arg>
-    constexpr explicit option(impl::construct_from_invoke_tag, F&& f, Arg&& arg)
+    constexpr explicit option(const impl::construct_from_invoke_tag, F&& f, Arg&& arg)
         : base(impl::construct_from_invoke_tag{}, std::forward<F>(f), std::forward<Arg>(arg)) {}
 
-    template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::false_type> = 0>
-    constexpr option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
+    template<class U,
+        typename checks::template from_option_like_ctor<T, U, const U&>::template constructor_is_explicit<false>::type = 0>
+    constexpr option(const option<U>& other) {
         impl::option_construct_from_option(*static_cast<base*>(this), static_cast<const impl::option_base<U>&>(other));
     }
-    template<class U, impl::option::enable_constructor_8<T, U, /*is_explicit=*/std::true_type> = 0>
-    constexpr explicit option(const option<U>& other) noexcept(std::is_nothrow_constructible_v<T, const U&>) {
+    template<class U,
+        typename checks::template from_option_like_ctor<T, U, const U&>::template constructor_is_explicit<true>::type = 0>
+    constexpr explicit option(const option<U>& other) {
         impl::option_construct_from_option(*static_cast<base*>(this), static_cast<const impl::option_base<U>&>(other));
     }
-    template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::false_type> = 0>
-    constexpr option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
+    template<class U,
+        typename checks::template from_option_like_ctor<T, U, U&&>::template constructor_is_explicit<false>::type = 0>
+    constexpr option(option<U>&& other) {
         impl::option_construct_from_option(*static_cast<base*>(this), static_cast<impl::option_base<U>&&>(other));
     }
-    template<class U, impl::option::enable_constructor_9<T, U, /*is_explicit=*/std::true_type> = 0>
-    constexpr explicit option(option<U>&& other) noexcept(std::is_nothrow_constructible_v<T, U&&>) {
+    template<class U,
+        typename checks::template from_option_like_ctor<T, U, U&&>::template constructor_is_explicit<true>::type = 0>
+    constexpr explicit option(option<U>&& other) {
         impl::option_construct_from_option(*static_cast<base*>(this), static_cast<impl::option_base<U>&&>(other));
     }
 
@@ -2754,8 +2705,9 @@ public:
     
     option& operator=(option&&) = default;
 
-    template<class U = T, impl::option::enable_assigment_operator_4<T, U> = 0>
-    constexpr option& operator=(U&& val) noexcept(impl::option::nothrow_assigment_operator_4<T, U>) {
+    template<class U = T,
+        class = typename checks::template from_value_assign<T, U>::type>
+    constexpr option& operator=(U&& val) {
         if constexpr (std::is_reference_v<T>) {
             base::value = base::ref_to_ptr(std::forward<U>(val));
         } else {
@@ -2764,7 +2716,8 @@ public:
         return *this;
     }
 
-    template<class U, impl::option::enable_assigment_operator_5<T, U> = 0>
+    template<class U,
+        class = typename checks::template from_option_like_assign<T, U, const U&>::assignment::type>
     constexpr option& operator=(const option<U>& other) {
         if constexpr (std::is_reference_v<T>) {
             base::assign_from_option(other);
@@ -2781,7 +2734,8 @@ public:
         }
         return *this;
     }
-    template<class U, impl::option::enable_assigment_operator_6<T, U> = 0>
+    template<class U,
+        class = typename checks::template from_option_like_assign<T, U, U&&>::assignment::type>
     constexpr option& operator=(option<U>&& other) {
         if constexpr (std::is_reference_v<T>) {
             base::assign_from_option(std::move(other));
@@ -2817,7 +2771,7 @@ public:
     }
 
     template<class... Args>
-    constexpr T& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    constexpr T& emplace(Args&&... args)
         OPTION_LIFETIMEBOUND {
         reset();
         base::construct(std::forward<Args>(args)...);

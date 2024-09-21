@@ -59,14 +59,6 @@ struct constructible_from_anything {
 static_assert(std::is_constructible_v<constructible_from_anything, int>);
 static_assert(std::is_convertible_v<int, constructible_from_anything>);
 
-struct constructible_from_anything_noexcept {
-    template<class... Args>
-    constructible_from_anything_noexcept(Args&&...) noexcept {}
-};
-static_assert(std::is_constructible_v<constructible_from_anything, int>);
-static_assert(std::is_convertible_v<int, constructible_from_anything>);
-static_assert(noexcept(constructible_from_anything_noexcept{1}));
-
 struct tag {
     constexpr explicit tag() = default;
 };
@@ -176,14 +168,6 @@ TEST_CASE("constructors") {
         CHECK_UNARY(std::is_constructible_v<opt::option<const int&>, const int&>);
         CHECK_UNARY_FALSE(std::is_constructible_v<opt::option<int&>, int>);
         CHECK_UNARY_FALSE(std::is_constructible_v<opt::option<const int&>, int>);
-
-        CHECK_UNARY(noexcept(opt::option<constructible_from_anything_noexcept>{1}));
-        CHECK_UNARY_FALSE(noexcept(opt::option<constructible_from_anything>{1}));
-
-        CHECK_UNARY(noexcept(opt::option<int>{1}));
-        CHECK_UNARY(noexcept(opt::option<int&>{std::declval<int&>()}));
-        CHECK_UNARY(noexcept(opt::option<constructible_from_anything_noexcept&>{std::declval<constructible_from_anything_noexcept&>()}));
-        CHECK_UNARY(noexcept(opt::option<constructible_from_anything&>{std::declval<constructible_from_anything&>()}));
     }
 }
 
