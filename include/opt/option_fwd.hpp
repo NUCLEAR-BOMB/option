@@ -17,8 +17,10 @@ struct is_option { static constexpr bool value = false; };
 template<class T>
 struct is_option<option<T>> { static constexpr bool value = true; };
 
+template<class>
+inline constexpr bool is_option_v = false;
 template<class T>
-inline constexpr bool is_option_v = is_option<T>::value;
+inline constexpr bool is_option_v<option<T>> = true;
 
 struct option_tag {};
 

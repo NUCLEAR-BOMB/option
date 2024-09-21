@@ -393,34 +393,53 @@ namespace impl {
     // Don't check for std::is_destructible because non-destructible types are anyway not allowed inside opt::option
     template<class T>
     using is_trivially_destructible = std::bool_constant<__is_trivially_destructible(T)>;
+    template<class T>
+    inline constexpr bool is_trivially_destructible_v = __is_trivially_destructible(T);
 #elif OPTION_HAS_BUILTIN(__has_trivial_destructor)
     template<class T>
     using is_trivially_destructible = std::bool_constant<__has_trivial_destructor(T)>;
+    template<class T>
+    inline constexpr bool is_trivially_destructible_v = __has_trivial_destructor(T);
 #else
     using std::is_trivially_destructible;
+    using std::is_trivially_destructible_v;
 #endif
 
 #if OPTION_HAS_BUILTIN(__is_trivially_assignable) || OPTION_MSVC
     // Don't uses std::add_lvalue_reference and std::add_rvalue_reference because non-referenceable types are anyway not allowed inside opt::option
     template<class T>
     using is_trivially_copy_assignable = std::bool_constant<__is_trivially_assignable(T&, const T&)>;
+    template<class T>
+    inline constexpr bool is_trivially_copy_assignable_v = __is_trivially_assignable(T&, const T&);
 
     template<class T>
     using is_trivially_move_assignable = std::bool_constant<__is_trivially_assignable(T&, T&&)>;
+    template<class T>
+    inline constexpr bool is_trivially_move_assignable_v = __is_trivially_assignable(T&, T&&);
 #else
     using std::is_trivially_copy_assignable;
+    using std::is_trivially_copy_assignable_v;
 
     using std::is_trivially_move_assignable;
+    using std::is_trivially_move_assignable_v;
 #endif
 
 #if OPTION_HAS_BUILTIN(__is_same)
     template<class T1, class T2>
     using is_not_same = std::bool_constant<!__is_same(T1, T2)>;
+
+    template<class T1, class T2>
+    inline constexpr bool is_not_same_v = !__is_same(T1, T2);
 #else
     template<class T1, class T2>
     struct is_not_same : std::true_type {};
     template<class T>
     struct is_not_same<T, T> : std::false_type {};
+
+    template<class T1, class T2>
+    inline constexpr bool is_not_same_v = true;
+    template<class T>
+    inline constexpr bool is_not_same_v<T, T> = false;
 #endif
 
 #if OPTION_HAS_BUILTIN(__remove_cvref)
@@ -470,7 +489,7 @@ namespace impl {
 
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
-        if constexpr (impl::is_trivially_move_assignable<T>::value) {
+        if constexpr (impl::is_trivially_move_assignable_v<T>) {
             if constexpr (std::is_aggregate_v<T>) {
                 *ptr = T{std::forward<Args>(args)...};
             } else {
@@ -559,9 +578,15 @@ namespace impl {
     template<class... Pred>
     using or_ = std::disjunction<Pred...>;
 #endif
-
     template<class Pred>
     using not_ = std::bool_constant<!Pred::value>;
+
+    template<class... Pred>
+    inline constexpr bool and_v = and_<Pred...>::value;
+    template<class... Pred>
+    inline constexpr bool or_v = or_<Pred...>::value;
+    template<class Pred>
+    inline constexpr bool not_v = not_<Pred>::value;
 
     template<bool>
     struct if_impl {
@@ -1599,16 +1624,16 @@ namespace impl {
     };
 
     template<class T>
-    struct is_tuple_like_impl : std::false_type {};
+    struct is_tuple_like : std::false_type {};
     template<class T, std::size_t N>
-    struct is_tuple_like_impl<std::array<T, N>> : std::true_type {};
+    struct is_tuple_like<std::array<T, N>> : std::true_type {};
     template<class T1, class T2>
-    struct is_tuple_like_impl<std::pair<T1, T2>> : std::true_type {};
+    struct is_tuple_like<std::pair<T1, T2>> : std::true_type {};
     template<class... Ts>
-    struct is_tuple_like_impl<std::tuple<Ts...>> : std::true_type {};
+    struct is_tuple_like<std::tuple<Ts...>> : std::true_type {};
 
     template<class T>
-    inline constexpr bool is_tuple_like = is_tuple_like_impl<T>::value;
+    inline constexpr bool is_tuple_like_v = is_tuple_like<T>::value;
 
     template<class Tuple>
     struct tuple_like_of_options_t;
@@ -1648,6 +1673,8 @@ namespace impl {
     template<class T, class... Args>
     using is_initializable_from = std::is_constructible<T, Args...>;
 #endif
+    template<class T, class... Args>
+    inline constexpr bool is_initializable_from_v = is_initializable_from<T, Args...>::value;
 
     template<class T>
     struct member_type {
@@ -1677,7 +1704,7 @@ namespace impl {
 #endif
 
     template<class T,
-        bool TriviallyDestructible = impl::is_trivially_destructible<T>::value,
+        bool TriviallyDestructible = impl::is_trivially_destructible_v<T>,
         bool HasTraits = (opt::option_traits<std::remove_cv_t<T>>::max_level > 0)
     >
     struct option_destruct_base;
@@ -1943,24 +1970,15 @@ namespace impl {
         }
     }
 
-    template<class T>
-    using nothrow_option_copy_constructor = std::is_nothrow_copy_constructible<T>;
-    template<class T>
-    using nothrow_option_copy_assignment = and_<std::is_nothrow_copy_assignable<T>, std::is_nothrow_copy_constructible<T>>;
-    template<class T>
-    using nothrow_option_move_constructor = std::is_nothrow_move_constructible<T>;
-    template<class T>
-    using nothrow_option_move_assignment = and_<std::is_nothrow_move_assignable<T>, std::is_nothrow_move_constructible<T>>;
-
 #if OPTION_GCC
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wextra" // A base class is not initialized in the copy constructor of a derived class
 #endif
     template<class T,
         bool TrivialCopyCtor = std::is_trivially_copy_constructible_v<T>,
-        bool TrivialCopyAssignment = and_<impl::is_trivially_copy_assignable<T>, impl::is_trivially_destructible<T>>::value,
+        bool TrivialCopyAssignment = impl::is_trivially_copy_assignable_v<T> && impl::is_trivially_destructible_v<T>,
         bool TrivialMoveCtor = std::is_trivially_move_constructible_v<T>,
-        bool TrivialMoveAssignment = and_<impl::is_trivially_move_assignable<T>, impl::is_trivially_destructible<T>>::value,
+        bool TrivialMoveAssignment = impl::is_trivially_move_assignable_v<T> && impl::is_trivially_destructible_v<T>,
         bool is_reference = std::is_reference_v<T>
     >
     struct option_base : public option_destruct_base<T> {
@@ -1973,10 +1991,10 @@ namespace impl {
         using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
-        constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
+        constexpr option_base(const option_base& other) noexcept(std::is_nothrow_copy_constructible_v<T>) {
             impl::option_construct_from_option(*this, other);
         }
-        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+        constexpr option_base& operator=(const option_base& other) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
             impl::option_assign_from_option(*this, other);
             return *this;
         }
@@ -1989,7 +2007,7 @@ namespace impl {
 
         option_base() = default;
         option_base(const option_base&) = default;
-        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+        constexpr option_base& operator=(const option_base& other) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
             impl::option_assign_from_option(*this, other);
             return *this;
         }
@@ -2004,10 +2022,10 @@ namespace impl {
         option_base() = default;
         option_base(const option_base&) = default;
         option_base& operator=(const option_base&) = default;
-        constexpr option_base(option_base&& other) noexcept(nothrow_option_move_constructor<T>::value) {
+        constexpr option_base(option_base&& other) noexcept(std::is_nothrow_move_constructible_v<T>) {
             impl::option_construct_from_option(*this, static_cast<option_base&&>(other));
         }
-        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+        constexpr option_base& operator=(option_base&& other) noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
             impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
             return *this;
         }
@@ -2019,17 +2037,17 @@ namespace impl {
         using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
-        constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
+        constexpr option_base(const option_base& other) noexcept(std::is_nothrow_copy_constructible_v<T>) {
             impl::option_construct_from_option(*this, other);
         }
-        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+        constexpr option_base& operator=(const option_base& other) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
             impl::option_assign_from_option(*this, other);
             return *this;
         }
-        constexpr option_base(option_base&& other) noexcept(nothrow_option_move_constructor<T>::value) {
+        constexpr option_base(option_base&& other) noexcept(std::is_nothrow_move_constructible_v<T>) {
             impl::option_construct_from_option(*this, static_cast<option_base&&>(other));
         }
-        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+        constexpr option_base& operator=(option_base&& other) noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
             impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
             return *this;
         }
@@ -2042,14 +2060,14 @@ namespace impl {
 
         option_base() = default;
         option_base(const option_base&) = default;
-        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+        constexpr option_base& operator=(const option_base& other) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
             impl::option_assign_from_option(*this, other);
             return *this;
         }
-        constexpr option_base(option_base&& other) noexcept(nothrow_option_move_constructor<T>::value) {
+        constexpr option_base(option_base&& other) noexcept(std::is_nothrow_move_constructible_v<T>) {
             impl::option_construct_from_option(*this, static_cast<option_base&&>(other));
         }
-        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+        constexpr option_base& operator=(option_base&& other) noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
             impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
             return *this;
         }
@@ -2062,7 +2080,7 @@ namespace impl {
         option_base(const option_base&) = default;
         option_base& operator=(const option_base&) = default;
         option_base(option_base&&) = default;
-        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+        constexpr option_base& operator=(option_base&& other) noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
             impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
             return *this;
         }
@@ -2073,15 +2091,15 @@ namespace impl {
         using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
-        constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
+        constexpr option_base(const option_base& other) noexcept(std::is_nothrow_copy_constructible_v<T>) {
             impl::option_construct_from_option(*this, other);
         }
-        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+        constexpr option_base& operator=(const option_base& other) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
             impl::option_assign_from_option(*this, other);
             return *this;
         }
         option_base(option_base&&) = default;
-        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+        constexpr option_base& operator=(option_base&& other) noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
             impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
             return *this;
         }
@@ -2092,12 +2110,12 @@ namespace impl {
 
         option_base() = default;
         option_base(const option_base&) = default;
-        constexpr option_base& operator=(const option_base& other) noexcept(nothrow_option_copy_assignment<T>::value) {
+        constexpr option_base& operator=(const option_base& other) noexcept(std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>) {
             impl::option_assign_from_option(*this, other);
             return *this;
         }
         option_base(option_base&&) = default;
-        constexpr option_base& operator=(option_base&& other) noexcept(nothrow_option_move_assignment<T>::value) {
+        constexpr option_base& operator=(option_base&& other) noexcept(std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>) {
             impl::option_assign_from_option(*this, static_cast<option_base&&>(other));
             return *this;
         }
@@ -2115,23 +2133,12 @@ namespace impl {
         using raw_type = std::remove_reference_t<T>;
 
         template<class U>
-        static constexpr bool can_bind_reference() {
-            using raw_u = std::remove_reference_t<U>;
-            if constexpr (std::is_lvalue_reference_v<T>) {
-                return std::is_lvalue_reference_v<U> && std::is_convertible_v<raw_u*, raw_type*>;
-            } else { // std::is_rvalue_reference_v<T>
-                return !std::is_lvalue_reference_v<U> && std::is_convertible_v<raw_u*, raw_type*>;
-            }
-        }
-        template<class U>
         static constexpr raw_type* ref_to_ptr(U&& other) noexcept {
             using raw_u = std::remove_reference_t<U>;
             if constexpr (std::is_same_v<raw_u, std::reference_wrapper<std::remove_const_t<raw_type>>>
                        || std::is_same_v<raw_u, std::reference_wrapper<raw_type>>) {
                 return std::addressof(other.get());
             } else {
-                static_assert(can_bind_reference<U>(),
-                    "Cannot construct a reference element from a possible temporary object");
                 return std::addressof(other);
             }
         }
@@ -2474,7 +2481,7 @@ namespace impl::option {
     template<class Self>
     constexpr auto unzip(Self&& self) {
         using tuple_like_type = impl::remove_cvref<typename impl::remove_cvref<Self>::value_type>;
-        static_assert(is_tuple_like<tuple_like_type>,
+        static_assert(is_tuple_like_v<tuple_like_type>,
             "To unzip opt::option<T>, T must be tuple-like."
             "A type T that satisfies tuple-like must be a specialization of "
             "std::array, std::pair, std::tuple");
@@ -2495,18 +2502,17 @@ namespace impl::option {
 
     template<class T, class U>
     using enable_swap = std::enable_if_t<
-        and_<
+        and_v<
             std::is_move_constructible<T>,
             std::is_move_constructible<U>,
             std::is_swappable_with<T, U>
-        >::value
+        >
     >;
     template<class T, class U>
-    using nothrow_swap = and_<
-        std::is_nothrow_move_constructible<T>,
-        std::is_nothrow_move_constructible<U>,
-        std::is_nothrow_swappable_with<T, U>
-    >;
+    inline constexpr bool nothrow_swap =
+        std::is_nothrow_move_constructible_v<T>
+        && std::is_nothrow_move_constructible_v<U>
+        && std::is_nothrow_swappable_with_v<T, U>;
 }
 
 namespace impl {
@@ -2515,9 +2521,11 @@ namespace impl {
         using is_explicit = std::enable_if<!Condition, int>;
     };
     template<class T, class U>
-    struct explicit_if_convertible {
+    struct check_from_value_ctor {
         template<bool Condition>
-        using is_explicit = std::enable_if<std::is_convertible_v<U, T> != Condition, int>;
+        using is_explicit = std::enable_if<
+            (std::is_convertible_v<U, T> != Condition) && is_initializable_from_v<T, U>
+        , int>;
     };
     template<class T, class U, class QualU>
     struct check_option_like_ctor {
@@ -2552,103 +2560,113 @@ namespace impl {
         using assignment = std::enable_if<true>;
     };
 
-    template<class = void>
     struct option_check_fail {};
 
     template<bool IsReference/*=false*/>
     struct option_checks_base {
         template<class T, class U>
         using from_value_ctor = if_<
-            is_initializable_from<T, U>::value
-            && is_not_same<remove_cvref<U>, opt::option<T>>::value
-            && is_not_same<remove_cvref<U>, std::in_place_t>::value
+            is_not_same_v<remove_cvref<U>, opt::option<T>>
+            && is_not_same_v<remove_cvref<U>, std::in_place_t>
             && (!std::is_same_v<std::remove_cv_t<T>, bool> || !opt::is_option_v<remove_cvref<U>>),
-            explicit_if_convertible<T, U>, option_check_fail<>>;
+            check_from_value_ctor<T, U>, option_check_fail>;
 
         template<class T, class First, class... Args>
         using from_args_ctor = std::enable_if<
-            is_initializable_from<T, First, Args...>::value
-            && is_not_same<remove_cvref<First>, opt::option<T>>::value
-            && is_not_same<remove_cvref<First>, std::in_place_t>::value
+            and_v<
+                is_not_same<remove_cvref<First>, opt::option<T>>,
+                is_not_same<remove_cvref<First>, std::in_place_t>,
+                is_initializable_from<T, First, Args...>
+            >
         >;
-
+        
         template<class T, class InPlaceT, class... Args>
         using from_in_place_args_ctor = std::enable_if<
-            and_<std::is_same<InPlaceT, std::in_place_t>, is_initializable_from<T, Args...>>::value
+            and_v<
+                std::is_same<InPlaceT, std::in_place_t>,
+                is_initializable_from<T, Args...>
+            >
         >;
 
         template<class T, class U, class QualU>
         using from_option_like_ctor = if_<
-            is_not_same<U, T>::value
-            && is_initializable_from<T, QualU>::value,
-            check_option_like_ctor<T, U, QualU>, option_check_fail<>
+            is_not_same_v<U, T>
+            && is_initializable_from_v<T, QualU>,
+            check_option_like_ctor<T, U, QualU>, option_check_fail
         >;
         template<class T, class U, class QualU>
         using from_option_like_assign = if_<
-            is_not_same<U, T>::value
-            && is_initializable_from<T, QualU>::value
+            is_not_same_v<U, T>
+            && is_initializable_from_v<T, QualU>
             && std::is_assignable_v<T&, QualU>,
-            check_option_like_ctor<T, U, QualU>, option_check_fail<>
+            check_option_like_ctor<T, U, QualU>, option_check_fail
         >;
 
         template<class T, class U>
         using from_value_assign = std::enable_if<
-            is_not_same<remove_cvref<U>, opt::option<T>>::value
-            && (is_not_same<remove_cvref<U>, T>::value || !std::is_scalar_v<T>)
-            && is_initializable_from<T, U>::value
+            is_not_same_v<remove_cvref<U>, opt::option<T>>
+            && (is_not_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)
+            && is_initializable_from_v<T, U>
             && std::is_assignable_v<T&, U>
         >;
     };
     template<>
     struct option_checks_base</*IsReference=*/true> {
-        template<class T, class U>
+        template<class T, class U, class TUnref = std::remove_reference_t<T>, class UUnref = std::remove_reference_t<U>>
         static constexpr bool can_bind_reference() {
-            using u_unref = std::remove_reference_t<U>;
-            using t_unref = std::remove_reference_t<T>;
-
-            if constexpr (std::is_same_v<u_unref, std::reference_wrapper<std::remove_const_t<t_unref>>>
-                       || std::is_same_v<u_unref, std::reference_wrapper<t_unref>>) {
-                return true;
-            } else {
-                if constexpr (std::is_lvalue_reference_v<T>) {
-                    return std::is_lvalue_reference_v<U> && std::is_convertible_v<u_unref*, t_unref*>;
-                } else { // std::is_rvalue_reference_v<T>
-                    return !std::is_lvalue_reference_v<U> && std::is_convertible_v<u_unref*, t_unref*>;
-                }
-            }
+            return
+                std::is_same_v<UUnref, std::reference_wrapper<std::remove_const_t<TUnref>>>
+             || std::is_same_v<UUnref, std::reference_wrapper<TUnref>>
+             || (std::is_convertible_v<UUnref*, TUnref*>
+              && std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>);
         }
+        // template<class T, class U, class TUnref = std::remove_reference_t<T>, class UUnref = std::remove_reference_t<U>>
+        // using can_bind_reference =
+        //     or_<
+        //         std::is_same<UUnref, std::reference_wrapper<std::remove_const_t<TUnref>>>,
+        //         std::is_same<UUnref, std::reference_wrapper<TUnref>>,
+        //         and_<
+        //             std::is_convertible<UUnref*, TUnref*>
+        //             if_<std::is_lvalue_reference_v<T>,
+        //                 std::is_lvalue_reference<U>,
+        //                 not_<std::is_lvalue_reference<U>>
+        //             >
+        //         >
+        //     >;
+        // false true  false
+        // false false true
 
         template<class T, class U>
         using from_value_ctor = if_<
-            is_not_same<remove_cvref<U>, opt::option<T>>::value
-            && is_not_same<remove_cvref<U>, std::in_place_t>::value
+            is_not_same_v<remove_cvref<U>, opt::option<T>>
+            && is_not_same_v<remove_cvref<U>, std::in_place_t>
             && !opt::is_option_v<remove_cvref<U>>
             && can_bind_reference<T, U>(),
-            always_non_explicit, option_check_fail<>>;
+            always_non_explicit, option_check_fail>;
 
         template<class T, class First, class... Args>
-        using from_args_ctor = option_check_fail<First>;
+        using from_args_ctor = std::enable_if<sizeof(First) == 0>;
 
         template<class T, class InPlaceT, class... Args>
-        using from_in_place_args_ctor = option_check_fail<InPlaceT>;
+        using from_in_place_args_ctor = std::enable_if<sizeof(InPlaceT) == 0>;
 
         template<class T, class U, class QualU>
         using from_option_like_ctor = if_<
-            is_not_same<U, T>::value
+            is_not_same_v<U, T>
             && can_bind_reference<T, U>(),
-            always_non_explicit, option_check_fail<>
+            always_non_explicit, option_check_fail
         >;
         template<class T, class U, class QualU>
         using from_option_like_assign = if_<
-            is_not_same<U, T>::value
+            is_not_same_v<U, T>
             && can_bind_reference<T, U>(),
-            always_assign, option_check_fail<>
+            always_assign, option_check_fail
         >;
 
         template<class T, class U>
         using from_value_assign = std::enable_if<
-            is_not_same<remove_cvref<U>, opt::option<T>>::value
-            && (is_not_same<remove_cvref<U>, T>::value || !std::is_scalar_v<T>)
+            is_not_same_v<remove_cvref<U>, opt::option<T>>
+            && (is_not_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)
             && can_bind_reference<T, U>()
         >;
     };
@@ -3068,7 +3086,7 @@ public:
     }
 
     template<class U>
-    constexpr void swap(option<U>& other) noexcept(impl::option::nothrow_swap<T, U>::value) {
+    constexpr void swap(option<U>& other) noexcept(impl::option::nothrow_swap<T, U>) {
         using std::swap;
         if (!has_value() && !other.has_value()) {
             return;
@@ -3187,7 +3205,7 @@ template<class T>
 }
 
 template<class T, class U>
-constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>::value) {
+constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>) {
     left.swap(right);
 }
 
@@ -3548,7 +3566,7 @@ namespace impl {
     struct type_wrapper {
         T m{};
 
-        template<class... Args, std::enable_if_t<impl::is_initializable_from<T, Args...>::value, int> = 0>
+        template<class... Args, std::enable_if_t<impl::is_initializable_from_v<T, Args...>, int> = 0>
         constexpr explicit type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             : m{std::forward<Args>(args)...} {}
 
@@ -3705,13 +3723,13 @@ namespace impl {
 
     template<class T, class Hash = std::hash<T>>
     using enable_hash_helper2 = std::enable_if_t<
-        and_<
+        and_v<
             std::is_default_constructible<Hash>,
             std::is_copy_constructible<Hash>,
             std::is_move_constructible<Hash>,
             std::is_destructible<Hash>,
             std::is_invocable_r<std::size_t, Hash, const T&>
-        >::value
+        >
     >;
 }
 
