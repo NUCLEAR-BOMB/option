@@ -500,13 +500,13 @@ namespace impl {
     template<class T, class Traits, class = void>
     inline constexpr bool has_set_level_method = false;
     template<class T, class Traits>
-    inline constexpr bool has_set_level_method<T, Traits, decltype(Traits::set_level(std::declval<T*>(), std::declval<std::uintmax_t>()))>
-        = noexcept(Traits::set_level(std::declval<T*>(), std::declval<std::uintmax_t>()));
+    inline constexpr bool has_set_level_method<T, Traits, decltype(Traits::set_level(std::declval<std::remove_const_t<T>*>(), std::declval<std::uintmax_t>()))>
+        = noexcept(Traits::set_level(std::declval<std::remove_const_t<T>*>(), std::declval<std::uintmax_t>()));
 
     template<class T, class = void>
     inline constexpr bool has_sentinel_member = false;
     template<class T>
-    inline constexpr bool has_sentinel_member<T, std::void_t<decltype(std::declval<T&>().SENTINEL)>> = true;
+    inline constexpr bool has_sentinel_member<T, std::void_t<decltype(std::declval<std::remove_const_t<T>&>().SENTINEL)>> = true;
 
     template<class T, class = void>
     inline constexpr bool has_sentinel_enumerator = false;
@@ -1670,7 +1670,7 @@ namespace impl {
 
     template<class T,
         bool TriviallyDestructible = impl::is_trivially_destructible<T>::value,
-        bool HasTraits = (opt::option_traits<T>::max_level > 0)
+        bool HasTraits = (opt::option_traits<std::remove_cv_t<T>>::max_level > 0)
     >
     struct option_destruct_base;
 
@@ -1682,7 +1682,7 @@ namespace impl {
     struct option_destruct_base<T, /*TriviallyDestructible=*/true, /*HasTraits=*/false> {
         union {
             nontrivial_dummy dummy;
-            T value;
+            std::remove_const_t<T> value;
         };
         bool has_value_flag;
 
@@ -1718,7 +1718,7 @@ namespace impl {
     struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/false> {
         union {
             nontrivial_dummy dummy;
-            T value;
+            std::remove_const_t<T> value;
         };
         bool has_value_flag;
 
@@ -1767,9 +1767,9 @@ namespace impl {
     struct option_destruct_base<T, /*TriviallyDestructible=*/true, /*HasTraits=*/true> {
         union {
             nontrivial_dummy dummy;
-            T value;
+            std::remove_const_t<T> value;
         };
-        using traits = opt::option_traits<T>;
+        using traits = opt::option_traits<std::remove_cv_t<T>>;
 
         static_assert(impl::has_get_level_method<T, traits>, "The static method 'get_level' in 'opt::option_traits' does not exist or has an invalid function signature");
         static_assert(impl::has_set_level_method<T, traits>, "The static method 'set_level' in 'opt::option_traits' does not exist or has an invalid function signature");
@@ -1815,9 +1815,9 @@ namespace impl {
     struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/true> {
         union {
             nontrivial_dummy dummy;
-            T value;
+            std::remove_const_t<T> value;
         };
-        using traits = opt::option_traits<T>;
+        using traits = opt::option_traits<std::remove_cv_t<T>>;
 
         static_assert(impl::has_get_level_method<T, traits>, "The static method 'get_level' in 'opt::option_traits' does not exist or has an invalid function signature");
         static_assert(impl::has_set_level_method<T, traits>, "The static method 'set_level' in 'opt::option_traits' does not exist or has an invalid function signature");
@@ -1918,20 +1918,14 @@ namespace impl {
         bool TrivialMoveAssignment = and_<impl::is_trivially_move_assignable<T>, impl::is_trivially_destructible<T>>::value,
         bool is_reference = std::is_reference_v<T>
     >
-    struct option_base : public option_destruct_base<std::remove_const_t<T>> {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-
-        using base::base;
+    struct option_base : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
     };
 
     // If TrivialCopyCtor is false, then always do not enable the trivial copy assignment operator
     template<class T, bool TrivialCopyAssignment>
-    struct option_base<T, false, TrivialCopyAssignment, true, true, false>
-        : public option_destruct_base<std::remove_const_t<T>>
-    {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+    struct option_base<T, false, TrivialCopyAssignment, true, true, false> : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
@@ -1945,12 +1939,8 @@ namespace impl {
         option_base& operator=(option_base&&) = default;
     };
     template<class T>
-    struct option_base<T, true, false, true, true, false>
-        : public option_destruct_base<std::remove_const_t<T>>
-    {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+    struct option_base<T, true, false, true, true, false> : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         option_base(const option_base&) = default;
@@ -1963,12 +1953,8 @@ namespace impl {
     };
     // If TrivialMoveAssignment is false, then always do not enable the trivial move assignment operator
     template<class T, bool TrivialMoveAssignment>
-    struct option_base<T, true, true, false, TrivialMoveAssignment, false>
-        : public option_destruct_base<std::remove_const_t<T>>
-    {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+    struct option_base<T, true, true, false, TrivialMoveAssignment, false> : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         option_base(const option_base&) = default;
@@ -1984,12 +1970,8 @@ namespace impl {
     // If TrivialMoveAssignment is false, then always do not enable the trivial move assignment operator
     // If TrivialCopyCtor is false, then always do not enable the trivial copy assignment operator
     template<class T, bool TrivialCopyAssignment, bool TrivialMoveAssignment>
-    struct option_base<T, false, TrivialCopyAssignment, false, TrivialMoveAssignment, false>
-        : public option_destruct_base<std::remove_const_t<T>>
-    {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+    struct option_base<T, false, TrivialCopyAssignment, false, TrivialMoveAssignment, false> : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
@@ -2009,12 +1991,9 @@ namespace impl {
     };
     // If TrivialMoveAssignment is false, then always do not enable the trivial move assignment operator
     template<class T, bool TrivialMoveAssignment>
-    struct option_base<T, true, false, false, TrivialMoveAssignment, false>
-        : public option_destruct_base<std::remove_const_t<T>>
+    struct option_base<T, true, false, false, TrivialMoveAssignment, false> : public option_destruct_base<T>
     {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         option_base(const option_base&) = default;
@@ -2031,12 +2010,8 @@ namespace impl {
         }
     };
     template<class T>
-    struct option_base<T, true, true, true, false, false>
-        : public option_destruct_base<std::remove_const_t<T>>
-    {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+    struct option_base<T, true, true, true, false, false> : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         option_base(const option_base&) = default;
@@ -2049,12 +2024,8 @@ namespace impl {
     };
     // If TrivialCopyCtor is false, then always do not enable the trivial copy assignment operator
     template<class T, bool TrivialCopyAssignment>
-    struct option_base<T, false, TrivialCopyAssignment, true, false, false>
-        : public option_destruct_base<std::remove_const_t<T>>
-    {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+    struct option_base<T, false, TrivialCopyAssignment, true, false, false> : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         constexpr option_base(const option_base& other) noexcept(nothrow_option_copy_constructor<T>::value) {
@@ -2071,12 +2042,8 @@ namespace impl {
         }
     };
     template<class T>
-    struct option_base<T, true, false, true, false, false>
-        : public option_destruct_base<std::remove_const_t<T>>
-    {
-        using base = option_destruct_base<std::remove_const_t<T>>;
-    public:
-        using base::base;
+    struct option_base<T, true, false, true, false, false> : public option_destruct_base<T> {
+        using option_destruct_base<T>::option_destruct_base;
 
         option_base() = default;
         option_base(const option_base&) = default;
