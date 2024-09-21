@@ -2117,14 +2117,8 @@ namespace impl {
 
         template<class Option>
         constexpr void assign_from_option(Option&& other) {
-            using option_value_type = typename impl::remove_cvref<Option>::value_type;
-
             if (other.has_value()) {
-                if constexpr (std::is_reference_v<option_value_type>) {
-                    construct(other.get());
-                } else {
-                    construct(std::forward<Option>(other).get());
-                }
+                value = ref_to_ptr(std::forward<Option>(other).get());
             } else {
                 reset();
             }
