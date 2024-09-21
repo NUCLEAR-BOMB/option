@@ -11,6 +11,8 @@ namespace {
 
 TEST_SUITE_BEGIN("meta");
 
+// NOLINTBEGIN(modernize-use-equals-default,performance-noexcept-move-constructor,cert-oop54-cpp)
+
 struct non_default_constructible {
     non_default_constructible() = delete;
 };
@@ -256,6 +258,8 @@ TEST_CASE("operator=") {
         CHECK_UNARY_FALSE(std::is_assignable_v<opt::option<non_assignable_from_anything>&, opt::option<int>>);
     }
 }
+
+// NOLINTEND(modernize-use-equals-default,performance-noexcept-move-constructor,cert-oop54-cpp)
 
 TEST_SUITE_END();
 
