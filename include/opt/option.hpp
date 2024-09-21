@@ -471,12 +471,20 @@ namespace impl {
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
         if constexpr (impl::is_trivially_move_assignable<T>::value) {
-            *ptr = T{std::forward<Args>(args)...};
+            if constexpr (std::is_aggregate_v<T>) {
+                *ptr = T{std::forward<Args>(args)...};
+            } else {
+                *ptr = T(std::forward<Args>(args)...);
+            }
         } else {
 #if OPTION_IS_CXX20
             std::construct_at(ptr, std::forward<Args>(args)...);
 #else
-            ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
+            if constexpr (std::is_aggregate_v<T>) {
+                ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
+            } else {
+                ::new(static_cast<void*>(ptr)) T(std::forward<Args>(args)...);
+            }
 #endif
         }
     }
@@ -1620,6 +1628,7 @@ namespace impl {
     template<class Tuple>
     using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
 
+#if !OPTION_IS_CXX20
     template<bool IsAggregate, bool IsConstructible, class, class T, class... Args>
     struct is_initializable_from_impl
         : std::bool_constant<IsConstructible> {};
@@ -1630,6 +1639,10 @@ namespace impl {
 
     template<class T, class... Args>
     using is_initializable_from = is_initializable_from_impl<std::is_aggregate_v<T>, std::is_constructible_v<T, Args...>, void, T, Args...>;
+#else
+    template<class T, class... Args>
+    using is_initializable_from = std::is_constructible<T, Args...>;
+#endif
 
     template<class T>
     struct member_type {
@@ -1680,12 +1693,20 @@ namespace impl {
             : dummy{}, has_value_flag(false) {}
 
         template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
+        constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
             : value{std::forward<Args>(args)...}, has_value_flag(true) {}
 
+        template<class... Args>
+        constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
+            : value(std::forward<Args>(args)...), has_value_flag(true) {}
+
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
+
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
 
         constexpr void reset() noexcept {
             has_value_flag = false;
@@ -1716,12 +1737,20 @@ namespace impl {
             : dummy(), has_value_flag(false) {}
 
         template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
+        constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
             : value{std::forward<Args>(args)...}, has_value_flag(true) {}
 
+        template<class... Args>
+        constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
+            : value(std::forward<Args>(args)...), has_value_flag(true) {}
+
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
+
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
 
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value_flag) {
@@ -1770,13 +1799,24 @@ namespace impl {
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }
         template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
+        constexpr option_destruct_base(const std::in_place_t, std::true_type, Args&&... args)
             : value{std::forward<Args>(args)...} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
+        template<class... Args>
+        constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
+            : value(std::forward<Args>(args)...) {
+            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+        }
+
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+        }
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
 
@@ -1818,13 +1858,23 @@ namespace impl {
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }
         template<class... Args>
-        constexpr option_destruct_base(const std::in_place_t, Args&&... args)
+        constexpr option_destruct_base(const std::in_place_t, std::true_type, Args&&... args)
             : value{std::forward<Args>(args)...} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
+        template<class... Args>
+        constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
+            : value(std::forward<Args>(args)...) {
+            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+        }
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
             : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
+        }
+        template<class F, class Arg>
+        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
+            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
@@ -2085,12 +2135,12 @@ namespace impl {
         constexpr option_base() noexcept
             : value{nullptr} {}
 
-        template<class Arg>
-        constexpr option_base(const std::in_place_t, Arg&& arg) noexcept
+        template<class Arg, bool IsAggregate>
+        constexpr option_base(const std::in_place_t, std::bool_constant<IsAggregate>, Arg&& arg) noexcept
             : value{ref_to_ptr(std::forward<Arg>(arg))} {}
 
-        template<class F, class Arg>
-        constexpr option_base(construct_from_invoke_tag, F&& f, Arg&& arg)
+        template<class F, class Arg, bool IsAggregate>
+        constexpr option_base(construct_from_invoke_tag, std::bool_constant<IsAggregate>, F&& f, Arg&& arg)
             : value{ref_to_ptr(std::invoke(std::forward<F>(f), std::forward<Arg>(arg)))} {}
 
         OPTION_PURE constexpr bool has_value() const noexcept {
@@ -2646,29 +2696,29 @@ public:
 
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<true>::type = 0>
     constexpr explicit option(U&& val)
-        : base(std::in_place, std::forward<U>(val)) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<U>(val)) {}
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<false>::type = 0>
     constexpr option(U&& val)
-        : base(std::in_place, std::forward<U>(val)) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<U>(val)) {}
 
     template<class First, class Second, class... Args,
         class = typename checks::template from_args_ctor<T, First, Second, Args...>::type>
     constexpr explicit option(First&& first, Second&& second, Args&&... args)
-        : base(std::in_place, std::forward<First>(first), std::forward<Second>(second), std::forward<Args>(args)...) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<First>(first), std::forward<Second>(second), std::forward<Args>(args)...) {}
 
     template<class InPlaceT, class... Args,
         class = typename checks::template from_in_place_args_ctor<T, InPlaceT, Args...>::type>
     constexpr explicit option(const InPlaceT, Args&&... args)
-        : base(std::in_place, std::forward<Args>(args)...) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<Args>(args)...) {}
 
     template<class InPlaceT, class U, class... Args,
         class = typename checks::template from_in_place_args_ctor<T, InPlaceT, std::initializer_list<U>&, Args...>::type>
     constexpr explicit option(const InPlaceT, std::initializer_list<U> ilist, Args&&... args)
-        : base(std::in_place, ilist, std::forward<Args>(args)...) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, ilist, std::forward<Args>(args)...) {}
 
     template<class F, class Arg>
     constexpr explicit option(const impl::construct_from_invoke_tag, F&& f, Arg&& arg)
-        : base(impl::construct_from_invoke_tag{}, std::forward<F>(f), std::forward<Arg>(arg)) {}
+        : base(impl::construct_from_invoke_tag{}, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<F>(f), std::forward<Arg>(arg)) {}
 
     template<class U,
         typename checks::template from_option_like_ctor<T, U, const U&>::template constructor_is_explicit<false>::type = 0>
