@@ -1620,21 +1620,16 @@ namespace impl {
     template<class Tuple>
     using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
 
-    template<class, class T, class... Args>
-    struct is_direct_list_initializable_impl {
-        static constexpr bool value = false;
-    };
-    template<class T, class... Args>
-    struct is_direct_list_initializable_impl<std::void_t<decltype(T{std::declval<Args>()...})>, T, Args...> {
-        static constexpr bool value = true;
-    };
-    template<class T, class... Args>
-    struct is_direct_list_initializable {
-        static constexpr bool value = is_direct_list_initializable_impl<void, T, Args...>::value;
-    };
+    template<bool IsAggregate, bool IsConstructible, class, class T, class... Args>
+    struct is_initializable_from_impl
+        : std::bool_constant<IsConstructible> {};
 
     template<class T, class... Args>
-    inline constexpr bool is_direct_list_initializable_v = is_direct_list_initializable<T, Args...>::value;
+    struct is_initializable_from_impl<true, false, decltype(T{std::declval<Args>()...}, void()), T, Args...>
+        : std::true_type {};
+
+    template<class T, class... Args>
+    using is_initializable_from = is_initializable_from_impl<std::is_aggregate_v<T>, std::is_constructible_v<T, Args...>, void, T, Args...>;
 
     template<class T>
     struct member_type {
@@ -2509,7 +2504,7 @@ namespace impl {
     struct option_checks_base {
         template<class T, class U>
         using from_value_ctor = if_<
-            is_direct_list_initializable<T, U>::value
+            is_initializable_from<T, U>::value
             && is_not_same<remove_cvref<U>, opt::option<T>>::value
             && is_not_same<remove_cvref<U>, std::in_place_t>::value
             && (!std::is_same_v<std::remove_cv_t<T>, bool> || !opt::is_option_v<remove_cvref<U>>),
@@ -2517,26 +2512,26 @@ namespace impl {
 
         template<class T, class First, class... Args>
         using from_args_ctor = std::enable_if<
-            is_direct_list_initializable<T, First, Args...>::value
+            is_initializable_from<T, First, Args...>::value
             && is_not_same<remove_cvref<First>, opt::option<T>>::value
             && is_not_same<remove_cvref<First>, std::in_place_t>::value
         >;
 
         template<class T, class InPlaceT, class... Args>
         using from_in_place_args_ctor = std::enable_if<
-            and_<std::is_same<InPlaceT, std::in_place_t>, is_direct_list_initializable<T, Args...>>::value
+            and_<std::is_same<InPlaceT, std::in_place_t>, is_initializable_from<T, Args...>>::value
         >;
 
         template<class T, class U, class QualU>
         using from_option_like_ctor = if_<
             is_not_same<U, T>::value
-            && is_direct_list_initializable<T, QualU>::value,
+            && is_initializable_from<T, QualU>::value,
             check_option_like_ctor<T, U, QualU>, option_check_fail<>
         >;
         template<class T, class U, class QualU>
         using from_option_like_assign = if_<
             is_not_same<U, T>::value
-            && is_direct_list_initializable<T, QualU>::value
+            && is_initializable_from<T, QualU>::value
             && std::is_assignable_v<T&, QualU>,
             check_option_like_ctor<T, U, QualU>, option_check_fail<>
         >;
@@ -2545,7 +2540,7 @@ namespace impl {
         using from_value_assign = std::enable_if<
             is_not_same<remove_cvref<U>, opt::option<T>>::value
             && (is_not_same<remove_cvref<U>, T>::value || !std::is_scalar_v<T>)
-            && is_direct_list_initializable<T, U>::value
+            && is_initializable_from<T, U>::value
             && std::is_assignable_v<T&, U>
         >;
     };
@@ -3498,8 +3493,8 @@ namespace impl {
     struct type_wrapper {
         T m{};
 
-        template<class... Args, std::enable_if_t<impl::is_direct_list_initializable_v<T, Args...>, int> = 0>
-        constexpr type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+        template<class... Args, std::enable_if_t<impl::is_initializable_from<T, Args...>::value, int> = 0>
+        constexpr explicit type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
             : m{std::forward<Args>(args)...} {}
 
         type_wrapper() = default;
@@ -3513,12 +3508,9 @@ namespace impl {
         constexpr type_wrapper(T&& x) noexcept(std::is_nothrow_move_constructible_v<T>)
             : m{std::move(x)} {}
 
-        type_wrapper& operator=(const T& x) noexcept(std::is_nothrow_copy_assignable_v<T>) {
-            m = x;
-            return *this;
-        }
-        type_wrapper& operator=(T&& x) noexcept(std::is_nothrow_move_assignable_v<T>) {
-            m = std::move(x);
+        template<class U = T>
+        constexpr type_wrapper& operator=(U&& x) {
+            m = std::forward<U>(x);
             return *this;
         }
 

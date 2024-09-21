@@ -152,7 +152,7 @@ TEST_CASE("opt::member") {
     opt::option<opt::member<my_type, &my_type::x>> a;
     CHECK_EQ(sizeof(a), sizeof(my_type));
     CHECK_UNARY_FALSE(a.has_value());
-    a = 1.f;
+    a = my_type{1.f};
     CHECK_EQ(a->m.x, 2.f);
     a.reset();
     CHECK_UNARY_FALSE(a.has_value());
