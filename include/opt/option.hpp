@@ -2590,6 +2590,64 @@ namespace impl::option {
     >;
 }
 
+namespace impl {
+    struct always_non_explicit {
+        template<bool Condition>
+        using is_explicit = std::enable_if<!Condition, int>;
+    };
+    template<class T, class U>
+    struct explicit_if_convertible {
+        template<bool Condition>
+        using is_explicit = std::enable_if<std::is_convertible_v<U, T> != Condition, int>;
+    };
+
+    struct option_check_fail {};
+
+    template<bool IsReference/*=false*/>
+    struct option_checks_base {
+        template<class T, class U>
+        using from_value_ctor = if_<
+            is_direct_list_initializable<T, U>::value
+            && is_not_same<remove_cvref<U>, opt::option<T>>::value
+            && is_not_same<remove_cvref<U>, std::in_place_t>::value
+            && (!std::is_same_v<std::remove_cv_t<T>, bool> || !opt::is_option_v<remove_cvref<U>>),
+            explicit_if_convertible<T, U>, option_check_fail>;
+
+        template<class T, class U>
+        using from_value_ctor_noexcept = std::is_nothrow_constructible<T, U>;
+    };
+    template<>
+    struct option_checks_base</*IsReference=*/true> {
+        template<class T, class U>
+        static constexpr bool can_bind_reference() {
+            using u_unref = std::remove_reference_t<U>;
+            using t_unref = std::remove_reference_t<T>;
+
+            if constexpr (std::is_same_v<u_unref, std::reference_wrapper<std::remove_const_t<t_unref>>>
+                       || std::is_same_v<u_unref, std::reference_wrapper<t_unref>>) {
+                return true;
+            } else {
+                if constexpr (std::is_lvalue_reference_v<T>) {
+                    return std::is_lvalue_reference_v<U> && std::is_convertible_v<u_unref*, t_unref*>;
+                } else { // std::is_rvalue_reference_v<T>
+                    return !std::is_lvalue_reference_v<U> && std::is_convertible_v<u_unref*, t_unref*>;
+                }
+            }
+        }
+
+        template<class T, class U>
+        using from_value_ctor = if_<
+            is_not_same<remove_cvref<U>, opt::option<T>>::value
+            && is_not_same<remove_cvref<U>, std::in_place_t>::value
+            && !opt::is_option_v<remove_cvref<U>>
+            && can_bind_reference<T, U>(),
+            always_non_explicit, option_check_fail>;
+
+        template<class T, class U>
+        using from_value_ctor_noexcept = std::true_type;
+    };
+}
+
 template<class T>
 class OPTION_DECLSPEC_EMPTY_BASES option
     : private impl::option_base<T>
@@ -2607,7 +2665,7 @@ class OPTION_DECLSPEC_EMPTY_BASES option
     template<class, impl::option_strategy> friend struct impl::internal_option_traits;
     template<class> friend class option;
 
-    
+    using checks = impl::option_checks_base<std::is_reference_v<T>>;
 public:
     static_assert(!std::is_same_v<impl::remove_cvref<T>, opt::none_t>,
         "In opt::option<T>, T cannot be opt::none_t."
@@ -2635,11 +2693,11 @@ public:
 
     option(option&&) = default;
 
-    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/std::true_type> = 0>
-    constexpr explicit option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
+    template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<true>::type = 0>
+    constexpr explicit option(U&& val) noexcept(checks::template from_value_ctor_noexcept<T, U>::value)
         : base(std::in_place, std::forward<U>(val)) {}
-    template<class U = T, impl::option::enable_constructor_5<T, U, /*is_explicit=*/std::false_type> = 0>
-    constexpr option(U&& val) noexcept(std::is_nothrow_constructible_v<T, U&&>)
+    template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<false>::type = 0>
+    constexpr option(U&& val) noexcept(checks::template from_value_ctor_noexcept<T, U>::value)
         : base(std::in_place, std::forward<U>(val)) {}
 
     template<class First, class Second, class... Args, impl::option::enable_constructor_6<T, First, Second, Args...> = 0>
