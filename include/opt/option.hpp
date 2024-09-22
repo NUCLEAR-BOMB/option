@@ -3472,43 +3472,54 @@ template<class T>
     return opt::none;
 }
 
+namespace impl {
+    template<class T>
+    [[nodiscard]] T fake_copy(T) noexcept;
+}
+
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator==(const option<T1>& left, const option<T2>& right) {
+[[nodiscard]] constexpr auto operator==(const option<T1>& left, const option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left.get() == right.get())) {
     const bool left_has_value = left.has_value();
     const bool right_has_value = right.has_value();
     if (left_has_value && right_has_value) { return left.get() == right.get(); }
     return left_has_value == right_has_value;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator!=(const option<T1>& left, const option<T2>& right) {
+[[nodiscard]] constexpr auto operator!=(const option<T1>& left, const option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left.get() != right.get())) {
     const bool left_has_value = left.has_value();
     const bool right_has_value = right.has_value();
     if (left_has_value && right_has_value) { return left.get() != right.get(); }
     return left_has_value != right_has_value;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator<(const option<T1>& left, const option<T2>& right) {
+[[nodiscard]] constexpr auto operator<(const option<T1>& left, const option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left.get() < right.get())) {
     const bool left_has_value = left.has_value();
     const bool right_has_value = right.has_value();
     if (left_has_value && right_has_value) { return left.get() < right.get(); }
     return left_has_value < right_has_value;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator<=(const option<T1>& left, const option<T2>& right) {
+[[nodiscard]] constexpr auto operator<=(const option<T1>& left, const option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left.get() <= right.get())) {
     const bool left_has_value = left.has_value();
     const bool right_has_value = right.has_value();
     if (left_has_value && right_has_value) { return left.get() <= right.get(); }
     return left_has_value <= right_has_value;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator>(const option<T1>& left, const option<T2>& right) {
+[[nodiscard]] constexpr auto operator>(const option<T1>& left, const option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left.get() > right.get())) {
     const bool left_has_value = left.has_value();
     const bool right_has_value = right.has_value();
     if (left_has_value && right_has_value) { return left.get() > right.get(); }
     return left_has_value > right_has_value;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator>=(const option<T1>& left, const option<T2>& right) {
+[[nodiscard]] constexpr auto operator>=(const option<T1>& left, const option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left.get() >= right.get())) {
     const bool left_has_value = left.has_value();
     const bool right_has_value = right.has_value();
     if (left_has_value && right_has_value) { return left.get() >= right.get(); }
@@ -3565,51 +3576,63 @@ template<class T>
 }
 
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator==(const option<T1>& left, const T2& right) {
+[[nodiscard]] constexpr auto operator==(const option<T1>& left, const T2& right)
+    -> decltype(impl::fake_copy<bool>(left.get() == right)) {
     return left.has_value() ? left.get() == right : false;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator==(const T1& left, const opt::option<T2>& right) {
+[[nodiscard]] constexpr auto operator==(const T1& left, const opt::option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left == right.get())) {
     return right.has_value() ? left == right.get() : false;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator!=(const option<T1>& left, const T2& right) {
+[[nodiscard]] constexpr auto operator!=(const option<T1>& left, const T2& right)
+    -> decltype(impl::fake_copy<bool>(left.get() != right)) {
     return left.has_value() ? left.get() != right : true;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator!=(const T1& left, const opt::option<T2>& right) {
+[[nodiscard]] constexpr auto operator!=(const T1& left, const opt::option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left != right.get())) {
     return right.has_value() ? left != right.get() : true;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator<(const option<T1>& left, const T2& right) {
+[[nodiscard]] constexpr auto operator<(const option<T1>& left, const T2& right)
+    -> decltype(impl::fake_copy<bool>(left.get() < right)) {
     return left.has_value() ? left.get() < right : true;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator<(const T1& left, const opt::option<T2>& right) {
+[[nodiscard]] constexpr auto operator<(const T1& left, const opt::option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left < right.get())) {
     return right.has_value() ? left < right.get() : false;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator<=(const option<T1>& left, const T2& right) {
+[[nodiscard]] constexpr auto operator<=(const option<T1>& left, const T2& right)
+    -> decltype(impl::fake_copy<bool>(left.get() <= right)) {
     return left.has_value() ? left.get() <= right : true;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator<=(const T1& left, const opt::option<T2>& right) {
+[[nodiscard]] constexpr auto operator<=(const T1& left, const opt::option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left <= right.get())) {
     return right.has_value() ? left <= right.get() : false;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator>(const option<T1>& left, const T2& right) {
+[[nodiscard]] constexpr auto operator>(const option<T1>& left, const T2& right)
+    -> decltype(impl::fake_copy<bool>(left.get() > right)) {
     return left.has_value() ? left.get() > right : false;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator>(const T1& left, const opt::option<T2>& right) {
+[[nodiscard]] constexpr auto operator>(const T1& left, const opt::option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left > right.get())) {
     return right.has_value() ? left > right.get() : true;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator>=(const option<T1>& left, const T2& right) {
+[[nodiscard]] constexpr auto operator>=(const option<T1>& left, const T2& right)
+    -> decltype(impl::fake_copy<bool>(left.get() >= right)) {
     return left.has_value() ? left.get() >= right : false;
 }
 template<class T1, class T2>
-[[nodiscard]] constexpr bool operator>=(const T1& left, const opt::option<T2>& right) {
+[[nodiscard]] constexpr auto operator>=(const T1& left, const opt::option<T2>& right)
+    -> decltype(impl::fake_copy<bool>(left >= right.get())) {
     return right.has_value() ? left >= right.get() : true;
 }
 

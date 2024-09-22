@@ -1776,6 +1776,7 @@ template<class T1, class T2>
 constexpr bool operator==(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `==`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `==`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() == right.get()` is well-formed.
 
 ---
 
@@ -1800,6 +1801,7 @@ template<class T1, class T2>
 constexpr bool operator==(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `==`; otherwise, return `false`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() == right` is well-formed.
 
 ---
 
@@ -1808,6 +1810,7 @@ template<class T1, class T2>
 constexpr bool operator==(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `==`; otherwise, return `false`.
+- *Enabled* when the implicit conversion to `bool` of expression `left == right.get()` is well-formed.
 
 ### `operator!=`
 ```cpp
@@ -1815,6 +1818,7 @@ template<class T1, class T2>
 constexpr bool operator!=(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `!=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `!=`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() != right.get()` is well-formed.
 
 ---
 
@@ -1839,6 +1843,7 @@ template<class T1, class T2>
 constexpr bool operator!=(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `!=`; otherwise, return `true`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() != right` is well-formed.
 
 ---
 
@@ -1847,6 +1852,7 @@ template<class T1, class T2>
 constexpr bool operator!=(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `!=`; otherwise, return `true`.
+- *Enabled* when the implicit conversion to `bool` of expression `left != right.get()` is well-formed.
 
 ### `operator<`
 ```cpp
@@ -1854,6 +1860,7 @@ template<class T1, class T2>
 constexpr bool operator<(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `<`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() < right.get()` is well-formed.
 
 ---
 
@@ -1878,6 +1885,7 @@ template<class T1, class T2>
 constexpr bool operator<(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `<`; otherwise, return `true`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() < right` is well-formed.
 
 ---
 
@@ -1886,6 +1894,7 @@ template<class T1, class T2>
 constexpr bool operator<(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `<`; otherwise, return `false`.
+- *Enabled* when the implicit conversion to `bool` of expression `left < right.get()` is well-formed.
 
 ### `operator<=`
 ```cpp
@@ -1893,6 +1902,7 @@ template<class T1, class T2>
 constexpr bool operator<=(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `<=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<=`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() <= right.get()` is well-formed.
 
 ---
 
@@ -1917,6 +1927,7 @@ template<class T1, class T2>
 constexpr bool operator<=(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `<=`; otherwise, return `true`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() <= right` is well-formed.
 
 ---
 
@@ -1925,6 +1936,7 @@ template<class T1, class T2>
 constexpr bool operator<=(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `<=`; otherwise, return `false`.
+- *Enabled* when the implicit conversion to `bool` of expression `left <= right.get()` is well-formed.
 
 ### `operator>`
 ```cpp
@@ -1932,6 +1944,7 @@ template<class T1, class T2>
 constexpr bool operator>(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `>`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() > right.get()` is well-formed.
 
 ---
 
@@ -1956,6 +1969,7 @@ template<class T1, class T2>
 constexpr bool operator>(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `>`; otherwise, return `false`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() > right` is well-formed.
 
 ---
 
@@ -1964,6 +1978,7 @@ template<class T1, class T2>
 constexpr bool operator>(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `>`; otherwise, return `true`.
+- *Enabled* when the implicit conversion to `bool` of expression `left > right.get()` is well-formed.
 
 ### `operator>=`
 ```cpp
@@ -1971,6 +1986,7 @@ template<class T1, class T2>
 constexpr bool operator>=(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `>=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>=`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() >= right.get()` is well-formed.
 
 ---
 
@@ -1995,6 +2011,7 @@ template<class T1, class T2>
 constexpr bool operator>=(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `=>`; otherwise, return `false`.
+- *Enabled* when the implicit conversion to `bool` of expression `left.get() >= right` is well-formed.
 
 ---
 
@@ -2003,6 +2020,7 @@ template<class T1, class T2>
 constexpr bool operator>=(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `=>`; otherwise, return `true`.
+- *Enabled* when the implicit conversion to `bool` of expression `left >= right.get()` is well-formed.
 
 ## Helpers
 

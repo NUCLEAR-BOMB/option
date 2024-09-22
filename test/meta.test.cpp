@@ -286,6 +286,158 @@ TEST_CASE("operator=") {
     }
 }
 
+template<class T1, class T2, class = bool>
+constexpr bool is_eq_comparable = false;
+template<class T1, class T2>
+constexpr bool is_eq_comparable<T1, T2, decltype(std::declval<T1>() == std::declval<T2>())> = true;
+
+template<class T1, class T2, class = bool>
+constexpr bool is_lt_comparable = false;
+template<class T1, class T2>
+constexpr bool is_lt_comparable<T1, T2, decltype(std::declval<T1>() < std::declval<T2>())> = true;
+
+template<class T1, class T2, class = bool>
+constexpr bool is_gt_comparable = false;
+template<class T1, class T2>
+constexpr bool is_gt_comparable<T1, T2, decltype(std::declval<T1>() > std::declval<T2>())> = true;
+
+template<class T1, class T2, class = bool>
+constexpr bool is_le_comparable = false;
+template<class T1, class T2>
+constexpr bool is_le_comparable<T1, T2, decltype(std::declval<T1>() <= std::declval<T2>())> = true;
+
+template<class T1, class T2, class = bool>
+constexpr bool is_ge_comparable = false;
+template<class T1, class T2>
+constexpr bool is_ge_comparable<T1, T2, decltype(std::declval<T1>() >= std::declval<T2>())> = true;
+
+template<class T1, class T2, class = bool>
+constexpr bool is_ne_comparable = false;
+template<class T1, class T2>
+constexpr bool is_ne_comparable<T1, T2, decltype(std::declval<T1>() != std::declval<T2>())> = true;
+
+TEST_CASE("compare operators") {
+    SUBCASE("operator==") {
+        CHECK_UNARY(is_eq_comparable<const opt::option<int>&, const opt::option<int>&>);
+        struct s1 {
+            int x;
+            bool operator==(const s1& r) const { return x == r.x; }
+        };
+        CHECK_EQ((s1{1} == s1{1}), true);
+        CHECK_UNARY(is_eq_comparable<const opt::option<s1>&, const opt::option<s1>&>);
+        CHECK_UNARY(is_eq_comparable<const s1&, const opt::option<s1>&>);
+        CHECK_UNARY(is_eq_comparable<const opt::option<s1>&, const s1&>);
+        struct s2 {
+            int x;
+        };
+        CHECK_UNARY_FALSE(is_eq_comparable<const opt::option<s2>&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_eq_comparable<const s2&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_eq_comparable<const opt::option<s2>&, const s2&>);
+        struct s3 {
+            int x;
+            s1 operator==(const s3& r) const { return s1{int(x == r.x)}; }
+        };
+        CHECK_EQ((s3{1} == s3{1}), s1{1});
+        CHECK_UNARY_FALSE(is_eq_comparable<const opt::option<s3>&, const opt::option<s3>&>);
+        CHECK_UNARY_FALSE(is_eq_comparable<const s3&, const opt::option<s3>&>);
+        CHECK_UNARY_FALSE(is_eq_comparable<const opt::option<s3>&, const s3&>);
+        struct s4 {
+            int x;
+            operator bool() const { return x == 0; }
+        };
+        CHECK_UNARY(bool(s4{0}));
+        struct s5 {
+            int x;
+            s4 operator==(const s5& r) const { return s4{int(x != r.x)}; }
+        };
+        CHECK_EQ(s5{1}, s5{1});
+        CHECK_EQ((s5{1} == s5{1}), s4{0});
+        CHECK_UNARY(is_eq_comparable<const opt::option<s5>&, const opt::option<s5>&>);
+        CHECK_UNARY(is_eq_comparable<const s5&, const opt::option<s5>&>);
+        CHECK_UNARY(is_eq_comparable<const opt::option<s5>&, const s5&>);
+    }
+    SUBCASE("operator!=") {
+        CHECK_UNARY(is_ne_comparable<const opt::option<int>&, const opt::option<int>&>);
+        struct s1 {
+            int x;
+            bool operator!=(const s1& r) const { return x != r.x; }
+        };
+        CHECK_UNARY(is_ne_comparable<const opt::option<s1>&, const opt::option<s1>&>);
+        CHECK_UNARY(is_ne_comparable<const s1&, const opt::option<s1>&>);
+        CHECK_UNARY(is_ne_comparable<const opt::option<s1>&, const s1&>);
+        struct s2 {
+            int x;
+        };
+        CHECK_UNARY_FALSE(is_ne_comparable<const opt::option<s2>&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_ne_comparable<const s2&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_ne_comparable<const opt::option<s2>&, const s2&>);
+    }
+    SUBCASE("operator<") {
+        CHECK_UNARY(is_lt_comparable<const opt::option<int>&, const opt::option<int>&>);
+        struct s1 {
+            int x;
+            bool operator<(const s1& r) const { return x < r.x; }
+        };
+        CHECK_UNARY(is_lt_comparable<const opt::option<s1>&, const opt::option<s1>&>);
+        CHECK_UNARY(is_lt_comparable<const s1&, const opt::option<s1>&>);
+        CHECK_UNARY(is_lt_comparable<const opt::option<s1>&, const s1&>);
+        struct s2 {
+            int x;
+        };
+        CHECK_UNARY_FALSE(is_lt_comparable<const opt::option<s2>&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_lt_comparable<const s2&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_lt_comparable<const opt::option<s2>&, const s2&>);
+    }
+    SUBCASE("operator<=") {
+        CHECK_UNARY(is_le_comparable<const opt::option<int>&, const opt::option<int>&>);
+        struct s1 {
+            int x;
+            bool operator<=(const s1& r) const { return x <= r.x; }
+        };
+        CHECK_UNARY(is_le_comparable<const opt::option<s1>&, const opt::option<s1>&>);
+        CHECK_UNARY(is_le_comparable<const s1&, const opt::option<s1>&>);
+        CHECK_UNARY(is_le_comparable<const opt::option<s1>&, const s1&>);
+        struct s2 {
+            int x;
+        };
+        CHECK_UNARY_FALSE(is_le_comparable<const opt::option<s2>&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_le_comparable<const s2&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_le_comparable<const opt::option<s2>&, const s2&>);
+    }
+    SUBCASE("operator>") {
+        CHECK_UNARY(is_gt_comparable<const opt::option<int>&, const opt::option<int>&>);
+        struct s1 {
+            int x;
+            bool operator>(const s1& r) const { return x > r.x; }
+        };
+        CHECK_UNARY(is_gt_comparable<const opt::option<s1>&, const opt::option<s1>&>);
+        CHECK_UNARY(is_gt_comparable<const s1&, const opt::option<s1>&>);
+        CHECK_UNARY(is_gt_comparable<const opt::option<s1>&, const s1&>);
+        struct s2 {
+            int x;
+        };
+        CHECK_UNARY_FALSE(is_gt_comparable<const opt::option<s2>&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_gt_comparable<const s2&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_gt_comparable<const opt::option<s2>&, const s2&>);
+    }
+    SUBCASE("operator>=") {
+        CHECK_UNARY(is_ge_comparable<const opt::option<int>&, const opt::option<int>&>);
+        struct s1 {
+            int x;
+            bool operator>=(const s1& r) const { return x >= r.x; }
+        };
+        CHECK_UNARY(is_ge_comparable<const opt::option<s1>&, const opt::option<s1>&>);
+        CHECK_UNARY(is_ge_comparable<const s1&, const opt::option<s1>&>);
+        CHECK_UNARY(is_ge_comparable<const opt::option<s1>&, const s1&>);
+        struct s2 {
+            int x;
+        };
+        CHECK_UNARY_FALSE(is_ge_comparable<const opt::option<s2>&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_ge_comparable<const s2&, const opt::option<s2>&>);
+        CHECK_UNARY_FALSE(is_ge_comparable<const opt::option<s2>&, const s2&>);
+    }
+}
+
 // NOLINTEND(modernize-use-equals-default,performance-noexcept-move-constructor,cert-oop54-cpp)
 
 TEST_SUITE_END();
