@@ -1,6 +1,8 @@
 #include <iostream>
 #include <opt/option.hpp>
 #include <array>
+#include <tuple>
+#include <utility>
 
 void has_value_and() {
     opt::option<int> a = 3;

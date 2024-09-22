@@ -3,6 +3,7 @@
 #include <variant>
 #include <tuple>
 #include <vector>
+#include <functional>
 
 void zip() {
     opt::option<int> a{1};

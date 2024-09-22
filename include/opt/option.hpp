@@ -11,7 +11,6 @@
 #include <limits> // std::numeric_limits
 #include <exception> // std::exception
 #include <cstdint>
-#include <functional> // std::invoke, std::hash
 
 #if __has_include(<opt/option_fwd.hpp>)
     #include <opt/option_fwd.hpp>
@@ -363,6 +362,8 @@ OPTION_STD_NAMESPACE_CXX11_END
 #if OPTION_IS_CXX20
     struct contiguous_iterator_tag; // Defined in header <iterator>
 #endif
+    template<class T>
+    struct hash; // Defined in header <functional>
 OPTION_STD_NAMESPACE_END
 #else
     #include <string_view>
@@ -493,6 +494,42 @@ namespace impl {
     template<class T>
     using remove_cvref = typename remove_cvref_impl<T>::type;
 #endif
+
+    // Simplified std::invoke (without noexcept and SFINAE)
+    template<class T, class... Args>
+    constexpr decltype(auto) invoke(T&& fn, Args&&... args) {
+        return static_cast<T&&>(fn)(static_cast<Args&&>(args)...);
+    }
+    template<class T, class C, class First, class... Args,
+        std::enable_if_t<std::is_function_v<T> && (std::is_same_v<C, remove_cvref<First>> || std::is_base_of_v<C, remove_cvref<First>>), int> = 0>
+    constexpr decltype(auto) invoke(T C::* obj, First&& first, Args&&... args) {
+        return (static_cast<First&&>(first).*obj)(static_cast<Args&&>(args)...);
+    }
+    template<class T, class C, class First, class... Args,
+        std::enable_if_t<std::is_function_v<T> && !(std::is_same_v<C, remove_cvref<First>> || std::is_base_of_v<C, remove_cvref<First>>), int> = 0>
+    constexpr decltype(auto) invoke(T C::* obj, First&& first, Args&&... args) {
+        return ((*static_cast<First&&>(first)).*obj)(static_cast<Args&&>(args)...);
+    }
+    template<class T, class C, class First,
+        std::enable_if_t<!std::is_function_v<T> && (std::is_same_v<C, remove_cvref<First>> || std::is_base_of_v<C, remove_cvref<First>>), int> = 0>
+    constexpr decltype(auto) invoke(T C::* obj, First&& first) {
+        return static_cast<First&&>(first).*obj;
+    }
+    template<class T, class C, class First,
+        std::enable_if_t<!std::is_function_v<T> && !(std::is_same_v<C, remove_cvref<First>> || std::is_base_of_v<C, remove_cvref<First>>), int> = 0>
+    constexpr decltype(auto) invoke(T C::* obj, First&& first) {
+        return (*static_cast<First&&>(first)).*obj;
+    }
+    template<class T, class C, class First, class... Args,
+        std::enable_if_t<std::is_function_v<T>, int> = 0>
+    constexpr decltype(auto) invoke(T C::* obj, std::reference_wrapper<First> first, Args&&... args) {
+        return (first.get().*obj)(static_cast<Args&&>(args)...);
+    }
+    template<class T, class C, class First,
+        std::enable_if_t<!std::is_function_v<T>, int> = 0>
+    constexpr decltype(auto) invoke(T C::* obj, std::reference_wrapper<First> first) {
+        return first.get().*obj;
+    }
 
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
@@ -1741,11 +1778,11 @@ namespace impl {
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
+            : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
+            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
 
         constexpr void reset() noexcept {
             has_value_flag = false;
@@ -1785,11 +1822,11 @@ namespace impl {
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
+            : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
+            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
 
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value_flag) {
@@ -1850,12 +1887,12 @@ namespace impl {
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
+            : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
+            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
 
@@ -1908,12 +1945,12 @@ namespace impl {
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
+            : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
+            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
@@ -2160,7 +2197,7 @@ namespace impl {
 
         template<class F, class Arg, bool IsAggregate>
         constexpr option_base(construct_from_invoke_tag, std::bool_constant<IsAggregate>, F&& f, Arg&& arg)
-            : value{ref_to_ptr(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)))} {}
+            : value{ref_to_ptr(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)))} {}
 
         OPTION_PURE constexpr bool has_value() const noexcept {
             return value != nullptr;
@@ -2374,10 +2411,10 @@ namespace impl::option {
     // implementation of opt::option<T>::and_then(F&&)
     template<class Self, class F>
     constexpr auto and_then(Self&& self, F&& f) {
-        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*static_cast<Self&&>(self))>>;
+        using invoke_res = impl::remove_cvref<decltype(impl::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self)))>;
         static_assert(opt::is_option_v<invoke_res>, "The return type of function F must be a specialization of opt::option");
         if (self.has_value()) {
-            return std::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self));
+            return impl::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self));
         } else {
             return invoke_res{opt::none};
         }
@@ -2387,7 +2424,7 @@ namespace impl::option {
     // map(F&&) -> option<U> : F(T&&) -> U
     template<class T, class Self, class F>
     constexpr auto map(Self&& self, F&& f) {
-        using f_result = std::remove_cv_t<std::invoke_result_t<F, decltype(static_cast<Self&&>(self).get())>>;
+        using f_result = std::remove_cv_t<decltype(impl::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self)))>;
         if (self.has_value()) {
             return opt::option<f_result>{construct_from_invoke_tag{}, static_cast<F&&>(f), *static_cast<Self&&>(self)};
         }
@@ -2398,33 +2435,33 @@ namespace impl::option {
     template<class T, class Self, class U, class F>
     constexpr impl::remove_cvref<U> map_or(Self&& self, U&& default_value, F&& f) {
         if (self.has_value()) {
-            return std::invoke(static_cast<F&&>(f), static_cast<Self&&>(self).get());
+            return impl::invoke(static_cast<F&&>(f), static_cast<Self&&>(self).get());
         }
         return static_cast<U&&>(default_value);
     }
 
     template<class T, class Self, class D, class F>
     constexpr auto map_or_else(Self&& self, D&& d, F&& f) {
-        using d_result = std::invoke_result_t<D>;
-        using f_result = std::invoke_result_t<F, decltype(static_cast<Self&&>(self).get())>;
+        using d_result = decltype(static_cast<D&&>(d)());
+        using f_result = decltype(impl::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self)));
         static_assert(std::is_same_v<d_result, f_result>,
             "The type of the invoke result functions D and F must be the same");
         if (self.has_value()) {
-            return std::invoke(static_cast<F&&>(f), static_cast<Self&&>(self).get());
+            return impl::invoke(static_cast<F&&>(f), static_cast<Self&&>(self).get());
         }
-        return std::invoke(static_cast<D&&>(d));
+        return static_cast<D&&>(d)();
     }
 
     // implementation of opt::option<T>::or_else(F&&)
     template<class T, class Self, class F>
     constexpr opt::option<T> or_else(Self&& self, F&& f) {
-        using f_result = std::invoke_result_t<F>;
+        using f_result = decltype(static_cast<F&&>(f)());
         static_assert(std::is_same_v<impl::remove_cvref<f_result>, opt::option<T>>,
             "The function F must return an opt::option<T>");
         if (self.has_value()) {
             return static_cast<Self&&>(self);
         }
-        return std::invoke(static_cast<F&&>(f));
+        return static_cast<F&&>(f)();
     }
 
     // implementation of opt::option<T>::value_or_throw()
@@ -2450,7 +2487,7 @@ namespace impl::option {
     template<class Self, class P>
     constexpr bool has_value_and(Self&& self, P&& predicate) {
         if (self.has_value()) {
-            return std::invoke(static_cast<P&&>(predicate), static_cast<Self&&>(self).get());
+            return impl::invoke(static_cast<P&&>(predicate), static_cast<Self&&>(self).get());
         }
         return false;
     }
@@ -2458,7 +2495,7 @@ namespace impl::option {
     template<class Self, class F>
     constexpr Self&& inspect(Self&& self, F&& f) {
         if (self.has_value()) {
-            std::invoke(static_cast<F&&>(f), self.get());
+            impl::invoke(static_cast<F&&>(f), self.get());
         }
         return static_cast<Self&&>(self);
     }
@@ -2492,7 +2529,7 @@ namespace impl::option {
 
     template<class Self, class F>
     constexpr impl::remove_cvref<Self> filter(Self&& self, F&& f) {
-        if (self.has_value() && bool(std::invoke(static_cast<F&&>(f), self.get()))) {
+        if (self.has_value() && bool(impl::invoke(static_cast<F&&>(f), self.get()))) {
             return static_cast<Self&&>(self).get();
         }
         return opt::none;
@@ -2744,22 +2781,30 @@ public:
     template<class U,
         typename checks::template from_option_like_ctor<T, U, const U&>::template constructor_is_explicit<false>::type = 0>
     constexpr option(const option<U>& other) {
-        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<const impl::option_base<U>&>(other));
+        if (other.has_value()) {
+            base::construct(other.get());
+        }
     }
     template<class U,
         typename checks::template from_option_like_ctor<T, U, const U&>::template constructor_is_explicit<true>::type = 0>
     constexpr explicit option(const option<U>& other) {
-        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<const impl::option_base<U>&>(other));
+        if (other.has_value()) {
+            base::construct(other.get());
+        }
     }
     template<class U,
         typename checks::template from_option_like_ctor<T, U, U&&>::template constructor_is_explicit<false>::type = 0>
     constexpr option(option<U>&& other) {
-        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<impl::option_base<U>&&>(other));
+        if (other.has_value()) {
+            base::construct(static_cast<option<U>&&>(other).get());
+        }
     }
     template<class U,
         typename checks::template from_option_like_ctor<T, U, U&&>::template constructor_is_explicit<true>::type = 0>
     constexpr explicit option(option<U>&& other) {
-        impl::option_construct_from_option(*static_cast<base*>(this), static_cast<impl::option_base<U>&&>(other));
+        if (other.has_value()) {
+            base::construct(static_cast<option<U>&&>(other).get());
+        }
     }
 
     constexpr option& operator=(opt::none_t) noexcept {
@@ -2877,7 +2922,7 @@ public:
     template<class P>
     [[nodiscard]] constexpr option<T> take_if(P&& predicate) {
         static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
-        if (has_value() && bool(std::invoke(static_cast<P&&>(predicate), get()))) {
+        if (has_value() && bool(impl::invoke(static_cast<P&&>(predicate), get()))) {
             return take();
         }
         return opt::none;
@@ -3180,15 +3225,15 @@ template<class... Options, std::enable_if_t<std::conjunction_v<opt::is_option<im
 template<class Fn, class... Options, std::enable_if_t<std::conjunction_v<opt::is_option<impl::remove_cvref<Options>>...>, int> = 0>
 [[nodiscard]] constexpr auto zip_with(Fn&& fn, Options&&... options)
 {
-    using fn_result = std::invoke_result_t<Fn, decltype(std::declval<Options>().get())...>;
+    using fn_result = decltype(impl::invoke(static_cast<Fn&&>(fn), static_cast<Options&&>(options).get()...));
     if constexpr (std::is_void_v<fn_result>) {
         if ((options.has_value() && ...)) {
-            std::invoke(static_cast<Fn&&>(fn), static_cast<Options&&>(options).get()...);
+            impl::invoke(static_cast<Fn&&>(fn), static_cast<Options&&>(options).get()...);
         }
         return void();
     } else {
         if ((options.has_value() && ...)) {
-            return opt::option<fn_result>{std::invoke(static_cast<Fn&&>(fn), static_cast<Options&&>(options).get()...)};
+            return opt::option<fn_result>{impl::invoke(static_cast<Fn&&>(fn), static_cast<Options&&>(options).get()...)};
         } else {
             return opt::option<fn_result>{opt::none};
         }

@@ -1748,6 +1748,68 @@ TEST_CASE("option<bool>") {
     CHECK_EQ(d, false);
 }
 
+TEST_CASE("internal invoke") {
+    const opt::option<int> a = opt::option<int>{1}.map([](int x) { return x + 1; });
+    CHECK_EQ(a, 2);
+    const auto b_fn = [](int x) { return x + 2; };
+    const opt::option<int> b = opt::option<int>{10}.map(std::ref(b_fn));
+    CHECK_EQ(b, 12);
+
+    struct c_t {
+        int value;
+    };
+    const opt::option<int> c = opt::option<c_t>{20}.map(&c_t::value);
+    CHECK_EQ(c, 20);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<c_t>&>().map(&c_t::value)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<const opt::option<c_t>&>().map(&c_t::value)), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<c_t>>().map(&c_t::value)), opt::option<int&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<const opt::option<c_t>>().map(&c_t::value)), opt::option<const int&&>>);
+
+    c_t d_v{30};
+    const opt::option<int> d = opt::option{std::ref(d_v)}.map(&c_t::value);
+    CHECK_EQ(d, 30);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<std::reference_wrapper<c_t>>>().map(&c_t::value)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<std::reference_wrapper<const c_t>>>().map(&c_t::value)), opt::option<const int&>>);
+
+    const opt::option<int> c2 = opt::option<c_t*>{&d_v}.map(&c_t::value);
+    CHECK_EQ(c2, 30);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<c_t*>&>().map(&c_t::value)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<const c_t*>&>().map(&c_t::value)), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<c_t*>>().map(&c_t::value)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<const c_t*>>().map(&c_t::value)), opt::option<const int&>>);
+
+#if 0 // boost.pfr errors
+    struct e_t : c_t {
+        unsigned value2;
+    };
+    const opt::option<int> e = opt::option<e_t>{{40, 50}}.map(&e_t::value);
+#endif
+
+    struct f_t {
+        int value;
+        float function() const { return float(value) + 8.f; }
+    };
+    const opt::option<float> f = opt::option<f_t>{30}.map(&f_t::function);
+    CHECK_EQ(f, 38.f);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<f_t>&>().map(&f_t::function)), opt::option<float>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<const opt::option<f_t>&>().map(&f_t::function)), opt::option<float>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<f_t>>().map(&f_t::function)), opt::option<float>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<const opt::option<f_t>>().map(&f_t::function)), opt::option<float>>);
+
+    f_t g_v{40};
+    const opt::option<float> g = opt::option{std::ref(g_v)}.map(&f_t::function);
+    CHECK_EQ(g, 48.f);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<std::reference_wrapper<f_t>>>().map(&f_t::function)), opt::option<float>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<std::reference_wrapper<const f_t>>>().map(&f_t::function)), opt::option<float>>);
+
+    const opt::option<float> f2 = opt::option<f_t*>{&g_v}.map(&f_t::function);
+    CHECK_EQ(f2, 48.f);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<f_t*>&>().map(&f_t::function)), opt::option<float>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<const f_t*>&>().map(&f_t::function)), opt::option<float>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<f_t*>>().map(&f_t::function)), opt::option<float>>);
+    CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<const f_t*>>().map(&f_t::function)), opt::option<float>>);
+}
+
 TEST_SUITE_END();
 
 struct struct1 {
