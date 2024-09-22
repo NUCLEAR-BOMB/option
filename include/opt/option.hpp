@@ -498,18 +498,18 @@ namespace impl {
     constexpr void construct_at(T* ptr, Args&&... args) {
         if constexpr (impl::is_trivially_move_assignable_v<T>) {
             if constexpr (std::is_aggregate_v<T>) {
-                *ptr = T{std::forward<Args>(args)...};
+                *ptr = T{static_cast<Args&&>(args)...};
             } else {
-                *ptr = T(std::forward<Args>(args)...);
+                *ptr = T(static_cast<Args&&>(args)...);
             }
         } else {
 #if OPTION_IS_CXX20
-            std::construct_at(ptr, std::forward<Args>(args)...);
+            std::construct_at(ptr, static_cast<Args&&>(args)...);
 #else
             if constexpr (std::is_aggregate_v<T>) {
-                ::new(static_cast<void*>(ptr)) T{std::forward<Args>(args)...};
+                ::new(static_cast<void*>(ptr)) T{static_cast<Args&&>(args)...};
             } else {
-                ::new(static_cast<void*>(ptr)) T(std::forward<Args>(args)...);
+                ::new(static_cast<void*>(ptr)) T(static_cast<Args&&>(args)...);
             }
 #endif
         }
@@ -1733,19 +1733,19 @@ namespace impl {
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
-            : value{std::forward<Args>(args)...}, has_value_flag(true) {}
+            : value{static_cast<Args&&>(args)...}, has_value_flag(true) {}
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
-            : value(std::forward<Args>(args)...), has_value_flag(true) {}
+            : value(static_cast<Args&&>(args)...), has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
+            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
+            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
 
         constexpr void reset() noexcept {
             has_value_flag = false;
@@ -1756,12 +1756,12 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value_flag, "Value is non-empty");
-            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             has_value_flag = true;
         }
         template<class U>
         constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
+            value = static_cast<U&&>(other);
         }
     };
     template<class T>
@@ -1777,19 +1777,19 @@ namespace impl {
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
-            : value{std::forward<Args>(args)...}, has_value_flag(true) {}
+            : value{static_cast<Args&&>(args)...}, has_value_flag(true) {}
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
-            : value(std::forward<Args>(args)...), has_value_flag(true) {}
+            : value(static_cast<Args&&>(args)...), has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))}, has_value_flag(true) {}
+            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))), has_value_flag(true) {}
+            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
 
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value_flag) {
@@ -1809,12 +1809,12 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value_flag, "Value is non-empty");
-            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             has_value_flag = true;
         }
         template<class U>
         constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
+            value = static_cast<U&&>(other);
         }
     };
 #if OPTION_GCC
@@ -1839,23 +1839,23 @@ namespace impl {
         }
         template<class... Args>
         constexpr option_destruct_base(const std::in_place_t, std::true_type, Args&&... args)
-            : value{std::forward<Args>(args)...} {
+            : value{static_cast<Args&&>(args)...} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
-            : value(std::forward<Args>(args)...) {
+            : value(static_cast<Args&&>(args)...) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
 
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
 
@@ -1871,12 +1871,12 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class U>
         constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
+            value = static_cast<U&&>(other);
             OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
         }
     };
@@ -1898,22 +1898,22 @@ namespace impl {
         }
         template<class... Args>
         constexpr option_destruct_base(const std::in_place_t, std::true_type, Args&&... args)
-            : value{std::forward<Args>(args)...} {
+            : value{static_cast<Args&&>(args)...} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::false_type, Args&&... args)
-            : value(std::forward<Args>(args)...) {
+            : value(static_cast<Args&&>(args)...) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
-            : value{std::invoke(std::forward<F>(f), std::forward<Arg>(arg))} {
+            : value{std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
         constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(std::invoke(std::forward<F>(f), std::forward<Arg>(arg))) {
+            : value(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
@@ -1937,12 +1937,12 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class U>
         constexpr void assign(U&& other) {
-            value = std::forward<U>(other);
+            value = static_cast<U&&>(other);
             OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
         }
     };
@@ -1953,18 +1953,18 @@ namespace impl {
     template<class Self, class U>
     constexpr void option_assign_from_value(Self& self, U&& value) {
         if (self.has_value()) {
-            self.assign(std::forward<U>(value));
+            self.assign(static_cast<U&&>(value));
         } else {
-            self.construct(std::forward<U>(value));
+            self.construct(static_cast<U&&>(value));
         }
     }
     template<class Self, class Option>
     constexpr void option_assign_from_option(Self& self, Option&& other) {
         if (other.has_value()) {
             if (self.has_value()) {
-                self.assign(std::forward<Option>(other).value);
+                self.assign(static_cast<Option&&>(other).value);
             } else {
-                self.construct(std::forward<Option>(other).value);
+                self.construct(static_cast<Option&&>(other).value);
             }
         } else {
             self.reset();
@@ -1973,7 +1973,7 @@ namespace impl {
     template<class Self, class Option>
     constexpr void option_construct_from_option(Self& self, Option&& other) {
         if (other.has_value()) {
-            self.construct(std::forward<Option>(other).value);
+            self.construct(static_cast<Option&&>(other).value);
         }
     }
 
@@ -2156,11 +2156,11 @@ namespace impl {
 
         template<class Arg, bool IsAggregate>
         constexpr option_base(const std::in_place_t, std::bool_constant<IsAggregate>, Arg&& arg) noexcept
-            : value{ref_to_ptr(std::forward<Arg>(arg))} {}
+            : value{ref_to_ptr(static_cast<Arg&&>(arg))} {}
 
         template<class F, class Arg, bool IsAggregate>
         constexpr option_base(construct_from_invoke_tag, std::bool_constant<IsAggregate>, F&& f, Arg&& arg)
-            : value{ref_to_ptr(std::invoke(std::forward<F>(f), std::forward<Arg>(arg)))} {}
+            : value{ref_to_ptr(std::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)))} {}
 
         OPTION_PURE constexpr bool has_value() const noexcept {
             return value != nullptr;
@@ -2171,7 +2171,7 @@ namespace impl {
 
         template<class Arg>
         constexpr void construct(Arg&& arg) noexcept {
-            value = ref_to_ptr(std::forward<Arg>(arg));
+            value = ref_to_ptr(static_cast<Arg&&>(arg));
         }
     };
 
@@ -2374,10 +2374,10 @@ namespace impl::option {
     // implementation of opt::option<T>::and_then(F&&)
     template<class Self, class F>
     constexpr auto and_then(Self&& self, F&& f) {
-        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*std::forward<Self>(self))>>;
+        using invoke_res = impl::remove_cvref<std::invoke_result_t<F, decltype(*static_cast<Self&&>(self))>>;
         static_assert(opt::is_option_v<invoke_res>, "The return type of function F must be a specialization of opt::option");
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f), *std::forward<Self>(self));
+            return std::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self));
         } else {
             return invoke_res{opt::none};
         }
@@ -2387,9 +2387,9 @@ namespace impl::option {
     // map(F&&) -> option<U> : F(T&&) -> U
     template<class T, class Self, class F>
     constexpr auto map(Self&& self, F&& f) {
-        using f_result = std::remove_cv_t<std::invoke_result_t<F, decltype(std::forward<Self>(self).get())>>;
+        using f_result = std::remove_cv_t<std::invoke_result_t<F, decltype(static_cast<Self&&>(self).get())>>;
         if (self.has_value()) {
-            return opt::option<f_result>{construct_from_invoke_tag{}, std::forward<F>(f), *std::forward<Self>(self)};
+            return opt::option<f_result>{construct_from_invoke_tag{}, static_cast<F&&>(f), *static_cast<Self&&>(self)};
         }
         return opt::option<f_result>{opt::none};
     }
@@ -2398,21 +2398,21 @@ namespace impl::option {
     template<class T, class Self, class U, class F>
     constexpr impl::remove_cvref<U> map_or(Self&& self, U&& default_value, F&& f) {
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f), std::forward<Self>(self).get());
+            return std::invoke(static_cast<F&&>(f), static_cast<Self&&>(self).get());
         }
-        return std::forward<U>(default_value);
+        return static_cast<U&&>(default_value);
     }
 
     template<class T, class Self, class D, class F>
     constexpr auto map_or_else(Self&& self, D&& d, F&& f) {
         using d_result = std::invoke_result_t<D>;
-        using f_result = std::invoke_result_t<F, decltype(std::forward<Self>(self).get())>;
+        using f_result = std::invoke_result_t<F, decltype(static_cast<Self&&>(self).get())>;
         static_assert(std::is_same_v<d_result, f_result>,
             "The type of the invoke result functions D and F must be the same");
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f), std::forward<Self>(self).get());
+            return std::invoke(static_cast<F&&>(f), static_cast<Self&&>(self).get());
         }
-        return std::invoke(std::forward<D>(d));
+        return std::invoke(static_cast<D&&>(d));
     }
 
     // implementation of opt::option<T>::or_else(F&&)
@@ -2422,16 +2422,16 @@ namespace impl::option {
         static_assert(std::is_same_v<impl::remove_cvref<f_result>, opt::option<T>>,
             "The function F must return an opt::option<T>");
         if (self.has_value()) {
-            return std::forward<Self>(self);
+            return static_cast<Self&&>(self);
         }
-        return std::invoke(std::forward<F>(f));
+        return std::invoke(static_cast<F&&>(f));
     }
 
     // implementation of opt::option<T>::value_or_throw()
     template<class Self>
     constexpr auto&& value_or_throw(Self&& self) {
         if (!self.has_value()) { throw_bad_access(); }
-        return *std::forward<Self>(self);
+        return *static_cast<Self&&>(self);
     }
 
     template<class ValueType, class Self>
@@ -2440,7 +2440,7 @@ namespace impl::option {
         constexpr bool is_option_option = opt::is_option_v<ValueType>;
         if constexpr (is_option_option) {
             if (self.has_value() && self->has_value()) {
-                return ValueType{std::forward<Self>(self)->get()};
+                return ValueType{static_cast<Self&&>(self)->get()};
             }
             return ValueType{opt::none};
         } else {
@@ -2450,7 +2450,7 @@ namespace impl::option {
     template<class Self, class P>
     constexpr bool has_value_and(Self&& self, P&& predicate) {
         if (self.has_value()) {
-            return std::invoke(std::forward<P>(predicate), std::forward<Self>(self).get());
+            return std::invoke(static_cast<P&&>(predicate), static_cast<Self&&>(self).get());
         }
         return false;
     }
@@ -2458,16 +2458,16 @@ namespace impl::option {
     template<class Self, class F>
     constexpr Self&& inspect(Self&& self, F&& f) {
         if (self.has_value()) {
-            std::invoke(std::forward<F>(f), self.get());
+            std::invoke(static_cast<F&&>(f), self.get());
         }
-        return std::forward<Self>(self);
+        return static_cast<Self&&>(self);
     }
 
     template<class TupleLikeOfOptions, class Self, std::size_t... Idx>
     constexpr auto unzip_impl(Self&& self, std::index_sequence<Idx...>) {
         if (self.has_value()) {
             return TupleLikeOfOptions{
-                opt::option{std::get<Idx>(std::forward<Self>(self).get())}...
+                opt::option{std::get<Idx>(static_cast<Self&&>(self).get())}...
             };
         } else {
             return TupleLikeOfOptions{
@@ -2485,15 +2485,15 @@ namespace impl::option {
             "std::array, std::pair, std::tuple");
 
         return unzip_impl<impl::tuple_like_of_options<tuple_like_type>>(
-            std::forward<Self>(self),
+            static_cast<Self&&>(self),
             std::make_index_sequence<std::tuple_size<tuple_like_type>::value>{}
         );
     }
 
     template<class Self, class F>
     constexpr impl::remove_cvref<Self> filter(Self&& self, F&& f) {
-        if (self.has_value() && bool(std::invoke(std::forward<F>(f), self.get()))) {
-            return std::forward<Self>(self).get();
+        if (self.has_value() && bool(std::invoke(static_cast<F&&>(f), self.get()))) {
+            return static_cast<Self&&>(self).get();
         }
         return opt::none;
     }
@@ -2717,29 +2717,29 @@ public:
 
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<true>::type = 0>
     constexpr explicit option(U&& val)
-        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<U>(val)) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<U&&>(val)) {}
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<false>::type = 0>
     constexpr option(U&& val)
-        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<U>(val)) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<U&&>(val)) {}
 
     template<class First, class Second, class... Args,
         class = typename checks::template from_args_ctor<T, First, Second, Args...>::type>
     constexpr explicit option(First&& first, Second&& second, Args&&... args)
-        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<First>(first), std::forward<Second>(second), std::forward<Args>(args)...) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<First&&>(first), static_cast<Second&&>(second), static_cast<Args&&>(args)...) {}
 
     template<class InPlaceT, class... Args,
         class = typename checks::template from_in_place_args_ctor<T, InPlaceT, Args...>::type>
     constexpr explicit option(const InPlaceT, Args&&... args)
-        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<Args>(args)...) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<Args&&>(args)...) {}
 
     template<class InPlaceT, class U, class... Args,
         class = typename checks::template from_in_place_args_ctor<T, InPlaceT, std::initializer_list<U>&, Args...>::type>
     constexpr explicit option(const InPlaceT, std::initializer_list<U> ilist, Args&&... args)
-        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, ilist, std::forward<Args>(args)...) {}
+        : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, ilist, static_cast<Args&&>(args)...) {}
 
     template<class F, class Arg>
     constexpr explicit option(const impl::construct_from_invoke_tag, F&& f, Arg&& arg)
-        : base(impl::construct_from_invoke_tag{}, std::bool_constant<std::is_aggregate_v<T>>{}, std::forward<F>(f), std::forward<Arg>(arg)) {}
+        : base(impl::construct_from_invoke_tag{}, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<F&&>(f), static_cast<Arg&&>(arg)) {}
 
     template<class U,
         typename checks::template from_option_like_ctor<T, U, const U&>::template constructor_is_explicit<false>::type = 0>
@@ -2775,9 +2775,9 @@ public:
         class = typename checks::template from_value_assign<T, U>::type>
     constexpr option& operator=(U&& val) {
         if constexpr (std::is_reference_v<T>) {
-            base::value = base::ref_to_ptr(std::forward<U>(val));
+            base::value = base::ref_to_ptr(static_cast<U&&>(val));
         } else {
-            impl::option_assign_from_value(*static_cast<base*>(this), std::forward<U>(val));
+            impl::option_assign_from_value(*static_cast<base*>(this), static_cast<U&&>(val));
         }
         return *this;
     }
@@ -2848,7 +2848,7 @@ public:
     constexpr T& emplace(Args&&... args)
         OPTION_LIFETIMEBOUND {
         reset();
-        base::construct(std::forward<Args>(args)...);
+        base::construct(static_cast<Args&&>(args)...);
         return *(*this);
     }
 
@@ -2860,16 +2860,16 @@ public:
     }
 
     template<class P>
-    [[nodiscard]] constexpr bool has_value_and(P&& predicate) & { return impl::option::has_value_and(*this, std::forward<P>(predicate)); }
+    [[nodiscard]] constexpr bool has_value_and(P&& predicate) & { return impl::option::has_value_and(*this, static_cast<P&&>(predicate)); }
     template<class P>
-    [[nodiscard]] constexpr bool has_value_and(P&& predicate) const& { return impl::option::has_value_and(*this, std::forward<P>(predicate)); }
+    [[nodiscard]] constexpr bool has_value_and(P&& predicate) const& { return impl::option::has_value_and(*this, static_cast<P&&>(predicate)); }
     template<class P>
-    [[nodiscard]] constexpr bool has_value_and(P&& predicate) && { return impl::option::has_value_and(std::move(*this), std::forward<P>(predicate)); }
+    [[nodiscard]] constexpr bool has_value_and(P&& predicate) && { return impl::option::has_value_and(static_cast<option&&>(*this), static_cast<P&&>(predicate)); }
     template<class P>
-    [[nodiscard]] constexpr bool has_value_and(P&& predicate) const&& { return impl::option::has_value_and(std::move(*this), std::forward<P>(predicate)); }
+    [[nodiscard]] constexpr bool has_value_and(P&& predicate) const&& { return impl::option::has_value_and(static_cast<const option&&>(*this), static_cast<P&&>(predicate)); }
 
-    [[nodiscard]] constexpr option<T> take() {
-        option<T> tmp{std::move(*this)};
+    [[nodiscard]] constexpr option take() {
+        option tmp{static_cast<option&&>(*this)};
         reset();
         return tmp;
     }
@@ -2877,20 +2877,20 @@ public:
     template<class P>
     [[nodiscard]] constexpr option<T> take_if(P&& predicate) {
         static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
-        if (has_value() && bool(std::invoke(std::forward<P>(predicate), get()))) {
+        if (has_value() && bool(std::invoke(static_cast<P&&>(predicate), get()))) {
             return take();
         }
         return opt::none;
     }
 
     template<class F>
-    constexpr option& inspect(F&& f) & { return impl::option::inspect(*this, std::forward<F>(f)); }
+    constexpr option& inspect(F&& f) & { return impl::option::inspect(*this, static_cast<F&&>(f)); }
     template<class F>
-    constexpr const option& inspect(F&& f) const& { return impl::option::inspect(*this, std::forward<F>(f)); }
+    constexpr const option& inspect(F&& f) const& { return impl::option::inspect(*this, static_cast<F&&>(f)); }
     template<class F>
-    constexpr option&& inspect(F&& f) && { return impl::option::inspect(std::move(*this), std::forward<F>(f)); }
+    constexpr option&& inspect(F&& f) && { return impl::option::inspect(static_cast<option&&>(*this), static_cast<F&&>(f)); }
     template<class F>
-    constexpr const option&& inspect(F&& f) const&& { return impl::option::inspect(std::move(*this), std::forward<F>(f)); }
+    constexpr const option&& inspect(F&& f) const&& { return impl::option::inspect(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
     [[nodiscard]] OPTION_PURE constexpr T& get() & noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
@@ -2981,8 +2981,8 @@ public:
 
     [[nodiscard]] constexpr T& value_or_throw() & OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(*this); }
     [[nodiscard]] constexpr const T& value_or_throw() const& OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(*this); }
-    [[nodiscard]] constexpr T&& value_or_throw() && OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(std::move(*this)); }
-    [[nodiscard]] constexpr const T&& value_or_throw() const&& OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(std::move(*this)); }
+    [[nodiscard]] constexpr T&& value_or_throw() && OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(static_cast<option&&>(*this)); }
+    [[nodiscard]] constexpr const T&& value_or_throw() const&& OPTION_LIFETIMEBOUND { return impl::option::value_or_throw(static_cast<const option&&>(*this)); }
 
     [[nodiscard]] constexpr T& value() & OPTION_LIFETIMEBOUND { return value_or_throw(); }
     [[nodiscard]] constexpr const T& value() const& OPTION_LIFETIMEBOUND { return value_or_throw(); }
@@ -2992,16 +2992,16 @@ public:
     template<class U>
     [[nodiscard]] constexpr T value_or(U&& default_value) const& {
         if (has_value()) {
-            return *(*this);
+            return get();
         }
-        return static_cast<T>(std::forward<U>(default_value));
+        return static_cast<T>(static_cast<U&&>(default_value));
     }
     template<class U>
     [[nodiscard]] constexpr T value_or(U&& default_value) && {
         if (has_value()) {
-            return std::move(*(*this));
+            return static_cast<T&&>(get());
         }
-        return static_cast<T>(std::forward<U>(default_value));
+        return static_cast<T>(static_cast<U&&>(default_value));
     }
 
     [[nodiscard]] constexpr T value_or_default() const& {
@@ -3012,28 +3012,28 @@ public:
     }
     [[nodiscard]] constexpr T value_or_default() && {
         if (has_value()) {
-            return std::move(get());
+            return static_cast<T&&>(get());
         }
         return T{};
     }
 
     template<class U, class F>
-    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) & { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) & { return impl::option::map_or<T>(*this, static_cast<U&&>(def), static_cast<F&&>(f)); }
     template<class U, class F>
-    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) const& { return impl::option::map_or<T>(*this, std::forward<U>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) const& { return impl::option::map_or<T>(*this, static_cast<U&&>(def), static_cast<F&&>(f)); }
     template<class U, class F>
-    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) && { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) && { return impl::option::map_or<T>(static_cast<option&&>(*this), static_cast<U&&>(def), static_cast<F&&>(f)); }
     template<class U, class F>
-    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(std::move(*this), std::forward<U>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or(U&& def, F&& f) const&& { return impl::option::map_or<T>(static_cast<const option&&>(*this), static_cast<U&&>(def), static_cast<F&&>(f)); }
 
     template<class D, class F>
-    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) & { return impl::option::map_or_else<T>(*this, std::forward<D>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) & { return impl::option::map_or_else<T>(*this, static_cast<D&&>(def), static_cast<F&&>(f)); }
     template<class D, class F>
-    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const& { return impl::option::map_or_else<T>(*this, std::forward<D>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const& { return impl::option::map_or_else<T>(*this, static_cast<D&&>(def), static_cast<F&&>(f)); }
     template<class D, class F>
-    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) && { return impl::option::map_or_else<T>(std::move(*this), std::forward<D>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) && { return impl::option::map_or_else<T>(static_cast<option&&>(*this), static_cast<D&&>(def), static_cast<F&&>(f)); }
     template<class D, class F>
-    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const&& { return impl::option::map_or_else<T>(std::move(*this), std::forward<D>(def), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const&& { return impl::option::map_or_else<T>(static_cast<const option&&>(*this), static_cast<D&&>(def), static_cast<F&&>(f)); }
 
     [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T>* ptr_or_null() noexcept OPTION_LIFETIMEBOUND {
         return has_value() ? OPTION_ADDRESSOF(get()) : nullptr;
@@ -3043,51 +3043,51 @@ public:
     }
 
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) & { return impl::option::filter(*this, std::forward<F>(f)); }
+    [[nodiscard]] constexpr option<T> filter(F&& f) & { return impl::option::filter(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) const& { return impl::option::filter(*this, std::forward<F>(f)); }
+    [[nodiscard]] constexpr option<T> filter(F&& f) const& { return impl::option::filter(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) && { return impl::option::filter(std::move(*this), std::forward<F>(f)); }
+    [[nodiscard]] constexpr option<T> filter(F&& f) && { return impl::option::filter(static_cast<option&&>(*this), static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) const&& { return impl::option::filter(std::move(*this), std::forward<F>(f)); }
+    [[nodiscard]] constexpr option<T> filter(F&& f) const&& { return impl::option::filter(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
     [[nodiscard]] constexpr auto flatten() const& { return impl::option::flatten<T>(*this); }
-    [[nodiscard]] constexpr auto flatten() && { return impl::option::flatten<T>(std::move(*this)); }
+    [[nodiscard]] constexpr auto flatten() && { return impl::option::flatten<T>(static_cast<option&&>(*this)); }
 
     template<class F>
-    [[nodiscard]] constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr auto and_then(F&& f) const& { return impl::option::and_then(*this, std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto and_then(F&& f) const& { return impl::option::and_then(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr auto and_then(F&& f) && { return impl::option::and_then(std::move(*this), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto and_then(F&& f) && { return impl::option::and_then(static_cast<option&&>(*this), static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr auto and_then(F&& f) const&& { return impl::option::and_then(std::move(*this), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto and_then(F&& f) const&& { return impl::option::and_then(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
     template<class F>
-    [[nodiscard]] constexpr auto map(F&& f) & { return impl::option::map<T>(*this, std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map(F&& f) & { return impl::option::map<T>(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr auto map(F&& f) const& { return impl::option::map<T>(*this, std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map(F&& f) const& { return impl::option::map<T>(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr auto map(F&& f) && { return impl::option::map<T>(std::move(*this), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map(F&& f) && { return impl::option::map<T>(static_cast<option&&>(*this), static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr auto map(F&& f) const&& { return impl::option::map<T>(std::move(*this), std::forward<F>(f)); }
+    [[nodiscard]] constexpr auto map(F&& f) const&& { return impl::option::map<T>(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
     template<class F>
-    [[nodiscard]] constexpr option<T> or_else(F&& f) const& { return impl::option::or_else<T>(*this, std::forward<F>(f)); }
+    [[nodiscard]] constexpr option<T> or_else(F&& f) const& { return impl::option::or_else<T>(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> or_else(F&& f) && { return impl::option::or_else<T>(std::move(*this), std::forward<F>(f)); }
+    [[nodiscard]] constexpr option<T> or_else(F&& f) && { return impl::option::or_else<T>(static_cast<option&&>(*this), static_cast<F&&>(f)); }
 
     [[nodiscard]] constexpr auto unzip() & { return impl::option::unzip(*this); }
     [[nodiscard]] constexpr auto unzip() const& { return impl::option::unzip(*this); }
-    [[nodiscard]] constexpr auto unzip() && { return impl::option::unzip(std::move(*this)); }
-    [[nodiscard]] constexpr auto unzip() const&& { return impl::option::unzip(std::move(*this)); }
+    [[nodiscard]] constexpr auto unzip() && { return impl::option::unzip(static_cast<option&&>(*this)); }
+    [[nodiscard]] constexpr auto unzip() const&& { return impl::option::unzip(static_cast<const option&&>(*this)); }
 
     template<class U>
     [[nodiscard]] constexpr option<T> replace(U&& val) {
-        option<T> tmp{std::move(*this)};
+        option tmp{static_cast<option&&>(*this)};
         // should call the destructor after moving, because moving does not end lifetime
         base::reset();
-        base::construct(std::forward<U>(val));
+        base::construct(static_cast<U&&>(val));
         return tmp;
     }
 
@@ -3102,11 +3102,11 @@ public:
             return;
         }
         if (has_value()) {
-            other.base::construct(std::move(get()));
+            other.base::construct(static_cast<T&&>(get()));
             base::reset();
             return;
         }
-        base::construct(std::move(other.get()));
+        base::construct(static_cast<U&&>(other.get()));
         other.base::reset();
     }
 };
@@ -3155,15 +3155,15 @@ namespace impl {
 
 template<class T>
 [[nodiscard]] constexpr option<std::decay_t<T>> make_option(T&& value) {
-    return option<std::decay_t<T>>{std::forward<T>(value)};
+    return option<std::decay_t<T>>{static_cast<T&&>(value)};
 }
 template<class T, class... Args>
 [[nodiscard]] constexpr option<T> make_option(Args&&... args) {
-    return option<T>{std::in_place, std::forward<Args>(args)...};
+    return option<T>{std::in_place, static_cast<Args&&>(args)...};
 }
 template<class T, class U, class... Args>
 [[nodiscard]] constexpr option<T> make_option(std::initializer_list<U> ilist, Args&&... args) {
-    return option<T>{std::in_place, ilist, std::forward<Args>(args)...};
+    return option<T>{std::in_place, ilist, static_cast<Args&&>(args)...};
 }
 
 template<class... Options, std::enable_if_t<std::conjunction_v<opt::is_option<impl::remove_cvref<Options>>...>, int> = 0>
@@ -3171,7 +3171,7 @@ template<class... Options, std::enable_if_t<std::conjunction_v<opt::is_option<im
     -> opt::option<std::tuple<typename impl::remove_cvref<Options>::value_type...>>
 {
     if ((options.has_value() && ...)) {
-        return opt::option{std::tuple{std::forward<Options>(options).get()...}};
+        return opt::option{std::tuple{static_cast<Options&&>(options).get()...}};
     } else {
         return {};
     }
@@ -3183,12 +3183,12 @@ template<class Fn, class... Options, std::enable_if_t<std::conjunction_v<opt::is
     using fn_result = std::invoke_result_t<Fn, decltype(std::declval<Options>().get())...>;
     if constexpr (std::is_void_v<fn_result>) {
         if ((options.has_value() && ...)) {
-            std::invoke(std::forward<Fn>(fn), std::forward<Options>(options).get()...);
+            std::invoke(static_cast<Fn&&>(fn), static_cast<Options&&>(options).get()...);
         }
         return void();
     } else {
         if ((options.has_value() && ...)) {
-            return opt::option<fn_result>{std::invoke(std::forward<Fn>(fn), std::forward<Options>(options).get()...)};
+            return opt::option<fn_result>{std::invoke(static_cast<Fn&&>(fn), static_cast<Options&&>(options).get()...)};
         } else {
             return opt::option<fn_result>{opt::none};
         }
@@ -3201,7 +3201,7 @@ template<class To, class From>
 }
 template<class To, class From>
 [[nodiscard]] constexpr opt::option<To> option_cast(opt::option<From>&& value) {
-    return std::move(value).map([](From&& x) { return To(std::move(x)); });
+    return static_cast<opt::option<From>&&>(value).map([](From&& x) { return To(static_cast<From&&>(x)); });
 }
 
 template<class T>
@@ -3219,20 +3219,20 @@ namespace impl {
     template<std::size_t I, class Self>
     constexpr auto get_impl(Self&& self) noexcept {
         using std::get;
-        using type = impl::copy_reference_t<decltype(get<I>(std::forward<Self>(self).get())), Self>;
+        using type = impl::copy_reference_t<decltype(get<I>(static_cast<Self&&>(self).get())), Self>;
 
         if (self.has_value()) {
-            return opt::option<type>{static_cast<type>(get<I>(std::forward<Self>(self).get()))};
+            return opt::option<type>{static_cast<type>(get<I>(static_cast<Self&&>(self).get()))};
         }
         return opt::option<type>{opt::none};
     }
     template<class T, class Self>
     constexpr auto get_impl(Self&& self) noexcept {
         using std::get;
-        using type = impl::copy_reference_t<decltype(get<T>(std::forward<Self>(self).get())), Self>;
+        using type = impl::copy_reference_t<decltype(get<T>(static_cast<Self&&>(self).get())), Self>;
 
         if (self.has_value()) {
-            return opt::option<type>{static_cast<type>(get<T>(std::forward<Self>(self).get()))};
+            return opt::option<type>{static_cast<type>(get<T>(static_cast<Self&&>(self).get()))};
         }
         return opt::option<type>{opt::none};
     }
@@ -3243,18 +3243,18 @@ template<std::size_t I, class T>
 template<std::size_t I, class T>
 [[nodiscard]] constexpr auto get(const opt::option<T>& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(x); }
 template<std::size_t I, class T>
-[[nodiscard]] constexpr auto get(opt::option<T>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(std::move(x)); }
+[[nodiscard]] constexpr auto get(opt::option<T>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(static_cast<opt::option<T>&&>(x)); }
 template<std::size_t I, class T>
-[[nodiscard]] constexpr auto get(const opt::option<T>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(std::move(x)); }
+[[nodiscard]] constexpr auto get(const opt::option<T>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<I>(static_cast<const opt::option<T>&&>(x)); }
 
 template<class T, class OptT>
 [[nodiscard]] constexpr auto get(opt::option<OptT>& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(x); }
 template<class T, class OptT>
 [[nodiscard]] constexpr auto get(const opt::option<OptT>& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(x); }
 template<class T, class OptT>
-[[nodiscard]] constexpr auto get(opt::option<OptT>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(std::move(x)); }
+[[nodiscard]] constexpr auto get(opt::option<OptT>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(static_cast<opt::option<T>&&>(x)); }
 template<class T, class OptT>
-[[nodiscard]] constexpr auto get(const opt::option<OptT>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(std::move(x)); }
+[[nodiscard]] constexpr auto get(const opt::option<OptT>&& x OPTION_LIFETIMEBOUND) noexcept { return impl::get_impl<T>(static_cast<const opt::option<T>&&>(x)); }
 
 namespace impl {
     template<std::size_t I, class Variant>
@@ -3276,18 +3276,18 @@ template<std::size_t I, class... Ts>
 template<std::size_t I, class... Ts>
 [[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(v); }
 template<std::size_t I, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(static_cast<std::variant<Ts...>&&>(v)); }
 template<std::size_t I, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<I>(static_cast<const std::variant<Ts...>&&>(v)); }
 
 template<class T, class... Ts>
 [[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
 [[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(v); }
 template<class T, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(static_cast<std::variant<Ts...>&&>(v)); }
 template<class T, class... Ts>
-[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(std::move(v)); }
+[[nodiscard]] OPTION_PURE constexpr auto get(const std::variant<Ts...>&& v OPTION_LIFETIMEBOUND) noexcept { return impl::variant_get<T>(static_cast<const std::variant<Ts...>&&>(v)); }
 
 namespace impl {
     template<class T>
@@ -3352,10 +3352,10 @@ template<class T, class NoneCase>
 
 template<class T>
 [[nodiscard]] OPTION_PURE constexpr auto at(T&& container OPTION_LIFETIMEBOUND, const std::size_t index) noexcept {
-    using type = impl::copy_reference_t<decltype(std::forward<T>(container)[index]), T>;
+    using type = impl::copy_reference_t<decltype(static_cast<T&&>(container)[index]), T>;
 
     if (index >= container.size()) { return opt::option<type>{opt::none}; }
-    return opt::option<type>{static_cast<type>(std::forward<T>(container)[index])};
+    return opt::option<type>{static_cast<type>(static_cast<T&&>(container)[index])};
 }
 
 template<class T>
@@ -3388,7 +3388,7 @@ constexpr opt::option<T>& operator|=(opt::option<T>& left, const opt::option<T>&
 template<class T>
 constexpr opt::option<T>& operator|=(opt::option<T>& left, opt::option<T>&& right) {
     if (!left.has_value()) {
-        left = std::move(right);
+        left = static_cast<opt::option<T>&&>(right);
     }
     return left;
 }
@@ -3402,7 +3402,7 @@ constexpr opt::option<T>& operator|=(opt::option<T>& left, const T& right) {
 template<class T>
 constexpr opt::option<T>& operator|=(opt::option<T>& left, T&& right) {
     if (!left.has_value()) {
-        left = std::move(right);
+        left = static_cast<T&&>(right);
     }
     return left;
 }
@@ -3574,7 +3574,7 @@ namespace impl {
 
         template<class... Args, std::enable_if_t<impl::is_initializable_from_v<T, Args...>, int> = 0>
         constexpr explicit type_wrapper(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-            : m{std::forward<Args>(args)...} {}
+            : m{static_cast<Args&&>(args)...} {}
 
         type_wrapper() = default;
         type_wrapper(const type_wrapper&) = default;
@@ -3585,18 +3585,18 @@ namespace impl {
         constexpr type_wrapper(const T& x) noexcept(std::is_nothrow_copy_constructible_v<T>)
             : m{x} {}
         constexpr type_wrapper(T&& x) noexcept(std::is_nothrow_move_constructible_v<T>)
-            : m{std::move(x)} {}
+            : m{static_cast<T&&>(x)} {}
 
         template<class U = T>
         constexpr type_wrapper& operator=(U&& x) {
-            m = std::forward<U>(x);
+            m = static_cast<U&&>(x);
             return *this;
         }
 
         constexpr operator T&() & noexcept { return m; }
         constexpr operator const T&() const& noexcept { return m; }
-        constexpr operator T&&() && noexcept { return std::move(m); }
-        constexpr operator const T&&() const&& noexcept { return std::move(m); }
+        constexpr operator T&&() && noexcept { return static_cast<T&&>(m); }
+        constexpr operator const T&&() const&& noexcept { return static_cast<const T&&>(m); }
     };
 }
 
