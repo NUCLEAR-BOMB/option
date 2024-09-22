@@ -23,6 +23,7 @@ Replacement for [`std::optional`][std::optional] with efficient memory usage and
 - [How it works](#how-it-works)
 - [Compatibility with `std::optional`](#compatibility-with-stdoptional)
 - [About undefined behavior](#about-undefined-behavior)
+- [Build times](#build-times)
 - [Examples](#examples)
 
 # Overview
@@ -148,7 +149,6 @@ Most methods/functions are inspired from Rust's [`std::option::Option`][Rust Opt
 - [`opt::option<T>::take_if`](./docs/markdown/reference.md#take_if)
 - [`opt::option<T>::inspect`](./docs/markdown/reference.md#inspect)
 - [`opt::option<T>::get_unchecked`](./docs/markdown/reference.md#get_unchecked)
-- [`opt::option<T>::value_or_default`](./docs/markdown/reference.md#value_or_default)
 - [`opt::option<T>::map_or`](./docs/markdown/reference.md#map_or)
 - [`opt::option<T>::map_or_else`](./docs/markdown/reference.md#map_or_else)
 - [`opt::option<T>::filter`](./docs/markdown/reference.md#filter)
@@ -165,6 +165,10 @@ Most methods/functions are inspired from Rust's [`std::option::Option`][Rust Opt
 But the option library has its own functionality:
 - [`opt::option<T>::value_or_throw`](./docs/markdown/reference.md#value-value_or_throw) (explicit `opt::option<T>::value`)
 - [`opt::option<T>::ptr_or_null`](./docs/markdown/reference.md#ptr_or_null)
+- [`opt::option<T>::value_or`](./docs/markdown/reference.md#value_or) (more flexible version, [P2218: More flexible `optional::value_or()`][P2218])
+- [`opt::option<T>::value_or_construct`](./docs/markdown/reference.md#value_or_default) ([P2218: More flexible `optional::value_or()`][P2218])
+- [`opt::option<T>::begin`](./docs/markdown/reference.md#begin) ([P3168: Give `std::optional` Range Support][P3168])
+- [`opt::option<T>::end`](./docs/markdown/reference.md#end) ([P3168: Give `std::optional` Range Support][P3168])
 - [`opt::option_cast`](./docs/markdown/reference.md#optoption_cast)
 - [`opt::from_nullable`](./docs/markdown/reference.md#optfrom_nullable)
 - [`opt::get`](./docs/markdown/reference.md#optget) (from tuple-like or `std::variant`)
@@ -357,7 +361,6 @@ The library is fully compatible with `std::optional`[^4], except:
 - Some operations on types are not always `constexpr` depending on the option traits.
 - [`std::bad_optional_access`][std::bad_optional_access] is `opt::bad_access`.
 - [`std::nullopt`][std::nullopt]/[`std::nullopt_t`][std::nullopt_t] is `opt::none`/`opt::none_t`.
-- Some methods/functions may not be `noexcept`.
 
 You can replace `std::optional` with `opt::option`, taking into account that there are these exceptions.
 
@@ -372,6 +375,28 @@ Recommended using sanitizers (*`AddressSanitizer`* and *`UndefinedBehaviorSaniti
 
 You can disable individual built-in traits to avoid using platform specific behavior for specific types.
 Or you can disable built-in traits entirely with a macro definition.
+
+# Build times
+
+The `opt::option` is slightly slower to build than `std::optional` due to meta-programming overhead and addutional functionality.
+
+The benchmarks are created with CMake's custom command which creates a file with **2000** instantiations of `opt::option`/`std::optional` using a [Python script](./benchmark/generate.py).
+
+**Benchmarks are performed on commit `0e882312c4451ac937103eb8830531ee2726f863`.**
+
+| Compiler (*version*, (*stdlib*), *platform*) | `opt::option` <br/> Debug | `std::optional` <br/> Debug | `opt::option` <br/> Release | `std::optional` <br/> Release |
+| :------------------------------------------- | :-----------------------: | :-------------------------: | :-------------------------: | :---------------------------: |
+| **MSVC** (`19.40.33811`, x64)                | 09:774                    | 06:143                      | 10:552                      | 06:100                        |
+| **Clang** (`18.1.8`, `libstdc++`, x64)       | 14:958                    | 12:757                      | 12:829                      | 11:140                        |
+| **Clang** (`18.1.8`, `libc++`, x64)          | 13:203                    | 08:418                      | 12:085                      | 07:168                        |
+| **GCC** (`14.2.0`, `libstdc++`, x64)         | 10:793                    | 10:964                      | 07:783                      | 07:849                        |
+
+> [!NOTE]
+> The Clang and GCC are used on WSL.
+>
+> Time is in seconds (e.g. `123:456` is 123 seconds and 456 milliseconds).
+
+On average, compiling  `opt::option` takes ~1.27x longer than `std::optional` (on `Debug` configuration).
 
 # Examples
 
@@ -421,3 +446,5 @@ Note that some compilers/versions have unstable sanitizer support, so the CI tes
 [libstdc++]: https://gcc.gnu.org/onlinedocs/libstdc++/
 [add_subdirectory]: https://cmake.org/cmake/help/latest/command/add_subdirectory.html
 [MSVC STL]: https://github.com/microsoft/STL
+[P3168]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2
+[P2218]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2218r0
