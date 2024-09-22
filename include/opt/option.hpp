@@ -2166,15 +2166,6 @@ namespace impl {
         constexpr void construct(Arg&& arg) noexcept {
             value = ref_to_ptr(std::forward<Arg>(arg));
         }
-
-        template<class Option>
-        constexpr void assign_from_option(Option&& other) {
-            if (other.has_value()) {
-                value = ref_to_ptr(std::forward<Option>(other).get());
-            } else {
-                reset();
-            }
-        }
     };
 
     // Tag is to distinguish between derived `enable_copy_move` and derived `enable_copy_move` inside contained nested `opt::option`.
@@ -2788,7 +2779,11 @@ public:
         class = typename checks::template from_option_like_assign<T, U, const U&>::assignment::type>
     constexpr option& operator=(const option<U>& other) {
         if constexpr (std::is_reference_v<T>) {
-            base::assign_from_option(other);
+            if (other.has_value()) {
+                base::value = base::ref_to_ptr(static_cast<option<U>&&>(other.get()));
+            } else {
+                reset();
+            }
         } else {
             if (other.has_value()) {
                 if (has_value()) {
@@ -2806,7 +2801,11 @@ public:
         class = typename checks::template from_option_like_assign<T, U, U&&>::assignment::type>
     constexpr option& operator=(option<U>&& other) {
         if constexpr (std::is_reference_v<T>) {
-            base::assign_from_option(std::move(other));
+            if (other.has_value()) {
+                base::value = base::ref_to_ptr(static_cast<option<U>&&>(other).get());
+            } else {
+                reset();
+            }
         } else {
             if (other.has_value()) {
                 if (has_value()) {
