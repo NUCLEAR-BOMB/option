@@ -77,8 +77,15 @@ class option;
 
 ## Template parameters
 
-`T` - the type of the value to manage initialization state for. \
-The type must be not `opt::none_t`, not `void`, and be destructible.
+`T` - the type of the value to manage initialization state for.
+
+`T` must be:
+- not `std::in_place_t` (possibly cv-qualified).
+- not `opt::none_t` (possibly cv-qualified).
+- not `void` ([`std::is_void`][std::is_void]).
+- destructible ([`std::is_destructible`][std::is_destructible]).
+- not array ([`std::is_array`][std::is_array]).
+- not function ([`std::is_function`][std::is_function]).
 
 ## Member types
 
@@ -158,10 +165,9 @@ Where `{construct}` is a function that constructs contained object in place.
 
 ```cpp
 template<class U = T>
-constexpr explicit(/*see below*/) option(U&& value) noexcept(/*see below*/);
+constexpr explicit(/*see below*/) option(U&& value);
 ```
 Constructs an `opt::option` object that *contains a value*. Initializes a contained object of type `T` using *direct-list-initialization* with the expression `std::forward<U>(value)`.
-- *`noexcept`* when `std::is_nothrow_constructible_v<T, U>`.
 - *`explicit`* when `!std::is_convertible_v<U&&, T>`.
 - *Enabled* when the following conditions are true:
     - `std::is_constructible_v<T, U&&>`.
@@ -173,10 +179,9 @@ Constructs an `opt::option` object that *contains a value*. Initializes a contai
 
 ```cpp
 template<class First, class... Args>
-constexpr option(First&& first, Args&&... args) noexcept(/*see below*/);
+constexpr option(First&& first, Args&&... args);
 ```
 Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `std::forward<First>(first), std::forward<Args>(args)...`.
-- *`noexpect`* when `std::is_nothrow_constructible_v<T, First, Args...>`.
 - *Enabled* when the following conditions are true:
     - `std::is_constructible_v<T, First, Args...> || is_direct_list_initializable<T, First, Args...>`.
     - `!std::is_same_v<remove_cvref<First>, opt::option<T>>`. \
@@ -187,25 +192,23 @@ Constructs an `opt::option` object that contains a value that is initialized usi
 
 ```cpp
 template<class... Args>
-constexpr explicit option(std::in_place_t, Args&&... args) noexcept(/*see below*/);
+constexpr explicit option(std::in_place_t, Args&&... args);
 ```
 Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `std::forward<Args>(args)...`.
-- *`noexpect`* when `std::is_nothrow_constructible_v<T, Args...>`.
 
 ---
 
 ```cpp
 template<class U, class... Args>
-constexpr explicit option(std::in_place_t, std::initializer_list<U> ilist, Args&&... args) noexcept(/*see below*/);
+constexpr explicit option(std::in_place_t, std::initializer_list<U> ilist, Args&&... args);
 ```
 Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `ilist, std::forward<Args>(args)...`.
-- *`noexpect`* when `std::is_nothrow_constructible_v<T, std::initializer_list<U>&, Args...>`.
 
 ---
 
 ```cpp
 template<class U>
-constexpr explicit(/*see below*/) option(const option<U>& other) noexcept(/*see below*/);
+constexpr explicit(/*see below*/) option(const option<U>& other);
 ```
 Converting copy constructor. \
 Constructs an object of type `T` using *direct-list-initialization* with the expression `other.get()` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
@@ -218,7 +221,6 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`noexpect`* when `std::is_nothrow_constructible_v<T, const U&>`.
 - *`explicit`* when `!std::is_convertible_v<const U&, T>`.
 - *Enabled* when the following conditions are true:
     - `std::is_constructible_v<T, const U&>`.
@@ -240,7 +242,7 @@ Where `{construct}` is a function that constructs contained object in place.
 
 ```cpp
 template<class U>
-constexpr explicit(/*see below*/) option(option<U>&& other) noexcept(/*see below*/);
+constexpr explicit(/*see below*/) option(option<U>&& other);
 ```
 Converting move constructor. \
 Constructs an object of type `T` using *direct-list-initialization* with the expression `std::move(other.get())` if `other` contains a value. If `other` does not contain a value, construct an empty `opt::option` object instead.
@@ -253,7 +255,6 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`noexcept`* when `std::is_nothrow_constructible_v<T, U&&>`.
 - *`explicit`* when `!std::is_convertible_v<U&&, T>`.
 - *Enabled* when the following conditions are true:
     - `std::is_convertible_v<T, U&&>`.
@@ -365,7 +366,7 @@ Where `{construct}` is a function that constructs contained object in place.
 
 ```cpp
 template<class U = T>
-constexpr option& operator=(U&& value) noexcept(/*see below*/);
+constexpr option& operator=(U&& value);
 ```
 Perfect-forwarded assignment. \
 If this `opt::option` contains a value before the call, it is assigned from the expression `std::forward<U>(value)`. If does not, the contained object of type `T` is constructed using *direct-list-initialization* with the expression `std::forward<U>(value)`.
@@ -380,9 +381,6 @@ if (has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`noexcept`* when the following are all `true`:
-    - `std::is_nothrow_assignable_v<T&, U&&>`.
-    - `std::is_nothrow_constructible_v<T, U&&>`.
 - *Enabled* when the following are all `true`:
     - `!opt::is_option<U>`.
     - `!(std::is_scalar_v<T> && std::is_same_v<T, std::decay_t<U>>)`.
@@ -495,11 +493,10 @@ If this `opt::option` contains a value, destroy that contained value. If does no
 
 ```cpp
 template<class... Args>
-constexpr T& emplace(Args&&... args) noexcept(/*see below*/) /*lifetimebound*/;
+constexpr T& emplace(Args&&... args) /*lifetimebound*/;
 ```
 Constructs the contained from `args...`. \
 If this `opt::option` already contains a value, the contained value is destroyed. Initializes the contained value of type `T` using *direct-list-initialization* with `std::forward<Args>(args)...` as parameters.
-- *`noexcept`* when `std::is_nothrow_constructible_v<T, Args...>`.
 
 Description in the code equivalent:
 ```cpp
@@ -697,7 +694,7 @@ Returns a pointer to the contained value (`std::addressof(get())`) of the `opt::
 constexpr T& operator*() & noexcept /*lifetimebound*/;
 constexpr const T& operator*() const& noexcept /*lifetimebound*/;
 constexpr std::remove_reference_t<T>&& operator*() && noexcept /*lifetimebound*/;
-constexpr const std::remove_reference_t<T>&& operator*() const&& /*lifetimebound*/;
+constexpr const std::remove_reference_t<T>&& operator*() const&& noexcept /*lifetimebound*/;
 ```
 Access the contained value. \
 Returns a reference to the contained value of the `opt::option`. Calls the [`OPTION_VERIFY`][option-verify] macro if the `opt::option` does not contain a value. Same as `get()`.
@@ -741,20 +738,18 @@ The `value_or_throw()` method is a more explicit version of the `value()` method
 
 ```cpp
 template<class U>
-constexpr T value_or(U&& default) const& noexcept(/*see below*/) /*lifetimebound*/;
+constexpr T value_or(U&& default) const& /*lifetimebound*/;
 ```
 Returns the contained value if `opt::option` contains one or returns a provided `default` instead. \
-- *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>` and ` std::is_nothrow_constructible_v<T, U&&>`.
 - *Requirements:* `std::is_copy_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
 
 ---
 
 ```cpp
 template<class U>
-constexpr T value_or(U&& default) && noexcept(/*see below*/) /*lifetimebound*/;
+constexpr T value_or(U&& default) && /*lifetimebound*/;
 ```
 Returns the contained value if `opt::option` contains one or returns a provided `default` instead. \
-- *`noexcept`* when `std::is_nothrow_move_constructible_v<T>` and ` std::is_nothrow_constructible_v<T, U&&>`.
 - *Requirements:* `std::is_move_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
 
 ---
@@ -762,19 +757,17 @@ Returns the contained value if `opt::option` contains one or returns a provided 
 ### `value_or_default`
 
 ```cpp
-constexpr T value_or_default() const& noexcept(/*see below*/);
+constexpr T value_or_default() const&;
 ```
 Returns the contained value if `opt::option` contains one, otherwise returns a default constructed of type `T` (expression `T{}`).
-- *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>` and `std::is_nothrow_default_constructible_v<T>`.
 - *Requirements:* `std::is_default_constructible_v<T>`, `std::is_copy_constructible_v<T>` and `std::is_move_constructible_v<T>`.
 
 ---
 
 ```cpp
-constexpr T value_or_default() const& noexcept(/*see below*/);
+constexpr T value_or_default() const&;
 ```
 Returns the contained value if `opt::option` contains one, otherwise returns a default constructed of type `T` (expression `T{}`).
-- *`noexcept`* when `std::is_nothrow_move_constructible_v<T>` and `std::is_nothrow_default_constructible_v<T>`.
 - *Requirements:* `std::is_default_constructible_v<T>` and `std::is_move_constructible_v<T>`.
 
 ---
@@ -1780,10 +1773,9 @@ std::cout << (a ^ b).has_value() << '\n'; // false
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator==(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator==(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `==`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `==`.
-- *`noexcept`* when `noexcept(*left == *right)` is `true`.
 
 ---
 
@@ -1805,27 +1797,24 @@ Returns `!right.has_value()`.
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator==(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+constexpr bool operator==(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `==`; otherwise, return `false`.
-- *`noexcept`* when `noexcept(*left == right)` is `true`.
 
 ---
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator==(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator==(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `==`; otherwise, return `false`.
-- *`noexcept`* when `noexcept(left == *right)` is `true`.
 
 ### `operator!=`
 ```cpp
 template<class T1, class T2>
-constexpr bool operator!=(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator!=(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `!=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `!=`.
-- *`noexcept`* when `noexcept(*left != *right)` is `true`.
 
 ---
 
@@ -1847,27 +1836,24 @@ Returns `right.has_value()`.
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator!=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+constexpr bool operator!=(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `!=`; otherwise, return `true`.
-- *`noexcept`* when `noexcept(*left != right)` is `true`.
 
 ---
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator!=(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator!=(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `!=`; otherwise, return `true`.
-- *`noexcept`* when `noexcept(left != *right)` is `true`.
 
 ### `operator<`
 ```cpp
 template<class T1, class T2>
-constexpr bool operator<(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator<(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `<`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<`.
-- *`noexcept`* when `noexcept(*left < *right)` is `true`.
 
 ---
 
@@ -1889,27 +1875,24 @@ Returns `right.has_value()`.
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator<(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+constexpr bool operator<(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `<`; otherwise, return `true`.
-- *`noexcept`* when `noexcept(*left < right)` is `true`.
 
 ---
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator<(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator<(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `<`; otherwise, return `false`.
-- *`noexcept`* when `noexcept(left < *right)` is `true`.
 
 ### `operator<=`
 ```cpp
 template<class T1, class T2>
-constexpr bool operator<=(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator<=(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `<=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `<=`.
-- *`noexcept`* when `noexcept(*left <= *right)` is `true`.
 
 ---
 
@@ -1931,27 +1914,24 @@ Returns `true`.
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator<=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+constexpr bool operator<=(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `<=`; otherwise, return `true`.
-- *`noexcept`* when `noexcept(*left <= right)` is `true`.
 
 ---
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator<=(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator<=(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `<=`; otherwise, return `false`.
-- *`noexcept`* when `noexcept(left <= *right)` is `true`.
 
 ### `operator>`
 ```cpp
 template<class T1, class T2>
-constexpr bool operator>(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator>(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `>`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>`.
-- *`noexcept`* when `noexcept(*left > *right)` is `true`.
 
 ---
 
@@ -1973,27 +1953,24 @@ Returns `false`.
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator>(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+constexpr bool operator>(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `>`; otherwise, return `false`.
-- *`noexcept`* when `noexcept(*left < right)` is `true`.
 
 ---
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator>(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator>(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `>`; otherwise, return `true`.
-- *`noexcept`* when `noexcept(left < *right)` is `true`.
 
 ### `operator>=`
 ```cpp
 template<class T1, class T2>
-constexpr bool operator>=(const option<T1>& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator>=(const option<T1>& left, const option<T2>& right);
 ```
 If `left` and `right` contains the values, then compare values using operator `>=`; otherwise, compare `left.has_value()` and `right.has_value()` using operator `>=`.
-- *`noexcept`* when `noexcept(*left >= *right)` is `true`.
 
 ---
 
@@ -2015,19 +1992,17 @@ Returns `!right.has_value()`.
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator>=(const option<T1>& left, const T2& right) noexcept(/*see below*/);
+constexpr bool operator>=(const option<T1>& left, const T2& right);
 ```
 If `left` contains a value, then compare it with `right` using operator `=>`; otherwise, return `false`.
-- *`noexcept`* when `noexcept(*left >= right)` is `true`.
 
 ---
 
 ```cpp
 template<class T1, class T2>
-constexpr bool operator>=(const T1& left, const option<T2>& right) noexcept(/*see below*/);
+constexpr bool operator>=(const T1& left, const option<T2>& right);
 ```
 If `right` contains a value, then compare it with `left` using operator `=>`; otherwise, return `true`.
-- *`noexcept`* when `noexcept(left >= *right)` is `true`.
 
 ## Helpers
 
@@ -2321,3 +2296,7 @@ static_assert(std::is_same_v<decltype(c), opt::option<double>>);
 [UB]: https://en.cppreference.com/w/cpp/language/ub
 [option-verify]: ./macros.md#option_verify
 [pfr is_reflectable]: https://www.boost.org/doc/libs/1_86_0/doc/html/doxygen/reference_section_of_pfr/structboost_1_1pfr_1_1is__reflectable.html
+[std::is_array]: https://en.cppreference.com/w/cpp/types/is_array
+[std::is_destructible]: https://en.cppreference.com/w/cpp/types/is_destructible
+[std::is_void]: https://en.cppreference.com/w/cpp/types/is_void
+[std::is_function]: https://en.cppreference.com/w/cpp/types/is_function
