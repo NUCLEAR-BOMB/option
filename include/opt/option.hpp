@@ -377,6 +377,13 @@ OPTION_STD_NAMESPACE_END
     #include <memory> // for std::construct_at
 #endif
 
+#if OPTION_HAS_BUILTIN(__builtin_addressof) || OPTION_MSVC
+    #define OPTION_ADDRESSOF(x) __builtin_addressof(x)
+#else
+    #include <memory>
+    #define OPTION_ADDRESSOF(x) ::std::addressof(x)
+#endif
+
 namespace opt {
 
 template<class T>
@@ -1163,16 +1170,16 @@ namespace impl {
 
         static constexpr std::uintmax_t get_level(const std::pair<First, Second>* const value) noexcept {
             if constexpr (first_is_max) {
-                return traits::get_level(std::addressof(value->first));
+                return traits::get_level(OPTION_ADDRESSOF(value->first));
             } else {
-                return traits::get_level(std::addressof(value->second));
+                return traits::get_level(OPTION_ADDRESSOF(value->second));
             }
         }
         static constexpr void set_level(std::pair<First, Second>* const value, const std::uintmax_t level) noexcept {
             if constexpr (first_is_max) {
-                traits::set_level(std::addressof(value->first), level);
+                traits::set_level(OPTION_ADDRESSOF(value->first), level);
             } else {
-                traits::set_level(std::addressof(value->second), level);
+                traits::set_level(OPTION_ADDRESSOF(value->second), level);
             }
         }
     };
@@ -1188,10 +1195,10 @@ namespace impl {
         static constexpr std::uintmax_t max_level = select_traits::level;
 
         static constexpr std::uintmax_t get_level(const std::tuple<Ts...>* const value) noexcept {
-            return traits::get_level(std::addressof(std::get<tuple_index>(*value)));
+            return traits::get_level(OPTION_ADDRESSOF(std::get<tuple_index>(*value)));
         }
         static constexpr void set_level(std::tuple<Ts...>* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(std::addressof(std::get<tuple_index>(*value)), level);
+            traits::set_level(OPTION_ADDRESSOF(std::get<tuple_index>(*value)), level);
         }
     };
 
@@ -1203,10 +1210,10 @@ namespace impl {
         static constexpr std::uintmax_t max_level = traits::max_level;
 
         static constexpr std::uintmax_t get_level(const std::array<T, N>* const value) noexcept {
-            return traits::get_level(std::addressof((*value)[0]));
+            return traits::get_level(OPTION_ADDRESSOF((*value)[0]));
         }
         static constexpr void set_level(std::array<T, N>* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(std::addressof((*value)[0]), level);
+            traits::set_level(OPTION_ADDRESSOF((*value)[0]), level);
         }
     };
 
@@ -1225,10 +1232,10 @@ namespace impl {
         static constexpr std::uintmax_t max_level = select_traits::level;
 
         static constexpr std::uintmax_t get_level(const T* const value) noexcept {
-            return traits::get_level(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)));
+            return traits::get_level(OPTION_ADDRESSOF(OPTION_PFR_NAMESPACE get<index>(*value)));
         }
         static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(std::addressof(OPTION_PFR_NAMESPACE get<index>(*value)), level);
+            traits::set_level(OPTION_ADDRESSOF(OPTION_PFR_NAMESPACE get<index>(*value)), level);
         }
     };
 #endif
@@ -1485,10 +1492,10 @@ namespace impl {
         static constexpr std::uintmax_t max_level = select_traits::level;
 
         static constexpr std::uintmax_t get_level(const T* const value) noexcept {
-            return traits::get_level(std::addressof(tuple_like_get<index>(*value)));
+            return traits::get_level(OPTION_ADDRESSOF(tuple_like_get<index>(*value)));
         }
         static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(std::addressof(tuple_like_get<index>(*value)), level);
+            traits::set_level(OPTION_ADDRESSOF(tuple_like_get<index>(*value)), level);
         }
     };
 
@@ -1749,7 +1756,7 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value_flag, "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
         template<class U>
@@ -1786,13 +1793,13 @@ namespace impl {
 
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value_flag) {
-                impl::destroy_at(std::addressof(value));
+                impl::destroy_at(OPTION_ADDRESSOF(value));
             }
         }
 
         constexpr void reset() {
             if (has_value_flag) {
-                impl::destroy_at(std::addressof(value));
+                impl::destroy_at(OPTION_ADDRESSOF(value));
                 has_value_flag = false;
             }
         }
@@ -1802,7 +1809,7 @@ namespace impl {
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value_flag, "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
             has_value_flag = true;
         }
         template<class U>
@@ -1827,7 +1834,7 @@ namespace impl {
         
         constexpr option_destruct_base() noexcept
             : dummy{} {
-            traits::set_level(std::addressof(value), 0);
+            traits::set_level(OPTION_ADDRESSOF(value), 0);
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }
         template<class... Args>
@@ -1853,18 +1860,18 @@ namespace impl {
         }
 
         constexpr void reset() noexcept {
-            traits::set_level(std::addressof(value), 0);
+            traits::set_level(OPTION_ADDRESSOF(value), 0);
             OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
         }
         OPTION_PURE constexpr bool has_value() const noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(value));
+            const std::uintmax_t level = traits::get_level(OPTION_ADDRESSOF(value));
             OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
             return level == std::uintmax_t(-1);
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class U>
@@ -1886,7 +1893,7 @@ namespace impl {
         
         constexpr option_destruct_base() noexcept
             : dummy{} {
-            traits::set_level(std::addressof(value), 0);
+            traits::set_level(OPTION_ADDRESSOF(value), 0);
             OPTION_VERIFY(!has_value(), "After the default construction, the value is in an empty state.");
         }
         template<class... Args>
@@ -1911,26 +1918,26 @@ namespace impl {
         }
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value()) {
-                impl::destroy_at(std::addressof(value));
+                impl::destroy_at(OPTION_ADDRESSOF(value));
             }
         }
 
         constexpr void reset() noexcept {
             if (has_value()) {
-                impl::destroy_at(std::addressof(value));
-                traits::set_level(std::addressof(value), 0);
+                impl::destroy_at(OPTION_ADDRESSOF(value));
+                traits::set_level(OPTION_ADDRESSOF(value), 0);
                 OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
             }
         }
         OPTION_PURE constexpr bool has_value() const noexcept {
-            const std::uintmax_t level = traits::get_level(std::addressof(value));
+            const std::uintmax_t level = traits::get_level(OPTION_ADDRESSOF(value));
             OPTION_VERIFY(level == std::uintmax_t(-1) || level < traits::max_level, "Invalid level");
             return level == std::uintmax_t(-1);
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
             OPTION_VERIFY(!has_value(), "Value is non-empty");
-            impl::construct_at(std::addressof(value), std::forward<Args>(args)...);
+            impl::construct_at(OPTION_ADDRESSOF(value), std::forward<Args>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class U>
@@ -2137,9 +2144,9 @@ namespace impl {
             using raw_u = std::remove_reference_t<U>;
             if constexpr (std::is_same_v<raw_u, std::reference_wrapper<std::remove_const_t<raw_type>>>
                        || std::is_same_v<raw_u, std::reference_wrapper<raw_type>>) {
-                return std::addressof(other.get());
+                return OPTION_ADDRESSOF(other.get());
             } else {
-                return std::addressof(other);
+                return OPTION_ADDRESSOF(other);
             }
         }
         raw_type* value;
@@ -2821,16 +2828,16 @@ public:
     }
 
     [[nodiscard]] constexpr iterator begin() noexcept {
-        return iterator{has_value() ? std::addressof(get()) : nullptr};
+        return iterator{has_value() ? OPTION_ADDRESSOF(get()) : nullptr};
     }
     [[nodiscard]] constexpr const_iterator begin() const noexcept {
-        return const_iterator{has_value() ? std::addressof(get()) : nullptr};
+        return const_iterator{has_value() ? OPTION_ADDRESSOF(get()) : nullptr};
     }
     [[nodiscard]] constexpr iterator end() noexcept {
-        return iterator{has_value() ? (std::addressof(get()) + 1) : nullptr};
+        return iterator{has_value() ? (OPTION_ADDRESSOF(get()) + 1) : nullptr};
     }
     [[nodiscard]] constexpr const_iterator end() const noexcept {
-        return const_iterator{has_value() ? (std::addressof(get()) + 1) : nullptr};
+        return const_iterator{has_value() ? (OPTION_ADDRESSOF(get()) + 1) : nullptr};
     }
 
     constexpr void reset() noexcept {
@@ -2919,11 +2926,11 @@ public:
     }
     [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<const T> operator->() const noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return std::addressof(get());
+        return OPTION_ADDRESSOF(get());
     }
     [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<T> operator->() noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
-        return std::addressof(get());
+        return OPTION_ADDRESSOF(get());
     }
 
     [[nodiscard]] OPTION_PURE constexpr T& operator*() & noexcept OPTION_LIFETIMEBOUND {
@@ -3029,10 +3036,10 @@ public:
     [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const&& { return impl::option::map_or_else<T>(std::move(*this), std::forward<D>(def), std::forward<F>(f)); }
 
     [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T>* ptr_or_null() noexcept OPTION_LIFETIMEBOUND {
-        return has_value() ? std::addressof(get()) : nullptr;
+        return has_value() ? OPTION_ADDRESSOF(get()) : nullptr;
     }
     [[nodiscard]] OPTION_PURE constexpr const std::remove_reference_t<T>* ptr_or_null() const noexcept OPTION_LIFETIMEBOUND {
-        return has_value() ? std::addressof(get()) : nullptr;
+        return has_value() ? OPTION_ADDRESSOF(get()) : nullptr;
     }
 
     template<class F>
@@ -3116,7 +3123,7 @@ namespace impl {
         static constexpr std::uintmax_t max_level = traits::max_level - 1;
 
         static std::uintmax_t get_level(const opt::option<T>* const value) noexcept {
-            std::uintmax_t level = traits::get_level(std::addressof(static_cast<const base*>(value)->value));
+            std::uintmax_t level = traits::get_level(OPTION_ADDRESSOF(static_cast<const base*>(value)->value));
             level -= 1;
             return level < std::uintmax_t(-2) ? level : std::uintmax_t(-1);
             // if (level == std::uintmax_t(-1) || level == 0) {
@@ -3127,7 +3134,7 @@ namespace impl {
         }
 
         static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(std::addressof(static_cast<base*>(value)->value), level + 1);
+            traits::set_level(OPTION_ADDRESSOF(static_cast<base*>(value)->value), level + 1);
         }
     };
     template<class T>
@@ -3138,10 +3145,10 @@ namespace impl {
         static constexpr std::uintmax_t max_level = bool_traits::max_level;
 
         static std::uintmax_t get_level(const opt::option<T>* const value) noexcept {
-            return bool_traits::get_level(std::addressof(static_cast<const base*>(value)->has_value_flag));
+            return bool_traits::get_level(OPTION_ADDRESSOF(static_cast<const base*>(value)->has_value_flag));
         }
         static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
-            bool_traits::set_level(std::addressof(static_cast<base*>(value)->has_value_flag), level);
+            bool_traits::set_level(OPTION_ADDRESSOF(static_cast<base*>(value)->has_value_flag), level);
         }
     };
 }
@@ -3688,10 +3695,10 @@ public:
     static constexpr std::uintmax_t max_level = traits::max_level;
 
     static constexpr std::uintmax_t get_level(const value_t* const value) noexcept {
-        return traits::get_level(std::addressof(static_cast<const T&>(*value).*MemberPtr));
+        return traits::get_level(OPTION_ADDRESSOF(static_cast<const T&>(*value).*MemberPtr));
     }
     static constexpr void set_level(value_t* const value, const std::uintmax_t level) noexcept {
-        traits::set_level(std::addressof(static_cast<T&>(*value).*MemberPtr), level);
+        traits::set_level(OPTION_ADDRESSOF(static_cast<T&>(*value).*MemberPtr), level);
     }
 };
 
@@ -3708,10 +3715,10 @@ public:
     static_assert(max_level > 0, "the 'max_level' is expected to be greater than 0 (opt::enforce<T>)");
 
     static constexpr std::uintmax_t get_level(const enforce<T>* const value) noexcept {
-        return traits::get_level(std::addressof(static_cast<const T&>(*value)));
+        return traits::get_level(OPTION_ADDRESSOF(static_cast<const T&>(*value)));
     }
     static constexpr void set_level(enforce<T>* const value, const std::uintmax_t level) noexcept {
-        traits::set_level(std::addressof(static_cast<T&>(*value)), level);
+        traits::set_level(OPTION_ADDRESSOF(static_cast<T&>(*value)), level);
     }
 };
 
