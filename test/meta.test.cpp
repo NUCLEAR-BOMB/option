@@ -70,6 +70,11 @@ struct constructible_from_tag_and_anything {
 static_assert(std::is_constructible_v<constructible_from_tag_and_anything, tag>);
 static_assert(std::is_constructible_v<constructible_from_tag_and_anything, tag, int>);
 
+struct noexcept_move_constructible {
+    noexcept_move_constructible(noexcept_move_constructible&&) noexcept {}
+};
+static_assert(std::is_nothrow_move_constructible_v<noexcept_move_constructible>);
+
 TEST_CASE("constructors") {
     SUBCASE("default") {
         CHECK_UNARY(std::is_default_constructible_v<int>);
@@ -94,6 +99,10 @@ TEST_CASE("constructors") {
 
         CHECK_UNARY_FALSE(std::is_trivially_move_constructible_v<opt::option<non_trivially_move_constructible>>);
         CHECK_UNARY_FALSE(std::is_trivially_move_constructible_v<opt::option<non_move_constructible>>);
+
+        CHECK_UNARY(std::is_nothrow_move_constructible_v<opt::option<int>>);
+        CHECK_UNARY_FALSE(std::is_nothrow_move_constructible_v<opt::option<non_trivially_move_constructible>>);
+        CHECK_UNARY(std::is_nothrow_move_constructible_v<noexcept_move_constructible>);
     }
     SUBCASE("converting copy constructor") {
         CHECK_UNARY(std::is_constructible_v<opt::option<constructible_from_anything>, const opt::option<int>&>);
@@ -215,6 +224,13 @@ struct constructible_and_assignable_from_anything {
 static_assert(std::is_constructible_v<constructible_and_assignable_from_anything, int>);
 static_assert(std::is_assignable_v<constructible_and_assignable_from_anything&, int>);
 
+struct noexcept_move_assignable_and_constructible {
+    noexcept_move_assignable_and_constructible(noexcept_move_assignable_and_constructible&&) noexcept {}
+    noexcept_move_assignable_and_constructible& operator=(noexcept_move_assignable_and_constructible&&) noexcept { return *this; }
+};
+static_assert(std::is_nothrow_move_assignable_v<noexcept_move_assignable_and_constructible>);
+static_assert(std::is_nothrow_move_constructible_v<noexcept_move_assignable_and_constructible>);
+
 TEST_CASE("operator=") {
     SUBCASE("from opt::none") {
         CHECK_UNARY(std::is_assignable_v<opt::option<int>&, const opt::none_t&>);
@@ -243,6 +259,11 @@ TEST_CASE("operator=") {
         CHECK_UNARY_FALSE(std::is_trivially_move_assignable_v<opt::option<non_trivially_destructible>>);
         CHECK_UNARY_FALSE(std::is_trivially_move_assignable_v<opt::option<non_move_constructible>>);
         CHECK_UNARY_FALSE(std::is_trivially_move_assignable_v<opt::option<non_move_assignable>>);
+
+        CHECK_UNARY(std::is_nothrow_move_assignable_v<opt::option<int>>);
+        CHECK_UNARY_FALSE(std::is_nothrow_move_assignable_v<opt::option<non_trivially_move_assignable>>);
+        CHECK_UNARY_FALSE(std::is_nothrow_move_assignable_v<opt::option<non_trivially_move_constructible>>);
+        CHECK_UNARY(std::is_nothrow_move_assignable_v<opt::option<noexcept_move_assignable_and_constructible>>);
     }
     SUBCASE("from value") {
         CHECK_UNARY(std::is_assignable_v<opt::option<int>&, int>);
