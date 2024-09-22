@@ -489,6 +489,23 @@ TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt:
         a = v1;
         CHECK_EQ(a.value_or(v2), v1);
         CHECK_EQ(as_rvalue(a).value_or(v3), v1);
+
+        if constexpr (std::is_default_constructible_v<T>) {
+            opt::option<T> b;
+            CHECK_EQ(b.value_or({}), T{});
+            b = v0;
+            CHECK_EQ(b.value_or({}), v0);
+        }
+    }
+    SUBCASE(".value_or_construct") {
+        opt::option<T> a;
+        CHECK_EQ(a.value_or_construct(v0), v0);
+        a = v1;
+        CHECK_EQ(a.value_or_construct(v2), v1);
+        if constexpr (std::is_default_constructible_v<T>) {
+            a.reset();
+            CHECK_EQ(a.value_or_construct(), T{});
+        }
     }
     if (v0 == v1) { goto skip_and_then; }
     SUBCASE(".and_then") {
@@ -620,14 +637,6 @@ skip_map:
         CHECK_UNARY(std::is_same_v<decltype(i), opt::option<opt::option<T>>>);
 
         // NOLINTEND(misc-const-correctness)
-    }
-    SUBCASE(".value_or_default") {
-        if constexpr (std::is_default_constructible_v<T>) {
-            opt::option a{v0};
-            CHECK_EQ(a.value_or_default(), v0);
-            a = opt::none;
-            CHECK_EQ(a.value_or_default(), T{});
-        }
     }
     SUBCASE(".ptr_or_null") {
         opt::option a{v0};

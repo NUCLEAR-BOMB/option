@@ -1810,6 +1810,22 @@ TEST_CASE("internal invoke") {
     CHECK_UNARY(std::is_same_v<decltype(std::declval<opt::option<const f_t*>>().map(&f_t::function)), opt::option<float>>);
 }
 
+TEST_CASE("value_or") {
+#if !OPTION_MSVC // for some reason MSVC internal errors with this code
+    struct s1 {
+        int x = 1;
+        int y = 2;
+        bool operator==(const s1& r) const { return x == r.x && y == r.y; }
+    };
+    opt::option<s1> a;
+    CHECK_EQ(a.value_or({}), s1{1, 2});
+    CHECK_EQ(a.value_or({3, 4}), s1{3, 4});
+    a = {5, 6};
+    CHECK_EQ(a.value_or({}), s1{5, 6});
+    CHECK_EQ(a.value_or({7, 8}), s1{5, 6});
+#endif
+}
+
 TEST_SUITE_END();
 
 struct struct1 {

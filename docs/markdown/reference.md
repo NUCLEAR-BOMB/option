@@ -19,7 +19,7 @@
     - [`get_unchecked`](#get_unchecked)
     - [`value`, `value_or_throw`](#value-value_or_throw)
     - [`value_or`](#value_or)
-    - [`value_or_default`](#value_or_default)
+    - [`value_or_construct`](#value_or_construct)
     - [`map_or`](#map_or)
     - [`map_or_else`](#map_or_else)
     - [`ptr_or_null`](#ptr_or_null)
@@ -737,38 +737,47 @@ The `value_or_throw()` method is a more explicit version of the `value()` method
 ### `value_or`
 
 ```cpp
-template<class U>
-constexpr T value_or(U&& default) const& /*lifetimebound*/;
+template<class U = std::remove_cv_t<T>>
+constexpr std::remove_cv_t<T> value_or(U&& def) const&;
+
+template<class U = std::remove_cv_t<T>>
+constexpr std::remove_cv_t<T> value_or(U&& def) &&;
 ```
-Returns the contained value if `opt::option` contains one or returns a provided `default` instead. \
+Returns the contained value if `opt::option` contains one or returns a provided `def` instead. \
 - *Requirements:* `std::is_copy_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
 
----
+Implements the [P2218: More flexible `optional::value_or()`][P2218] proposal.
 
+Description in the simplified equivalent:
 ```cpp
-template<class U>
-constexpr T value_or(U&& default) && /*lifetimebound*/;
+return has_value() ? get() : T(std::forward<U>(def));
 ```
-Returns the contained value if `opt::option` contains one or returns a provided `default` instead. \
-- *Requirements:* `std::is_move_constructible_v<T>` and `std::is_convertible_v<U&&, T>`.
-
----
-
-### `value_or_default`
-
-```cpp
-constexpr T value_or_default() const&;
-```
-Returns the contained value if `opt::option` contains one, otherwise returns a default constructed of type `T` (expression `T{}`).
-- *Requirements:* `std::is_default_constructible_v<T>`, `std::is_copy_constructible_v<T>` and `std::is_move_constructible_v<T>`.
 
 ---
 
+### `value_or_construct`
+
 ```cpp
-constexpr T value_or_default() const&;
+template<class... Args>
+constexpr std::remove_cv_t<T> value_or_construct(Args&&... args) const&;
+
+template<class... Args>
+constexpr std::remove_cv_t<T> value_or_construct(Args&&... args) &&;
+
+template<class U, class... Args>
+constexpr std::remove_cv_t<T> value_or_construct(std::initializer_list<U> ilist, Args&&... args) const&&;
+
+template<class U, class... Args>
+constexpr std::remove_cv_t<T> value_or_construct(std::initializer_list<U> ilist, Args&&... args) &&;
 ```
-Returns the contained value if `opt::option` contains one, otherwise returns a default constructed of type `T` (expression `T{}`).
-- *Requirements:* `std::is_default_constructible_v<T>` and `std::is_move_constructible_v<T>`.
+Returns the contained value or constructs a new one from the arguments `std::forward<Args>(args)...` (or `ilist, std::forward<Args>(args)...`).
+
+Implements the [P2218: More flexible `optional::value_or()`][P2218] proposal.
+
+Description in the simplified equivalent:
+```cpp
+return has_value() ? get() : T(std::forward<Args>(args)...);
+```
 
 ---
 
@@ -1186,7 +1195,7 @@ If contains a value, returns an iterator to the contained value. Otherwise, a pa
 
 The returned iterator is pointing to the range with a single element, which is the contained value inside option.
 
-Implements the [P1255R12: Give `std::optional` Range Support](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2.html) proposal.
+Implements the [P3168: Give `std::optional` Range Support][P3168] proposal.
 
 **Example:**
 ```cpp
@@ -1224,7 +1233,7 @@ constexpr const_iterator end() const noexcept;
 ```
 Returns a past-the-end iterator. Equivalent to `begin() + has_value()`.
 
-Implements the [P1255R12: Give `std::optional` Range Support](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2.html) proposal.
+Implements the [P3168: Give `std::optional` Range Support][P3168] proposal.
 
 **Example:**
 ```cpp
@@ -2318,3 +2327,5 @@ static_assert(std::is_same_v<decltype(c), opt::option<double>>);
 [std::is_destructible]: https://en.cppreference.com/w/cpp/types/is_destructible
 [std::is_void]: https://en.cppreference.com/w/cpp/types/is_void
 [std::is_function]: https://en.cppreference.com/w/cpp/types/is_function
+[P3168]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2
+[P2218]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2218r0

@@ -2409,6 +2409,19 @@ namespace impl {
 }
 
 namespace impl::option {
+    template<class T, class Self, class... Args>
+    constexpr T value_or_construct(Self&& self, Args&&... args) {
+        if (self.has_value()) {
+            return static_cast<Self&&>(self).get();
+        } else {
+            if constexpr (std::is_aggregate_v<T>) {
+                return T{static_cast<Args&&>(args)...};
+            } else {
+                return T(static_cast<Args&&>(args)...);
+            }
+        }
+    }
+
     // implementation of opt::option<T>::and_then(F&&)
     template<class Self, class F>
     constexpr auto and_then(Self&& self, F&& f) {
@@ -3035,33 +3048,31 @@ public:
     [[nodiscard]] constexpr T&& value() && OPTION_LIFETIMEBOUND { return static_cast<T&&>(value_or_throw()); }
     [[nodiscard]] constexpr const T&& value() const&& OPTION_LIFETIMEBOUND { return static_cast<const T&&>(value_or_throw()); }
 
-    template<class U>
-    [[nodiscard]] constexpr T value_or(U&& default_value) const& {
+    template<class U = std::remove_cv_t<T>>
+    [[nodiscard]] constexpr std::remove_cv_t<T> value_or(U&& default_value) const& {
         if (has_value()) {
             return get();
+        } else {
+            return static_cast<std::remove_cv_t<T>>(static_cast<U&&>(default_value));
         }
-        return static_cast<T>(static_cast<U&&>(default_value));
     }
-    template<class U>
-    [[nodiscard]] constexpr T value_or(U&& default_value) && {
+    template<class U = std::remove_cv_t<T>>
+    [[nodiscard]] constexpr std::remove_cv_t<T> value_or(U&& default_value) && {
         if (has_value()) {
             return static_cast<T&&>(get());
+        } else {
+            return static_cast<std::remove_cv_t<T>>(static_cast<U&&>(default_value));
         }
-        return static_cast<T>(static_cast<U&&>(default_value));
     }
 
-    [[nodiscard]] constexpr T value_or_default() const& {
-        if (has_value()) {
-            return get();
-        }
-        return T{};
-    }
-    [[nodiscard]] constexpr T value_or_default() && {
-        if (has_value()) {
-            return static_cast<T&&>(get());
-        }
-        return T{};
-    }
+    template<class... Args>
+    [[nodiscard]] constexpr std::remove_cv_t<T> value_or_construct(Args&&... args) const& { return impl::option::value_or_construct<std::remove_cv_t<T>>(*this, static_cast<Args&&>(args)...); }
+    template<class... Args>
+    [[nodiscard]] constexpr std::remove_cv_t<T> value_or_construct(Args&&... args) && { return impl::option::value_or_construct<std::remove_cv_t<T>>(static_cast<option&&>(*this), static_cast<Args&&>(args)...); }
+    template<class U, class... Args>
+    [[nodiscard]] constexpr std::remove_cv_t<T> value_or_construct(std::initializer_list<U> ilist, Args&&... args) const& { return impl::option::value_or_construct<std::remove_cv_t<T>>(*this, ilist, static_cast<Args&&>(args)...); }
+    template<class U, class... Args>
+    [[nodiscard]] constexpr std::remove_cv_t<T> value_or_construct(std::initializer_list<U> ilist, Args&&... args) && { return impl::option::value_or_construct<std::remove_cv_t<T>>(static_cast<option&&>(*this), ilist, static_cast<Args&&>(args)...); }
 
     template<class U, class F>
     [[nodiscard]] constexpr auto map_or(U&& def, F&& f) & { return impl::option::map_or<T>(*this, static_cast<U&&>(def), static_cast<F&&>(f)); }
