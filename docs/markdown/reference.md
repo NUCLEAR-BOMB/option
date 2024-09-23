@@ -67,6 +67,7 @@
     - [`member`](#optmember)
     - [`enforce`](#optenforce)
 - [Deduction guides](#deduction-guides)
+- [Exposition-only](#exposition-only)
 
 ## Declaration
 
@@ -131,9 +132,9 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`noexcept`* when `std::is_nothrow_copy_constructible_v<T>`.
-- *Deleted* when `!std::is_copy_constructible_v<T>`.
-- *Trivial* when `std::is_trivially_copy_constructible_v<T>`.
+- *`noexcept`* when `std::is_reference_v<T>` or `std::is_nothrow_copy_constructible_v<T>`.
+- *Deleted* when `!std::is_reference_v<T>` and `!std::is_copy_constructible_v<T>`.
+- *Trivial* when `std::is_reference_v<T>` or `std::is_trivially_copy_constructible_v<T>`.
 - *Postcondition:* `has_value() == other.has_value()`.
 
 ---
@@ -153,9 +154,9 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`noexcept`* when `std::is_nothrow_move_constructible_v<T>`.
-- *Deleted* when `!std::is_move_constructible_v<T>`
-- *Trivial* when `std::is_trivially_move_constructible_v<T>`.
+- *`noexcept`* when `std::is_reference_v<T>` or `std::is_nothrow_move_constructible_v<T>`.
+- *Deleted* when `!std::is_reference_v<T>` and `!std::is_move_constructible_v<T>`
+- *Trivial* when `std::is_reference_v<T>` or `std::is_trivially_move_constructible_v<T>`.
 - *Postcondition:* `has_value() == other.has_value()`.
 
 > [!IMPORTANT]
@@ -168,12 +169,19 @@ template<class U = T>
 constexpr explicit(/*see below*/) option(U&& value);
 ```
 Constructs an `opt::option` object that *contains a value*. Initializes a contained object of type `T` using *direct-list-initialization* with the expression `std::forward<U>(value)`.
-- *`explicit`* when `!std::is_convertible_v<U&&, T>`.
+
+- *`explicit`* when `!std::is_reference_v<T>` and `!std::is_convertible_v<U&&, T>`.
 - *Enabled* when the following conditions are true:
-    - `std::is_constructible_v<T, U&&>`.
-    - `!std::is_same_v<remove_cvref<U>, opt::option<T>>`.
-    - `!(std::is_same_v<remove_cvref<T>, bool> && opt::is_option<remove_cvref<U>>)`. \
-    Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X`.
+    - If `T` is a non-reference type:
+      - `std::is_constructible_v<T, U&&>`.
+      - `!std::is_same_v<remove_cvref<U>, opt::option<T>>`. ([`remove_cvref`](#remove_cvrefx))
+      - `!std::is_same_v<remove_cvref<U>, std::in_place_t`.
+      - `(!std::is_same_v<remove_cvref<T>, bool> || !opt::is_option_v<remove_cvref<U>>)`.
+    - Otherwise, if `T` is a reference type:
+      - `!std::is_same_v<remove_cvref<U>, opt::option<T>>`.
+      - `!std::is_same_v<remove_cvref<U>, std::in_place_t>`.
+      - `!opt::is_option_v<remove_cvref<U>>`.
+      - [`can_bind_reference<T, U>`](#can_bind_referencex-y).
 
 ---
 
@@ -182,11 +190,13 @@ template<class First, class... Args>
 constexpr option(First&& first, Args&&... args);
 ```
 Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `std::forward<First>(first), std::forward<Args>(args)...`.
+
+Always disabled when `T` is a reference type.
+
 - *Enabled* when the following conditions are true:
-    - `std::is_constructible_v<T, First, Args...> || is_direct_list_initializable<T, First, Args...>`.
-    - `!std::is_same_v<remove_cvref<First>, opt::option<T>>`. \
-    Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type X. \
-    Where `is_direct_list_initializable<X, XArgs...>` is a metafunction, that checks if a type `X` can be *direct-list-initialized* with the arguments of types `XArgs...`.
+    - `!std::is_reference_v<T>`.
+    - `std::is_constructible_v<T, First, Args...> || is_initializable_from<T, First, Args...>`. ([`is_initializable_from`](#is_initializable_fromx-y))
+    - `!std::is_same_v<remove_cvref<First>, opt::option<T>>`. ([`remove_cvref`](#remove_cvrefx))
 
 ---
 
@@ -196,6 +206,8 @@ constexpr explicit option(std::in_place_t, Args&&... args);
 ```
 Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `std::forward<Args>(args)...`.
 
+Always disabled when `T` is a reference type.
+
 ---
 
 ```cpp
@@ -203,6 +215,8 @@ template<class U, class... Args>
 constexpr explicit option(std::in_place_t, std::initializer_list<U> ilist, Args&&... args);
 ```
 Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `ilist, std::forward<Args>(args)...`.
+
+Always disabled when `T` is a reference type.
 
 ---
 
@@ -221,23 +235,16 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`explicit`* when `!std::is_convertible_v<const U&, T>`.
+- *`explicit`* when `!std::is_reference_v<T>` and `!std::is_convertible_v<const U&, T>`.
 - *Enabled* when the following conditions are true:
-    - `std::is_constructible_v<T, const U&>`.
-    - `!std::is_same_v<remove_cvref<T>, bool>`.
-    - `!is_constructible_from_option<T, U>)`. \
-    Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type X. \
-    Where `is_constructible_from_option<X, Y>` is a metafunction, that checks if type `X` is constructible or convertible from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following there is at least one `true`:
-        - `std::is_constructible_v<X, opt::option<Y>&>`.
-        - `std::is_constructible_v<X, const opt::option<Y>&>`.
-        - `std::is_constructible_v<X, opt::option<Y>&&>`.
-        - `std::is_constructible_v<X, const opt::option<Y>&&>`.
-        - `std::is_convertible_v<opt::option<Y>&, X>`.
-        - `std::is_convertible_v<const opt::option<Y>&, X>`.
-        - `std::is_convertible_v<opt::option<Y>&&, X>`.
-        - `std::is_convertible_v<const opt::option<Y>&&, X>`.
+    - If `T` is a non-reference type:
+      - `std::is_constructible_v<T, const U&>`.
+      - `!std::is_same_v<T, U>`.
+      - `std::is_same_v<remove_cvref<T>, bool> || !is_constructible_from_option<T, U>`. ([`remove_cvref`](#remove_cvrefx), [`is_constructible_from_option`](#is_constructible_from_optionx-y)).
+    - Otherwise, if `T` is a reference type:
+      - `!std::is_same_v<T, U>`,
+      - [`can_bind_reference<T, U>`](#can_bind_referencex-y).
 - *Postcondition:* `has_value() == other.has_value()`.
-
 ---
 
 ```cpp
@@ -255,21 +262,15 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`explicit`* when `!std::is_convertible_v<U&&, T>`.
+- *`explicit`* when `!std::is_reference_v<T>` and `!std::is_convertible_v<U&&, T>`.
 - *Enabled* when the following conditions are true:
-    - `std::is_convertible_v<T, U&&>`.
-    - `!std::is_same_v<remove_cvref<T>, bool>`.
-    - `!is_constructible_from_option<T, U>`. \
-    Where `remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type X. \
-    Where `is_constructible_from_option<X, Y>` is a metafunction, that checks if type `X` is constructible or convertible from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following there is at least one `true`:
-        - `std::is_constructible_v<X, opt::option<Y>&>`.
-        - `std::is_constructible_v<X, const opt::option<Y>&>`.
-        - `std::is_constructible_v<X, opt::option<Y>&&>`.
-        - `std::is_constructible_v<X, const opt::option<Y>&&>`.
-        - `std::is_convertible_v<opt::option<Y>&, X>`.
-        - `std::is_convertible_v<const opt::option<Y>&, X>`.
-        - `std::is_convertible_v<opt::option<Y>&&, X>`.
-        - `std::is_convertible_v<const opt::option<Y>&&, X>`.
+    - If `T` is a non-reference type:
+      - `std::is_convertible_v<T, U&&>`.
+      - `!std::is_same_v<T, U>`.
+      - `std::is_same_v<std::remove_cv_t<T>, bool> || !is_constructible_from_option<T, U>`. ([`is_constructible_from_option`](#is_constructible_from_optionx-y),  [`remove_cvref`](#remove_cvrefx))
+    - Otherwise, if `T` is a reference type:
+      - `!std::is_same_v<T, U>`,
+      - [`can_bind_reference<T, U>`](#can_bind_referencex-y).
 - *Postcondition:* `has_value() == other.has_value()`.
 
 ---
@@ -318,7 +319,7 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *`noexcept`* when `std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>`.
+- *`noexcept`* when `std::is_reference_v<T>` or `std::is_nothrow_copy_assignable_v<T> && std::is_nothrow_copy_constructible_v<T>`.
 - *Deleted* when `!std::is_reference_v<T>` and `!std::is_copy_constructible_v<T> || !std::is_copy_assignable_v<T>`.
 - *Trivial* when `std::is_reference_v<T>` or the following are all `true`:
     - `std::is_trivially_copy_assignable_v<T>`.
@@ -382,10 +383,15 @@ if (has_value()) {
 Where `{construct}` is a function that constructs contained object in place.
 
 - *Enabled* when the following are all `true`:
-    - `!opt::is_option<U>`.
-    - `!(std::is_scalar_v<T> && std::is_same_v<T, std::decay_t<U>>)`.
-    - `std::is_constructible_v<T, U>`.
-    - `std::is_assignable_v<T&, U>`.
+    - If `T` is a non-reference type:
+      - `!std::is_same_v<remove_cvref<U>, opt::option<T>>`. ([`remove_cvref`](#remove_cvrefx))
+      - `(!std::is_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)`.
+      - `is_initializable_from<T, U>` ([`is_initializable_from`](#is_initializable_fromx-y))
+      - `std::is_assignable_v<T&, U>`.
+    - Otherwise, if `T` is a reference type:
+      - `!std::is_same_v<remove_cvref<U>, opt::option<T>>`.
+      - `(!std::is_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)`.
+      - [`can_bind_reference<T, U>`](#can_bind_referencex-y).
 
 ---
 
@@ -413,21 +419,16 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-- *Enabled* when `!is_constructible_from_option<T, U> && !is_assignable_from_option<T, U>` and `std::is_reference_v<T> || (std::is_constructible_v<T, const U&> && std::is_assignable_v<T&, const U&>)`.
-- Where `is_constructible_from_option<X, Y>` is a metafunction, that checks if type `X` is constructible or convertible from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following there is at least one `true`:
-    - `std::is_constructible_v<X, opt::option<Y>&>`.
-    - `std::is_constructible_v<X, const opt::option<Y>&>`.
-    - `std::is_constructible_v<X, opt::option<Y>&&>`.
-    - `std::is_constructible_v<X, const opt::option<Y>&&>`.
-    - `std::is_convertible_v<opt::option<Y>&, X>`.
-    - `std::is_convertible_v<const opt::option<Y>&, X>`.
-    - `std::is_convertible_v<opt::option<Y>&&, X>`.
-    - `std::is_convertible_v<const opt::option<Y>&&, X>`.
-- Where `is_assignable_from_option<X, Y>` is a metafunction, that checks if type `X` is assignable from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following conditions there is at least one `true`:
-    - `std::is_assignable_v<X&, opt::option<Y>&>`.
-    - `std::is_assignable_v<X&, const opt::option<Y>&>`.
-    - `std::is_assignable_v<X&, opt::option<Y>&&>`.
-    - `std::is_assignable_v<X&, const opt::option<Y>&&>`.
+- *Enabled* when the following are all `true`:
+    - If `T` is a non-reference type:
+      - `!std::is_same_v<T, U>`.
+      - `is_initializable_from<T, const U&>`. ([`is_initializable_from`](#is_initializable_fromx-y))
+      - `std::is_assignable_v<T&, const U&>`.
+      - `!is_constructible_from_option<T, U>`. ([`is_constructible_from_option`](#is_constructible_from_optionx-y))
+      - `!is_assignable_from_option<T, U>`. ([`is_assignable_from_option`](#is_assignable_from_optionx-y))
+  - Otherwise, if `T` is a reference type:
+      - `!std::is_same_v<T, U>`.
+      - `can_bind_reference<T, U>`. ([`can_bind_reference`](#can_bind_referencex-y))
 - *Postcondition:* `has_value() == other.has_value()`.
 
 ---
@@ -459,21 +460,16 @@ Where `{construct}` is a function that constructs contained object in place.
 > [!IMPORTANT]
 > After move, `other` still holds a value (if it had before), but the value itself is moved from.
 
-- *Enabled* when `!is_constructible_from_option<T, U> && !is_assignable_from_option<T, U>` and `std::is_reference_v<T> || (std::is_constructible_v<T, U&&> && std::is_assignable_v<T&, U&&>)`.
-- Where `is_constructible_from_option<X, Y>` is a metafunction, that checks if type `X` is constructible or convertible from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following there is at least one `true`:
-    - `std::is_constructible_v<X, opt::option<Y>&>`.
-    - `std::is_constructible_v<X, const opt::option<Y>&>`.
-    - `std::is_constructible_v<X, opt::option<Y>&&>`.
-    - `std::is_constructible_v<X, const opt::option<Y>&&>`.
-    - `std::is_convertible_v<opt::option<Y>&, X>`.
-    - `std::is_convertible_v<const opt::option<Y>&, X>`.
-    - `std::is_convertible_v<opt::option<Y>&&, X>`.
-    - `std::is_convertible_v<const opt::option<Y>&&, X>`.
-- Where `is_assignable_from_option<X, Y>` is a metafunction, that checks if type `X` is assignable from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following conditions there is at least one `true`:
-    - `std::is_assignable_v<X&, opt::option<Y>&>`.
-    - `std::is_assignable_v<X&, const opt::option<Y>&>`.
-    - `std::is_assignable_v<X&, opt::option<Y>&&>`.
-    - `std::is_assignable_v<X&, const opt::option<Y>&&>`.
+- *Enabled* when the following are all `true`:
+    - If `T` is a non-reference type:
+      - `!std::is_same_v<T, U>`.
+      - `is_initializable_from<T, U&&>`. ([`is_initializable_from`](#is_initializable_fromx-y))
+      - `std::is_assignable_v<T&, U&&>`.
+      - `!is_constructible_from_option<T, U>`. ([`is_constructible_from_option`](#is_constructible_from_optionx-y))
+      - `!is_assignable_from_option<T, U>`. ([`is_assignable_from_option`](#is_assignable_from_optionx-y))
+  - Otherwise, if `T` is a reference type:
+      - `!std::is_same_v<T, U>`.
+      - `can_bind_reference<T, U>`. ([`can_bind_reference`](#can_bind_referencex-y))
 - *Postcondition:* `has_value() == other.has_value()`.
 
 ---
@@ -2319,6 +2315,45 @@ static_assert(std::is_same_v<decltype(b), opt::option<float>>);
 auto c = opt::option{opt::option{3.}};
 static_assert(std::is_same_v<decltype(c), opt::option<double>>);
 ```
+
+## Exposition-only
+
+### `remove_cvref<X>`
+
+`remove_cvref<X>` is a metafunction, that removes cv-qualifiers from type `X` (e.g. `remove_cvref<const int&>` is `int`).
+
+### `can_bind_reference<X, Y>`
+
+`can_bind_reference<X, Y>` is a metafunction, it is defined as:
+```
+std::is_same_v<std::remove_reference_t<Y>, std::reference_wrapper<std::remove_const_t<std::remove_reference_t<X>>>>
+|| std::is_same_v<std::remove_reference_t<Y>, std::reference_wrapper<std::remove_reference_t<X>>>
+|| (std::is_convertible_v<std::remove_reference_t<Y>*, std::remove_reference_t<X>*>
+ && std::is_lvalue_reference_v<X> ? std::is_lvalue_reference_v<Y> : !std::is_lvalue_reference_v<Y>)
+```
+
+### `is_initializable_from<X, Y...>`
+
+`is_initializable_from<X, Y...>` is a metafunction, that checks if a type `X` can be *direct-list-initialized* if `X` is an aggregate type with the arguments of types `Y...`; otherwise, if `X` can be *list-initialized* with the arguments of types `Y...`.
+
+### `is_constructible_from_option<X, Y>`
+
+`is_constructible_from_option<X, Y>` is a metafunction, that checks if type `X` is constructible or convertible from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following there is at least one `true`:
+- `std::is_constructible_v<X, opt::option<Y>&>`.
+- `std::is_constructible_v<X, const opt::option<Y>&>`.
+- `std::is_constructible_v<X, opt::option<Y>&&>`.
+- `std::is_constructible_v<X, const opt::option<Y>&&>`.
+- `std::is_convertible_v<opt::option<Y>&, X>`.
+- `std::is_convertible_v<const opt::option<Y>&, X>`.
+- `std::is_convertible_v<opt::option<Y>&&, X>`.
+- `std::is_convertible_v<const opt::option<Y>&&, X>`.
+
+### `is_assignable_from_option<X, Y>`
+`is_assignable_from_option<X, Y>` is a metafunction, that checks if type `X` is assignable from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following conditions there is at least one `true`:
+- `std::is_assignable_v<X&, opt::option<Y>&>`.
+- `std::is_assignable_v<X&, const opt::option<Y>&>`.
+- `std::is_assignable_v<X&, opt::option<Y>&&>`.
+- `std::is_assignable_v<X&, const opt::option<Y>&&>`.
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub
 [option-verify]: ./macros.md#option_verify
