@@ -2698,19 +2698,14 @@ namespace impl {
 
     template<>
     struct option_checks_base</*IsReference=*/true> {
-        template<class T, class U, class TUnref = std::remove_reference_t<T>, class UUnref = std::remove_reference_t<U>>
-        static constexpr bool can_bind_reference() {
-            return is_same_reference_wrapper_v<TUnref, UUnref>
-                || (std::is_convertible_v<UUnref*, TUnref*>
-                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>));
-        }
-
         template<class T, class U>
         using from_value_ctor = if_<
             is_not_same_v<remove_cvref<U>, opt::option<T>>
             && is_not_same_v<remove_cvref<U>, std::in_place_t>
             && !opt::is_option_v<remove_cvref<U>>
-            && can_bind_reference<T, U>(),
+            && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
+                || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
+                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>))),
             always_non_explicit, option_check_fail>;
 
         template<class T, class First, class... Args>
@@ -2722,13 +2717,17 @@ namespace impl {
         template<class T, class U, class QualU>
         using from_option_like_ctor = if_<
             is_not_same_v<U, T>
-            && can_bind_reference<T, U>(),
+            && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
+                || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
+                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>))),
             always_non_explicit, option_check_fail
         >;
         template<class T, class U, class QualU>
         using from_option_like_assign = if_<
             is_not_same_v<U, T>
-            && can_bind_reference<T, U>(),
+            && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
+                || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
+                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>))),
             always_assign, option_check_fail
         >;
 
@@ -2736,7 +2735,9 @@ namespace impl {
         using from_value_assign = std::enable_if<
             is_not_same_v<remove_cvref<U>, opt::option<T>>
             && (is_not_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)
-            && can_bind_reference<T, U>()
+            && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
+                || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
+                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>)))
         >;
     };
 }
