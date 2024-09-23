@@ -2667,7 +2667,7 @@ namespace impl {
                 std::is_same_v<UUnref, std::reference_wrapper<std::remove_const_t<TUnref>>>
              || std::is_same_v<UUnref, std::reference_wrapper<TUnref>>
              || (std::is_convertible_v<UUnref*, TUnref*>
-              && std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>);
+              && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>));
         }
         // template<class T, class U, class TUnref = std::remove_reference_t<T>, class UUnref = std::remove_reference_t<U>>
         // using can_bind_reference =
