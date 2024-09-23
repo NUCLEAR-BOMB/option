@@ -396,7 +396,7 @@ The benchmarks are created with CMake's custom command which creates a file with
 >
 > Time is in seconds (e.g. `123:456` is 123 seconds and 456 milliseconds).
 
-On average, compiling  `opt::option` takes ~1.27x longer than `std::optional` (on `Debug` configuration).
+On average, compiling  `opt::option` takes ~1.33x longer than `std::optional` (on `Debug` configuration).
 
 # Examples
 
