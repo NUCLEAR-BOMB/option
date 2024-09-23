@@ -2688,31 +2688,22 @@ namespace impl {
             && std::is_assignable_v<T&, U>
         >;
     };
+
+    template<class T, class U>
+    inline constexpr bool is_same_reference_wrapper_v = false;
+    template<class T>
+    inline constexpr bool is_same_reference_wrapper_v<const T, std::reference_wrapper<T>> = true;
+    template<class T>
+    inline constexpr bool is_same_reference_wrapper_v<T, std::reference_wrapper<T>> = true;
+
     template<>
     struct option_checks_base</*IsReference=*/true> {
         template<class T, class U, class TUnref = std::remove_reference_t<T>, class UUnref = std::remove_reference_t<U>>
         static constexpr bool can_bind_reference() {
-            return
-                std::is_same_v<UUnref, std::reference_wrapper<std::remove_const_t<TUnref>>>
-             || std::is_same_v<UUnref, std::reference_wrapper<TUnref>>
-             || (std::is_convertible_v<UUnref*, TUnref*>
-              && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>));
+            return is_same_reference_wrapper_v<TUnref, UUnref>
+                || (std::is_convertible_v<UUnref*, TUnref*>
+                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>));
         }
-        // template<class T, class U, class TUnref = std::remove_reference_t<T>, class UUnref = std::remove_reference_t<U>>
-        // using can_bind_reference =
-        //     or_<
-        //         std::is_same<UUnref, std::reference_wrapper<std::remove_const_t<TUnref>>>,
-        //         std::is_same<UUnref, std::reference_wrapper<TUnref>>,
-        //         and_<
-        //             std::is_convertible<UUnref*, TUnref*>
-        //             if_<std::is_lvalue_reference_v<T>,
-        //                 std::is_lvalue_reference<U>,
-        //                 not_<std::is_lvalue_reference<U>>
-        //             >
-        //         >
-        //     >;
-        // false true  false
-        // false false true
 
         template<class T, class U>
         using from_value_ctor = if_<
