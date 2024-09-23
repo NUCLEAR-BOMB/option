@@ -102,17 +102,21 @@ inline constexpr none_t none{impl::none_tag{}};
     #define OPTION_HAS_ATTRIBUTE(x) (0)
 #endif
 
+#ifdef __has_cpp_attribute
+    #define OPTION_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
+#else
+    #define OPTION_HAS_CPP_ATTRIBUTE(x) (0)
+#endif
+
 #ifdef __has_builtin
     #define OPTION_HAS_BUILTIN(x) __has_builtin(x)
 #else
     #define OPTION_HAS_BUILTIN(x) (0)
 #endif
 
-#ifndef __has_cpp_attribute
-    #define OPTION_LIFETIMEBOUND
-#elif __has_cpp_attribute(msvc::lifetimebound)
+#if OPTION_HAS_CPP_ATTRIBUTE(msvc::lifetimebound)
     #define OPTION_LIFETIMEBOUND [[msvc::lifetimebound]]
-#elif __has_cpp_attribute(clang::lifetimebound)
+#elif OPTION_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
     #define OPTION_LIFETIMEBOUND [[clang::lifetimebound]]
 #else
     #define OPTION_LIFETIMEBOUND
@@ -283,6 +287,26 @@ inline constexpr none_t none{impl::none_tag{}};
     #define OPTION_CAN_REFLECT_ENUM 1
 #else
     #define OPTION_CAN_REFLECT_ENUM 0
+#endif
+
+#ifndef OPTION_CONSUMED_ANNOTATION_CHECKING
+    #define OPTION_CONSUMED_ANNOTATION_CHECKING 0
+#endif
+
+#if OPTION_CONSUMED_ANNOTATION_CHECKING && (OPTION_HAS_CPP_ATTRIBUTE(clang::consumable) && OPTION_HAS_CPP_ATTRIBUTE(clang::callable_when) && OPTION_HAS_CPP_ATTRIBUTE(clang::param_typestate) && OPTION_HAS_CPP_ATTRIBUTE(clang::return_typestate) && OPTION_HAS_CPP_ATTRIBUTE(clang::set_typestate) && OPTION_HAS_CPP_ATTRIBUTE(clang::test_typestate))
+    #define OPTION_CONSUMABLE(x) [[clang::consumable(x)]]
+    #define OPTION_CALLABLE_WHEN(x) [[clang::callable_when(x)]]
+    #define OPTION_PARAM_TYPESTATE(x) [[clang::param_typestate(x)]]
+    #define OPTION_RETURN_TYPESTATE(x) [[clang::return_typestate(x)]]
+    #define OPTION_SET_TYPESTATE(x) [[clang::set_typestate(x)]]
+    #define OPTION_TEST_TYPESTATE(x) [[clang::test_typestate(x)]]
+#else
+    #define OPTION_CONSUMABLE(x)
+    #define OPTION_CALLABLE_WHEN(x)
+    #define OPTION_PARAM_TYPESTATE(x)
+    #define OPTION_RETURN_TYPESTATE(x)
+    #define OPTION_SET_TYPESTATE(x)
+    #define OPTION_TEST_TYPESTATE(x)
 #endif
 
 #ifndef OPTION_FORWARD_DECLARE_STD
@@ -2408,6 +2432,11 @@ namespace impl {
     }
 }
 
+#if OPTION_CLANG && OPTION_CONSUMED_ANNOTATION_CHECKING
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wconsumed"
+#endif
+
 namespace impl::option {
     template<class T, class Self, class... Args>
     constexpr T value_or_construct(Self&& self, Args&&... args) {
@@ -2722,7 +2751,7 @@ namespace impl {
 }
 
 template<class T>
-class OPTION_DECLSPEC_EMPTY_BASES option
+class OPTION_DECLSPEC_EMPTY_BASES OPTION_CONSUMABLE(unconsumed) option
     : private impl::option_base<T>
     , private impl::enable_copy_move<
         /*Tag=*/T,
@@ -2758,8 +2787,10 @@ public:
     using iterator = impl::option_iterator<T>;
     using const_iterator = impl::option_iterator<const T>;
 
+    OPTION_RETURN_TYPESTATE(unconsumed)
     constexpr option() noexcept {}
 
+    OPTION_RETURN_TYPESTATE(unconsumed)
     constexpr option(opt::none_t) noexcept {}
 
     option(const option&) = default;
@@ -2767,28 +2798,34 @@ public:
     option(option&&) = default;
 
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<true>::type = 0>
+    OPTION_RETURN_TYPESTATE(consumed)
     constexpr explicit option(U&& val)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<U&&>(val)) {}
     template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<false>::type = 0>
+    OPTION_RETURN_TYPESTATE(consumed)
     constexpr option(U&& val)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<U&&>(val)) {}
 
     template<class First, class Second, class... Args,
         class = typename checks::template from_args_ctor<T, First, Second, Args...>::type>
+    OPTION_RETURN_TYPESTATE(consumed)
     constexpr explicit option(First&& first, Second&& second, Args&&... args)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<First&&>(first), static_cast<Second&&>(second), static_cast<Args&&>(args)...) {}
 
     template<class InPlaceT, class... Args,
         class = typename checks::template from_in_place_args_ctor<T, InPlaceT, Args...>::type>
+    OPTION_RETURN_TYPESTATE(consumed)
     constexpr explicit option(const InPlaceT, Args&&... args)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<Args&&>(args)...) {}
 
     template<class InPlaceT, class U, class... Args,
         class = typename checks::template from_in_place_args_ctor<T, InPlaceT, std::initializer_list<U>&, Args...>::type>
+    OPTION_RETURN_TYPESTATE(consumed)
     constexpr explicit option(const InPlaceT, std::initializer_list<U> ilist, Args&&... args)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, ilist, static_cast<Args&&>(args)...) {}
 
     template<class F, class Arg>
+    OPTION_RETURN_TYPESTATE(consumed)
     constexpr explicit option(const impl::construct_from_invoke_tag, F&& f, Arg&& arg)
         : base(impl::construct_from_invoke_tag{}, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<F&&>(f), static_cast<Arg&&>(arg)) {}
 
@@ -2821,6 +2858,7 @@ public:
         }
     }
 
+    OPTION_SET_TYPESTATE(unconsumed)
     constexpr option& operator=(opt::none_t) noexcept {
         reset();
         return *this;
@@ -2832,6 +2870,7 @@ public:
 
     template<class U = T,
         class = typename checks::template from_value_assign<T, U>::type>
+    OPTION_SET_TYPESTATE(consumed)
     constexpr option& operator=(U&& val) {
         if constexpr (std::is_reference_v<T>) {
             base::value = base::ref_to_ptr(static_cast<U&&>(val));
@@ -2904,6 +2943,7 @@ public:
     }
 
     template<class... Args>
+    OPTION_SET_TYPESTATE(consumed)
     constexpr T& emplace(Args&&... args)
         OPTION_LIFETIMEBOUND {
         reset();
@@ -2911,9 +2951,11 @@ public:
         return *(*this);
     }
 
+    OPTION_TEST_TYPESTATE(consumed)
     [[nodiscard]] OPTION_PURE constexpr bool has_value() const noexcept {
         return base::has_value();
     }
+    OPTION_TEST_TYPESTATE(consumed)
     [[nodiscard]] OPTION_PURE constexpr explicit operator bool() const noexcept {
         return base::has_value();
     }
@@ -2927,6 +2969,7 @@ public:
     template<class P>
     [[nodiscard]] constexpr bool has_value_and(P&& predicate) const&& { return impl::option::has_value_and(static_cast<const option&&>(*this), static_cast<P&&>(predicate)); }
 
+    OPTION_SET_TYPESTATE(unconsumed) OPTION_RETURN_TYPESTATE(unknown)
     [[nodiscard]] constexpr option take() {
         option tmp{static_cast<option&&>(*this)};
         reset();
@@ -2951,6 +2994,7 @@ public:
     template<class F>
     constexpr const option&& inspect(F&& f) const&& { return impl::option::inspect(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr T& get() & noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         if constexpr (std::is_reference_v<T>) {
@@ -2959,6 +3003,7 @@ public:
             return base::value;
         }
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr const T& get() const& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         if constexpr (std::is_reference_v<T>) {
@@ -2967,6 +3012,7 @@ public:
             return base::value;
         }
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr T&& get() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         if constexpr (std::is_reference_v<T>) {
@@ -2975,6 +3021,7 @@ public:
             return static_cast<T&&>(base::value);
         }
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr const T&& get() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         if constexpr (std::is_reference_v<T>) {
@@ -2983,27 +3030,32 @@ public:
             return static_cast<const T&&>(base::value);
         }
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<const T> operator->() const noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return OPTION_ADDRESSOF(get());
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<T> operator->() noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return OPTION_ADDRESSOF(get());
     }
-
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr T& operator*() & noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return get();
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr const T& operator*() const& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return get();
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr T&& operator*() && noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return static_cast<T&&>(get());
     }
+    OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr const T&& operator*() const&& noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return static_cast<const T&&>(get());
@@ -3140,6 +3192,7 @@ public:
     [[nodiscard]] constexpr auto unzip() const&& { return impl::option::unzip(static_cast<const option&&>(*this)); }
 
     template<class U>
+    OPTION_RETURN_TYPESTATE(unknown) OPTION_SET_TYPESTATE(unconsumed)
     [[nodiscard]] constexpr option<T> replace(U&& val) {
         option tmp{static_cast<option&&>(*this)};
         // should call the destructor after moving, because moving does not end lifetime
@@ -3211,14 +3264,17 @@ namespace impl {
 }
 
 template<class T>
+OPTION_RETURN_TYPESTATE(consumed)
 [[nodiscard]] constexpr option<std::decay_t<T>> make_option(T&& value) {
     return option<std::decay_t<T>>{static_cast<T&&>(value)};
 }
 template<class T, class... Args>
+OPTION_RETURN_TYPESTATE(consumed)
 [[nodiscard]] constexpr option<T> make_option(Args&&... args) {
     return option<T>{std::in_place, static_cast<Args&&>(args)...};
 }
 template<class T, class U, class... Args>
+OPTION_RETURN_TYPESTATE(consumed)
 [[nodiscard]] constexpr option<T> make_option(std::initializer_list<U> ilist, Args&&... args) {
     return option<T>{std::in_place, ilist, static_cast<Args&&>(args)...};
 }
@@ -3832,3 +3888,7 @@ public:
         return val.has_value() ? val_hash{}(val.get()) : disengaged_hash;
     }
 };
+
+#if OPTION_CLANG && OPTION_CONSUMED_ANNOTATION_CHECKING
+    #pragma clang diagnostic pop
+#endif

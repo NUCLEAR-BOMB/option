@@ -39,6 +39,7 @@ function(target_add_warnings target)
                 -Wno-c++98-compat
                 -Wno-float-equal # Disable floating-point comparison warnings
                 -Wno-gnu-zero-variadic-macro-arguments
+                -Wconsumed
             )
         endif()
         if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")

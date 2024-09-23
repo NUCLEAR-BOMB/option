@@ -8,6 +8,7 @@
 - [OPTION_VERIFY](#option_verify)
 - [OPTION_USE_BUILTIN_TRAITS](#option_use_builtin_traits)
 - [OPTION_FORWARD_DECLARE_STD](#option_forward_declare_std)
+- [OPTION_CONSUMED_ANNOTATION_CHECKING](#option_consumed_annotation_checking)
 - [**boost.pfr**/**pfr** library related](#boostpfrpfr-library-related)
     - [OPTION_PFR_FILE](#option_pfr_file)
     - [OPTION_USE_PFR](#option_use_pfr)
@@ -47,6 +48,14 @@ Otherwise just includes headers.
 > This kind of action is forbidden by the standard. 
 > If you have compilation error related to a forward declaration of standard library, set this macro to `1`.
 
+### OPTION_CONSUMED_ANNOTATION_CHECKING
+*expects:* `boolean`, *default:* `false`
+
+Enables support for Clang's [Consumed Annotation Checking][Consumed Annotation Checking] (experimental) for `opt::option`.
+
+> [!NOTE]
+> This is really not recommended to use it because [`-Wconsumed`][Wconsumed] gives too many false positives.
+
 ## **boost.pfr**/**pfr** library related
 
 ### OPTION_PFR_FILE
@@ -84,3 +93,5 @@ Define [`OPTION_VERIFY`](#option_verify) to `LIBASSERT_ASSUME` macro and don't u
 [cpp-include]: https://en.cppreference.com/w/cpp/preprocessor/include
 [cpp-error]: https://en.cppreference.com/w/cpp/preprocessor/error
 [libassert]: https://github.com/jeremy-rifkin/libassert
+[Consumed Annotation Checking]: https://clang.llvm.org/docs/AttributeReference.html#consumed-annotation-checking
+[Wconsumed]: https://clang.llvm.org/docs/DiagnosticsReference.html#wconsumed
