@@ -2789,11 +2789,11 @@ public:
 
     option(option&&) = default;
 
-    template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<true>::type = 0>
+    template<class U = std::remove_cv_t<T>, typename checks::template from_value_ctor<T, U>::template is_explicit<true>::type = 0>
     OPTION_RETURN_TYPESTATE(consumed)
     constexpr explicit option(U&& val)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<U&&>(val)) {}
-    template<class U = T, typename checks::template from_value_ctor<T, U>::template is_explicit<false>::type = 0>
+    template<class U = std::remove_cv_t<T>, typename checks::template from_value_ctor<T, U>::template is_explicit<false>::type = 0>
     OPTION_RETURN_TYPESTATE(consumed)
     constexpr option(U&& val)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<U&&>(val)) {}
@@ -2860,7 +2860,7 @@ public:
     
     option& operator=(option&&) = default;
 
-    template<class U = T,
+    template<class U = std::remove_cv_t<T>,
         class = typename checks::template from_value_assign<T, U>::type>
     OPTION_SET_TYPESTATE(consumed)
     constexpr option& operator=(U&& val) {
@@ -3103,7 +3103,7 @@ public:
     template<class U = std::remove_cv_t<T>>
     [[nodiscard]] constexpr std::remove_cv_t<T> value_or(U&& default_value) && {
         if (has_value()) {
-            return static_cast<T&&>(get());
+            return static_cast<std::remove_cv_t<T>&&>(get());
         } else {
             return static_cast<std::remove_cv_t<T>>(static_cast<U&&>(default_value));
         }
