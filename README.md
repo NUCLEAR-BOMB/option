@@ -6,7 +6,7 @@ Replacement for [`std::optional`][std::optional] with efficient memory usage and
 - Functionality from [C++23 `std::optional`][std::optional monadic], Rust's [`std::option::Option`][Rust Option] and other `opt::option`'s own stuff. See [reference](./docs/markdown/reference.md).
 - Zero memory overhead with types that have unused values. See [builtin traits](./docs/markdown/builtin_traits.md).
 - Support for nested `opt::option`s with zero memory overhead.
-- Simpler interface than `std::optional` (constructors without [`std::in_place`][std::in_place]), allows [direct list initialization][direct-list-initialization].
+- Simpler interface than `std::optional` (constructors without [`std::in_place`][std::in_place]), supports construction of aggregate types in C++17 (using [*direct-list-initialization*][direct-list-initialization] for them).
 - Custom size optimizations for your own types ([`opt::option_traits`](./docs/markdown/reference.md#optoption_traits)). See [option traits guide](./docs/markdown/custom_traits_guide.md).
 - Allows reference types.
 
@@ -132,7 +132,7 @@ Minimizing the type size is always a good thing.
 
 It supports reference types, so you can avoid using inconvenient `std::reference_wrapper` and dangerous nullable pointers.
 
-Allows [direct-list-initialization][direct-list-initialization] and constructors without `std::in_place` (but they are still supported).
+Allows [direct-list-initialization][direct-list-initialization] for an aggregate types and constructors without `std::in_place` (but they are still supported).
 
 Features taken from Rust's [`std::option::Option`][Rust Option] (`.take`, `.map_or(_else)`, `.flatten`, `.unzip`, etc.), [monadic operations from C++23][std::optional monadic] (`.and_then`, `.map` (renamed `.transform`), `.or_else`) and custom ones (`.ptr_or_null`, `opt::option_cast`, `opt::from_nullable`, operators equivalent to methods, etc.).
 
