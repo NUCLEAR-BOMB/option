@@ -3,7 +3,7 @@ add_library(option-codegen-test "sample.cpp")
 target_link_libraries(option-codegen-test PRIVATE option)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(option-codegen-test PRIVATE "-Wno-missing-declarations" "-Wno-missing-prototypes")
+    target_compile_options(option-codegen-test PRIVATE "-w")
 endif()
 
 find_package(Python3 COMPONENTS Interpreter)
