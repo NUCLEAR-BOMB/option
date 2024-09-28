@@ -21,14 +21,17 @@ if (Python3_Interpreter_FOUND)
     endif()
 
     find_program(llvm_objdump_path "llvm-objdump")
-
-    add_custom_target(run-option-codegen-test VERBATIM
-        COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/codegen/run.py"
-            ${llvm_objdump_path}
-            "$<TARGET_FILE:option-codegen-test>"
-            "${CMAKE_CURRENT_SOURCE_DIR}/sample.cpp"
-            "${current_compiler}"
-    )
+    if (llvm_objdump_path)
+        add_custom_target(run-option-codegen-test VERBATIM
+            COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/codegen/run.py"
+                ${llvm_objdump_path}
+                "$<TARGET_FILE:option-codegen-test>"
+                "${CMAKE_CURRENT_SOURCE_DIR}/sample.cpp"
+                "${current_compiler}"
+        )
+    else()
+        message(STATUS "llvm-objdump is not found: \"run-option-codegen-test\" target was not created")
+    endif()
 else()
     message(STATUS "Python3 is not found: \"run-option-codegen-test\" target was not created")
 endif()
