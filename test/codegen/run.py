@@ -4,13 +4,14 @@ import re
 import collections
 from pprint import pprint
 
-target_path = sys.argv[1].strip()
-source_path = sys.argv[2].strip()
-current_compiler = sys.argv[3].strip().lower()
+llvm_objdump_path = sys.argv[1].strip()
+target_path = sys.argv[2].strip()
+source_path = sys.argv[3].strip()
+current_compiler = sys.argv[4].strip().lower()
 
 prefix = '//$'
 
-disasm_result = subprocess.run(['llvm-objdump', '-d', '--no-addresses', '--no-show-raw-insn', '--demangle', '-M', 'intel', target_path], capture_output=True, text=True)
+disasm_result = subprocess.run([llvm_objdump_path, '-d', '--no-addresses', '--no-show-raw-insn', '--demangle', '-M', 'intel', target_path], capture_output=True, text=True)
 if len(disasm_result.stderr) > 0:
     print('Disassembly error: {} (return code: {})'.format(disasm_result.stderr, disasm_result.returncode))
     sys.exit(1)

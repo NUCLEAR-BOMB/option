@@ -3,7 +3,7 @@ add_library(option-codegen-test "sample.cpp")
 target_link_libraries(option-codegen-test PRIVATE option)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(option-codegen-test PRIVATE "-Wno-missing-declarations")
+    target_compile_options(option-codegen-test PRIVATE "-Wno-missing-declarations" "-Wno-missing-prototypes")
 endif()
 
 find_package(Python3 COMPONENTS Interpreter)
@@ -20,8 +20,11 @@ if (Python3_Interpreter_FOUND)
         set(current_compiler "unknown")
     endif()
 
+    find_program(llvm_objdump_path "llvm-objdump")
+
     add_custom_target(run-option-codegen-test VERBATIM
         COMMAND ${Python3_EXECUTABLE} "${PROJECT_SOURCE_DIR}/test/codegen/run.py"
+            ${llvm_objdump_path}
             "$<TARGET_FILE:option-codegen-test>"
             "${CMAKE_CURRENT_SOURCE_DIR}/sample.cpp"
             "${current_compiler}"
