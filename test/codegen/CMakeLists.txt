@@ -2,6 +2,10 @@
 add_library(option-codegen-test "sample.cpp")
 target_link_libraries(option-codegen-test PRIVATE option)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(option-codegen-test PRIVATE "-Wno-missing-declarations")
+endif()
+
 find_package(Python3 COMPONENTS Interpreter)
 if (Python3_Interpreter_FOUND)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
