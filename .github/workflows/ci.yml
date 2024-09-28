@@ -32,7 +32,7 @@ jobs:
           - name: 'clang 18 C++20'
             cxx: 'clang++-18'
             cc: 'clang-18'
-            packages: 'g++-multilib'
+            packages: 'llvm-18 g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -44,7 +44,7 @@ jobs:
           - name: 'clang 18'
             cxx: 'clang++-18'
             cc: 'clang-18'
-            packages: 'g++-multilib'
+            packages: 'llvm-18 g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -56,7 +56,7 @@ jobs:
           - name: 'clang 17'
             cxx: 'clang++-17'
             cc: 'clang-17'
-            packages: 'g++-multilib'
+            packages: 'llvm-17 g++-multilib'
             os: 'ubuntu-24.04'
             options: '--stdlib=libstdc++'
             x64_options: >-
@@ -68,7 +68,7 @@ jobs:
           - name: 'clang 16'
             cxx: 'clang++-16'
             cc: 'clang-16'
-            packages: 'g++-multilib'
+            packages: 'llvm-16 g++-multilib'
             os: 'ubuntu-24.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -80,7 +80,7 @@ jobs:
           - name: 'clang 15'
             cxx: 'clang++-15'
             cc: 'clang-15'
-            packages: 'libclang-15-dev llvm-15-dev g++-multilib'
+            packages: 'llvm-15 libclang-15-dev llvm-15-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -91,7 +91,7 @@ jobs:
           - name: 'clang 14'
             cxx: 'clang++-14'
             cc: 'clang-14'
-            packages: 'libclang-14-dev llvm-14-dev g++-multilib'
+            packages: 'llvm-14 libclang-14-dev llvm-14-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -102,7 +102,7 @@ jobs:
           - name: 'clang 13'
             cxx: 'clang++-13'
             cc: 'clang-13'
-            packages: 'libclang-13-dev llvm-13-dev g++-multilib'
+            packages: 'llvm-13 libclang-13-dev llvm-13-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -114,7 +114,7 @@ jobs:
           - name: 'clang 12'
             cxx: 'clang++-12'
             cc: 'clang-12'
-            packages: 'clang-12 libclang-12-dev llvm-12-dev g++-multilib'
+            packages: 'llvm-12 clang-12 libclang-12-dev llvm-12-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -127,7 +127,7 @@ jobs:
           - name: 'clang 11'
             cxx: 'clang++-11'
             cc: 'clang-11'
-            packages: 'clang-11 libclang-11-dev llvm-11-dev g++-multilib'
+            packages: 'llvm-11 clang-11 libclang-11-dev llvm-11-dev g++-multilib'
             os: 'ubuntu-22.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -141,7 +141,7 @@ jobs:
           - name: 'clang 10'
             cxx: 'clang++-10'
             cc: 'clang-10'
-            packages: 'clang-10 libclang-10-dev llvm-10-dev g++-multilib'
+            packages: 'llvm-10 clang-10 libclang-10-dev llvm-10-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -154,7 +154,7 @@ jobs:
           - name: 'clang 9'
             cxx: 'clang++-9'
             cc: 'clang-9'
-            packages: 'clang-9 libclang-9-dev llvm-9-dev g++-multilib'
+            packages: 'llvm-9 clang-9 libclang-9-dev llvm-9-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -167,7 +167,7 @@ jobs:
             cxx: 'g++-14'
             cc: 'gcc-14'
             os: 'ubuntu-24.04'
-            packages: 'g++-14-multilib'
+            packages: 'llvm-18 g++-14-multilib'
             x64_options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -178,7 +178,7 @@ jobs:
             cxx: 'g++-14'
             cc: 'gcc-14'
             os: 'ubuntu-24.04'
-            packages: 'g++-14-multilib'
+            packages: 'llvm-18 g++-14-multilib'
             x64_options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -188,7 +188,7 @@ jobs:
             cxx: 'g++-13'
             cc: 'gcc-13'
             os: 'ubuntu-24.04'
-            packages: 'g++-13-multilib'
+            packages: 'llvm-18 g++-13-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -198,7 +198,7 @@ jobs:
             cxx: 'g++-12'
             cc: 'gcc-12'
             os: 'ubuntu-22.04'
-            packages: 'g++-12-multilib'
+            packages: 'llvm-18 g++-12-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -208,7 +208,7 @@ jobs:
             cxx: 'g++-11'
             cc: 'gcc-11'
             os: 'ubuntu-22.04'
-            packages: 'g++-11-multilib'
+            packages: 'llvm-18 g++-11-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all

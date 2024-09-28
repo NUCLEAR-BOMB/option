@@ -12,6 +12,11 @@
 //$ mov rax, qword ptr [rsp + 0x8]
 //$ mov qword ptr [rcx], rax
 //$ ret
+
+//$ @opt_int_assign {clang-cl}:
+//$ movabs rax, 0x100000002
+//$ mov qword ptr [rcx], rax
+//$ ret
 void opt_int_assign(opt::option<int>* a) {
     *a = 2;
 }
@@ -31,6 +36,12 @@ void opt_int_assign(opt::option<int>* a) {
 //$ @opt_int_return {msvc}:
 //$ mov dword ptr [rcx], 0x2
 //$ mov rax, rcx
+//$ mov byte ptr [rcx + 0x4], 0x1
+//$ ret
+
+//$ @opt_int_return {clang-cl}:
+//$ mov rax, rcx
+//$ mov dword ptr [rcx], 0x2
 //$ mov byte ptr [rcx + 0x4], 0x1
 //$ ret
 opt::option<int> opt_int_return() {
