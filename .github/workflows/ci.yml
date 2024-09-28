@@ -294,6 +294,9 @@ jobs:
       - name: Check examples (Release)
         run: cmake --build build --config Release --target check-option-examples
 
+      - name: Run codegen tests
+        run: cmake --build build --config Release --target run-option-codegen-test
+
       - name: Configure CMake (x32)
         env:
           CXXFLAGS: ${{env.CXXFLAGS}} -m32 ${{matrix.x32_options}}
@@ -488,6 +491,9 @@ jobs:
       - name: Check examples (Release)
         run: cmake --build build --config Release --target check-option-examples
 
+      - name: Run codegen tests
+        run: cmake --build build --config Release --target run-option-codegen-test
+
   windows:
     name: 'Windows VS ${{matrix.toolset}}'
     runs-on: windows-latest
@@ -535,6 +541,9 @@ jobs:
 
       - name: Check examples (Release x64)
         run: cmake --build build --config Release --target check-option-examples
+
+      - name: Run codegen tests
+        run: cmake --build build --config Release --target run-option-codegen-test
 
       - name: Configure CMake (Debug x32)
         run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" ${{matrix.cmake_options}}
@@ -619,6 +628,9 @@ jobs:
 
       - name: Check examples (Release)
         run: cmake --build build --config Release --target check-option-examples
+
+      - name: Run codegen tests
+        run: cmake --build build --config Release --target run-option-codegen-test
 
   clang-tidy:
     name: 'Clang tidy on ${{matrix.os}} (${{matrix.configuration}})'
