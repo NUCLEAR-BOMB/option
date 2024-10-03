@@ -20,8 +20,6 @@ jobs:
       VERBOSE: 1
       CXX: ${{matrix.cxx}}
       CC: ${{matrix.cc}}
-      CXXFLAGS: ${{matrix.options}} ${{matrix.cxx_options}}
-      CFLAGS: ${{matrix.options}}
       ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=2:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true:${{matrix.asan_options}}'
       UBSAN_OPTIONS: 'print_stacktrace=1:silence_unsigned_overflow=1'
 
@@ -267,13 +265,11 @@ jobs:
       #     force-url: ${{matrix.install-llvm.url}}
 
       - name: Configure CMake
-        env:
-          CXXFLAGS: ${{env.CXXFLAGS}} ${{matrix.x64_options}}
-          CFLAGS: ${{env.CFLAGS}} ${{matrix.x64_options}}
         run: >-
           cmake -B build
           -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
           -DCMAKE_CXX_EXTENSIONS=FALSE
+          "-DOPTION_EXTRA_FLAGS=${{matrix.options}} ${{matrix.x64_options}}"
           ${{matrix.cmake_options}}
 
       - name: Build (Debug)
@@ -299,12 +295,13 @@ jobs:
 
       - name: Configure CMake (x32)
         env:
-          CXXFLAGS: ${{env.CXXFLAGS}} -m32 ${{matrix.x32_options}}
-          CFLAGS: ${{env.CFLAGS}} -m32 ${{matrix.x32_options}}
+          CXXFLAGS: -m32
+          CFLAGS: -m32
         run: >-
           cmake -B build-x32
           -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
           -DCMAKE_CXX_EXTENSIONS=FALSE
+          "-DOPTION_EXTRA_FLAGS=${{matrix.options}} ${{matrix.x32_options}}"
           ${{matrix.cmake_options}}
 
       - name: Build (Debug x32)
@@ -334,8 +331,6 @@ jobs:
       VERBOSE: 1
       CXX: ${{matrix.cxx}}
       CC: ${{matrix.cc}}
-      CXXFLAGS: ${{matrix.options}}
-      CFLAGS: ${{matrix.options}}
       ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=2:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true:${{matrix.asan_options}}'
       UBSAN_OPTIONS: 'print_stacktrace=1:silence_unsigned_overflow=1'
 
@@ -471,6 +466,7 @@ jobs:
           cmake -B build
           -DCMAKE_CXX_STANDARD_REQUIRED=TRUE
           -DCMAKE_CXX_EXTENSIONS=FALSE
+          "-DOPTION_EXTRA_FLAGS=${{matrix.options}}"
           ${{matrix.cmake_options}}
 
       - name: Build (Debug)
@@ -499,8 +495,6 @@ jobs:
     runs-on: windows-latest
 
     env:
-      CFLAGS: ${{matrix.options}}
-      CXXFLAGS: ${{matrix.options}}
       VERBOSE: 1
       ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=0:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true'
 
@@ -522,7 +516,7 @@ jobs:
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
       - name: Configure CMake (Debug x64)
-        run: cmake -B build -A x64 -T "${{matrix.toolset}}" ${{matrix.cmake_options}}
+        run: cmake -B build -A x64 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options}}" ${{matrix.cmake_options}}
 
       - name: Build (Debug x64)
         run: cmake --build build --config Debug --parallel $env:NUMBER_OF_PROCESSORS
@@ -546,7 +540,7 @@ jobs:
         run: cmake --build build --config Release --target run-option-codegen-test
 
       - name: Configure CMake (Debug x32)
-        run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" ${{matrix.cmake_options}}
+        run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options}}" ${{matrix.cmake_options}}
 
       - name: Build (Debug x32)
         run: cmake --build build-x32 --config Debug --parallel $env:NUMBER_OF_PROCESSORS
