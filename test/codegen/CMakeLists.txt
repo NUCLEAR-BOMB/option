@@ -1,4 +1,7 @@
 
+set(cmake_cxx_flags_tmp ${CMAKE_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS "")
+
 add_library(option-codegen-test "sample.cpp")
 target_link_libraries(option-codegen-test PRIVATE option)
 
@@ -41,3 +44,5 @@ if (Python3_Interpreter_FOUND)
 else()
     message(STATUS "Python3 is not found: \"run-option-codegen-test\" target was not created")
 endif()
+
+set(CMAKE_CXX_FLAGS ${cmake_cxx_flags_tmp})
