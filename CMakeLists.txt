@@ -13,10 +13,6 @@ option(OPTION_USE_NATVIS "Enable .natvis file for Visual Studio debugger" TRUE)
 option(OPTION_USE_NATSTEPFILTER "Enable .natstepfilter file for Visual Studio debugger" FALSE)
 option(USE_LIBASSERT "Enable libassert library integration" TRUE)
 
-separate_arguments(OPTION_EXTRA_FLAGS)
-add_compile_options(${OPTION_EXTRA_FLAGS})
-add_link_options(${OPTION_EXTRA_FLAGS})
-
 add_library(option INTERFACE
     "include/opt/option.hpp"
     "include/opt/option_fwd.hpp"
@@ -40,8 +36,14 @@ if (OPTION_USE_NATSTEPFILTER)
     target_sources(option INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/debugger/option.natstepfilter>)
 endif()
 
-if(OPTION_INSTALL)
+if (OPTION_INSTALL)
     set(exclude_from_all EXCLUDE_FROM_ALL)
+endif()
+
+if (DEFINED OPTION_EXTRA_FLAGS)
+    separate_arguments(OPTION_EXTRA_FLAGS)
+    add_compile_options(${OPTION_EXTRA_FLAGS})
+    add_link_options(${OPTION_EXTRA_FLAGS})
 endif()
 
 if (OPTION_TEST)
