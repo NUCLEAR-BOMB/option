@@ -331,6 +331,7 @@ jobs:
       VERBOSE: 1
       CXX: ${{matrix.cxx}}
       CC: ${{matrix.cc}}
+      CXXFLAGS: '--stdlib=libc++'
       ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=2:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true:${{matrix.asan_options}}'
       UBSAN_OPTIONS: 'print_stacktrace=1:silence_unsigned_overflow=1'
 
@@ -347,7 +348,6 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
 
           - name: 'clang 17'
             cxx: 'clang++-17'
@@ -358,7 +358,6 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
 
           - name: 'clang 16'
             cxx: 'clang++-16'
@@ -369,7 +368,6 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
 
           - name: 'clang 15'
             cxx: 'clang++-15'
@@ -380,7 +378,6 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
 
           - name: 'clang 14'
             cxx: 'clang++-14'
@@ -391,7 +388,6 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
 
           - name: 'clang 13'
             cxx: 'clang++-13'
@@ -402,7 +398,6 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
             
           - name: 'clang 12'
             cxx: 'clang++-12'
@@ -414,7 +409,6 @@ jobs:
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               -Wno-unknown-warning-option
-              --stdlib=libc++
 
           - name: 'clang 11'
             cxx: 'clang++-11'
@@ -426,7 +420,6 @@ jobs:
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
             asan_options: 'use_sigaltstack=false'
 
           - name: 'clang 10'
@@ -439,7 +432,6 @@ jobs:
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
               -ffp-exception-behavior=maytrap
-              --stdlib=libc++
 
           - name: 'clang 9'
             cxx: 'clang++-9'
@@ -450,7 +442,6 @@ jobs:
               -fsanitize=address,undefined,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -Wno-unknown-warning-option
-              --stdlib=libc++
 
     steps:
       - name: Checkout
