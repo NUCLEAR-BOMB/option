@@ -22,11 +22,15 @@ if disasm_result.returncode != 0:
 disasm_target_list = []
 function_name_pattern = re.compile(r'<.*?(\S+)\(.*\)>')
 instruction_pattern = re.compile(r'\s+(.*)', re.DOTALL)
+decimal_number = re.compile(r'(\W|\A)(\d+)(\W|\Z)')
+
 for line in disasm_result.stdout.splitlines():
-    if function_name := function_name_pattern.match(line):
+    if function_name := re.match(function_name_pattern, line):
         disasm_target_list.append((function_name[1], []))
-    elif len(disasm_target_list) != 0 and (instruction := instruction_pattern.match(line)):
-        disasm_target_list[-1][1].append(instruction[1].replace('\t', ' '))
+    elif len(disasm_target_list) != 0 and (instruction := re.match(instruction_pattern, line)):
+        converted_instruction = re.sub(decimal_number, lambda m: (m[1] + hex(int(m[2])) + m[3]), instruction[1].replace('\t', ' '))
+
+        disasm_target_list[-1][1].append(converted_instruction)
 
 disasm_target = dict(disasm_target_list)
 
