@@ -139,7 +139,7 @@ jobs:
           - name: 'clang 10'
             cxx: 'clang++-10'
             cc: 'clang-10'
-            packages: 'llvm-10 clang-10 libclang-10-dev llvm-10-dev llvm-11-dev g++-multilib'
+            packages: 'llvm-10 clang-10 libclang-10-dev llvm-10-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
@@ -152,7 +152,7 @@ jobs:
           - name: 'clang 9'
             cxx: 'clang++-9'
             cc: 'clang-9'
-            packages: 'llvm-9 clang-9 libclang-9-dev llvm-9-dev llvm-11-dev g++-multilib'
+            packages: 'llvm-9 clang-9 libclang-9-dev llvm-9-dev g++-multilib'
             os: 'ubuntu-20.04'
             options: >-
               -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
