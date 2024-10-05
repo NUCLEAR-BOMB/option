@@ -33,6 +33,8 @@ for line in disasm_result.stdout.splitlines():
     if function_name := re.match(function_name_pattern, line):
         disasm_target_list.append((function_name[1], []))
     elif len(disasm_target_list) != 0 and (instruction := re.match(instruction_pattern, line)):
+        if 'endbr64' in instruction[1] or 'endbr32' in instruction[1]:
+            continue
         converted_instruction = re.sub(decimal_number, lambda m: (m[1] + hex(int(m[2])) + m[3]), instruction[1].replace('\t', ' '))
 
         disasm_target_list[-1][1].append(converted_instruction)
