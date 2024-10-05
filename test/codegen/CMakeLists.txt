@@ -27,7 +27,7 @@ if (Python3_Interpreter_FOUND)
     endif()
 
     find_program(llvm_objdump_path
-        NAMES "llvm-objdump" "llvm-objdump-18" "llvm-objdump-17" "llvm-objdump-16" "llvm-objdump-15" "llvm-objdump-14" "llvm-objdump-13"
+        NAMES llvm-objdump llvm-objdump-18 llvm-objdump-17 llvm-objdump-16 llvm-objdump-15 llvm-objdump-14 llvm-objdump-13 llvm-objdump-12 llvm-objdump-11 llvm-objdump-10 llvm-objdump-9
     )
     if (llvm_objdump_path)
         add_custom_target(run-option-codegen-test VERBATIM
