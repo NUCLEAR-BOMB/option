@@ -16,7 +16,7 @@ if len(llvm_objdump_version.stderr) > 0 or llvm_objdump_version.returncode != 0:
     sys.exit(1)
 print('llvm-objdump version output:\n', ''.join(llvm_objdump_version.stdout.splitlines(True)[:2]))
 
-disasm_result = subprocess.run([llvm_objdump_path, '-d', '--no-leading-addr', '--no-show-raw-insn', '--demangle', '-M', 'intel', target_path], capture_output=True, text=True)
+disasm_result = subprocess.run([llvm_objdump_path, '-d', '--no-leading-addr', '--no-show-raw-insn', '--demangle', '--x86-asm-syntax=intel', target_path], capture_output=True, text=True)
 if len(disasm_result.stderr) > 0:
     print('Disassembly error: {} (return code: {})'.format(disasm_result.stderr, disasm_result.returncode))
     sys.exit(1)
