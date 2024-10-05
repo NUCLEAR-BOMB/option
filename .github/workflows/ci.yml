@@ -196,7 +196,7 @@ jobs:
             cxx: 'g++-12'
             cc: 'gcc-12'
             os: 'ubuntu-22.04'
-            packages: 'llvm-18 g++-12-multilib'
+            packages: 'llvm-15 g++-12-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
@@ -206,7 +206,7 @@ jobs:
             cxx: 'g++-11'
             cc: 'gcc-11'
             os: 'ubuntu-22.04'
-            packages: 'llvm-18 g++-11-multilib'
+            packages: 'llvm-15 g++-11-multilib'
             options: >-
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
