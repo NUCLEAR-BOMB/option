@@ -48,20 +48,25 @@ opt::option<int> option_int_return() {
     return 2;
 }
 
-//$ @option_float_assign {clang,gcc,icx,clang-cl}:
+//$ @option_float_assign {clang,gcc,icx}:
 //$ mov dword ptr [rdi], 0x3f800000
 //$ ret
 
-//$ @option_float_assign {msvc}:
+//$ @option_float_assign {msvc,clang-cl}:
 //$ mov dword ptr [rcx], 0x3f800000
 //$ ret
 void option_float_assign(opt::option<float>* a) {
     *a = 1.f;
 }
 
-//$ @optional_float_assign {clang,gcc,icx,clang-cl}:
+//$ @optional_float_assign {clang,gcc,icx}:
 //$ mov dword ptr [rdi], 0x3f800000
 //$ mov byte ptr [rdi + 0x4], 0x1
+//$ ret
+
+//$ @optional_float_assign {clang-cl}:
+//$ mov dword ptr [rcx], 0x3f800000
+//$ mov byte ptr [rcx + 0x4], 0x1
 //$ ret
 
 //$ @optional_float_assign {msvc}:
@@ -74,13 +79,18 @@ void optional_float_assign(std::optional<float>* a) {
     *a = 1.f;
 }
 
-//$ @option_float_return {clang,icx,clang-cl}:
+//$ @option_float_return {clang,icx}:
 //$ movss xmm0, dword ptr [rip]
 //$ ret
 
 //$ @option_float_return {gcc}:
 //$ mov eax, 0x3f800000
 //$ movd xmm0, eax
+//$ ret
+
+//$ @option_float_return {clang-cl}:
+//$ mov rax, rcx
+//$ mov dword ptr [rcx], 0x3f800000
 //$ ret
 
 //$ @option_float_return {msvc}:
@@ -91,7 +101,7 @@ opt::option<float> option_float_return() {
     return 1.f;
 }
 
-//$ @optional_float_return {clang,icx,clang-cl}:
+//$ @optional_float_return {clang,icx}:
 //$ movabs rax, 0x13f800000
 //$ ret
 
@@ -99,6 +109,12 @@ opt::option<float> option_float_return() {
 //$ mov dword ptr [rsp - 0x8], 0x3f800000
 //$ mov byte ptr [rsp - 0x4], 0x1
 //$ mov rax, qword ptr [rsp - 0x8]
+//$ ret
+
+//$ @optional_float_return {clang-cl}:
+//$ mov rax, rcx
+//$ mov dword ptr [rcx], 0x3f800000
+//$ mov byte ptr [rcx + 0x4], 0x1
 //$ ret
 
 //$ @optional_float_return {msvc}:
