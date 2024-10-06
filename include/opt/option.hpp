@@ -366,10 +366,26 @@ OPTION_STD_NAMESPACE_CXX11_END
     class variant; // Defined in header <variant>
 
 #if OPTION_MSVC
+    _EXPORT_STD template<std::size_t I, class... Types>
+    _NODISCARD constexpr auto get_if(variant<Types...>*) noexcept;
+    _EXPORT_STD template<std::size_t I, class... Types>
+    _NODISCARD constexpr auto get_if(const variant<Types...>*) noexcept;
+    _EXPORT_STD template<class T, class... Types>
+    _NODISCARD constexpr add_pointer_t<T> get_if(variant<Types...>* _Ptr) noexcept;
+    _EXPORT_STD template<class T, class... Types>
+    _NODISCARD constexpr add_pointer_t<const T> get_if(const variant<Types...>* _Ptr) noexcept;
+#elif OPTION_LIBCPP
+    template<std::size_t N, class T>
+    struct variant_alternative;
+
     template<std::size_t I, class... Types>
-    constexpr auto get_if(variant<Types...>*) noexcept;
+    _LIBCPP_HIDE_FROM_ABI constexpr add_pointer_t<typename variant_alternative<I, variant<Types...>>::type> get_if(variant<Types...>*) noexcept;
     template<std::size_t I, class... Types>
-    constexpr auto get_if(const variant<Types...>*) noexcept;
+    _LIBCPP_HIDE_FROM_ABI constexpr add_pointer_t<const typename variant_alternative<I, variant<Types...>>::type> get_if(const variant<Types...>*) noexcept;
+    template<class T, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr add_pointer_t<T> get_if(variant<Types...>*) noexcept;
+    template<class T, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr add_pointer_t<const T> get_if(const variant<Types...>*) noexcept;
 #else
     template<std::size_t N, class T>
     struct variant_alternative;
@@ -378,6 +394,10 @@ OPTION_STD_NAMESPACE_CXX11_END
     constexpr add_pointer_t<typename variant_alternative<I, variant<Types...>>::type> get_if(variant<Types...>*) noexcept;
     template<std::size_t I, class... Types>
     constexpr add_pointer_t<const typename variant_alternative<I, variant<Types...>>::type> get_if(const variant<Types...>*) noexcept;
+    template<class T, class... Types>
+    constexpr add_pointer_t<T> get_if(variant<Types...>*) noexcept;
+    template<class T, class... Types>
+    constexpr add_pointer_t<const T> get_if(const variant<Types...>*) noexcept;
 #endif
     struct input_iterator_tag; // Defined in header <iterator>
     struct output_iterator_tag; // Defined in header <iterator>
