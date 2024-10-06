@@ -3,6 +3,7 @@ import subprocess
 import re
 import collections
 from pprint import pprint
+import difflib
 
 PREFIX = '//$'
 
@@ -40,7 +41,7 @@ def parse_disassembly(raw_string):
                 continue
             converted_instruction = re.sub(decimal_number, lambda m: (m[1] + hex(int(m[2])) + m[3]), cleaned_instruction)
 
-            disasm_target_list[-1][1].append(converted_instruction)
+            disasm_target_list[-1][1].append(converted_instruction + '\n')
 
     return dict(disasm_target_list)
 
@@ -61,22 +62,33 @@ def parse_expected_disassembly(file_path):
                     sys.exit(1)
 
                 if section is not None: expected_disasm.append(section)
-                section = (fn_name, (compilers.lower().split(','), []))
+                section = (fn_name, compilers.lower().split(','), [])
             else:
-                section[1][1].append((idx, exp))
+                section[2].append((idx, exp + '\n'))
         if section is not None:
             expected_disasm.append(section)
 
     return expected_disasm
 
+def difference_with_line_numbers(difference, line_numbers):
+    index = 0
+    max_number_length = max(len(str(line_num)) for line_num in line_numbers)
+    for line in difference:
+        code = line[:2]
+
+        if code in ('  ', '+ '):
+            yield '{} {}'.format(str(line_numbers[index]).ljust(max_number_length), line)
+            index += 1
+        else:
+            yield '{} {}'.format(' ' * max_number_length, line)
+
 def check_disassembly(expected, received, current_compiler):
     is_successful = True
     checked_function = 0
 
-    for fn_name, (compilers, expected_asm) in expected:
-        is_successful_current_iteration = True
-        resulted_asm = received.get(fn_name, None)
-        if resulted_asm is None:
+    differ = difflib.Differ()
+    for fn_name, compilers, expected_asm in expected:
+        if (resulted_asm := received.get(fn_name, None)) is None:
             print('\nUnknown function name: "{}"\nList of known function names: {}\n'.format(fn_name, ", ".join(received.keys())))
             sys.exit(1)
 
@@ -85,20 +97,9 @@ def check_disassembly(expected, received, current_compiler):
 
         checked_function += 1
 
-        for (line_number, expected_asm_line), resulted_asm_line in zip(expected_asm, resulted_asm):
-            if expected_asm_line != resulted_asm_line:
-                print('Line: {}\nFunction: "{}"\n Expected: "{}"\n Received: "{}"\n'.format(line_number, fn_name, expected_asm_line, resulted_asm_line))
-                is_successful_current_iteration = False
-
-        if len(expected_asm) > len(resulted_asm):
-            print('Function: "{}"\n Expected too many instructions: {}\n Received: {}\n'.format(fn_name, len(expected_asm), len(resulted_asm)))
-            is_successful_current_iteration = False
-        elif len(expected_asm) < len(resulted_asm):
-            print('Function: "{}"\n Received too many instructions: {}\n Expected: {}\n'.format(fn_name, len(resulted_asm), len(expected_asm)))
-            is_successful_current_iteration = False
-
-        if not is_successful_current_iteration:
-            print('Full received assembly:\n {}'.format("\n ".join(resulted_asm)))
+        difference = list(differ.compare(resulted_asm, [asm_and_line[1] for asm_and_line in expected_asm]))
+        if any(line[:2] == '+ ' for line in difference):
+            print('{}:\n{}'.format(fn_name, ''.join(difference_with_line_numbers(difference, [asm_and_line[0] for asm_and_line in expected_asm]))))
             is_successful = False
 
     if not is_successful:
