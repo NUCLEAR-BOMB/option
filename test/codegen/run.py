@@ -5,6 +5,7 @@ import collections
 from pprint import pprint
 import difflib
 import itertools
+import operator
 
 PREFIX = '//$'
 
@@ -46,6 +47,12 @@ def parse_disassembly(raw_string):
 
     return dict(disasm_target_list)
 
+def parse_compilers(compilers):
+    if compilers is None:
+        return None
+
+    return [operator.itemgetter(0, 2)(compiler.partition(' ')) for compiler in compilers.lower().split(',')]
+
 def parse_expected_disassembly(file_path):
     function_pattern = re.compile(r'@(.+?)\s*(?:{(.+)})?\s*:')
     
@@ -59,8 +66,10 @@ def parse_expected_disassembly(file_path):
             if fn := function_pattern.match(exp):
                 fn_name, compilers = fn[1], fn[2]
 
-                if section is not None: expected_disasm.append(section)
-                section = (fn_name, compilers.lower().split(',') if compilers is not None else None, [])
+                if section is not None:
+                    expected_disasm.append(section)
+
+                section = (fn_name, parse_compilers(compilers), [])
             else:
                 section[2].append((idx, exp + '\n'))
         if section is not None:
@@ -80,6 +89,30 @@ def difference_with_line_numbers(difference, line_numbers):
         else:
             yield '{} {}'.format(' ' * max_number_length, line)
 
+def parse_compiler_version(version_string):
+    splitted_version_string = version_string.split('.')
+    return tuple(itertools.chain(map(int, splitted_version_string), [0] * (4 - len(splitted_version_string))))
+
+def match_compiler(compiler_needle, compiler_haystack):
+    current_compiler_name, current_compiler_raw_ver = compiler_needle
+    current_compiler_ver = parse_compiler_version(current_compiler_raw_ver)
+
+    for name, version in compiler_haystack:
+        if name != current_compiler_name: continue
+
+        if len(version) == 0:
+            return True
+        elif version[0] == '<':
+            if current_compiler_ver < parse_compiler_version(version[1:]):
+                return True
+        elif version[0] == '>':
+            if current_compiler_ver > parse_compiler_version(version[1:]):
+                return True
+        else:
+            if current_compiler_ver == parse_compiler_version(version):
+                return True
+    return False
+
 def check_disassembly(expected, received, current_compiler):
     is_successful = True
     checked_function = 0
@@ -94,10 +127,10 @@ def check_disassembly(expected, received, current_compiler):
             used_compilers = itertools.chain.from_iterable([
                 other_compilers for _, other_compilers, _ in filter(lambda x: x[0] == fn_name and x[1] is not None, expected)
             ])
-            if current_compiler in used_compilers:
+            if match_compiler(current_compiler, used_compilers):
                 continue
                 
-        elif current_compiler not in compilers:
+        elif not match_compiler(current_compiler, compilers):
             continue
 
         checked_function += 1
@@ -116,7 +149,9 @@ def main():
     llvm_objdump_path = sys.argv[1].strip()
     target_path = sys.argv[2].strip()
     source_path = sys.argv[3].strip()
-    current_compiler = sys.argv[4].strip().lower()
+    current_compiler = (sys.argv[4].strip().lower(), sys.argv[5].strip())
+
+    print('Compiler name: "{}", version: "{}"\n'.format(current_compiler[0], current_compiler[1]))
 
     print_llvm_objdump_version(llvm_objdump_path)
     raw_disassembly = llvm_objdump_disassembly(llvm_objdump_path, target_path)

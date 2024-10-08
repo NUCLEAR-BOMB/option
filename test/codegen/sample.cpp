@@ -64,6 +64,11 @@ void option_float_assign(opt::option<float>* a) {
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
 
+//$ @optional_float_assign {clang <12.0}:
+//$ movabs rax, 0x13f800000
+//$ mov qword ptr [rdi], rax
+//$ ret
+
 //$ @optional_float_assign {clang-cl}:
 //$ mov dword ptr [rcx], 0x3f800000
 //$ mov byte ptr [rcx + 0x4], 0x1

@@ -36,6 +36,7 @@ if (Python3_Interpreter_FOUND)
                 "$<TARGET_FILE:option-codegen-test>"
                 "${CMAKE_CURRENT_SOURCE_DIR}/sample.cpp"
                 "${current_compiler}"
+                "${CMAKE_CXX_COMPILER_VERSION}"
         )
     else()
         message(STATUS "llvm-objdump is not found: \"run-option-codegen-test\" target was not created")
