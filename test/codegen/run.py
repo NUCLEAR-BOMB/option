@@ -82,16 +82,12 @@ def parse_expected_disassembly(file_path):
 
     return expected_disasm
 
-def difference_with_line_numbers(difference, line_numbers):
-    index = 0
-    max_number_length = max(len(str(line_num)) for line_num in line_numbers)
-    for line in difference:
-        code = line[:2]
-
-        if code in ('  ', '+ '):
-            yield '{} {}'.format(str(line_numbers[index]).ljust(max_number_length), line)
-            index += 1
-        else:
+def difference_with_line_numbers(difference):
+    max_number_length = max(len(str(line_num or '')) for line_num, _ in difference)
+    for line_num, lines in difference:
+        if line_num is not None:
+            yield '{} {}'.format(str(line_num).ljust(max_number_length), lines[0])
+        for line in lines[1:]:
             yield '{} {}'.format(' ' * max_number_length, line)
 
 def parse_compiler_version(version_string):
@@ -118,11 +114,22 @@ def match_compiler(compiler_needle, compiler_haystack):
                 return True
     return False
 
+def compare_disassembly(expected, received):
+    total_difference = []
+    has_mismatch = False
+    line_num_iter = map(lambda x: x[0], expected)
+    for exp, rec in itertools.zip_longest(map(lambda x: x[1], expected), received, fillvalue=''):
+        diff = list(difflib.ndiff((exp, ), (rec, )))
+        if any(line[:2] == '+ ' for line in diff):
+            has_mismatch = True
+        total_difference.append((next(line_num_iter, None), diff))
+
+    return has_mismatch, total_difference
+
 def check_disassembly(expected, received, current_compiler):
     is_successful = True
     checked_function = 0
 
-    differ = difflib.Differ()
     for fn_name, compilers, expected_asm in expected:
         if (resulted_asm := received.get(fn_name, None)) is None:
             print('\nUnknown function name: "{}"\nList of known function names: {}\n'.format(fn_name, ", ".join(received.keys())))
@@ -140,9 +147,9 @@ def check_disassembly(expected, received, current_compiler):
 
         checked_function += 1
 
-        difference = list(differ.compare(resulted_asm, [asm_and_line[1] for asm_and_line in expected_asm]))
-        if any(line[:2] == '+ ' for line in difference):
-            print('{}:\n{}'.format(fn_name, ''.join(difference_with_line_numbers(difference, [asm_and_line[0] for asm_and_line in expected_asm]))))
+        has_mismatch, difference = compare_disassembly(expected_asm, resulted_asm)
+        if has_mismatch:
+            print('{}:\n{}'.format(fn_name, ''.join(difference_with_line_numbers(difference))))
             is_successful = False
 
     if not is_successful:
