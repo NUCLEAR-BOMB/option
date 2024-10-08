@@ -1,7 +1,7 @@
 #include <opt/option.hpp>
 #include <optional>
 
-//$ @option_int_assign {clang,gcc,icx}:
+//$ @option_int_assign:
 //$ mov dword ptr [rdi], 0x2
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
@@ -21,7 +21,7 @@ void option_int_assign(opt::option<int>* a) {
     *a = 2;
 }
 
-//$ @option_int_return {clang,icx}:
+//$ @option_int_return:
 //$ movabs rax, 0x100000002
 //$ ret
 
@@ -48,7 +48,7 @@ opt::option<int> option_int_return() {
     return 2;
 }
 
-//$ @option_float_assign {clang,gcc,icx}:
+//$ @option_float_assign:
 //$ mov dword ptr [rdi], 0x3f800000
 //$ ret
 
@@ -59,7 +59,7 @@ void option_float_assign(opt::option<float>* a) {
     *a = 1.f;
 }
 
-//$ @optional_float_assign {clang,gcc,icx}:
+//$ @optional_float_assign:
 //$ mov dword ptr [rdi], 0x3f800000
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
@@ -79,7 +79,7 @@ void optional_float_assign(std::optional<float>* a) {
     *a = 1.f;
 }
 
-//$ @option_float_return {clang,icx}:
+//$ @option_float_return:
 //$ movss xmm0, dword ptr [rip]
 //$ ret
 
@@ -101,7 +101,7 @@ opt::option<float> option_float_return() {
     return 1.f;
 }
 
-//$ @optional_float_return {clang,icx}:
+//$ @optional_float_return:
 //$ movabs rax, 0x13f800000
 //$ ret
 

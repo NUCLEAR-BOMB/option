@@ -4,6 +4,7 @@ import re
 import collections
 from pprint import pprint
 import difflib
+import itertools
 
 PREFIX = '//$'
 
@@ -46,8 +47,8 @@ def parse_disassembly(raw_string):
     return dict(disasm_target_list)
 
 def parse_expected_disassembly(file_path):
-    function_pattern = re.compile(r'@(.+?)\s*{(.+)}\s*:')
-
+    function_pattern = re.compile(r'@(.+?)\s*(?:{(.+)})?\s*:')
+    
     expected_disasm = []
     with open(file_path) as src_file:
         section = None
@@ -57,12 +58,9 @@ def parse_expected_disassembly(file_path):
 
             if fn := function_pattern.match(exp):
                 fn_name, compilers = fn[1], fn[2]
-                if compilers is None:
-                    print('Invalid compiler attribute in function name. Line: {}, Function: "{}"'.format(idx, fn_name))
-                    sys.exit(1)
 
                 if section is not None: expected_disasm.append(section)
-                section = (fn_name, compilers.lower().split(','), [])
+                section = (fn_name, compilers.lower().split(',') if compilers is not None else None, [])
             else:
                 section[2].append((idx, exp + '\n'))
         if section is not None:
@@ -92,7 +90,14 @@ def check_disassembly(expected, received, current_compiler):
             print('\nUnknown function name: "{}"\nList of known function names: {}\n'.format(fn_name, ", ".join(received.keys())))
             sys.exit(1)
 
-        if current_compiler not in compilers:
+        if compilers is None:
+            used_compilers = itertools.chain.from_iterable([
+                other_compilers for _, other_compilers, _ in filter(lambda x: x[0] == fn_name and x[1] is not None, expected)
+            ])
+            if current_compiler in used_compilers:
+                continue
+                
+        elif current_compiler not in compilers:
             continue
 
         checked_function += 1
