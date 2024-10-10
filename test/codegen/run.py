@@ -135,9 +135,9 @@ def check_disassembly(expected, received, current_compiler):
             sys.exit(1)
 
         if compilers is None:
-            used_compilers = itertools.chain.from_iterable([
+            used_compilers = itertools.chain.from_iterable(
                 other_compilers for _, other_compilers, _ in filter(lambda x: x[0] == fn_name and x[1] is not None, expected)
-            ])
+            )
             if match_compiler(current_compiler, used_compilers):
                 continue
                 
