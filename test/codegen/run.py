@@ -93,6 +93,9 @@ def parse_compiler_version(version_string):
     splitted_version_string = version_string.split('.')
     return tuple(itertools.chain(map(int, splitted_version_string), [0] * (4 - len(splitted_version_string))))
 
+def incomplete_parse_compiler_version(version_string):
+    return itertools.chain(map(int, version_string.split('.')))
+
 def match_compiler(compiler_needle, compiler_haystack):
     current_compiler_name, current_compiler_raw_ver = compiler_needle
     current_compiler_ver = parse_compiler_version(current_compiler_raw_ver)
@@ -109,7 +112,8 @@ def match_compiler(compiler_needle, compiler_haystack):
             if current_compiler_ver > parse_compiler_version(version[1:]):
                 return True
         else:
-            if current_compiler_ver == parse_compiler_version(version):
+            incom_ver = incomplete_parse_compiler_version(version)
+            if current_compiler_ver[:len(incom_ver)] == incom_ver:
                 return True
     return False
 
