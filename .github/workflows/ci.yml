@@ -85,6 +85,7 @@ jobs:
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           - name: 'clang 14'
             cxx: 'clang++-14'
@@ -96,6 +97,7 @@ jobs:
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           - name: 'clang 13'
             cxx: 'clang++-13'
@@ -108,6 +110,7 @@ jobs:
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
             
           - name: 'clang 12'
             cxx: 'clang++-12'
@@ -121,6 +124,7 @@ jobs:
               -Wno-unknown-warning-option
               --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           - name: 'clang 11'
             cxx: 'clang++-11'
@@ -135,6 +139,7 @@ jobs:
               --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
             asan_options: 'use_sigaltstack=false'
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           - name: 'clang 10'
             cxx: 'clang++-10'
@@ -148,6 +153,7 @@ jobs:
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           - name: 'clang 9'
             cxx: 'clang++-9'
@@ -160,6 +166,7 @@ jobs:
               -Wno-unknown-warning-option
               --stdlib=libstdc++
             x64_options: '-fsanitize=undefined'
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           - name: 'gcc 14 C++20'
             cxx: 'g++-14'
@@ -201,6 +208,7 @@ jobs:
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           - name: 'gcc 11'
             cxx: 'g++-11'
@@ -211,6 +219,7 @@ jobs:
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
           # - name: 'gcc 10'
           #   cxx: 'g++-10'
