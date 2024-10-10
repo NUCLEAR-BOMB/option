@@ -291,7 +291,9 @@ jobs:
         run: cmake --build build --config Release --target check-option-examples
 
       - name: Run codegen tests
-        run: cmake --build build --config Release --target run-option-codegen-test
+        run: |
+          dpkg -l libstdc++6 | grep libstd
+          cmake --build build --config Release --target run-option-codegen-test
 
       - name: Configure CMake (x32)
         env:
