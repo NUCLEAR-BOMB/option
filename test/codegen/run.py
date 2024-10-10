@@ -118,8 +118,8 @@ def compare_disassembly(expected, received):
     has_mismatch = False
     line_num_iter = map(operator.itemgetter(0), expected)
     for exp, rec in itertools.zip_longest(map(operator.itemgetter(1), expected), received, fillvalue=''):
-        diff = list(difflib.ndiff((exp, ), (rec, )))
-        if any(line[:2] == '+ ' for line in diff):
+        diff = list(filter(lambda x: x.rstrip() not in ('+', '-'), difflib.ndiff((exp, ), (rec, ))))
+        if any(line[:2] in ('+ ', '- ') for line in diff):
             has_mismatch = True
         total_difference.append((next(line_num_iter, None), diff))
 
