@@ -57,7 +57,7 @@ void option_float_assign(opt::option<float>* a) {
 //$ mov dword ptr [rdi], 0x3f800000
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
-//$ @optional_float_assign {clang <12.0}:
+//$ @optional_float_assign {clang-old-libstdcpp <12.0}:
 //$ movabs rax, 0x13f800000
 //$ mov qword ptr [rdi], rax
 //$ ret
@@ -129,7 +129,7 @@ void option_float_reset(opt::option<float>* a) {
 //$ @optional_float_reset:
 //$ mov byte ptr [rdi + 0x4], 0x0
 //$ ret
-//$ @optional_float_reset {clang-libcpp}:
+//$ @optional_float_reset {clang-libcpp,clang-old-libstdcpp,gcc-old-libstdcpp,icx}:
 //$ cmp byte ptr [rdi + 0x4], 0x0
 //$ je <L0>
 //$ mov byte ptr [rdi + 0x4], 0x0
@@ -156,6 +156,14 @@ void option_float_emplace(opt::option<float>* a) {
 //$ mov dword ptr [rdi], 0x3f800000
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
+//$ @optional_float_emplace {clang-old-libstdcpp <12.0,clang-libcpp <12.0}:
+//$ cmp byte ptr [rdi + 0x4], 0x0
+//$ je <L0>
+//$ mov byte ptr [rdi + 0x4], 0x0
+//$ <L0>:
+//$ mov dword ptr [rdi], 0x3f800000
+//$ mov byte ptr [rdi + 0x4], 0x1
+//$ ret
 //$ @optional_float_emplace {msvc,clang-cl}:
 //$ mov dword ptr [rcx], 0x3f800000
 //$ mov byte ptr [rcx + 0x4], 0x1
@@ -177,7 +185,7 @@ void option_bool_reset(opt::option<bool>* a) {
 //$ @optional_bool_reset:
 //$ mov byte ptr [rdi + 0x1], 0x0
 //$ ret
-//$ @optional_bool_reset {clang-libcpp}:
+//$ @optional_bool_reset {clang-libcpp,clang-old-libstdcpp,gcc-old-libstdcpp,icx}:
 //$ cmp byte ptr [rdi + 0x1], 0x0
 //$ je <L0>
 //$ mov byte ptr [rdi + 0x1], 0x0
