@@ -86,10 +86,8 @@ def parse_expected_disassembly(file_path):
 def difference_with_line_numbers(difference):
     max_number_length = max(len(str(line_num or '')) for line_num, _ in difference)
     for line_num, lines in difference:
-        if line_num is not None:
-            yield '{} {}'.format(str(line_num).ljust(max_number_length), lines[0])
-        for line in lines[1:]:
-            yield '{} {}'.format(' ' * max_number_length, line)
+        for line in lines:
+            yield '{} {}'.format(str(line_num or '').ljust(max_number_length), line)
 
 def parse_compiler_version(version_string):
     splitted_version_string = version_string.split('.')
