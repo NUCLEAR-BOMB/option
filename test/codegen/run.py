@@ -116,8 +116,8 @@ def match_compiler(compiler_needle, compiler_haystack):
 def compare_disassembly(expected, received):
     total_difference = []
     has_mismatch = False
-    line_num_iter = map(lambda x: x[0], expected)
-    for exp, rec in itertools.zip_longest(map(lambda x: x[1], expected), received, fillvalue=''):
+    line_num_iter = map(operator.itemgetter(0), expected)
+    for exp, rec in itertools.zip_longest(map(operator.itemgetter(1), expected), received, fillvalue=''):
         diff = list(difflib.ndiff((exp, ), (rec, )))
         if any(line[:2] == '+ ' for line in diff):
             has_mismatch = True
