@@ -146,6 +146,9 @@ def check_disassembly(expected, received, current_compiler):
 
         checked_function += 1
 
+        if expected_asm[0][1].strip() == '[disable]':
+            continue
+
         has_mismatch, difference = compare_disassembly(expected_asm, resulted_asm)
         if has_mismatch:
             print('{}:\n{}'.format(fn_name, ''.join(difference_with_line_numbers(difference))))
