@@ -135,7 +135,7 @@ def check_disassembly(expected, received, current_compiler):
 
     for fn_name, compilers, expected_asm in expected:
         if (resulted_asm := received.get(fn_name, None)) is None:
-            print('\nUnknown function name: "{}"\nList of known function names: {}\n'.format(fn_name, ", ".join(received.keys())))
+            print('\nUnknown function name: "{}"\nDid you mean: "{}"?\n'.format(fn_name, '", "'.join(difflib.get_close_matches(fn_name, received.keys(), n=3))))
             sys.exit(1)
 
         if compilers is None:
@@ -150,7 +150,7 @@ def check_disassembly(expected, received, current_compiler):
 
         checked_function += 1
 
-        if expected_asm[0][1].strip() == '[disable]':
+        if len(expected_asm) != 0 and expected_asm[0][1].strip() == '[disable]':
             continue
 
         has_mismatch, difference = compare_disassembly(expected_asm, resulted_asm)
