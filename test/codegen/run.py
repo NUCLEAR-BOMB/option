@@ -57,7 +57,7 @@ def parse_compilers(compilers):
     if compilers is None:
         return None
 
-    return [operator.itemgetter(0, 2)(compiler.partition(' ')) for compiler in compilers.lower().split(',')]
+    return [operator.itemgetter(0, 2)(compiler.strip().partition(' ')) for compiler in compilers.lower().split(',')]
 
 def parse_expected_disassembly(file_path):
     function_pattern = re.compile(r'@(.+?)\s*(?:{(.+)})?\s*:')
@@ -94,7 +94,7 @@ def parse_compiler_version(version_string):
     return tuple(itertools.chain(map(int, splitted_version_string), [0] * (4 - len(splitted_version_string))))
 
 def incomplete_parse_compiler_version(version_string):
-    return itertools.chain(map(int, version_string.split('.')))
+    return tuple(map(int, version_string.split('.')))
 
 def match_compiler(compiler_needle, compiler_haystack):
     current_compiler_name, current_compiler_raw_ver = compiler_needle
