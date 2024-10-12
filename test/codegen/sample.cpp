@@ -28,7 +28,7 @@ void option_int_assign(opt::option<int>* a) {
 //$ ret
 
 // ???
-//$ @option_int_return {gcc,gcc-old-libstdcpp}:
+//$ @option_int_return {gcc}:
 //$ mov dword ptr [rsp - 0x8], 0x2
 //$ mov byte ptr [rsp - 0x4], 0x1
 //$ mov rax, qword ptr [rsp - 0x8]
@@ -66,7 +66,7 @@ void option_float_assign(opt::option<float>* a) {
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
 
-//$ @optional_float_assign {clang-old-libstdcpp <12.0}:
+//$ @optional_float_assign {clang & old-libstdcpp <12.0}:
 //$ movabs rax, 0x13f800000
 //$ mov qword ptr [rdi], rax
 //$ ret
@@ -90,7 +90,7 @@ void optional_float_assign(std::optional<float>* a) {
 //$ movss xmm0, dword ptr <option_float_return()+0x8>
 //$ ret
 
-//$ @option_float_return {gcc,gcc-old-libstdcpp}:
+//$ @option_float_return {gcc}:
 //$ mov eax, 0x3f800000
 //$ movd xmm0, eax
 //$ ret
@@ -112,7 +112,7 @@ opt::option<float> option_float_return() {
 //$ movabs rax, 0x13f800000
 //$ ret
 
-//$ @optional_float_return {gcc,gcc-old-libstdcpp}:
+//$ @optional_float_return {gcc}:
 //$ mov dword ptr [rsp - 0x8], 0x3f800000
 //$ mov byte ptr [rsp - 0x4], 0x1
 //$ mov rax, qword ptr [rsp - 0x8]
@@ -137,7 +137,7 @@ std::optional<float> optional_float_return() {
 //$ movsd xmm0, qword ptr <option_double_return()+0x8>
 //$ ret
 
-//$ @option_double_return {gcc,gcc-old-libstdcpp}:
+//$ @option_double_return {gcc}:
 //$ movabs rax, 0x3ff0000000000000
 //$ movq xmm0, rax
 //$ ret
@@ -162,18 +162,12 @@ opt::option<double> option_double_return() {
 //$ mov al, 0x1
 //$ ret
 
-//$ @optional_double_return {clang-libcpp}:
+//$ @optional_double_return {clang & libcpp}:
 //$ movabs rax, 0x3ff0000000000000
 //$ mov dl, 0x1
 //$ ret
 
-//$ @optional_double_return {gcc <14}:
-//$ mov byte ptr [rsp - 0x10], 0x1
-//$ movsd xmm0, qword ptr <optional_double_return()+0xd>
-//$ mov rax, qword ptr [rsp - 0x10]
-//$ ret
-
-//$ @optional_double_return {gcc 14,gcc-old-libstdcpp <13}:
+//$ @optional_double_return {gcc}:
 //$ mov byte ptr [rsp - 0x10], 0x1
 //$ movsd xmm0, qword ptr <optional_double_return()+0x11>
 //$ mov rax, qword ptr [rsp - 0x10]
@@ -202,7 +196,7 @@ enum class enum_uint16 : std::uint16_t { a = 2 };
 //$ mov ax, 0x2
 //$ ret
 
-//$ @option_enum_uint16_return {gcc,gcc-old-libstdcpp}:
+//$ @option_enum_uint16_return {gcc}:
 //$ mov eax, 0x2
 //$ ret
 
@@ -223,7 +217,7 @@ opt::option<enum_uint16> option_enum_uint16_return() {
 //$ mov eax, 0x10002
 //$ ret
 
-//$ @optional_enum_uint16_return {gcc,gcc-old-libstdcpp}:
+//$ @optional_enum_uint16_return {gcc}:
 //$ mov eax, 0x2
 //$ mov byte ptr [rsp - 0x2], 0x1
 //$ mov word ptr [rsp - 0x4], ax
@@ -260,7 +254,7 @@ void option_float_reset(opt::option<float>* a) {
 //$ mov byte ptr [rdi + 0x4], 0x0
 //$ ret
 
-//$ @optional_float_reset {clang-libcpp,clang-old-libstdcpp,gcc <13.0,gcc-old-libstdcpp,icx}:
+//$ @optional_float_reset {clang & libcpp,clang & old-libstdcpp,gcc <13.0,gcc & old-libstdcpp,icx}:
 //$ cmp byte ptr [rdi + 0x4], 0x0
 //$ je <L0>
 //$ mov byte ptr [rdi + 0x4], 0x0
@@ -290,7 +284,7 @@ void option_float_emplace(opt::option<float>* a) {
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
 
-//$ @optional_float_emplace {clang-old-libstdcpp <12.0,clang-libcpp <12.0}:
+//$ @optional_float_emplace {clang & old-libstdcpp <12.0,clang & libcpp <12.0}:
 //$ cmp byte ptr [rdi + 0x4], 0x0
 //$ je <L0>
 //$ mov byte ptr [rdi + 0x4], 0x0
@@ -322,7 +316,7 @@ void option_bool_reset(opt::option<bool>* a) {
 //$ mov byte ptr [rdi + 0x1], 0x0
 //$ ret
 
-//$ @optional_bool_reset {clang-libcpp,clang-old-libstdcpp,gcc <13.0,gcc-old-libstdcpp,icx}:
+//$ @optional_bool_reset {clang & libcpp,clang & old-libstdcpp,gcc <13.0,gcc & old-libstdcpp,icx}:
 //$ cmp byte ptr [rdi + 0x1], 0x0
 //$ je <L0>
 //$ mov byte ptr [rdi + 0x1], 0x0
@@ -341,7 +335,7 @@ void optional_bool_reset(std::optional<bool>* a) {
 //$ ret
 
 // ???
-//$ @option_int_return_default_ctor {gcc,gcc-old-libstdcpp}:
+//$ @option_int_return_default_ctor {gcc}:
 //$ mov byte ptr [rsp - 0x4], 0x0
 //$ mov rax, qword ptr [rsp - 0x8]
 //$ ret
@@ -364,7 +358,7 @@ opt::option<int> option_int_return_default_ctor() {
 //$ ret
 
 // ???
-//$ @option_int_return_none {gcc,gcc-old-libstdcpp}:
+//$ @option_int_return_none {gcc}:
 //$ mov byte ptr [rsp - 0x4], 0x0
 //$ mov rax, qword ptr [rsp - 0x8]
 //$ ret
@@ -386,7 +380,7 @@ opt::option<int> option_int_return_none() {
 //$ xor eax, eax
 //$ ret
 
-//$ @optional_int_return_default_ctor {gcc,gcc-old-libstdcpp}:
+//$ @optional_int_return_default_ctor {gcc}:
 //$ mov byte ptr [rsp - 0x4], 0x0
 //$ mov rax, qword ptr [rsp - 0x8]
 //$ ret
@@ -408,7 +402,7 @@ std::optional<int> optional_int_return_default_ctor() {
 //$ xor eax, eax
 //$ ret
 
-//$ @optional_int_return_none {gcc,gcc-old-libstdcpp}:
+//$ @optional_int_return_none {gcc}:
 //$ mov byte ptr [rsp - 0x4], 0x0
 //$ mov rax, qword ptr [rsp - 0x8]
 //$ ret
@@ -431,7 +425,7 @@ std::optional<int> optional_int_return_none() {
 //$ ret
 
 // ???
-//$ @option_int64_return_none {gcc,gcc-old-libstdcpp}:
+//$ @option_int64_return_none {gcc}:
 //$ mov byte ptr [rsp - 0x10], 0x0
 //$ mov rax, qword ptr [rsp - 0x18]
 //$ mov rdx, qword ptr [rsp - 0x10]
@@ -455,7 +449,7 @@ opt::option<std::int64_t> option_int64_return_none() {
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ ret
 
-//$ @option_big_return_none {gcc,gcc-old-libstdcpp}:
+//$ @option_big_return_none {gcc}:
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ mov rax, rdi
 //$ ret
@@ -478,13 +472,13 @@ opt::option<std::array<int, 1024>> option_big_return_none() {
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ ret
 
-//$ @optional_big_return_none {clang-libcpp}:
+//$ @optional_big_return_none {clang & libcpp}:
 //$ mov rax, rdi
 //$ mov byte ptr [rdi], 0x0
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ ret
 
-//$ @optional_big_return_none {gcc,gcc-old-libstdcpp}:
+//$ @optional_big_return_none {gcc}:
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ mov rax, rdi
 //$ ret
@@ -506,7 +500,7 @@ std::optional<std::array<int, 1024>> optional_big_return_none() {
 //$ mov al, 0x2
 //$ ret
 
-//$ @option_bool_return_none {gcc,gcc-old-libstdcpp}:
+//$ @option_bool_return_none {gcc}:
 //$ mov eax, 0x2
 //$ ret
 
@@ -527,7 +521,7 @@ opt::option<bool> option_bool_return_none() {
 //$ xor eax, eax
 //$ ret
 
-//$ @optional_bool_return_none {gcc-old-libstdcpp <12}:
+//$ @optional_bool_return_none {gcc & old-libstdcpp <12}:
 //$ xor eax, eax
 //$ mov ah, 0x0
 //$ ret
@@ -550,7 +544,7 @@ std::optional<bool> optional_bool_return_none() {
 //$ movss xmm0, dword ptr <option_float_return_none()+0x8>
 //$ ret
 
-//$ @option_float_return_none {gcc,gcc-old-libstdcpp}:
+//$ @option_float_return_none {gcc}:
 //$ mov eax, 0xffbf69af
 //$ movd xmm0, eax
 //$ ret
@@ -572,7 +566,7 @@ opt::option<float> option_float_return_none() {
 //$ xor eax, eax
 //$ ret
 
-//$ @optional_float_return_none {gcc,gcc-old-libstdcpp}:
+//$ @optional_float_return_none {gcc}:
 //$ mov byte ptr [rsp - 0x4], 0x0
 //$ mov rax, qword ptr [rsp - 0x8]
 //$ ret
@@ -594,7 +588,7 @@ std::optional<float> optional_float_return_none() {
 //$ movsd xmm0, qword ptr <option_double_return_none()+0x8>
 //$ ret
 
-//$ @option_double_return_none {gcc,gcc-old-libstdcpp}:
+//$ @option_double_return_none {gcc}:
 //$ movabs rax, -0x93860aa4f7671
 //$ movq xmm0, rax
 //$ ret
@@ -618,12 +612,12 @@ opt::option<double> option_double_return_none() {
 //$ xor eax, eax
 //$ ret
 
-//$ @optional_double_return_none {clang-libcpp}:
+//$ @optional_double_return_none {clang & libcpp}:
 //$ xor eax, eax
 //$ xor edx, edx
 //$ ret
 
-//$ @optional_double_return_none {gcc,gcc-old-libstdcpp}:
+//$ @optional_double_return_none {gcc}:
 //$ mov byte ptr [rsp - 0x10], 0x0
 //$ movsd xmm0, qword ptr [rsp - 0x18]
 //$ mov rax, qword ptr [rsp - 0x10]
@@ -647,7 +641,18 @@ std::optional<double> optional_double_return_none() {
 //$ setb al
 //$ ret
 
-//$ @option_bool_has_value {gcc,gcc-old-libstdcpp}:
+//$ @option_bool_has_value {clang <15}:
+//$ mov al, byte ptr [rdi]
+//$ lea ecx, [rax - 0x2]
+//$ movzx ecx, cl
+//$ cmp al, 0x2
+//$ mov rax, -0x1
+//$ cmovae rax, rcx
+//$ cmp rax, -0x1
+//$ sete al
+//$ ret
+
+//$ @option_bool_has_value {gcc}:
 //$ cmp byte ptr [rdi], 0x1
 //$ setbe al
 //$ ret
@@ -677,6 +682,10 @@ bool option_bool_has_value(opt::option<bool>* a) {
 //$ movzx eax, byte ptr [rdi + 0x1]
 //$ ret
 
+//$ @optional_bool_has_value {clang <15}:
+//$ mov al, byte ptr [rdi + 0x1]
+//$ ret
+
 //$ @optional_bool_has_value {msvc,clang-cl}:
 //$ movzx eax, byte ptr [rcx + 0x1]
 //$ ret
@@ -691,7 +700,17 @@ bool optional_bool_has_value(std::optional<bool>* a) {
 //$ setb al
 //$ ret
 
-//$ @option_float_has_value {gcc,gcc-old-libstdcpp}:
+//$ @option_float_has_value {clang <15}:
+//$ mov eax, 0x409651
+//$ add eax, dword ptr [rdi]
+//$ cmp eax, 0x100
+//$ mov rcx, -0x1
+//$ cmovb rcx, rax
+//$ cmp rcx, -0x1
+//$ sete al
+//$ ret
+
+//$ @option_float_has_value {gcc}:
 //$ mov eax, dword ptr [rdi]
 //$ add eax, 0x409651
 //$ cmp eax, 0xff
@@ -724,6 +743,10 @@ bool option_float_has_value(opt::option<float>* a) {
 //$ movzx eax, byte ptr [rdi + 0x4]
 //$ ret
 
+//$ @optional_float_has_value {clang <15}:
+//$ mov al, byte ptr [rdi + 0x4]
+//$ ret
+
 //$ @optional_float_has_value {msvc,clang-cl}:
 //$ movzx eax, byte ptr [rcx + 0x4]
 //$ ret
@@ -738,7 +761,14 @@ bool optional_float_has_value(std::optional<float>* a) {
 //$ setb al
 //$ ret
 
-//$ @option_double_has_value {gcc,gcc-old-libstdcpp}:
+//$ @option_double_has_value {clang <14}:
+//$ movabs rax, 0x93860aa4f7671
+//$ add rax, qword ptr [rdi]
+//$ cmp rax, 0x100
+//$ setae al
+//$ ret
+
+//$ @option_double_has_value {gcc}:
 //$ movabs rax, 0x93860aa4f7671
 //$ add rax, qword ptr [rdi]
 //$ cmp rax, 0xff
@@ -768,6 +798,10 @@ bool option_double_has_value(opt::option<double>* a) {
 
 //$ @optional_double_has_value:
 //$ movzx eax, byte ptr [rdi + 0x8]
+//$ ret
+
+//$ @optional_double_has_value {clang <15}:
+//$ mov al, byte ptr [rdi + 0x8]
 //$ ret
 
 //$ @optional_double_has_value {msvc,clang-cl}:

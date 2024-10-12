@@ -11,6 +11,7 @@ from pprint import pprint
 import difflib
 import itertools
 import operator
+import string
 
 PREFIX = '//$'
 
@@ -53,12 +54,6 @@ def parse_disassembly(raw_string):
 
     return dict(disasm_target_list)
 
-def parse_compilers(compilers):
-    if compilers is None:
-        return None
-
-    return [operator.itemgetter(0, 2)(compiler.strip().partition(' ')) for compiler in compilers.lower().split(',')]
-
 def parse_expected_disassembly(file_path):
     function_pattern = re.compile(r'@(.+?)\s*(?:{(.+)})?\s*:')
     
@@ -75,7 +70,7 @@ def parse_expected_disassembly(file_path):
                 if section is not None:
                     expected_disasm.append(section)
 
-                section = (fn_name, parse_compilers(compilers), [])
+                section = (fn_name, compilers and compilers.lower(), [])
             else:
                 section[2].append((idx, exp + '\n'))
         if section is not None:
@@ -96,25 +91,35 @@ def parse_compiler_version(version_string):
 def incomplete_parse_compiler_version(version_string):
     return tuple(map(int, version_string.split('.')))
 
-def match_compiler(compiler_needle, compiler_haystack):
-    current_compiler_name, current_compiler_raw_ver = compiler_needle
-    current_compiler_ver = parse_compiler_version(current_compiler_raw_ver)
 
-    for name, version in compiler_haystack:
-        if name != current_compiler_name: continue
+def find_condition_version(cond):
+    idx = cond.rfind(' ')
+    if (idx + 1) < len(cond) and cond[idx + 1] in ('<', '>', *string.digits):
+        return cond[:idx], cond[idx:].strip()
+    return cond, ''
+
+def match_condition(specified_conditions, conditions):
+    specified_compiler_ids, specified_version = set(specified_conditions[0]), parse_compiler_version(specified_conditions[1])
+    for subcondition in conditions.split(','):
+        compiler_ids, version = find_condition_version(subcondition.strip())
+
+        if not (set(compiler_id.strip() for compiler_id in compiler_ids.split('&')).issubset(specified_compiler_ids)):
+            continue
 
         if len(version) == 0:
-            return True
+            pass
         elif version[0] == '<':
-            if current_compiler_ver < parse_compiler_version(version[1:]):
-                return True
+            if not (specified_version < parse_compiler_version(version[1:])):
+                continue
         elif version[0] == '>':
-            if current_compiler_ver > parse_compiler_version(version[1:]):
-                return True
+            if not (specified_version > parse_compiler_version(version[1:])):
+                continue
         else:
             incom_ver = incomplete_parse_compiler_version(version)
-            if current_compiler_ver[:len(incom_ver)] == incom_ver:
-                return True
+            if not (specified_version[:len(incom_ver)] == incom_ver):
+                continue
+
+        return True
     return False
 
 def compare_disassembly(expected, received):
@@ -129,23 +134,20 @@ def compare_disassembly(expected, received):
 
     return has_mismatch, total_difference
 
-def check_disassembly(expected, received, current_compiler):
+def check_disassembly(expected, received, specified_conditions):
     is_successful = True
     checked_function = 0
 
-    for fn_name, compilers, expected_asm in expected:
+    for fn_name, conditions, expected_asm in expected:
         if (resulted_asm := received.get(fn_name, None)) is None:
             print('\nUnknown function name: "{}"\nDid you mean: "{}"?\n'.format(fn_name, '", "'.join(difflib.get_close_matches(fn_name, received.keys(), n=3))))
             sys.exit(1)
 
-        if compilers is None:
-            used_compilers = itertools.chain.from_iterable(
-                other_compilers for _, other_compilers, _ in filter(lambda x: x[0] == fn_name and x[1] is not None, expected)
-            )
-            if match_compiler(current_compiler, used_compilers):
+        if conditions is None:
+            if any(match_condition(specified_conditions, other_conditions) for _, other_conditions, _ in filter(lambda x: x[0] == fn_name and x[1] is not None, expected)):
                 continue
                 
-        elif not match_compiler(current_compiler, compilers):
+        elif not match_condition(specified_conditions, conditions):
             continue
 
         checked_function += 1
@@ -167,15 +169,15 @@ def main():
     llvm_objdump_path = sys.argv[1].strip()
     target_path = sys.argv[2].strip()
     source_path = sys.argv[3].strip()
-    current_compiler = (sys.argv[4].strip().lower(), sys.argv[5].strip())
+    specified_conditions = (sys.argv[4].lower().split(';'), sys.argv[5].strip().lower())
 
-    print('Compiler name: "{}", version: "{}"\n'.format(current_compiler[0], current_compiler[1]))
+    print('Version: {}\nSpecified conditions:\n    {}\n'.format(specified_conditions[1], '\n    '.join(specified_conditions[0])))
 
     print_llvm_objdump_version(llvm_objdump_path)
     raw_disassembly = llvm_objdump_disassembly(llvm_objdump_path, target_path)
     received_disassembly = parse_disassembly(raw_disassembly)
     expected_disassembly = parse_expected_disassembly(source_path)
-    check_disassembly(expected_disassembly, received_disassembly, current_compiler)
+    check_disassembly(expected_disassembly, received_disassembly, specified_conditions)
 
 if __name__ == '__main__':
     main()
