@@ -41,6 +41,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     )
 endif()
 
+set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE CACHE BOOL "")
 include(FetchContent)
 FetchContent_Declare(
     doctest
