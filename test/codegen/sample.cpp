@@ -641,7 +641,7 @@ std::optional<double> optional_double_return_none() {
 //$ setb al
 //$ ret
 
-//$ @option_bool_has_value {clang <15}:
+//$ @option_bool_has_value {clang 13..<15}:
 //$ mov al, byte ptr [rdi]
 //$ lea ecx, [rax - 0x2]
 //$ movzx ecx, cl

@@ -98,6 +98,22 @@ def find_condition_version(cond):
         return cond[:idx], cond[idx:].strip()
     return cond, ''
 
+def check_version(specified_version, version):
+    version_range_pattern = re.compile(r'([\d\.]+)\.\.<?([\d\.]+)$')
+    if len(version) == 0:
+        return True
+    elif version[0] == '<':
+        return specified_version < parse_compiler_version(version[1:])
+    elif version[0] == '>':
+        return specified_version > parse_compiler_version(version[1:])
+    elif version_range := re.match(version_range_pattern, version):
+        start_ver = parse_compiler_version(version_range[1])
+        end_ver = parse_compiler_version(version_range[2])
+        return start_ver <= specified_version and specified_version < end_ver
+    else:
+        incom_ver = incomplete_parse_compiler_version(version)
+        return specified_version[:len(incom_ver)] == incom_ver
+
 def match_condition(specified_conditions, conditions):
     specified_compiler_ids, specified_version = set(specified_conditions[0]), parse_compiler_version(specified_conditions[1])
     for subcondition in conditions.split(','):
@@ -105,21 +121,9 @@ def match_condition(specified_conditions, conditions):
 
         if not (set(compiler_id.strip() for compiler_id in compiler_ids.split('&')).issubset(specified_compiler_ids)):
             continue
-
-        if len(version) == 0:
-            pass
-        elif version[0] == '<':
-            if not (specified_version < parse_compiler_version(version[1:])):
-                continue
-        elif version[0] == '>':
-            if not (specified_version > parse_compiler_version(version[1:])):
-                continue
-        else:
-            incom_ver = incomplete_parse_compiler_version(version)
-            if not (specified_version[:len(incom_ver)] == incom_ver):
-                continue
-
-        return True
+    
+        if check_version(specified_version, version):
+            return True
     return False
 
 def compare_disassembly(expected, received):
