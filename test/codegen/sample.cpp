@@ -169,7 +169,7 @@ opt::option<double> option_double_return() {
 
 //$ @optional_double_return {gcc}:
 //$ mov byte ptr [rsp - 0x10], 0x1
-//$ movsd xmm0, qword ptr <optional_double_return()+0x11>
+//$ movsd xmm0, qword ptr <optional_double_return()+0xd>
 //$ mov rax, qword ptr [rsp - 0x10]
 //$ ret
 
@@ -641,17 +641,6 @@ std::optional<double> optional_double_return_none() {
 //$ setb al
 //$ ret
 
-//$ @option_bool_has_value {clang 13..<15}:
-//$ mov al, byte ptr [rdi]
-//$ lea ecx, [rax - 0x2]
-//$ movzx ecx, cl
-//$ cmp al, 0x2
-//$ mov rax, -0x1
-//$ cmovae rax, rcx
-//$ cmp rax, -0x1
-//$ sete al
-//$ ret
-
 //$ @option_bool_has_value {clang 10..<13}:
 //$ mov al, byte ptr [rdi]
 //$ lea ecx, [rax - 0x2]
@@ -678,17 +667,11 @@ std::optional<double> optional_double_return_none() {
 //$ setbe al
 //$ ret
 
-// ???
 //$ @option_bool_has_value {msvc}:
 //$ movzx eax, byte ptr [rcx]
 //$ sub al, 0x2
-//$ movzx ecx, al
 //$ cmp al, -0x2
-//$ jb <L0>
-//$ mov rcx, -0x1
-//$ <L0>:
-//$ cmp rcx, -0x1
-//$ sete al
+//$ setae al
 //$ ret
 
 //$ @option_bool_has_value {clang-cl}:
@@ -721,16 +704,6 @@ bool optional_bool_has_value(std::optional<bool>* a) {
 //$ setb al
 //$ ret
 
-//$ @option_float_has_value {clang <15}:
-//$ mov eax, 0x409651
-//$ add eax, dword ptr [rdi]
-//$ cmp eax, 0x100
-//$ mov rcx, -0x1
-//$ cmovb rcx, rax
-//$ cmp rcx, -0x1
-//$ sete al
-//$ ret
-
 //$ @option_float_has_value {gcc}:
 //$ mov eax, dword ptr [rdi]
 //$ add eax, 0x409651
@@ -741,13 +714,8 @@ bool optional_bool_has_value(std::optional<bool>* a) {
 //$ @option_float_has_value {msvc}:
 //$ mov eax, dword ptr [rcx]
 //$ add eax, 0x409651
-//$ mov ecx, eax
 //$ cmp eax, 0x100
-//$ jb <L0>
-//$ mov rcx, -0x1
-//$ <L0>:
-//$ cmp rcx, -0x1
-//$ sete al
+//$ setae al
 //$ ret
 
 //$ @option_float_has_value {clang-cl}:
@@ -814,14 +782,11 @@ bool optional_float_has_value(std::optional<float>* a) {
 //$ ret
 
 //$ @option_double_has_value {msvc}:
-//$ mov rdx, qword ptr [rcx]
-//$ movabs rax, 0x93860aa4f7671
-//$ add rdx, rax
-//$ mov rax, -0x1
-//$ cmp rdx, 0x100
-//$ cmovb rax, rdx
-//$ cmp rax, -0x1
-//$ sete al
+//$ mov rax, qword ptr [rcx]
+//$ movabs rcx, 0x93860aa4f7671
+//$ add rax, rcx
+//$ cmp rax, 0x100
+//$ setae al
 //$ ret
 
 //$ @option_double_has_value {clang-cl}:
