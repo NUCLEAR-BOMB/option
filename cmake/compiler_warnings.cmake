@@ -27,6 +27,7 @@ function(target_add_warnings target)
         /wd4738 # storing 32-bit float result in memory, possible loss of performance
         /wd4121 # 'symbol' : alignment of a member was sensitive to packing
         /wd4574 # 'identifier' is defined to be '0': did you mean to use '#if identifier'?
+        /wd5045 # Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
         )
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
