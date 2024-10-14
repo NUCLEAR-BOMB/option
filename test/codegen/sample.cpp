@@ -167,7 +167,13 @@ opt::option<double> option_double_return() {
 //$ mov dl, 0x1
 //$ ret
 
-//$ @optional_double_return {gcc}:
+//$ @optional_double_return {gcc 14, gcc <13}:
+//$ mov byte ptr [rsp - 0x10], 0x1
+//$ movsd xmm0, qword ptr <optional_double_return()+0x11>
+//$ mov rax, qword ptr [rsp - 0x10]
+//$ ret
+
+//$ @optional_double_return {gcc 13}:
 //$ mov byte ptr [rsp - 0x10], 0x1
 //$ movsd xmm0, qword ptr <optional_double_return()+0xd>
 //$ mov rax, qword ptr [rsp - 0x10]
