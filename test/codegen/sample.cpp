@@ -779,7 +779,8 @@ bool optional_float_has_value(std::optional<float>* a) {
 //$ setae al
 //$ ret
 
-//$ movabs rax, 0x93860aa4f7671 {clang <13}
+//$ @option_double_has_value {clang <13}:
+//$ movabs rax, 0x93860aa4f7671
 //$ add rax, qword ptr [rdi]
 //$ cmp rax, 0x100
 //$ mov rcx, -0x1
