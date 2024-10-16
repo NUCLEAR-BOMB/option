@@ -720,7 +720,7 @@ jobs:
 
           - name: 'Windows MSVC'
             os: 'windows-latest'
-            options: '/Wall /WX /permissive-'
+            options: '/Wall /WX /permissive- /wd5045'
 
     steps:
       - name: Checkout
