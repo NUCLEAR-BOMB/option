@@ -647,27 +647,6 @@ std::optional<double> optional_double_return_none() {
 //$ setb al
 //$ ret
 
-//$ @option_bool_has_value {clang 10..<13}:
-//$ mov al, byte ptr [rdi]
-//$ lea ecx, [rax - 0x2]
-//$ movzx ecx, cl
-//$ cmp al, 0x1
-//$ mov rax, -0x1
-//$ cmova rax, rcx
-//$ cmp rax, -0x1
-//$ sete al
-//$ ret
-
-//$ @option_bool_has_value {clang <10}:
-//$ mov al, byte ptr [rdi]
-//$ add al, -0x2
-//$ movzx eax, al
-//$ mov rcx, -0x1
-//$ cmovb rcx, rax
-//$ cmp rcx, -0x1
-//$ sete al
-//$ ret
-
 //$ @option_bool_has_value {gcc}:
 //$ cmp byte ptr [rdi], 0x1
 //$ setbe al
@@ -708,6 +687,20 @@ bool optional_bool_has_value(std::optional<bool>* a) {
 //$ add eax, dword ptr [rdi]
 //$ cmp eax, 0xffffff00
 //$ setb al
+//$ ret
+
+//$ @option_float_has_value {clang 13..<14}:
+//$ mov eax, 0x409651
+//$ add eax, dword ptr [rdi]
+//$ cmp eax, 0x100
+//$ setae al
+//$ ret
+
+//$ @option_float_has_value {clang <13}:
+//$ mov eax, 0x409651
+//$ add eax, dword ptr [rdi]
+//$ cmp eax, 0xff
+//$ seta al
 //$ ret
 
 //$ @option_float_has_value {gcc}:
@@ -766,11 +759,8 @@ bool optional_float_has_value(std::optional<float>* a) {
 //$ @option_double_has_value {clang 10..<13}:
 //$ movabs rax, 0x93860aa4f7671
 //$ add rax, qword ptr [rdi]
-//$ cmp rax, 0x100
-//$ mov rcx, -0x1
-//$ cmovb rcx, rax
-//$ cmp rcx, -0x1
-//$ sete al
+//$ cmp rax, 0xff
+//$ seta al
 //$ ret
 
 //$ @option_double_has_value {clang <10}:
