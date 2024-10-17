@@ -450,56 +450,79 @@ opt::option<std::int64_t> option_int64_return_none() {
     return opt::none;
 }
 
-//$ @option_big_return_none:
+//$ @option_int_1024_return_none:
 //$ mov rax, rdi
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ ret
 
-//$ @option_big_return_none {gcc}:
+//$ @option_int_1024_return_none {gcc}:
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ mov rax, rdi
 //$ ret
 
-//$ @option_big_return_none {msvc}:
+//$ @option_int_1024_return_none {msvc}:
 //$ mov byte ptr [rcx + 0x1000], 0x0
 //$ mov rax, rcx
 //$ ret
 
-//$ @option_big_return_none {clang-cl}:
+//$ @option_int_1024_return_none {clang-cl}:
 //$ mov rax, rcx
 //$ mov byte ptr [rcx + 0x1000], 0x0
 //$ ret
-opt::option<std::array<int, 1024>> option_big_return_none() {
+opt::option<std::array<int, 1024>> option_int_1024_return_none() {
     return opt::none;
 }
 
-//$ @optional_big_return_none:
+//$ @optional_int_1024_return_none:
 //$ mov rax, rdi
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ ret
 
-//$ @optional_big_return_none {clang & libcpp}:
+//$ @optional_int_1024_return_none {clang & libcpp}:
 //$ mov rax, rdi
 //$ mov byte ptr [rdi], 0x0
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ ret
 
-//$ @optional_big_return_none {gcc}:
+//$ @optional_int_1024_return_none {gcc}:
 //$ mov byte ptr [rdi + 0x1000], 0x0
 //$ mov rax, rdi
 //$ ret
 
-//$ @optional_big_return_none {msvc}:
+//$ @optional_int_1024_return_none {msvc}:
 //$ mov byte ptr [rcx + 0x1000], 0x0
 //$ mov rax, rcx
 //$ ret
 
-//$ @optional_big_return_none {clang-cl}:
+//$ @optional_int_1024_return_none {clang-cl}:
 //$ mov rax, rcx
 //$ mov byte ptr [rcx + 0x1000], 0x0
 //$ ret
-std::optional<std::array<int, 1024>> optional_big_return_none() {
+std::optional<std::array<int, 1024>> optional_int_1024_return_none() {
     return std::nullopt;
+}
+
+//$ @option_float_1024_return_none:
+//$ mov rax, rdi
+//$ mov dword ptr [rdi], 0xffbf69af
+//$ ret
+
+//$ @option_float_1024_return_none {gcc}:
+//$ mov dword ptr [rdi], 0xffbf69af
+//$ mov rax, rdi
+//$ ret
+
+//$ @option_float_1024_return_none {msvc}:
+//$ mov dword ptr [rcx], 0xffbf69af
+//$ mov rax, rcx
+//$ ret
+
+//$ @option_float_1024_return_none {clang-cl}:
+//$ mov rax, rcx
+//$ mov dword ptr [rcx], 0xffbf69af
+//$ ret
+opt::option<std::array<float, 1024>> option_float_1024_return_none() {
+    return opt::none;
 }
 
 //$ @option_bool_return_none:
