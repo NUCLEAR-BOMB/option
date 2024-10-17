@@ -20,6 +20,7 @@ jobs:
       VERBOSE: 1
       CXX: ${{matrix.cxx}}
       CC: ${{matrix.cc}}
+      CXXFLAGS: ${{matrix.global_cxx_options}}
       ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=2:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true:${{matrix.asan_options}}'
       UBSAN_OPTIONS: 'print_stacktrace=1:silence_unsigned_overflow=1'
 
@@ -39,7 +40,7 @@ jobs:
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
-            cxx_options: '-std=c++20'
+            global_cxx_options: '-std=c++20'
 
           - name: 'clang 18'
             cxx: 'clang++-18'
@@ -183,7 +184,7 @@ jobs:
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
-            cxx_options: '-std=c++20'
+            global_cxx_options: '-std=c++20'
 
           - name: 'gcc 14'
             cxx: 'g++-14'
@@ -314,7 +315,7 @@ jobs:
 
       - name: Configure CMake (x32)
         env:
-          CXXFLAGS: -m32
+          CXXFLAGS: -m32 ${{matrix.global_cxx_options}}
           CFLAGS: -m32
         run: >-
           cmake -B build-x32
