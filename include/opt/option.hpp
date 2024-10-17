@@ -2136,14 +2136,6 @@ namespace impl {
     #pragma GCC diagnostic pop
 #endif
 
-    template<class Self, class U>
-    constexpr void option_assign_from_value(Self& self, U&& value) {
-        if (self.has_value()) {
-            self.assign(static_cast<U&&>(value));
-        } else {
-            self.construct(static_cast<U&&>(value));
-        }
-    }
     template<class Self, class Option>
     constexpr void option_assign_from_option(Self& self, Option&& other) {
         if (other.has_value()) {
@@ -2991,7 +2983,11 @@ public:
         if constexpr (std::is_reference_v<T>) {
             base::value = base::ref_to_ptr(static_cast<U&&>(val));
         } else {
-            impl::option_assign_from_value(*static_cast<base*>(this), static_cast<U&&>(val));
+            if (has_value()) {
+                base::assign(static_cast<U&&>(val));
+            } else {
+                base::construct(static_cast<U&&>(val));
+            }
         }
         return *this;
     }
