@@ -8,14 +8,9 @@
 //$ mov byte ptr [rdi + 0x4], 0x1
 //$ ret
 
-//$ @option_int_assign {msvc}:
+//$ @option_int_assign {msvc,clang-cl}:
 //$ mov dword ptr [rcx], 0x2
 //$ mov byte ptr [rcx + 0x4], 0x1
-//$ ret
-
-//$ @option_int_assign {clang-cl}:
-//$ movabs rax, 0x100000002
-//$ mov qword ptr [rcx], rax
 //$ ret
 void option_int_assign(opt::option<int>* a) {
     *a = 2;
