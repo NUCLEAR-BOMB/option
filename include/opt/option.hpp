@@ -1112,7 +1112,7 @@ namespace impl {
     public:
         static constexpr std::uintmax_t max_level = 255;
 
-        OPTION_PURE static std::uintmax_t get_level(const unref* const* const value) noexcept {
+        static std::uintmax_t get_level(const unref* const* const value) noexcept {
             const auto uptr = impl::ptr_bit_cast<std::uintptr_t>(value);
             if (uptr < max_level) {
                 return uptr;
