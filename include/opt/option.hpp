@@ -1925,10 +1925,6 @@ namespace impl {
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             has_value_flag = true;
         }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = static_cast<U&&>(other);
-        }
     };
     template<class T>
     struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/false> {
@@ -1977,10 +1973,6 @@ namespace impl {
             OPTION_VERIFY(!has_value_flag, "Value is non-empty");
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             has_value_flag = true;
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = static_cast<U&&>(other);
         }
     };
 #if OPTION_GCC
@@ -2049,11 +2041,6 @@ namespace impl {
             OPTION_VERIFY(!has_value(), "Value is non-empty");
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = static_cast<U&&>(other);
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
         }
     };
     template<class T>
@@ -2126,11 +2113,6 @@ namespace impl {
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
-        template<class U>
-        constexpr void assign(U&& other) {
-            value = static_cast<U&&>(other);
-            OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
-        }
     };
 #if OPTION_GCC
     #pragma GCC diagnostic pop
@@ -2140,7 +2122,7 @@ namespace impl {
     constexpr void option_assign_from_option(Self& self, Option&& other) {
         if (other.has_value()) {
             if (self.has_value()) {
-                self.assign(static_cast<Option&&>(other).value);
+                self.value = static_cast<Option&&>(other).value;
             } else {
                 self.construct(static_cast<Option&&>(other).value);
             }
@@ -2984,7 +2966,8 @@ public:
             base::value = base::ref_to_ptr(static_cast<U&&>(val));
         } else {
             if (has_value()) {
-                base::assign(static_cast<U&&>(val));
+                base::value = static_cast<U&&>(val);
+                OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
             } else {
                 base::construct(static_cast<U&&>(val));
             }
@@ -3026,7 +3009,8 @@ public:
         } else {
             if (other.has_value()) {
                 if (has_value()) {
-                    base::assign(static_cast<option<U>&&>(other).get());
+                    base::value = static_cast<option<U>&&>(other).get();
+                    OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
                 } else {
                     base::construct(static_cast<option<U>&&>(other).get());
                 }
