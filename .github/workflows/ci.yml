@@ -33,9 +33,9 @@ jobs:
             packages: 'llvm-18 g++-multilib'
             os: 'ubuntu-24.04'
             x64_options: >-
-              -fsanitize=undefined
+              -fsanitize=undefined,object-size
             options: >-
-              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
@@ -47,9 +47,9 @@ jobs:
             packages: 'llvm-18 g++-multilib'
             os: 'ubuntu-24.04'
             x64_options: >-
-              -fsanitize=undefined
+              -fsanitize=undefined,object-size
             options: >-
-              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
@@ -73,9 +73,9 @@ jobs:
             packages: 'llvm-16 g++-multilib'
             os: 'ubuntu-24.04'
             x64_options: >-
-              -fsanitize=undefined
+              -fsanitize=undefined,object-size
             options: >-
-              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
+              -fsanitize=address,vptr,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
