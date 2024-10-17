@@ -385,12 +385,10 @@ Where `{construct}` is a function that constructs contained object in place.
 - *Enabled* when the following are all `true`:
     - If `T` is a non-reference type:
       - `!std::is_same_v<remove_cvref<U>, opt::option<T>>`. ([`remove_cvref`](#remove_cvrefx))
-      - `(!std::is_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)`.
       - `is_initializable_from<T, U>` ([`is_initializable_from`](#is_initializable_fromx-y))
       - `std::is_assignable_v<T&, U>`.
     - Otherwise, if `T` is a reference type:
       - `!std::is_same_v<remove_cvref<U>, opt::option<T>>`.
-      - `(!std::is_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)`.
       - [`can_bind_reference<T, U>`](#can_bind_referencex-y).
 
 ---
