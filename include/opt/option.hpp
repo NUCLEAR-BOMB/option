@@ -1782,11 +1782,6 @@ template<class T, class>
 struct option_traits : impl::internal_option_traits<T> {};
 
 namespace impl {
-    // See https://github.com/microsoft/STL/pull/878#issuecomment-639696118
-    struct nontrivial_dummy {
-        constexpr nontrivial_dummy() noexcept {}
-    };
-
     struct construct_from_invoke_tag {
         explicit construct_from_invoke_tag() = default;
     };
@@ -1866,6 +1861,11 @@ namespace impl {
     template<class T, class U>
     using copy_reference_t = typename copy_reference<T, U>::type;
 
+    // See https://github.com/microsoft/STL/pull/878#issuecomment-639696118
+    struct nontrivial_dummy {
+        constexpr nontrivial_dummy() noexcept {}
+    };
+
 #if OPTION_MSVC
     #pragma warning(push)
     #pragma warning(disable : 4296) // 'operator' : expression is always false
@@ -1884,13 +1884,12 @@ namespace impl {
     template<class T>
     struct option_destruct_base<T, /*TriviallyDestructible=*/true, /*HasTraits=*/false> {
         union {
-            nontrivial_dummy dummy;
             std::remove_const_t<T> value;
         };
         bool has_value_flag;
 
         constexpr option_destruct_base() noexcept
-            : dummy{}, has_value_flag(false) {}
+            : has_value_flag(false) {}
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
@@ -1923,13 +1922,12 @@ namespace impl {
     template<class T>
     struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/false> {
         union {
-            nontrivial_dummy dummy;
             std::remove_const_t<T> value;
         };
         bool has_value_flag;
 
         constexpr option_destruct_base() noexcept
-            : dummy(), has_value_flag(false) {}
+            : has_value_flag(false) {}
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
@@ -1975,7 +1973,7 @@ namespace impl {
     template<class T>
     struct option_destruct_base<T, /*TriviallyDestructible=*/true, /*HasTraits=*/true> {
         union {
-            nontrivial_dummy dummy;
+            char dummy;
             std::remove_const_t<T> value;
         };
         using traits = opt::option_traits<std::remove_cv_t<T>>;
@@ -2038,7 +2036,7 @@ namespace impl {
     template<class T>
     struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/true> {
         union {
-            nontrivial_dummy dummy;
+            char dummy;
             std::remove_const_t<T> value;
         };
         using traits = opt::option_traits<std::remove_cv_t<T>>;

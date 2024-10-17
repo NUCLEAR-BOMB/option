@@ -109,12 +109,11 @@ void optional_float_assign(std::optional<float>* a) {
 }
 
 //$ @option_float_return:
-//$ movss xmm0, dword ptr <option_float_return()+0x8>
+//$ mov eax, 0x3f800000
 //$ ret
 
 //$ @option_float_return {gcc}:
 //$ mov eax, 0x3f800000
-//$ movd xmm0, eax
 //$ ret
 
 //$ @option_float_return {clang-cl}:
@@ -156,12 +155,11 @@ std::optional<float> optional_float_return() {
 }
 
 //$ @option_double_return:
-//$ movsd xmm0, qword ptr <option_double_return()+0x8>
+//$ movabs rax, 0x3ff0000000000000
 //$ ret
 
 //$ @option_double_return {gcc}:
 //$ movabs rax, 0x3ff0000000000000
-//$ movq xmm0, rax
 //$ ret
 
 //$ @option_double_return {msvc}:
@@ -590,14 +588,12 @@ std::optional<bool> optional_bool_return_none() {
     return std::nullopt;
 }
 
-// ???
 //$ @option_float_return_none:
-//$ movss xmm0, dword ptr <option_float_return_none()+0x8>
+//$ mov eax, 0xffbf69af
 //$ ret
 
 //$ @option_float_return_none {gcc}:
 //$ mov eax, 0xffbf69af
-//$ movd xmm0, eax
 //$ ret
 
 //$ @option_float_return_none {msvc}:
@@ -636,12 +632,11 @@ std::optional<float> optional_float_return_none() {
 }
 
 //$ @option_double_return_none:
-//$ movsd xmm0, qword ptr <option_double_return_none()+0x8>
+//$ movabs rax, -0x93860aa4f7671
 //$ ret
 
 //$ @option_double_return_none {gcc}:
 //$ movabs rax, -0x93860aa4f7671
-//$ movq xmm0, rax
 //$ ret
 
 //$ @option_double_return_none {msvc}:
