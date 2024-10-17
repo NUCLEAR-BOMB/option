@@ -1949,13 +1949,13 @@ namespace impl {
 
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value_flag) {
-                impl::destroy_at(OPTION_ADDRESSOF(value));
+                value.~T();
             }
         }
 
         constexpr void reset() {
             if (has_value_flag) {
-                impl::destroy_at(OPTION_ADDRESSOF(value));
+                value.~T();
                 has_value_flag = false;
             }
         }
@@ -2073,13 +2073,13 @@ namespace impl {
         }
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value()) {
-                impl::destroy_at(OPTION_ADDRESSOF(value));
+                value.~T();
             }
         }
 
         constexpr void reset() noexcept {
             if (has_value()) {
-                impl::destroy_at(OPTION_ADDRESSOF(value));
+                value.~T();
                 traits::set_level(OPTION_ADDRESSOF(value), 0);
                 OPTION_VERIFY(!has_value(), "After resetting, the value is in an empty state.");
             }
