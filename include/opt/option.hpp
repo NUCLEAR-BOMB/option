@@ -1921,7 +1921,6 @@ namespace impl {
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value_flag, "Value is non-empty");
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             has_value_flag = true;
         }
@@ -1970,7 +1969,6 @@ namespace impl {
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value_flag, "Value is non-empty");
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             has_value_flag = true;
         }
@@ -2038,7 +2036,6 @@ namespace impl {
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
@@ -2109,7 +2106,6 @@ namespace impl {
         }
         template<class... Args>
         constexpr void construct(Args&&... args) {
-            OPTION_VERIFY(!has_value(), "Value is non-empty");
             impl::construct_at(OPTION_ADDRESSOF(value), static_cast<Args&&>(args)...);
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
@@ -2781,7 +2777,6 @@ namespace impl {
         template<class T, class U>
         using from_value_assign = std::enable_if<
             is_not_same_v<remove_cvref<U>, opt::option<T>>
-            && (is_not_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)
             && is_initializable_from_v<T, U>
             && std::is_assignable_v<T&, U>
         >;
@@ -2832,7 +2827,6 @@ namespace impl {
         template<class T, class U>
         using from_value_assign = std::enable_if<
             is_not_same_v<remove_cvref<U>, opt::option<T>>
-            && (is_not_same_v<remove_cvref<U>, T> || !std::is_scalar_v<T>)
             && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
                 || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
                 && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>)))
@@ -2964,6 +2958,8 @@ public:
     constexpr option& operator=(U&& val) {
         if constexpr (std::is_reference_v<T>) {
             base::value = base::ref_to_ptr(static_cast<U&&>(val));
+        } else if constexpr (std::is_scalar_v<T>) {
+            base::construct(static_cast<U&&>(val));
         } else {
             if (has_value()) {
                 base::value = static_cast<U&&>(val);

@@ -9,10 +9,8 @@
 //$ ret
 
 //$ @option_int_assign {msvc}:
-//$ mov dword ptr [rsp + 0x8], 0x2
-//$ mov byte ptr [rsp + 0xc], 0x1
-//$ mov rax, qword ptr [rsp + 0x8]
-//$ mov qword ptr [rcx], rax
+//$ mov dword ptr [rcx], 0x2
+//$ mov byte ptr [rcx + 0x4], 0x1
 //$ ret
 
 //$ @option_int_assign {clang-cl}:
@@ -21,6 +19,28 @@
 //$ ret
 void option_int_assign(opt::option<int>* a) {
     *a = 2;
+}
+
+//$ @option_int_assign_option:
+//$ movzx eax, byte ptr [rsi + 0x4]
+//$ mov byte ptr [rdi + 0x4], al
+//$ mov eax, dword ptr [rsi]
+//$ mov dword ptr [rdi], eax
+//$ ret
+
+//$ @option_int_assign_option {gcc}:
+//$ mov eax, dword ptr [rsi]
+//$ mov dword ptr [rdi], eax
+//$ movzx eax, byte ptr [rsi + 0x4]
+//$ mov byte ptr [rdi + 0x4], al
+//$ ret
+
+//$ @option_int_assign_option {msvc,clang-cl}:
+//$ mov rax, qword ptr [rdx]
+//$ mov qword ptr [rcx], rax
+//$ ret
+void option_int_assign_option(opt::option<int>* a, opt::option<int>* b) {
+    *a = *b;
 }
 
 //$ @option_int_return:
