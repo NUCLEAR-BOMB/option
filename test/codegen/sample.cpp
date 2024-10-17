@@ -28,6 +28,13 @@ void option_int_assign(opt::option<int>* a) {
 //$ mov dword ptr [rdi], eax
 //$ ret
 
+//$ @option_int_assign_option {clang <15}:
+//$ mov al, byte ptr [rsi + 0x4]
+//$ mov byte ptr [rdi + 0x4], al
+//$ mov eax, dword ptr [rsi]
+//$ mov dword ptr [rdi], eax
+//$ ret
+
 //$ @option_int_assign_option {gcc}:
 //$ mov eax, dword ptr [rsi]
 //$ mov dword ptr [rdi], eax
