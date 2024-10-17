@@ -576,6 +576,9 @@ namespace impl {
         return first.get().*obj;
     }
 
+#if OPTION_IS_CXX20
+    using std::construct_at;
+#else
     template<class T, class... Args>
     constexpr void construct_at(T* ptr, Args&&... args) {
         if constexpr (impl::is_trivially_move_assignable_v<T>) {
@@ -585,22 +588,14 @@ namespace impl {
                 *ptr = T(static_cast<Args&&>(args)...);
             }
         } else {
-#if OPTION_IS_CXX20
-            std::construct_at(ptr, static_cast<Args&&>(args)...);
-#else
             if constexpr (std::is_aggregate_v<T>) {
                 ::new(static_cast<void*>(ptr)) T{static_cast<Args&&>(args)...};
             } else {
                 ::new(static_cast<void*>(ptr)) T(static_cast<Args&&>(args)...);
             }
-#endif
         }
     }
-
-    template<class T>
-    constexpr void destroy_at(T* ptr) {
-        ptr->~T();
-    }
+#endif
 
     template<class T, class Traits, class = std::uintmax_t>
     inline constexpr bool has_get_level_method = false;
