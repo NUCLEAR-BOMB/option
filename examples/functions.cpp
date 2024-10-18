@@ -96,6 +96,30 @@ void at() {
     std::cout << (opt::at(a, 2) == 3) << '\n'; //$ false
 }
 
+void flatten() {
+    opt::option<opt::option<int>> a = 1;
+
+    opt::option<int> b = opt::flatten(a);
+    std::cout << *b << '\n'; //$ 1
+
+    *a = opt::none;
+    std::cout << opt::flatten(a).has_value() << '\n'; //$ false
+    a = opt::none;
+    std::cout << opt::flatten(a).has_value() << '\n'; //$ false
+
+    opt::option<opt::option<opt::option<float>>> c = 2.f;
+
+    opt::option<float> d = opt::flatten(c);
+    std::cout << *d << '\n'; //$ 2
+
+    c.get().get() = opt::none;
+    std::cout << opt::flatten(c).has_value() << '\n'; //$ false
+    c.get() = opt::none;
+    std::cout << opt::flatten(c).has_value() << '\n'; //$ false
+    c = opt::none;
+    std::cout << opt::flatten(c).has_value() << '\n'; //$ false
+}
+
 int main() {
     std::cout << std::boolalpha;
     zip();
@@ -105,4 +129,5 @@ int main() {
     hash();
     io();
     at();
+    flatten();
 }

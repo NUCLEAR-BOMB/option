@@ -24,7 +24,6 @@
     - [`map_or_else`](#map_or_else)
     - [`ptr_or_null`](#ptr_or_null)
     - [`filter`](#filter)
-    - [`flatten`](#flatten)
     - [`and_then`](#and_then)
     - [`map`](#map)
     - [`or_else`](#or_else)
@@ -42,6 +41,7 @@
     - [`get`](#optget)
     - [`io`](#optio)
     - [`at`](#optat)
+    - [`flatten`](#optflatten)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
@@ -918,39 +918,6 @@ std::cout << a.filter(is_odd).has_value() << '\n'; // false
 
 ---
 
-### `flatten`
-
-```cpp
-constexpr typename T::value_type flatten() const&;
-constexpr typename T::value_type flatten() &&;
-```
-Converts `opt::option<opt::option<X>>` to `opt::option<X>`. \
-If this `opt::option` contains a value and the contained `opt::option` contains the values, return the underlying `opt::option` that contains a value. If they does not, returns an empty `opt::option`.
-- *Requirements:* the `opt::option` must contain a value of specialization of `opt::option`.
-
-Description in the simplified code equivalent:
-```cpp
-if (has_value() && get().has_value()) {
-    return get().get();
-}
-return opt::none;
-```
-
-```cpp
-opt::option<opt::option<int>> a = 1;
-
-opt::option<int> b = a.flatten();
-std::cout << *b << '\n'; // 1
-
-*a = opt::none;
-std::cout << a.flatten().has_value() << '\n'; // false
-
-a = opt::none;
-std::cout << a.flatten().has_value() << '\n'; // false
-```
-
----
-
 ### `and_then`
 
 ```cpp
@@ -1551,6 +1518,59 @@ a = {1, 2};
 std::cout << (opt::at(a, 0) == 1) << '\n'; // true
 std::cout << (opt::at(a, 1) == 2) << '\n'; // true
 std::cout << (opt::at(a, 2) == 3) << '\n'; // false
+```
+
+---
+
+### `opt::flatten`
+
+### `flatten`
+
+```cpp
+template<class Option>
+constexpr auto flatten(Option&& opt);
+```
+Flattens `opt::option` up to the first level (i.e. `opt::option<X>`, where `X` is not an `opt::option`).
+
+Converts:
+- `opt::option<opt::option<X>>` -> `opt::option<X>`,
+- `opt::option<opt::option<opt::option<X>>>` -> `opt::option<X>`,
+- `opt::option<opt::option<opt::option<opt::option<X>>>>` -> `opt::option<X>`,
+- ...
+<!-- -->
+- *Requirements:* the `Option` template parameter must be at least `opt::option<opt::option<X>>` (where `X` can be any type).
+
+Description in the simplified code equivalent to the second level of `opt::option` nesting:
+```cpp
+if (opt.has_value()) {
+    return opt.get();
+}
+return opt::none;
+```
+
+**Example:**
+```cpp
+opt::option<opt::option<int>> a = 1;
+
+opt::option<int> b = opt::flatten(a);
+std::cout << *b << '\n'; // 1
+
+*a = opt::none;
+std::cout << opt::flatten(a).has_value() << '\n'; // false
+a = opt::none;
+std::cout << opt::flatten(a).has_value() << '\n'; // false
+
+opt::option<opt::option<opt::option<float>>> c = 2.f;
+
+opt::option<float> d = opt::flatten(c);
+std::cout << *d << '\n'; // 2
+
+c.get().get() = opt::none;
+std::cout << opt::flatten(c).has_value() << '\n'; // false
+c.get() = opt::none;
+std::cout << opt::flatten(c).has_value() << '\n'; // false
+c = opt::none;
+std::cout << opt::flatten(c).has_value() << '\n'; // false
 ```
 
 ---

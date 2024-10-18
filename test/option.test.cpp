@@ -674,21 +674,33 @@ skip_map:
     }
 skip_filter:
     if (v0 == v1) { goto skip_flatten; }
-    SUBCASE(".flatten") {
+    SUBCASE("flatten") {
         auto a = opt::make_option(opt::make_option(v0));
         CHECK_EQ(**a, v0);
-        auto b = a.flatten();
+        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(a)), opt::option<T>>);
+        auto b = opt::flatten(a);
         CHECK_EQ(*b, v0);
 
         a = opt::option{opt::option<T>{opt::none}};
-        b = a.flatten();
+        b = opt::flatten(a);
         CHECK_UNARY_FALSE(b.has_value());
         a = opt::option<T>{opt::none};
-        b = a.flatten();
+        b = opt::flatten(a);
         CHECK_UNARY_FALSE(b.has_value());
         a = opt::none;
-        b = a.flatten();
+        b = opt::flatten(a);
         CHECK_UNARY_FALSE(b.has_value());
+
+        auto c = opt::make_option(opt::make_option(opt::make_option(v1)));
+        CHECK_EQ(***c, v1);
+        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(c)), opt::option<T>>);
+        CHECK_EQ(opt::flatten(c), v1);
+        (**c) = opt::none;
+        CHECK_EQ(opt::flatten(c), opt::none);
+        (*c) = opt::none;
+        CHECK_EQ(opt::flatten(c), opt::none);
+        c = opt::none;
+        CHECK_EQ(opt::flatten(c), opt::none);
     }
 skip_flatten:
     if (v0 == v1) { goto skip_map_or; }
