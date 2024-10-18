@@ -3224,13 +3224,13 @@ public:
     }
 
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) & { return impl::option::filter(*this, static_cast<F&&>(f)); }
+    [[nodiscard]] constexpr option filter(F&& f) & { return impl::option::filter(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) const& { return impl::option::filter(*this, static_cast<F&&>(f)); }
+    [[nodiscard]] constexpr option filter(F&& f) const& { return impl::option::filter(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) && { return impl::option::filter(static_cast<option&&>(*this), static_cast<F&&>(f)); }
+    [[nodiscard]] constexpr option filter(F&& f) && { return impl::option::filter(static_cast<option&&>(*this), static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> filter(F&& f) const&& { return impl::option::filter(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
+    [[nodiscard]] constexpr option filter(F&& f) const&& { return impl::option::filter(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
     template<class F>
     [[nodiscard]] constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, static_cast<F&&>(f)); }
@@ -3251,9 +3251,9 @@ public:
     [[nodiscard]] constexpr auto map(F&& f) const&& { return impl::option::map<T>(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
     template<class F>
-    [[nodiscard]] constexpr option<T> or_else(F&& f) const& { return impl::option::or_else<T>(*this, static_cast<F&&>(f)); }
+    [[nodiscard]] constexpr option or_else(F&& f) const& { return impl::option::or_else<T>(*this, static_cast<F&&>(f)); }
     template<class F>
-    [[nodiscard]] constexpr option<T> or_else(F&& f) && { return impl::option::or_else<T>(static_cast<option&&>(*this), static_cast<F&&>(f)); }
+    [[nodiscard]] constexpr option or_else(F&& f) && { return impl::option::or_else<T>(static_cast<option&&>(*this), static_cast<F&&>(f)); }
 
     [[nodiscard]] constexpr auto unzip() & { return impl::option::unzip(*this); }
     [[nodiscard]] constexpr auto unzip() const& { return impl::option::unzip(*this); }
