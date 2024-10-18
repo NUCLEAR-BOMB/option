@@ -115,19 +115,6 @@ void filter() {
     std::cout << a.filter(is_odd).has_value() << '\n'; //$ false
 }
 
-void flatten() {
-    opt::option<opt::option<int>> a = 1;
-
-    opt::option<int> b = a.flatten();
-    std::cout << *b << '\n'; //$ 1
-
-    *a = opt::none;
-    std::cout << a.flatten().has_value() << '\n'; //$ false
-
-    a = opt::none;
-    std::cout << a.flatten().has_value() << '\n'; //$ false
-}
-
 void and_then() {
     const auto do_something = [](int x) {
         return x == 0 ? opt::option<float>{1.5f} : opt::none;
@@ -240,7 +227,6 @@ int main() {
     map_or_else();
     ptr_or_null();
     filter();
-    flatten();
     and_then();
     map();
     or_else();

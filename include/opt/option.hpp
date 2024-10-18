@@ -2601,19 +2601,6 @@ namespace impl::option {
         return *static_cast<Self&&>(self);
     }
 
-    template<class ValueType, class Self>
-    constexpr auto flatten(Self&& self) {
-        // this is for a nice error message if Self is not an opt::option<opt::option<T>>
-        constexpr bool is_option_option = opt::is_option_v<ValueType>;
-        if constexpr (is_option_option) {
-            if (self.has_value() && self->has_value()) {
-                return ValueType{static_cast<Self&&>(self)->get()};
-            }
-            return ValueType{opt::none};
-        } else {
-            static_assert(is_option_option, "To flatten opt::option<T>, T must be opt::option<U>");
-        }
-    }
     template<class Self, class P>
     constexpr bool has_value_and(Self&& self, P&& predicate) {
         if (self.has_value()) {
@@ -3245,9 +3232,6 @@ public:
     template<class F>
     [[nodiscard]] constexpr option<T> filter(F&& f) const&& { return impl::option::filter(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
-    [[nodiscard]] constexpr auto flatten() const& { return impl::option::flatten<T>(*this); }
-    [[nodiscard]] constexpr auto flatten() && { return impl::option::flatten<T>(static_cast<option&&>(*this)); }
-
     template<class F>
     [[nodiscard]] constexpr auto and_then(F&& f) & { return impl::option::and_then(*this, static_cast<F&&>(f)); }
     template<class F>
@@ -3401,6 +3385,15 @@ template<class T>
 template<class T, class U>
 constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>) {
     left.swap(right);
+}
+
+template<class Self>
+[[nodiscard]] constexpr auto flatten(Self&& self) {
+    if constexpr (!opt::is_option_v<typename impl::remove_cvref<Self>::value_type::value_type>) {
+        return self.has_value() ? static_cast<Self&&>(self).get() : opt::none;
+    } else {
+        return self.has_value() ? flatten(static_cast<Self&&>(self).get()) : opt::none;
+    }
 }
 
 namespace impl {
