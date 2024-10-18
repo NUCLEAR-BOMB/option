@@ -3537,51 +3537,52 @@ template<class T>
     return opt::option<type>{static_cast<type>(static_cast<T&&>(container)[index])};
 }
 
-template<class T>
-[[nodiscard]] constexpr T operator|(const opt::option<T>& left, const T& right) {
-    return left.value_or(right);
+template<class T, class U, std::enable_if_t<!opt::is_option_v<impl::remove_cvref<U>>, int> = 0>
+[[nodiscard]] constexpr std::remove_cv_t<T> operator|(const opt::option<T>& left, U&& right) {
+    return left.value_or(static_cast<U&&>(right));
 }
-template<class T>
-[[nodiscard]] constexpr opt::option<T> operator|(const opt::option<T>& left, const opt::option<T>& right) {
-    if (left.has_value()) {
-        return left.get();
-    }
-    return right;
-}
-template<class T>
-[[nodiscard]] constexpr opt::option<T> operator|(const opt::option<T>& left, none_t) {
-    return left;
-}
-template<class T>
-[[nodiscard]] constexpr opt::option<T> operator|(none_t, const opt::option<T>& right) {
-    return right;
+template<class T, class U, std::enable_if_t<!opt::is_option_v<impl::remove_cvref<U>>, int> = 0>
+[[nodiscard]] constexpr std::remove_cv_t<T> operator|(opt::option<T>&& left, U&& right) {
+    return static_cast<opt::option<T>&&>(left).value_or(static_cast<U&&>(right));
 }
 
 template<class T>
-constexpr opt::option<T>& operator|=(opt::option<T>& left, const opt::option<T>& right) {
-    if (!left.has_value()) {
-        left = right;
+[[nodiscard]] constexpr opt::option<T> operator|(const opt::option<T>& left, const opt::option<T>& right) {
+    if (left.has_value()) {
+        return left;
+    } else {
+        return right;
     }
-    return left;
 }
 template<class T>
-constexpr opt::option<T>& operator|=(opt::option<T>& left, opt::option<T>&& right) {
-    if (!left.has_value()) {
-        left = static_cast<opt::option<T>&&>(right);
+[[nodiscard]] constexpr opt::option<T> operator|(opt::option<T>&& left, const opt::option<T>& right) {
+    if (left.has_value()) {
+        return static_cast<opt::option<T>&&>(left);
+    } else {
+        return right;
     }
-    return left;
 }
 template<class T>
-constexpr opt::option<T>& operator|=(opt::option<T>& left, const T& right) {
-    if (!left.has_value()) {
-        left = right;
+[[nodiscard]] constexpr opt::option<T> operator|(const opt::option<T>& left, opt::option<T>&& right) {
+    if (left.has_value()) {
+        return left;
+    } else {
+        return static_cast<opt::option<T>&&>(right);
     }
-    return left;
 }
 template<class T>
-constexpr opt::option<T>& operator|=(opt::option<T>& left, T&& right) {
+[[nodiscard]] constexpr opt::option<T> operator|(opt::option<T>&& left, opt::option<T>&& right) {
+    if (left.has_value()) {
+        return static_cast<opt::option<T>&&>(left);
+    } else {
+        return static_cast<opt::option<T>&&>(right);
+    }
+}
+
+template<class T, class U>
+constexpr opt::option<T>& operator|=(opt::option<T>& left, U&& right) {
     if (!left.has_value()) {
-        left = static_cast<T&&>(right);
+        left = static_cast<U&&>(right);
     }
     return left;
 }
@@ -3593,6 +3594,13 @@ template<class T, class U>
     }
     return opt::none;
 }
+template<class T, class U>
+[[nodiscard]] constexpr opt::option<U> operator&(const opt::option<T>& left, opt::option<U>&& right) {
+    if (left.has_value()) {
+        return static_cast<opt::option<U>&&>(right);
+    }
+    return opt::none;
+}
 
 template<class T>
 [[nodiscard]] constexpr opt::option<T> operator^(const opt::option<T>& left, const opt::option<T>& right) {
@@ -3601,6 +3609,36 @@ template<class T>
     }
     if (!left.has_value() && right.has_value()) {
         return right;
+    }
+    return opt::none;
+}
+template<class T>
+[[nodiscard]] constexpr opt::option<T> operator^(opt::option<T>&& left, const opt::option<T>& right) {
+    if (left.has_value() && !right.has_value()) {
+        return static_cast<opt::option<T>&&>(left);
+    }
+    if (!left.has_value() && right.has_value()) {
+        return right;
+    }
+    return opt::none;
+}
+template<class T>
+[[nodiscard]] constexpr opt::option<T> operator^(const opt::option<T>& left, opt::option<T>&& right) {
+    if (left.has_value() && !right.has_value()) {
+        return left;
+    }
+    if (!left.has_value() && right.has_value()) {
+        return static_cast<opt::option<T>&&>(right);
+    }
+    return opt::none;
+}
+template<class T>
+[[nodiscard]] constexpr opt::option<T> operator^(opt::option<T>&& left, opt::option<T>&& right) {
+    if (left.has_value() && !right.has_value()) {
+        return static_cast<opt::option<T>&&>(left);
+    }
+    if (!left.has_value() && right.has_value()) {
+        return static_cast<opt::option<T>&&>(right);
     }
     return opt::none;
 }

@@ -77,8 +77,6 @@ TEST_CASE_FIXTURE(values, ">=") {
 }
 TEST_CASE_FIXTURE(values, "|") {
     CHECK_EQ(A | 3, A);
-    CHECK_EQ(A | opt::none, A);
-    CHECK_EQ(opt::none | A, A);
 
     CHECK_EQ(A | E, A);
     CHECK_EQ(E | B, B);

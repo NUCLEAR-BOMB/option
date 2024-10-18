@@ -1583,10 +1583,16 @@ std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // tr
 ### `operator|`
 
 ```cpp
-template<class T>
-constexpr T operator|(const option<T>& left, const T& right);
+template<class T, class U>
+constexpr T operator|(const option<T>& left, U&& right);
+
+template<class T, class U>
+constexpr T operator|(option<T>&& left, U&& right);
 ```
-If `left` does not contain a value, returns `right` value instead. If `left` does, just returns `left`. \
+If `left` does not contain a value, returns `right` value instead. If `left` does, just returns `left`.
+
+- *Enabled* when `U` (without cv-qualifiers) is not `opt::option`.
+
 Same as [`opt::option<T>::value_or`](#value_or).
 
 ---
@@ -1594,32 +1600,25 @@ Same as [`opt::option<T>::value_or`](#value_or).
 ```cpp
 template<class T>
 constexpr option<T> operator|(const option<T>& left, const option<T>& right);
+
+template<class T>
+constexpr option<T> operator|(option<T>&& left, const option<T>& right);
+
+template<class T>
+constexpr option<T> operator|(const option<T>& left, option<T>&& right);
+
+template<class T>
+constexpr option<T> operator|(option<T>&& left, option<T>&& right);
 ```
 Returns `left` if it does contains a value, or returns `right` if `left` does not.
 
-Description in the code equivalent:
+Description in the simplified code equivalent:
 ```cpp
 if (left.has_value()) {
-    return left.get();
+    return left;
 }
 return right;
 ```
-
----
-
-```cpp
-template<class T>
-constexpr option<T> operator|(const option<T>& left, none_t);
-```
-Returns `left`.
-
----
-
-```cpp
-template<class T>
-constexpr option<T> operator|(none_t, const option<T>& right);
-```
-Returns `right`.
 
 **Example:**
 ```cpp
@@ -1649,39 +1648,16 @@ std::cout << *b << '\n'; // 5
 ### `operator|=`
 
 ```cpp
-template<class T>
-constexpr option<T>& operator|=(option<T>& left, const option<T>& right);
-
-template<class T>
-constexpr option<T>& operator|=(option<T>& left, const T& right);
+template<class T, class U>
+constexpr option<T>& operator|=(option<T>& left, U&& right);
 ```
 Copy assigns `right` to `left` if the `left` does not contain a value. \
 Returns a reference to `left`.
 
-Description in the code equivalent:
+Description in the simplified code equivalent:
 ```cpp
 if (!left.has_value()) {
     left = right;
-}
-return left;
-```
-
----
-
-```cpp
-template<class T>
-constexpr option<T>& operator|=(option<T>& left, option<T>&& right);
-
-template<class T>
-constexpr option<T>& operator|=(option<T>& left, T&& right);
-```
-Move assigns `right` to `left` if the `left` does not contain a value, \
-Returns a reference to `left`.
-
-Description in the code equivalent:
-```cpp
-if (!left.has_value()) {
-    left = std::move(right);
 }
 return left;
 ```
@@ -1693,10 +1669,13 @@ return left;
 ```cpp
 template<class T, class U>
 constexpr option<U> operator&(const option<T>& left, const option<U>& right);
+
+template<class T, class U>
+constexpr option<U> operator&(const option<T>& left, option<U>&& right);
 ```
 Returns an empty `opt::option` if `left` does not contain a value, or if `left` does, returns `right`.
 
-Description in the code equivalent:
+Description in the simplified code equivalent:
 ```cpp
 if (left.has_value()) {
     return right;
@@ -1726,10 +1705,19 @@ std::cout << (a & b).has_value() << '\n'; // false
 ```cpp
 template<class T>
 constexpr option<T> operator^(const option<T>& left, const option<T>& right);
+
+template<class T>
+constexpr option<T> operator^(option<T>&& left, const option<T>& right);
+
+template<class T>
+constexpr option<T> operator^(const option<T>& left, option<T>&& right);
+
+template<class T>
+constexpr option<T> operator^(option<T>&& left, option<T>&& right);
 ```
 Returns `opt::option` that contains a value if exactly one of `left` and `right` contains a value, otherwise, returns an empty `opt::option`.
 
-Description in the code equivalent:
+Description in the simplified code equivalent:
 ```cpp
 if (left.has_value() && !right.has_value()) {
     return left;
