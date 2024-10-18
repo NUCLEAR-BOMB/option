@@ -4,6 +4,7 @@
 #include <tuple>
 #include <vector>
 #include <functional>
+#include <array>
 
 void zip() {
     opt::option<int> a{1};
@@ -120,6 +121,22 @@ void flatten() {
     std::cout << opt::flatten(c).has_value() << '\n'; //$ false
 }
 
+void unzip() {
+    opt::option<std::tuple<int, float>> a{1, 2.5f};
+
+    std::tuple<opt::option<int>, opt::option<float>> unzipped_a;
+    unzipped_a = opt::unzip(a);
+
+    std::cout << std::get<0>(unzipped_a).get() << '\n'; //$ 1
+    std::cout << std::get<1>(unzipped_a).get() << '\n'; //$ 2.5
+
+    opt::option<std::array<int, 3>> b = opt::none;
+
+    std::array<opt::option<int>, 3> unzipped_b = opt::unzip(b);
+
+    std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; //$ true
+}
+
 int main() {
     std::cout << std::boolalpha;
     zip();
@@ -130,4 +147,5 @@ int main() {
     io();
     at();
     flatten();
+    unzip();
 }

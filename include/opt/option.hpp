@@ -1799,7 +1799,12 @@ namespace impl {
     inline constexpr bool is_tuple_like_v = is_tuple_like<T>::value;
 
     template<class Tuple>
-    struct tuple_like_of_options_t;
+    struct tuple_like_of_options_t {
+        static_assert(!sizeof(Tuple),
+            "To unzip opt::option<T>, T must be tuple-like."
+            "A type T that satisfies tuple-like must be a specialization of "
+            "std::array, std::pair, std::tuple");
+    };
 
     template<class... Ts>
     struct tuple_like_of_options_t<std::tuple<Ts...>> {
@@ -2617,33 +2622,6 @@ namespace impl::option {
         return static_cast<Self&&>(self);
     }
 
-    template<class TupleLikeOfOptions, class Self, std::size_t... Idx>
-    constexpr auto unzip_impl(Self&& self, std::index_sequence<Idx...>) {
-        if (self.has_value()) {
-            return TupleLikeOfOptions{
-                opt::option{std::get<Idx>(static_cast<Self&&>(self).get())}...
-            };
-        } else {
-            return TupleLikeOfOptions{
-                opt::option<std::tuple_element_t<Idx, typename remove_cvref<Self>::value_type>>{opt::none}...
-            };
-        }
-    }
-
-    template<class Self>
-    constexpr auto unzip(Self&& self) {
-        using tuple_like_type = impl::remove_cvref<typename impl::remove_cvref<Self>::value_type>;
-        static_assert(is_tuple_like_v<tuple_like_type>,
-            "To unzip opt::option<T>, T must be tuple-like."
-            "A type T that satisfies tuple-like must be a specialization of "
-            "std::array, std::pair, std::tuple");
-
-        return unzip_impl<impl::tuple_like_of_options<tuple_like_type>>(
-            static_cast<Self&&>(self),
-            std::make_index_sequence<std::tuple_size<tuple_like_type>::value>{}
-        );
-    }
-
     template<class Self, class F>
     constexpr impl::remove_cvref<Self> filter(Self&& self, F&& f) {
         if (self.has_value() && bool(impl::invoke(static_cast<F&&>(f), self.get()))) {
@@ -3255,11 +3233,6 @@ public:
     template<class F>
     [[nodiscard]] constexpr option or_else(F&& f) && { return impl::option::or_else<T>(static_cast<option&&>(*this), static_cast<F&&>(f)); }
 
-    [[nodiscard]] constexpr auto unzip() & { return impl::option::unzip(*this); }
-    [[nodiscard]] constexpr auto unzip() const& { return impl::option::unzip(*this); }
-    [[nodiscard]] constexpr auto unzip() && { return impl::option::unzip(static_cast<option&&>(*this)); }
-    [[nodiscard]] constexpr auto unzip() const&& { return impl::option::unzip(static_cast<const option&&>(*this)); }
-
     template<class U>
     constexpr void swap(option<U>& other) noexcept(impl::option::nothrow_swap<T, U>) {
         using std::swap;
@@ -3394,6 +3367,31 @@ template<class Self>
     } else {
         return self.has_value() ? flatten(static_cast<Self&&>(self).get()) : opt::none;
     }
+}
+
+namespace impl {
+    template<class TupleLikeType, class Self, std::size_t... Idx>
+    constexpr auto unzip_impl(Self&& self, std::index_sequence<Idx...>) {
+        using tuple_like_of_options = impl::tuple_like_of_options<TupleLikeType>;
+        if (self.has_value()) {
+            return tuple_like_of_options{
+                opt::option<std::tuple_element_t<Idx, TupleLikeType>>{std::get<Idx>(static_cast<Self&&>(self).get())}...
+            };
+        } else {
+            return tuple_like_of_options{
+                opt::option<std::tuple_element_t<Idx, TupleLikeType>>{}...
+            };
+        }
+    }
+}
+
+template<class Self>
+[[nodiscard]] constexpr auto unzip(Self&& self) {
+    using tuple_like_type = impl::remove_cvref<typename impl::remove_cvref<Self>::value_type>;
+    return impl::unzip_impl<tuple_like_type>(
+        static_cast<Self&&>(self),
+        std::make_index_sequence<std::tuple_size<tuple_like_type>::value>{}
+    );
 }
 
 namespace impl {

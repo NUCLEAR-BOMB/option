@@ -161,25 +161,6 @@ void or_else() {
     ).has_value() << '\n'; //$ will print false
 }
 
-void unzip() {
-    // unzip() works for std::tuple, std::pair, std::array
-
-    opt::option<std::tuple<int, float>> a{1, 2.5f};
-
-    std::tuple<opt::option<int>, opt::option<float>> unzipped_a;
-    unzipped_a = a.unzip();
-
-    std::cout << std::get<0>(unzipped_a).get() << '\n'; //$ 1
-    std::cout << std::get<1>(unzipped_a).get() << '\n'; //$ 2.5
-
-    opt::option<std::array<int, 3>> b = opt::none;
-
-    std::array<opt::option<int>, 3> unzipped_b;
-    unzipped_b = b.unzip();
-
-    std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; //$ true
-}
-
 void begin() {
     opt::option<int> a = 1;
 
@@ -230,7 +211,6 @@ int main() {
     and_then();
     map();
     or_else();
-    unzip();
     begin();
     end();
 }

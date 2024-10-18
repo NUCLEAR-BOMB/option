@@ -28,7 +28,6 @@
     - [`map`](#map)
     - [`or_else`](#or_else)
     - [`assume_has_value`](#assume_has_value)
-    - [`unzip`](#unzip)
     - [`swap`](#swap)
     - [`begin`](#begin)
     - [`end`](#end)
@@ -42,6 +41,7 @@
     - [`io`](#optio)
     - [`at`](#optat)
     - [`flatten`](#optflatten)
+    - [`unzip`](#optunzip)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
@@ -1041,40 +1041,6 @@ std::cout << a.or_else(
 
 ---
 
-### `unzip`
-
-```cpp
-constexpr auto unzip() &;
-constexpr auto unzip() const&;
-constexpr auto unzip() &&;
-constexpr auto unzip() const&&;
-```
-Unzips `opt::option` that contains a *tuple like *type, into the *tuple like* object that contains values that wrapped into `opt::option`. \
-If `opt::option` contains the value, return *tuple like* object that contains `opt::option`s of the *tuple like* object contained types. If `opt::option` does not contain the value, return *tuple like* object that contains empty `opt::option`s.
-- *Requirements:* the contained value (without cv-qualifiers) must be a specialization of *tuple like* object.
-
-Where *tuple like* object is a type of specialization of `std::array`, `std::pair` or `std::tuple`.
-
-**Example:**
-```cpp
-opt::option<std::tuple<int, float>> a{1, 2.5f};
-
-std::tuple<opt::option<int>, opt::option<float>> unzipped_a;
-unzipped_a = a.unzip();
-
-std::cout << std::get<0>(unzipped_a).get() << '\n'; // 1
-std::cout << std::get<1>(unzipped_a).get() << '\n'; // 2.5
-
-opt::option<std::array<int, 3>> b = opt::none;
-
-std::array<opt::option<int>, 3> unzipped_b;
-unzipped_b = b.unzip();
-
-std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // true
-```
-
----
-
 ### `swap`
 
 ```cpp
@@ -1524,8 +1490,6 @@ std::cout << (opt::at(a, 2) == 3) << '\n'; // false
 
 ### `opt::flatten`
 
-### `flatten`
-
 ```cpp
 template<class Option>
 constexpr auto flatten(Option&& opt);
@@ -1571,6 +1535,47 @@ c.get() = opt::none;
 std::cout << opt::flatten(c).has_value() << '\n'; // false
 c = opt::none;
 std::cout << opt::flatten(c).has_value() << '\n'; // false
+```
+
+---
+
+### `opt::unzip`
+
+```cpp
+template<class Option>
+constexpr auto unzip(Option&& opt);
+```
+Unzips `opt::option` that contains a *tuple like* type, into the *tuple like* object that contains values that wrapped into `opt::option` (e.g. `opt::option<std::pair<int, float>>` -> `std::pair<opt::option<int>, opt::option<float>>`).
+
+If `opt::option` contains the value, return *tuple like* object that contains `opt::option`s of the *tuple like* object contained types. If `opt::option` does not contain the value, return *tuple like* object that contains empty `opt::option`s.
+- *Requirements:* the `opt` contained value (without cv-qualifiers) must be *tuple like* object.
+
+*tuple like* type (without cv-qualifiers) is a specialization of `std::array`, `std::pair` or `std::tuple`.
+
+Description in the simplified code equivalent for `std::pair`:
+```cpp
+if (opt.has_value()) {
+    return std::pair{opt::option{opt->first}, opt::option{opt->second}};
+} else {
+    return std::pair{opt::option<First>{opt::none}, opt::option<Second>{opt::none}};
+}
+```
+
+**Example:**
+```cpp
+opt::option<std::tuple<int, float>> a{1, 2.5f};
+
+std::tuple<opt::option<int>, opt::option<float>> unzipped_a;
+unzipped_a = opt::unzip(a);
+
+std::cout << std::get<0>(unzipped_a).get() << '\n'; // 1
+std::cout << std::get<1>(unzipped_a).get() << '\n'; // 2.5
+
+opt::option<std::array<int, 3>> b = opt::none;
+
+std::array<opt::option<int>, 3> unzipped_b = opt::unzip(b);
+
+std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // true
 ```
 
 ---

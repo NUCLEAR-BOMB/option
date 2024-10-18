@@ -794,12 +794,12 @@ skip_take_if:
         CHECK_EQ(a, v3);
     }
 skip_inspect:
-    SUBCASE(".unzip") {
+    SUBCASE("unzip") {
         SUBCASE("std::tuple") {
             opt::option a{std::tuple{v0, v1, v2, v3}};
             CHECK_UNARY(a.has_value());
 
-            auto b = a.unzip();
+            auto b = opt::unzip(a);
             CHECK_UNARY(std::is_same_v<decltype(b), std::tuple<
                 opt::option<T>, opt::option<T>, opt::option<T>, opt::option<T>
             >>);
@@ -815,7 +815,7 @@ skip_inspect:
             CHECK_EQ(*b4, v3);
 
             a.reset();
-            auto c = a.unzip();
+            auto c = opt::unzip(a);
             auto& [c1, c2, c3, c4] = c;
             CHECK_UNARY_FALSE(c1.has_value());
             CHECK_UNARY_FALSE(c2.has_value());
@@ -826,7 +826,7 @@ skip_inspect:
             opt::option a{std::pair{v0, v1}};
             CHECK_UNARY(a.has_value());
 
-            auto b = a.unzip();
+            auto b = opt::unzip(a);
             CHECK_UNARY(std::is_same_v<decltype(b), std::pair<opt::option<T>, opt::option<T>>>);
             auto& [b1, b2] = b;
 
@@ -836,7 +836,7 @@ skip_inspect:
             CHECK_EQ(*b2, v1);
 
             a.reset();
-            auto c = a.unzip();
+            auto c = opt::unzip(a);
             auto& [c1, c2] = c;
             CHECK_UNARY_FALSE(c1.has_value());
             CHECK_UNARY_FALSE(c2.has_value());
@@ -845,7 +845,7 @@ skip_inspect:
             opt::option a{std::array{v0, v1, v2}};
             CHECK_UNARY(a.has_value());
 
-            auto b = a.unzip();
+            auto b = opt::unzip(a);
             CHECK_UNARY(std::is_same_v<decltype(b), std::array<opt::option<T>, 3>>);
             auto& [b1, b2, b3] = b;
 
@@ -857,7 +857,7 @@ skip_inspect:
             CHECK_EQ(*b3, v2);
 
             a.reset();
-            auto c = a.unzip();
+            auto c = opt::unzip(a);
             auto& [c1, c2, c3] = c;
             CHECK_UNARY_FALSE(c1.has_value());
             CHECK_UNARY_FALSE(c2.has_value());
