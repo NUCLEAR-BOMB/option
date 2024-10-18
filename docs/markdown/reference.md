@@ -30,7 +30,6 @@
     - [`or_else`](#or_else)
     - [`assume_has_value`](#assume_has_value)
     - [`unzip`](#unzip)
-    - [`replace`](#replace)
     - [`swap`](#swap)
     - [`begin`](#begin)
     - [`end`](#end)
@@ -1105,41 +1104,6 @@ std::array<opt::option<int>, 3> unzipped_b;
 unzipped_b = b.unzip();
 
 std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // true
-```
-
----
-
-### `replace`
-
-```cpp
-template<class U>
-constexpr option<T> replace(U&& value) &;
-```
-Replaces the contained value by a provided `value` and returns the old `opt::option` contained value.
-
-Description in the code equivalent:
-```cpp
-option tmp{std::move(*this)};
-reset();
-{construct}(std::forward<U>(value));
-return tmp;
-```
-Where `{construct}` is a function that constructs contained object in place.
-
-**Example:**
-```cpp
-opt::option<int> a = 1;
-
-opt::option<int> b = a.replace(2);
-
-std::cout << *a << '\n'; // 2
-std::cout << *b << '\n'; // 1
-
-a = opt::none;
-b = a.replace(3);
-
-std::cout << *a << '\n'; // 3
-std::cout << b.has_value() << '\n'; // false
 ```
 
 ---

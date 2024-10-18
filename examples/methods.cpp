@@ -193,21 +193,6 @@ void unzip() {
     std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; //$ true
 }
 
-void replace() {
-    opt::option<int> a = 1;
-
-    opt::option<int> b = a.replace(2);
-
-    std::cout << *a << '\n'; //$ 2
-    std::cout << *b << '\n'; //$ 1
-
-    a = opt::none;
-    b = a.replace(3);
-
-    std::cout << *a << '\n'; //$ 3
-    std::cout << b.has_value() << '\n'; //$ false
-}
-
 void begin() {
     opt::option<int> a = 1;
 
@@ -260,7 +245,6 @@ int main() {
     map();
     or_else();
     unzip();
-    replace();
     begin();
     end();
 }

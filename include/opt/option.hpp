@@ -3277,16 +3277,6 @@ public:
     [[nodiscard]] constexpr auto unzip() const&& { return impl::option::unzip(static_cast<const option&&>(*this)); }
 
     template<class U>
-    OPTION_RETURN_TYPESTATE(unknown) OPTION_SET_TYPESTATE(unconsumed)
-    [[nodiscard]] constexpr option<T> replace(U&& val) {
-        option tmp{static_cast<option&&>(*this)};
-        // should call the destructor after moving, because moving does not end lifetime
-        base::reset();
-        base::construct(static_cast<U&&>(val));
-        return tmp;
-    }
-
-    template<class U>
     constexpr void swap(option<U>& other) noexcept(impl::option::nothrow_swap<T, U>) {
         using std::swap;
         if (!has_value() && !other.has_value()) {

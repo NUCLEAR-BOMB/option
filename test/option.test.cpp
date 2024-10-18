@@ -981,15 +981,6 @@ skip_inspect:
         CHECK_EQ(b, v0);
     }
 skip_zip_with:
-    SUBCASE(".replace") {
-        opt::option a{std::make_unique<T>(v0)};
-
-        auto c = a.replace(std::make_unique<T>(v1));
-        CHECK_UNARY(c.has_value());
-        CHECK_EQ(**c, v0);
-        CHECK_UNARY(a.has_value());
-        CHECK_EQ(**a, v1);
-    }
     SUBCASE("opt::from_nullable") {
         T a = v0;
         T* ptr = &a;

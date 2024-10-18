@@ -326,42 +326,6 @@ TEST_CASE("std::exchange") {
     }
 }
 
-TEST_CASE(".replace") {
-    opt::option<lifetime_tester> var0;
-
-    var0.reset();
-    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
-        (void)var0.replace(1);
-    }
-    var0.emplace();
-    LIFETIME_CHECK(0, 1, 2, 0, 1, 0, 0) {
-        (void)var0.replace(1);
-    }
-
-    opt::option<lifetime_tester> var1;
-
-    var0.reset();
-    var1.reset();
-    LIFETIME_CHECK(0, 1, 0, 0, 0, 0, 0) {
-        var1 = var0.replace(1);
-    }
-    var0.reset();
-    var1.emplace();
-    LIFETIME_CHECK(0, 1, 1, 0, 0, 0, 0) {
-        var1 = var0.replace(1);
-    }
-    var0.emplace();
-    var1.reset();
-    LIFETIME_CHECK(0, 1, 2, 0, 2, 0, 0) {
-        var1 = var0.replace(1);
-    }
-    var0.emplace();
-    var1.emplace();
-    LIFETIME_CHECK(0, 1, 2, 0, 1, 0, 1) {
-        var1 = var0.replace(1);
-    }
-}
-
 TEST_CASE(".map") {
     opt::option<int> ivar;
 
