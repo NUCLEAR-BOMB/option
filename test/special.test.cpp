@@ -1733,6 +1733,59 @@ TEST_CASE("opt::at") {
     CHECK_EQ(b[0], 'z');
 }
 
+TEST_CASE("opt::at_front") {
+    std::vector<int> a{{1, 2, 3}};
+    CHECK_EQ(a.size(), 3);
+
+    CHECK_EQ(opt::at_front(a), 1);
+    *opt::at_front(a) = 2;
+    CHECK_EQ(a[0], 2);
+    CHECK_EQ(a.front(), 2);
+    CHECK_EQ(opt::at_front(a), 2);
+
+    a.clear();
+    CHECK_EQ(a.size(), 0);
+    CHECK_EQ(opt::at_front(a), opt::none);
+    CHECK_NE(opt::at_front(a), 2);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_front(a)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_front(std::as_const(a))), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_front(as_rvalue(a))), opt::option<int&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_front(as_const_rvalue(a))), opt::option<const int&&>>);
+
+    std::string b = "123";
+    CHECK_EQ(b.size(), 3);
+
+    CHECK_EQ(opt::at_front(b), '1');
+    *opt::at_front(b) = '2';
+    CHECK_EQ(b[0], '2');
+    CHECK_EQ(b.front(), '2');
+    CHECK_EQ(opt::at_front(b), '2');
+
+    b.clear();
+    CHECK_EQ(b.size(), 0);
+    CHECK_EQ(opt::at_front(b), opt::none);
+}
+
+TEST_CASE("opt::at_back") {
+    std::vector<int> a{{4, 5, 6}};
+    CHECK_EQ(a.size(), 3);
+
+    CHECK_EQ(opt::at_back(a), 6);
+    *opt::at_back(a) = 7;
+    CHECK_EQ(a[2], 7);
+    CHECK_EQ(a.back(), 7);
+    CHECK_EQ(opt::at_back(a), 7);
+
+    a.clear();
+    CHECK_EQ(opt::at_back(a), opt::none);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_back(a)), opt::option<int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_back(std::as_const(a))), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_back(as_rvalue(a))), opt::option<int&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at_back(as_const_rvalue(a))), opt::option<const int&&>>);
+}
+
 TEST_CASE("option<bool>") {
     const opt::option<bool> a{false};
     const opt::option<int> b{a};

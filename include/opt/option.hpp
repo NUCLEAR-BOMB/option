@@ -3537,6 +3537,24 @@ template<class T>
     return opt::option<type>{static_cast<type>(static_cast<T&&>(container)[index])};
 }
 
+template<class T>
+[[nodiscard]] OPTION_PURE constexpr auto at_front(T&& container OPTION_LIFETIMEBOUND) noexcept {
+    using type = impl::copy_reference_t<decltype(static_cast<T&&>(container).front()), T>;
+    if (container.size() == 0) {
+        return opt::option<type>{};
+    }
+    return opt::option<type>{static_cast<type>(static_cast<T&&>(container).front())};
+}
+
+template<class T>
+[[nodiscard]] OPTION_PURE constexpr auto at_back(T&& container OPTION_LIFETIMEBOUND) noexcept {
+    using type = impl::copy_reference_t<decltype(static_cast<T&&>(container).back()), T>;
+    if (container.size() == 0) {
+        return opt::option<type>{};
+    }
+    return opt::option<type>{static_cast<type>(static_cast<T&&>(container).back())};
+}
+
 template<class T, class U, std::enable_if_t<!opt::is_option_v<impl::remove_cvref<U>>, int> = 0>
 [[nodiscard]] constexpr std::remove_cv_t<T> operator|(const opt::option<T>& left, U&& right) {
     return left.value_or(static_cast<U&&>(right));

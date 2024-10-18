@@ -40,6 +40,8 @@
     - [`get`](#optget)
     - [`io`](#optio)
     - [`at`](#optat)
+    - [`at_front`](#optat_front)
+    - [`at_back`](#optat_back)
     - [`flatten`](#optflatten)
     - [`unzip`](#optunzip)
     - [`operator|`](#operator-1)
@@ -1455,7 +1457,7 @@ std::cout << opt::io(a, "empty") << '\n'; // 1
 template<class T>
 constexpr auto at(T&& container /*lifetimebound*/, std::size_t index) noexcept;
 ```
-Returns the reference option (e.g. `opt::option<T&>`) to an holded value at `index` of the `container` if `index` is a valid index (bounds checking is performed).
+Returns the reference option (e.g. `opt::option<T&>`) to an held value at `index` of the `container` if `index` is a valid index (bounds checking is performed).
 Otherwise, returns `opt::none`.
 
 In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
@@ -1485,6 +1487,64 @@ std::cout << (opt::at(a, 0) == 1) << '\n'; // true
 std::cout << (opt::at(a, 1) == 2) << '\n'; // true
 std::cout << (opt::at(a, 2) == 3) << '\n'; // false
 ```
+
+---
+
+### `opt::at_front`
+
+```cpp
+template<class T>
+constexpr auto at_front(T&& container /*lifetimebound*/) noexcept;
+```
+Returns the reference option (e.g. `opt::option<T&>`) to the first element in the `container` if it is not empty (bounds checking is performed).
+Otherwise, returns `opt::none`.
+
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+Uses the `.size()` to check if container is empty (`container.size() == 0`)
+and `.front()` to access first element (`std::forward<T>(container).front()`).
+
+None of these function should throw any exceptions.
+
+Description in the simplified code equivalent:
+```cpp
+if (container.size() == 0) {
+    return opt::none;
+}
+return container.front();
+```
+
+> [!NOTE]
+> Calling `opt::at_front` on an empty container **does not** causes undefined behavior.
+
+---
+
+### `opt::at_back`
+
+```cpp
+template<class T>
+constexpr auto at_back(T&& container /*lifetimebound*/) noexcept;
+```
+Returns the reference option (e.g. `opt::option<T&>`) to the last element in the `container` if it is not empty (bounds checking is performed).
+Otherwise, returns `opt::none`.
+
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the first parameter of these overloads.
+
+Uses the `.size()` to check if container is empty (`container.size() == 0`)
+and `.back()` to access last element (`std::forward<T>(container).back()`).
+
+None of these function should throw any exceptions.
+
+Description in the simplified code equivalent:
+```cpp
+if (container.size() == 0) {
+    return opt::none;
+}
+return container.back();
+```
+
+> [!NOTE]
+> Calling `opt::at_back` on an empty container **does not** causes undefined behavior.
 
 ---
 
