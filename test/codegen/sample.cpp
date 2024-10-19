@@ -684,24 +684,12 @@ std::optional<double> optional_double_return_none() {
 
 //$ @option_bool_has_value:
 //$ cmp byte ptr [rdi], 0x2
-//$ setb al
+//$ setne al
 //$ ret
 
-//$ @option_bool_has_value {gcc}:
-//$ cmp byte ptr [rdi], 0x1
-//$ setbe al
-//$ ret
-
-//$ @option_bool_has_value {msvc}:
-//$ movzx eax, byte ptr [rcx]
-//$ sub al, 0x2
-//$ cmp al, -0x2
-//$ setae al
-//$ ret
-
-//$ @option_bool_has_value {clang-cl}:
+//$ @option_bool_has_value {msvc,clang-cl}:
 //$ cmp byte ptr [rcx], 0x2
-//$ setb al
+//$ setne al
 //$ ret
 bool option_bool_has_value(opt::option<bool>* a) {
     return a->has_value();
@@ -723,10 +711,8 @@ bool optional_bool_has_value(std::optional<bool>* a) {
 }
 
 //$ @option_float_has_value:
-//$ mov eax, 0x409551
-//$ add eax, dword ptr [rdi]
-//$ cmp eax, 0xffffff00
-//$ setb al
+//$ cmp dword ptr [rdi], 0xffbf69af
+//$ setne al
 //$ ret
 
 //$ @option_float_has_value {clang 13..<14}:
@@ -743,25 +729,15 @@ bool optional_bool_has_value(std::optional<bool>* a) {
 //$ seta al
 //$ ret
 
-//$ @option_float_has_value {gcc}:
-//$ mov eax, dword ptr [rdi]
-//$ add eax, 0x409651
-//$ cmp eax, 0xff
-//$ seta al
-//$ ret
-
 //$ @option_float_has_value {msvc}:
 //$ mov eax, dword ptr [rcx]
 //$ add eax, 0x409651
-//$ cmp eax, 0x100
-//$ setae al
+//$ setne al
 //$ ret
 
 //$ @option_float_has_value {clang-cl}:
-//$ mov eax, 0x409551
-//$ add eax, dword ptr [rcx]
-//$ cmp eax, 0xffffff00
-//$ setb al
+//$ cmp dword ptr [rcx], 0xffbf69af
+//$ setne al
 //$ ret
 bool option_float_has_value(opt::option<float>* a) {
     return a->has_value();
@@ -783,10 +759,9 @@ bool optional_float_has_value(std::optional<float>* a) {
 }
 
 //$ @option_double_has_value:
-//$ movabs rax, 0x93860aa4f7571
-//$ add rax, qword ptr [rdi]
-//$ cmp rax, -0x100
-//$ setb al
+//$ movabs rax, -0x93860aa4f7671
+//$ cmp qword ptr [rdi], rax
+//$ setne al
 //$ ret
 
 //$ @option_double_has_value {clang 13..<14}:
@@ -810,26 +785,17 @@ bool optional_float_has_value(std::optional<float>* a) {
 //$ seta al
 //$ ret
 
-//$ @option_double_has_value {gcc}:
-//$ movabs rax, 0x93860aa4f7671
-//$ add rax, qword ptr [rdi]
-//$ cmp rax, 0xff
-//$ seta al
-//$ ret
-
 //$ @option_double_has_value {msvc}:
 //$ mov rax, qword ptr [rcx]
 //$ movabs rcx, 0x93860aa4f7671
 //$ add rax, rcx
-//$ cmp rax, 0x100
-//$ setae al
+//$ setne al
 //$ ret
 
 //$ @option_double_has_value {clang-cl}:
-//$ movabs rax, 0x93860aa4f7571
-//$ add rax, qword ptr [rcx]
-//$ cmp rax, -0x100
-//$ setb al
+//$ movabs rax, -0x93860aa4f7671
+//$ cmp qword ptr [rcx], rax
+//$ setne al
 //$ ret
 bool option_double_has_value(opt::option<double>* a) {
     return a->has_value();
