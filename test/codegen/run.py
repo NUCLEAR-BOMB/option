@@ -65,7 +65,7 @@ def parse_expected_disassembly(file_path):
                 if section is not None:
                     expected_disasm.append(section)
 
-                section = (fn_name, compilers and compilers.lower(), [])
+                section = ((idx, fn_name), compilers and compilers.lower(), [])
             else:
                 section[2].append((idx, exp + '\n'))
         if section is not None:
@@ -132,17 +132,17 @@ def compare_disassembly(expected, received):
 
     return has_mismatch, total_difference
 
-def check_disassembly(expected, received, specified_conditions):
+def check_disassembly(expected, received, specified_conditions, file_path):
     is_successful = True
     checked_function = 0
 
-    for fn_name, conditions, expected_asm in expected:
+    for (fn_line, fn_name), conditions, expected_asm in expected:
         if (resulted_asm := received.get(fn_name, None)) is None:
             print('\nUnknown function name: "{}"\nDid you mean: "{}"?\n'.format(fn_name, '", "'.join(difflib.get_close_matches(fn_name, received.keys(), n=3))))
             sys.exit(1)
 
         if conditions is None:
-            if any(match_condition(specified_conditions, other_conditions) for _, other_conditions, _ in filter(lambda x: x[0] == fn_name and x[1] is not None, expected)):
+            if any(match_condition(specified_conditions, other_conditions) for _, other_conditions, _ in filter(lambda x: x[0][1] == fn_name and x[1] is not None, expected)):
                 continue
                 
         elif not match_condition(specified_conditions, conditions):
@@ -155,7 +155,7 @@ def check_disassembly(expected, received, specified_conditions):
 
         has_mismatch, difference = compare_disassembly(expected_asm, resulted_asm)
         if has_mismatch:
-            print('{}:\n{}'.format(fn_name, ''.join(difference_with_line_numbers(difference))))
+            print('{}({}): {}:\n{}'.format(file_path, fn_line, fn_name, ''.join(difference_with_line_numbers(difference))))
             is_successful = False
 
     if not is_successful:
@@ -175,7 +175,7 @@ def main():
     raw_disassembly = llvm_objdump_disassembly(llvm_objdump_path, target_path)
     received_disassembly = parse_disassembly(raw_disassembly)
     expected_disassembly = parse_expected_disassembly(source_path)
-    check_disassembly(expected_disassembly, received_disassembly, specified_conditions)
+    check_disassembly(expected_disassembly, received_disassembly, specified_conditions, source_path)
 
 if __name__ == '__main__':
     main()
