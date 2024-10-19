@@ -2149,13 +2149,12 @@ static *constexpr std::uintmax_t get_level(const T*) noexcept;
 ```
 The `opt::option` uses the `get_level` to determine if the contained value is considered empty.
 
-The return value should be less than `max_level` or equal to `std::uintmax_t(-1)`.
 The passed `const T*` pointer to the underlying object must be non-`nullptr`.
 
-If `get_level` returns `std::uintmax_t(-1)`, the contained value is not empty.
-Otherwise, it's in an empty state.
+If `get_level` returns `0`, the contained value is empty.
+Otherwise, it is not empty.
 
-Other non-`std::uintmax_t(-1)` values are used for nested `opt::option`s.
+Other non-`0` values are used for nested `opt::option`s.
 Level 0 indicates that the latest `opt::option` (the one that holds a value) is empty.
 Level 1 indicates that one after the latest `opt::option` (the one that holds `opt::option`, that holds a value) is empty and etc.
 until `max_level` is reached.
