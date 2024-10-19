@@ -30,12 +30,11 @@
 | `std::reference_wrapper`                        | 256                              | [0,255]                                 |
 | References                                      | 255                              | [0,254]                                 |
 | Pointer (8 bytes)                               | 512                              | [0xF8E1B1825D5D6C67,0xF8E1B1825D5D6E66] |
-| Pointer (4 bytes)                               | 256                              | [0xFFFFFEE0,0xFFFFFFE0]                 |
+| Pointer (4 bytes)                               | 32                               | [0xFFFFFFC0,0xFFFFFFDF]                 |
 | floating point (8 bytes, signaling NaN)         | 256                              | [0xFFF6C79F55B0898F,0xFFF6C79F55B08A8E] |
 | floating point (8 bytes, quite NaN)             | 256                              | [0xFFFBF26430BB3557,0xFFFBF26430BB3656] |
 | floating point (4 bytes, signaling NaN)         | 256                              | [0xFFBF69AF,0xFFBF6AAE]                 |
 | floating point (4 bytes, quite NaN)             | 256                              | [0xFFC3EFB5,0xFFC3F0B4]                 |
-| Empty type                                      | 255                              | [1,255]                                 |
 | Polymorphic type                                | 255                              | [-89152,-88898]                         |
 | `std::basic_string_view`                        | 255                              | data(): -32186, size(): [0,254]         |
 | `std::unique_ptr<T, std::default_delete<T>>`    | 255                              | [-46509,-46255]                         |
@@ -258,12 +257,12 @@ More details: [MSVC][pmf msvc], [Itanium C++ ABI][pmf itanium abi].
 
 Recursively stores level value.
 
-Underlying `opt::option` uses option traits for it's value:
-- If it's level is `std::uintmax_t(-1)` or `0`, propagates `std::uintmax_t(-1)`.
-- Uses next unused level to indicate it's empty state.
+Underlying `opt::option` uses next available level value.
 
-Underlying `opt::option` uses seperate "has value" flag:
-- Stores it's level inside that "has value" flag.
+For example:
+- `opt::option<X>` will use `0` level,
+- In `opt::option<opt::option<X>>`, outer `opt::option` will use `1` level and inner `opt::option` will use `0` level.
+- ...
 
 [basic.fundamental/10]: https://eel.is/c++draft/basic.fundamental#10
 [std::pair]: https://en.cppreference.com/w/cpp/utility/pair
