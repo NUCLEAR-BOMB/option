@@ -715,20 +715,6 @@ bool optional_bool_has_value(std::optional<bool>* a) {
 //$ setne al
 //$ ret
 
-//$ @option_float_has_value {clang 13..<14}:
-//$ mov eax, 0x409651
-//$ add eax, dword ptr [rdi]
-//$ cmp eax, 0x100
-//$ setae al
-//$ ret
-
-//$ @option_float_has_value {clang <13}:
-//$ mov eax, 0x409651
-//$ add eax, dword ptr [rdi]
-//$ cmp eax, 0xff
-//$ seta al
-//$ ret
-
 //$ @option_float_has_value {msvc}:
 //$ mov eax, dword ptr [rcx]
 //$ add eax, 0x409651
@@ -762,27 +748,6 @@ bool optional_float_has_value(std::optional<float>* a) {
 //$ movabs rax, -0x93860aa4f7671
 //$ cmp qword ptr [rdi], rax
 //$ setne al
-//$ ret
-
-//$ @option_double_has_value {clang 13..<14}:
-//$ movabs rax, 0x93860aa4f7671
-//$ add rax, qword ptr [rdi]
-//$ cmp rax, 0x100
-//$ setae al
-//$ ret
-
-//$ @option_double_has_value {clang 10..<13}:
-//$ movabs rax, 0x93860aa4f7671
-//$ add rax, qword ptr [rdi]
-//$ cmp rax, 0xff
-//$ seta al
-//$ ret
-
-//$ @option_double_has_value {clang <10}:
-//$ movabs rax, 0x93860aa4f7671
-//$ add rax, qword ptr [rdi]
-//$ cmp rax, 0xff
-//$ seta al
 //$ ret
 
 //$ @option_double_has_value {msvc}:
