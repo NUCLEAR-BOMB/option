@@ -508,13 +508,18 @@ jobs:
     env:
       VERBOSE: 1
       ASAN_OPTIONS: 'detect_invalid_pointer_pairs=2:strict_string_checks=true:detect_odr_violation=0:detect_stack_use_after_return=true:check_initialization_order=true:strict_init_order=true'
+      UBSAN_OPTIONS: 'print_stacktrace=1'
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { toolset: 'v143', options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO' }
-          - { toolset: 'ClangCL', cmake_options: '"-DOPTION_DEV_CLANGCL_SANITIZERS=-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable"' }
+          - toolset: 'v143'
+            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
+
+          - toolset: 'ClangCL'
+            cmake_options: >-
+              "-DOPTION_DEV_CLANGCL_SANITIZERS=-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable -fno-sanitize-recover=all"
 
     steps:
       - name: Checkout
