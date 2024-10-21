@@ -108,3 +108,9 @@ struct fp_exception_checker {
         REQUIRE_EQ(std::feclearexcept(FE_ALL_EXCEPT), 0);
     }
 };
+
+template<class F>
+OPTION_NO_SANITIZE_OBJECT_SIZE
+constexpr void no_sanitize_object_size_invoke(F&& f) {
+    static_cast<F&&>(f)();
+}
