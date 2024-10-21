@@ -130,6 +130,17 @@ inline constexpr none_t none{impl::none_tag{}};
     #define OPTION_PURE
 #endif
 
+#if defined(__has_feature) && OPTION_CLANG
+    #if __has_feature(undefined_behavior_sanitizer)
+        #define OPTION_NO_SANITIZE_OBJECT_SIZE [[clang::no_sanitize("object-size")]]
+        #define OPTION_HAS_NO_SANITIZE_OBJECT_SIZE 1
+    #endif
+#endif
+#ifndef OPTION_NO_SANITIZE_OBJECT_SIZE
+    #define OPTION_NO_SANITIZE_OBJECT_SIZE
+    #define OPTION_HAS_NO_SANITIZE_OBJECT_SIZE 0
+#endif
+
 #ifndef OPTION_USE_QUIET_NAN
     #define OPTION_USE_QUIET_NAN 0
 #endif
@@ -2285,6 +2296,9 @@ namespace impl {
         enable_copy_move& operator=(enable_copy_move&&) = delete;
     };
 
+#if OPTION_HAS_NO_SANITIZE_OBJECT_SIZE
+    #pragma clang attribute push(OPTION_NO_SANITIZE_OBJECT_SIZE, apply_to = function)
+#endif
     template<class T>
     class option_iterator {
     public:
@@ -2389,6 +2403,9 @@ namespace impl {
         }
     };
 }
+#if OPTION_HAS_NO_SANITIZE_OBJECT_SIZE
+    #pragma clang attribute pop
+#endif
 
 class bad_access : public std::exception {
 public:
@@ -2861,15 +2878,19 @@ public:
         return *this;
     }
 
+    OPTION_NO_SANITIZE_OBJECT_SIZE
     [[nodiscard]] constexpr iterator begin() noexcept {
         return iterator{has_value() ? OPTION_ADDRESSOF(get()) : nullptr};
     }
+    OPTION_NO_SANITIZE_OBJECT_SIZE
     [[nodiscard]] constexpr const_iterator begin() const noexcept {
         return const_iterator{has_value() ? OPTION_ADDRESSOF(get()) : nullptr};
     }
+    OPTION_NO_SANITIZE_OBJECT_SIZE
     [[nodiscard]] constexpr iterator end() noexcept {
         return iterator{has_value() ? (OPTION_ADDRESSOF(get()) + 1) : nullptr};
     }
+    OPTION_NO_SANITIZE_OBJECT_SIZE
     [[nodiscard]] constexpr const_iterator end() const noexcept {
         return const_iterator{has_value() ? (OPTION_ADDRESSOF(get()) + 1) : nullptr};
     }
