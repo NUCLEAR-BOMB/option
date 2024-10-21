@@ -904,7 +904,9 @@ skip_inspect:
         CHECK_LT(a.begin(), a.end());
         CHECK_GT(a.end(), a.begin());
         CHECK_NE(a.begin(), a.end());
-        *(a.end() - 1) = v1;
+        no_sanitize_object_size_invoke([&] {
+            *(a.end() - 1) = v1;
+        });
         CHECK_EQ(a, v1);
 
         auto it = a.begin();
