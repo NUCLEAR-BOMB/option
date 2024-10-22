@@ -1098,8 +1098,7 @@ namespace impl {
         static constexpr std::uintmax_t max_level = 254;
 
         static std::uintmax_t get_level(const bool* const value) noexcept {
-            const uint_bool u8_value = impl::ptr_bit_cast<uint_bool>(value);
-            return uint_bool(u8_value - 2);
+            return uint_bool(impl::ptr_bit_cast<uint_bool>(value) - 2);
         }
         static void set_level(bool* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
@@ -3172,8 +3171,7 @@ namespace impl {
         static constexpr std::uintmax_t max_level = traits::max_level - 1;
 
         static std::uintmax_t get_level(const opt::option<T>* const value) noexcept {
-            std::uintmax_t level = traits::get_level(OPTION_ADDRESSOF(static_cast<const base*>(value)->value));
-            return level - 1;
+            return traits::get_level(OPTION_ADDRESSOF(static_cast<const base*>(value)->value)) - 1;
         }
 
         static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
