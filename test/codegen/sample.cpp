@@ -179,13 +179,13 @@ opt::option<double> option_double_return() {
 //$ mov dl, 0x1
 //$ ret
 
-//$ @optional_double_return {gcc 14, gcc 11}:
+//$ @optional_double_return {gcc 14, gcc 11, gcc 12}:
 //$ mov byte ptr [rsp - 0x10], 0x1
 //$ movsd xmm0, qword ptr <optional_double_return()+0x11>
 //$ mov rax, qword ptr [rsp - 0x10]
 //$ ret
 
-//$ @optional_double_return {gcc 13, gcc 12}:
+//$ @optional_double_return {gcc 13}:
 //$ mov byte ptr [rsp - 0x10], 0x1
 //$ movsd xmm0, qword ptr <optional_double_return()+0xd>
 //$ mov rax, qword ptr [rsp - 0x10]
@@ -793,15 +793,22 @@ bool option_option_bool_has_value(opt::option<opt::option<bool>>* a) {
 //$ setb al
 //$ ret
 
-//$ @option_option_bool_nested_has_value {clang <15}:
+//$ @option_option_bool_nested_has_value {clang 11..<15}:
 //$ mov al, byte ptr [rdi]
 //$ and al, -0x2
 //$ cmp al, 0x2
 //$ setne al
 //$ ret
 
+//$ @option_option_bool_nested_has_value {clang <11}:
+//$ mov al, byte ptr [rdi]
+//$ or al, 0x1
+//$ cmp al, 0x3
+//$ setne al
+//$ ret
+
 // ???
-//$ @option_option_bool_nested_has_value {gcc 13}:
+//$ @option_option_bool_nested_has_value {gcc 13, gcc 14}:
 //$ movzx edx, byte ptr [rdi]
 //$ xor eax, eax
 //$ cmp dl, 0x3
@@ -811,7 +818,7 @@ bool option_option_bool_has_value(opt::option<opt::option<bool>>* a) {
 //$ <L0>:
 //$ ret
 
-//$ @option_option_bool_nested_has_value {gcc <13, gcc 14}:
+//$ @option_option_bool_nested_has_value {gcc <13}:
 //$ movzx eax, byte ptr [rdi]
 //$ sub eax, 0x2
 //$ cmp al, 0x1
