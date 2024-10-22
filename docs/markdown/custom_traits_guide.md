@@ -38,17 +38,16 @@ struct opt::option_traits<my_type> {
 
 `opt::option_traits` requires static constexpr `max_level` variable, `set_level` and `get_level` static methods to be implemented inside specialized `opt::option_traits`.
 
-- `max_level`: Maximum avaliable level depth inside underlying value. 0 means that option trait is disabled and can't be used for `opt::option`.
-- `get_level`: function that returns emptiness level of underlying value which is received by it's first parameter.
-If there is actually a contained value, `std::uintmax_t(-1)` is returned.
+- `max_level`: Maximum available level depth inside underlying value. 0 means that option trait is disabled and can't be used for `opt::option`.
+- `get_level`: function that returns emptiness level of underlying value which is received by it's first parameter. If the returned value is greater or equal than `max_level`, the contained value is not empty.
 - `set_level`: function that sets level of underlying value which is received by it's first parameter, and level value by second parameter.
-Passed level is less than `max_level`.
+Passed level must be less than `max_level`.
 
 > [!NOTE]
 > Level means the depth of emptiness of nested `opt::option`s. \
 > If level depth is 0 in `opt::option<opt::option<int>>`, the nested `opt::option<int>` is considered empty (can't access the `int` value), but outer `opt::option<opt::option<int>>` is not empty (can still access `opt::option<int>` ). \
 > If level depth is 1, entire `opt::option<opt::option<int>>` is considered empty (can't access the `opt::option<int>` value and accordingly the `int` value). \
-> If level depth is `std::uintmax_t(-1)` (last nested `opt::option` containes an underlying value), the `int` value is avaliable with every `opt::option` level correspondingly.
+> If level depth is greater or equal than `max_level` (last nested `opt::option` contains an underlying value), the `int` value is available with every `opt::option` level correspondingly.
 
 > [!IMPORTANT]
 > The `noexcept` specifier is required. It is made to avoid similar to [`std::variant<Types...>::valueless_by_exception`][std::variant valueless_by_exception] state.
@@ -167,7 +166,7 @@ struct opt::option_traits<my_type_3<T>, std::enable_if_t<!std::is_same_v<T, floa
     static constexpr std::uintmax_t max_level = 1;
 
     static std::uintmax_t get_level(const my_type_3<T>* value) noexcept {
-        return value->x == -1 ? 0 : std::uintmax_t(-1);
+        return value->x + 1;
     }
     static void set_level(my_type_3<T>* value, [[maybe_unused]] std::uintmax_t level) noexcept {
         value->x = -1;
@@ -293,7 +292,7 @@ struct opt::option_traits<float> {
     static constexpr std::uintmax_t max_level = 1;
 
     static std::uintmax_t get_level(const float* value) noexcept {
-        return *value == 0 ? 0 : std::uintmax_t(-1);
+        return *value == 0.f ? 0 : std::uintmax_t(-1);
     }
     static void set_level(float* value, [[maybe_unused]] std::uintmax_t level) noexcept {
         *value = 0;
