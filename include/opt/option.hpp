@@ -369,21 +369,38 @@ OPTION_STD_NAMESPACE_CXX11_END
     template<class T>
     struct default_delete; // Defined in header <memory>
 
-    template<class T, std::size_t N>
+    template<class T, size_t N>
     struct array; // Defined in header <array>
 
     template<class... Types>
     class variant; // Defined in header <variant>
 
 #if OPTION_MSVC
-    _EXPORT_STD template<std::size_t I, class... Types>
+    _EXPORT_STD template<size_t I, class... Types>
     _NODISCARD constexpr auto get_if(variant<Types...>*) noexcept;
-    _EXPORT_STD template<std::size_t I, class... Types>
+    _EXPORT_STD template<size_t I, class... Types>
     _NODISCARD constexpr auto get_if(const variant<Types...>*) noexcept;
     _EXPORT_STD template<class T, class... Types>
-    _NODISCARD constexpr add_pointer_t<T> get_if(variant<Types...>* _Ptr) noexcept;
+    _NODISCARD constexpr add_pointer_t<T> get_if(variant<Types...>*) noexcept;
     _EXPORT_STD template<class T, class... Types>
-    _NODISCARD constexpr add_pointer_t<const T> get_if(const variant<Types...>* _Ptr) noexcept;
+    _NODISCARD constexpr add_pointer_t<const T> get_if(const variant<Types...>*) noexcept;
+
+    _EXPORT_STD template<size_t I, class... Types>
+    _NODISCARD constexpr tuple_element_t<I, tuple<Types...>>& get(tuple<Types...>&) noexcept;
+    _EXPORT_STD template<size_t I, class... Types>
+    _NODISCARD constexpr const tuple_element_t<I, tuple<Types...>>& get(const tuple<Types...>&) noexcept;
+    _EXPORT_STD template<size_t I, class... Types>
+    _NODISCARD constexpr tuple_element_t<I, tuple<Types...>>&& get(tuple<Types...>&&) noexcept;
+    _EXPORT_STD template<size_t I, class... Types>
+    _NODISCARD constexpr const tuple_element_t<I, tuple<Types...>>&& get(const tuple<Types...>&&) noexcept;
+    _EXPORT_STD template<class T, class... Types>
+    _NODISCARD constexpr T& get(tuple<Types...>&) noexcept;
+    _EXPORT_STD template<class T, class... Types>
+    _NODISCARD constexpr const T& get(const tuple<Types...>&) noexcept;
+    _EXPORT_STD template<class T, class... Types>
+    _NODISCARD constexpr T&& get(tuple<Types...>&&) noexcept;
+    _EXPORT_STD template<class T, class... Types>
+    _NODISCARD constexpr const T&& get(const tuple<Types...>&&) noexcept;
 #elif OPTION_LIBCPP
     template<std::size_t N, class T>
     struct variant_alternative;
@@ -396,18 +413,52 @@ OPTION_STD_NAMESPACE_CXX11_END
     _LIBCPP_HIDE_FROM_ABI constexpr add_pointer_t<T> get_if(variant<Types...>*) noexcept;
     template<class T, class... Types>
     _LIBCPP_HIDE_FROM_ABI constexpr add_pointer_t<const T> get_if(const variant<Types...>*) noexcept;
+
+    template<size_t I, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr typename tuple_element<I, tuple<Types...>>::type& get(tuple<Types...>&) noexcept;
+    template<size_t I, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr const typename tuple_element<I, tuple<Types...>>::type& get(const tuple<Types...>&) noexcept;
+    template<size_t I, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr typename tuple_element<I, tuple<Types...>>::type&& get(tuple<Types...>&&) noexcept;
+    template<size_t I, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr const typename tuple_element<I, tuple<Types...>>::type&& get(const tuple<Types...>&&) noexcept;
+    template<class T, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr T& get(tuple<Types...>&) noexcept;
+    template<class T, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr const T& get(const tuple<Types...>&) noexcept;
+    template<class T, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr T&& get(tuple<Types...>&&) noexcept;
+    template<class T, class... Types>
+    _LIBCPP_HIDE_FROM_ABI constexpr const T&& get(const tuple<Types...>&&) noexcept;
 #else
-    template<std::size_t N, class T>
+    template<size_t N, class T>
     struct variant_alternative;
 
-    template<std::size_t I, class... Types>
+    template<size_t I, class... Types>
     constexpr add_pointer_t<typename variant_alternative<I, variant<Types...>>::type> get_if(variant<Types...>*) noexcept;
-    template<std::size_t I, class... Types>
+    template<size_t I, class... Types>
     constexpr add_pointer_t<const typename variant_alternative<I, variant<Types...>>::type> get_if(const variant<Types...>*) noexcept;
     template<class T, class... Types>
     constexpr add_pointer_t<T> get_if(variant<Types...>*) noexcept;
     template<class T, class... Types>
     constexpr add_pointer_t<const T> get_if(const variant<Types...>*) noexcept;
+
+    template<size_t I, class... Types>
+    constexpr __tuple_element_t<I, tuple<Types...>>& get(tuple<Types...>&) noexcept;
+    template<size_t I, class... Types>
+    constexpr const __tuple_element_t<I, tuple<Types...>>& get(const tuple<Types...>&) noexcept;
+    template<size_t I, class... Types>
+    constexpr __tuple_element_t<I, tuple<Types...>>&& get(tuple<Types...>&&) noexcept;
+    template<size_t I, class... Types>
+    constexpr const __tuple_element_t<I, tuple<Types...>>&& get(const tuple<Types...>&&) noexcept;
+    template<class T, class... Types>
+    constexpr T& get(tuple<Types...>&) noexcept;
+    template<class T, class... Types>
+    constexpr const T& get(const tuple<Types...>&) noexcept;
+    template<class T, class... Types>
+    constexpr T&& get(tuple<Types...>&&) noexcept;
+    template<class T, class... Types>
+    constexpr const T&& get(const tuple<Types...>&&) noexcept;
 #endif
     struct input_iterator_tag; // Defined in header <iterator>
     struct output_iterator_tag; // Defined in header <iterator>
