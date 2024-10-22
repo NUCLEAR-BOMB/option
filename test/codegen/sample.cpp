@@ -112,10 +112,6 @@ void optional_float_assign(std::optional<float>* a) {
 //$ mov eax, 0x3f800000
 //$ ret
 
-//$ @option_float_return {gcc}:
-//$ mov eax, 0x3f800000
-//$ ret
-
 //$ @option_float_return {clang-cl}:
 //$ mov rax, rcx
 //$ mov dword ptr [rcx], 0x3f800000
@@ -155,10 +151,6 @@ std::optional<float> optional_float_return() {
 }
 
 //$ @option_double_return:
-//$ movabs rax, 0x3ff0000000000000
-//$ ret
-
-//$ @option_double_return {gcc}:
 //$ movabs rax, 0x3ff0000000000000
 //$ ret
 
@@ -592,10 +584,6 @@ std::optional<bool> optional_bool_return_none() {
 //$ mov eax, 0xffbf69af
 //$ ret
 
-//$ @option_float_return_none {gcc}:
-//$ mov eax, 0xffbf69af
-//$ ret
-
 //$ @option_float_return_none {msvc}:
 //$ mov dword ptr [rcx], 0xffbf69af
 //$ mov rax, rcx
@@ -632,10 +620,6 @@ std::optional<float> optional_float_return_none() {
 }
 
 //$ @option_double_return_none:
-//$ movabs rax, -0x93860aa4f7671
-//$ ret
-
-//$ @option_double_return_none {gcc}:
 //$ movabs rax, -0x93860aa4f7671
 //$ ret
 
