@@ -330,8 +330,13 @@ inline constexpr none_t none{impl::none_tag{}};
         #define OPTION_STD_NAMESPACE_CXX11_BEGIN
         #define OPTION_STD_NAMESPACE_CXX11_END
     #elif OPTION_LIBSTDCPP && defined(_GLIBCXX_VISIBILITY) && defined(_GLIBCXX_BEGIN_NAMESPACE_VERSION) && defined(_GLIBCXX_END_NAMESPACE_VERSION)
-        #define OPTION_STD_NAMESPACE_BEGIN namespace std _GLIBCXX_VISIBILITY(default) { _GLIBCXX_BEGIN_NAMESPACE_VERSION
-        #define OPTION_STD_NAMESPACE_END _GLIBCXX_END_NAMESPACE_VERSION }
+        #define OPTION_STD_NAMESPACE_BEGIN \
+            namespace std _GLIBCXX_VISIBILITY(default) { _GLIBCXX_BEGIN_NAMESPACE_VERSION \
+            _Pragma("GCC diagnostic push") \
+            _Pragma("GCC diagnostic ignored \"-Wignored-attributes\"")
+        #define OPTION_STD_NAMESPACE_END \
+            _Pragma("GCC diagnostic pop") \
+            _GLIBCXX_END_NAMESPACE_VERSION }
         #define OPTION_STD_NAMESPACE_CXX11_BEGIN inline _GLIBCXX_BEGIN_NAMESPACE_CXX11
         #define OPTION_STD_NAMESPACE_CXX11_END _GLIBCXX_END_NAMESPACE_CXX11
     #elif OPTION_STL && defined(_STD_BEGIN) && defined(_STD_END)
@@ -401,6 +406,15 @@ OPTION_STD_NAMESPACE_CXX11_END
     _NODISCARD constexpr T&& get(tuple<Types...>&&) noexcept;
     _EXPORT_STD template<class T, class... Types>
     _NODISCARD constexpr const T&& get(const tuple<Types...>&&) noexcept;
+
+    _EXPORT_STD template<size_t I, class T, size_t Size>
+    _NODISCARD constexpr T& get(array<T, Size>&) noexcept;
+    _EXPORT_STD template<size_t I, class T, size_t Size>
+    _NODISCARD constexpr const T& get(const array<T, Size>&) noexcept;
+    _EXPORT_STD template<size_t I, class T, size_t Size>
+    _NODISCARD constexpr T&& get(array<T, Size>&&) noexcept;
+    _EXPORT_STD template<size_t I, class T, size_t Size>
+    _NODISCARD constexpr const T&& get(const array<T, Size>&&) noexcept;
 #elif OPTION_LIBCPP
     template<std::size_t N, class T>
     struct variant_alternative;
@@ -430,6 +444,15 @@ OPTION_STD_NAMESPACE_CXX11_END
     _LIBCPP_HIDE_FROM_ABI constexpr T&& get(tuple<Types...>&&) noexcept;
     template<class T, class... Types>
     _LIBCPP_HIDE_FROM_ABI constexpr const T&& get(const tuple<Types...>&&) noexcept;
+
+    template<size_t I, class T, size_t Size>
+    _LIBCPP_HIDE_FROM_ABI constexpr T& get(array<T, Size>&) noexcept;
+    template<size_t I, class T, size_t Size>
+    _LIBCPP_HIDE_FROM_ABI constexpr const T& get(const array<T, Size>&) noexcept;
+    template<size_t I, class T, size_t Size>
+    _LIBCPP_HIDE_FROM_ABI constexpr T&& get(array<T, Size>&&) noexcept;
+    template<size_t I, class T, size_t Size>
+    _LIBCPP_HIDE_FROM_ABI constexpr const T&& get(const array<T, Size>&&) noexcept;
 #else
     template<size_t N, class T>
     struct variant_alternative;
@@ -459,6 +482,15 @@ OPTION_STD_NAMESPACE_CXX11_END
     constexpr T&& get(tuple<Types...>&&) noexcept;
     template<class T, class... Types>
     constexpr const T&& get(const tuple<Types...>&&) noexcept;
+
+    template<size_t I, class T, size_t Size>
+    [[nodiscard]] constexpr T& get(array<T, Size>&) noexcept;
+    template<size_t I, class T, size_t Size>
+    [[nodiscard]] constexpr const T& get(const array<T, Size>&) noexcept;
+    template<size_t I, class T, size_t Size>
+    [[nodiscard]] constexpr T&& get(array<T, Size>&&) noexcept;
+    template<size_t I, class T, size_t Size>
+    [[nodiscard]] constexpr const T&& get(const array<T, Size>&&) noexcept;
 #endif
     struct input_iterator_tag; // Defined in header <iterator>
     struct output_iterator_tag; // Defined in header <iterator>
