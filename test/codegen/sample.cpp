@@ -764,3 +764,24 @@ bool option_double_has_value(opt::option<double>* a) {
 bool optional_double_has_value(std::optional<double>* a) {
     return a->has_value();
 }
+
+//$ @option_option_bool_has_value:
+//$ cmp byte ptr [rdi], 0x3
+//$ setne al
+//$ ret
+
+// ???
+//$ @option_option_bool_has_value {msvc}:
+//$ movzx eax, byte ptr [rcx]
+//$ sub al, 0x2
+//$ cmp al, 0x1
+//$ setne al
+//$ ret
+
+//$ @option_option_bool_has_value {clang-cl}:
+//$ cmp byte ptr [rcx], 0x3
+//$ setne al
+//$ ret
+bool option_option_bool_has_value(opt::option<opt::option<bool>>* a) {
+    return a->has_value();
+}
