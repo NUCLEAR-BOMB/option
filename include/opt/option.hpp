@@ -11,7 +11,6 @@
 #include <limits> // std::numeric_limits
 #include <exception> // std::exception
 #include <cstdint>
-#include <tuple>
 
 #if __has_include(<opt/option_fwd.hpp>)
     #include <opt/option_fwd.hpp>
@@ -420,6 +419,10 @@ OPTION_STD_NAMESPACE_CXX11_END
 #endif
     template<class T>
     struct hash; // Defined in header <functional>
+
+    // Forward declared in <utility>
+    // template<class... Types>
+    // class tuple; // Defined in header <tuple>
 OPTION_STD_NAMESPACE_END
 #else
     #include <string_view>
