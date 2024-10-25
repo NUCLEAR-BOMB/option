@@ -1859,16 +1859,21 @@ namespace impl {
 
     template<class T, class U>
     struct copy_reference {
-        using type = std::remove_reference_t<T>&&;
+        using type = T;
     };
     template<class T, class U>
-    struct copy_reference<T&, U&&> {
+    struct copy_reference<T&, U> {
         using type = T&&;
     };
     template<class T, class U>
-    struct copy_reference<T, U&> {
+    struct copy_reference<T&&, U> {
+        using type = T&&;
+    };
+    template<class T, class U>
+    struct copy_reference<T&, U&> {
         using type = T&;
     };
+
     template<class T, class U>
     using copy_reference_t = typename copy_reference<T, U>::type;
 
@@ -3538,6 +3543,33 @@ template<class T>
         return opt::option<type>{};
     }
     return opt::option<type>{static_cast<type>(static_cast<T&&>(container).back())};
+}
+
+namespace impl {
+    template<class T, class = void>
+    inline constexpr bool has_mapped_type = false;
+    template<class T>
+    inline constexpr bool has_mapped_type<T, std::void_t<typename T::mapped_type>> = true;
+}
+
+template<class T, class K>
+[[nodiscard]] constexpr auto lookup(T&& associative_container OPTION_LIFETIMEBOUND, K&& key) {
+    using uncvref_t = impl::remove_cvref<T>;
+
+    auto it = associative_container.find(static_cast<K&&>(key));
+    if constexpr (impl::has_mapped_type<uncvref_t>) {
+        using type = impl::copy_reference_t<decltype((it->second)), T>;
+        if (it == associative_container.end()) {
+            return opt::option<type>{};
+        }
+        return opt::option<type>{static_cast<type>(it->second)};
+    } else {
+        using type = impl::copy_reference_t<decltype(*it), T>;
+        if (it == associative_container.end()) {
+            return opt::option<type>{};
+        }
+        return opt::option<type>{static_cast<type>(*it)};
+    }
 }
 
 template<class T, class U, std::enable_if_t<!opt::is_option_v<impl::remove_cvref<U>>, int> = 0>

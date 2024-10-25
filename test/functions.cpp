@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 #include <type_traits>
+#include <map>
+#include <set>
 
 #include "utils.hpp"
 
@@ -87,6 +89,19 @@ TEST_CASE("opt::at") {
 
     *opt::at(b, 0) = 'z';
     CHECK_EQ(b[0], 'z');
+
+    struct ct {
+        int operator[](std::size_t) const { return 1; }
+        std::size_t size() const { return 1; }
+    };
+    ct c;
+    CHECK_EQ(c[0], 1);
+
+    CHECK_EQ(opt::at(c, 0), 1);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(c, 0)), opt::option<int>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(as_const(c), 0)), opt::option<int>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(as_rvalue(c), 0)), opt::option<int>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::at(as_const_rvalue(c), 0)), opt::option<int>>);
 }
 
 TEST_CASE("opt::at_front") {
@@ -140,6 +155,41 @@ TEST_CASE("opt::at_back") {
     CHECK_UNARY(std::is_same_v<decltype(opt::at_back(std::as_const(a))), opt::option<const int&>>);
     CHECK_UNARY(std::is_same_v<decltype(opt::at_back(as_rvalue(a))), opt::option<int&&>>);
     CHECK_UNARY(std::is_same_v<decltype(opt::at_back(as_const_rvalue(a))), opt::option<const int&&>>);
+}
+
+TEST_CASE("opt::lookup") {
+    std::map<int, std::string> a{{{1, "a"}, {2, "ab"}, {3, "abc"}, {4, "abcd"}}};
+    CHECK_EQ(a.size(), 4);
+
+    CHECK_EQ(opt::lookup(a, 1), "a");
+    CHECK_EQ(opt::lookup(a, 2), "ab");
+    CHECK_EQ(opt::lookup(a, 3), "abc");
+    CHECK_EQ(opt::lookup(a, 4), "abcd");
+    *opt::lookup(a, 1) = "a1";
+    CHECK_EQ(a.find(1)->second, "a1");
+    CHECK_EQ(opt::lookup(a, 1), "a1");
+
+    CHECK_EQ(a.find(5), a.end());
+    CHECK_EQ(opt::lookup(a, 5), opt::none);
+    CHECK_EQ(a.find(-1), a.end());
+    CHECK_EQ(opt::lookup(a, -1), opt::none);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(a, 0)), opt::option<std::string&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const(a), 0)), opt::option<const std::string&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_rvalue(a), 0)), opt::option<std::string&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const_rvalue(a), 0)), opt::option<const std::string&&>>);
+
+    std::set<int> b{{10, 11, 12}};
+    CHECK_EQ(b.size(), 3);
+
+    CHECK_EQ(opt::lookup(b, 10), 10);
+    CHECK_EQ(opt::lookup(b, 11), 11);
+    CHECK_EQ(opt::lookup(b, 12), 12);
+
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(b, 0)), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const(b), 0)), opt::option<const int&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_rvalue(b), 0)), opt::option<const int&&>>);
+    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const_rvalue(b), 0)), opt::option<const int&&>>);
 }
 
 TEST_SUITE_END();
