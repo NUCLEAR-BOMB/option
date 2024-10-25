@@ -709,27 +709,27 @@ namespace impl {
     template<class T, class = void>
     inline constexpr bool has_sentinel_member = false;
     template<class T>
-    inline constexpr bool has_sentinel_member<T, std::void_t<decltype(std::declval<std::remove_const_t<T>&>().SENTINEL)>> = true;
+    inline constexpr bool has_sentinel_member<T, decltype(std::declval<std::remove_const_t<T>&>().SENTINEL, void())> = true;
 
     template<class T, class = void>
     inline constexpr bool has_sentinel_enumerator = false;
     template<class T>
-    inline constexpr bool has_sentinel_enumerator<T, std::void_t<decltype(T::SENTINEL)>> = true;
+    inline constexpr bool has_sentinel_enumerator<T, decltype(T::SENTINEL, void())> = true;
 
     template<class T, class = void>
     inline constexpr bool has_sentinel_start_enumerator = false;
     template<class T>
-    inline constexpr bool has_sentinel_start_enumerator<T, std::void_t<decltype(T::SENTINEL_START)>> = true;
+    inline constexpr bool has_sentinel_start_enumerator<T, decltype(T::SENTINEL_START, void())> = true;
 
     template<class T, class = void>
     inline constexpr bool has_sentinel_end_enumerator = false;
     template<class T>
-    inline constexpr bool has_sentinel_end_enumerator<T, std::void_t<decltype(T::SENTINEL_END)>> = true;
+    inline constexpr bool has_sentinel_end_enumerator<T, decltype(T::SENTINEL_END, void())> = true;
 
     template<class T, class = void>
     inline constexpr bool is_custom_tuple_like = false;
     template<class T>
-    inline constexpr bool is_custom_tuple_like<T, std::void_t<decltype(std::tuple_size<T>::value)>> = true;
+    inline constexpr bool is_custom_tuple_like<T, decltype(std::tuple_size<T>::value, void())> = true;
 
 #if !OPTION_MSVC
     template<class...>
