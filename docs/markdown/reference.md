@@ -43,6 +43,7 @@
     - [`at_back`](#optat_back)
     - [`flatten`](#optflatten)
     - [`unzip`](#optunzip)
+    - [`lookup`](#optlookup)
     - [`operator|`](#operator-1)
     - [`operator|=`](#operator-2)
     - [`operator&`](#operator-3)
@@ -1635,6 +1636,47 @@ opt::option<std::array<int, 3>> b = opt::none;
 std::array<opt::option<int>, 3> unzipped_b = opt::unzip(b);
 
 std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; // true
+```
+
+---
+
+### `opt::lookup`
+
+```cpp
+template<class T, class K>
+constexpr auto lookup(T& associative_container /*lifetimebound*/, K&& key);
+```
+
+Finds an element with key equivalent to `key`. If no such element is found, returns `opt::none`.
+
+Returns a reference option (e.g. `opt::option<T&>`) to the found element in the `associative_container`.
+
+In return type, a `T` in `opt::option<T>` has the same reference qualifiers as for the `associative_container` parameter of these overloads.
+
+Uses the `.find(std::forward<K>(key))` to find an element
+and `.end()` to get the past-the-end iterator (the one that gets returns when element is not found).
+
+If type `T` (without cv-qualifiers) has the nested type `mapped_type` being defined
+it is considered that method `.find` returns an iterator to `std::pair` in which `.second` is a reference to the requested element.
+
+Otherwise, method `.find` simply returns an iterator to the requested element.
+
+Description in the simplified code equivalent for `map`-like types:
+```cpp
+auto it = associative_container.find(key);
+if (it == associative_container.end()) {
+    return opt::none;
+}
+return it->second;
+```
+
+Description in the simplified code equivalent for `set`-like types:
+```cpp
+auto it = associative_container.find(key);
+if (it == associative_container.end()) {
+    return opt::none;
+}
+return *it;
 ```
 
 ---
