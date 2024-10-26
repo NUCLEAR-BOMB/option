@@ -27,7 +27,6 @@
     - [`and_then`](#and_then)
     - [`map`](#map)
     - [`or_else`](#or_else)
-    - [`assume_has_value`](#assume_has_value)
     - [`swap`](#swap)
     - [`begin`](#begin)
     - [`end`](#end)
