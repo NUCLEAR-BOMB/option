@@ -3553,22 +3553,20 @@ namespace impl {
 }
 
 template<class T, class K>
-[[nodiscard]] constexpr auto lookup(T&& associative_container OPTION_LIFETIMEBOUND, K&& key) {
-    using uncvref_t = impl::remove_cvref<T>;
-
+[[nodiscard]] constexpr auto lookup(T& associative_container OPTION_LIFETIMEBOUND, K&& key) {
     auto it = associative_container.find(static_cast<K&&>(key));
-    if constexpr (impl::has_mapped_type<uncvref_t>) {
-        using type = impl::copy_reference_t<decltype((it->second)), T>;
+    if constexpr (impl::has_mapped_type<impl::remove_cvref<T>>) {
+        using type = decltype((it->second));
         if (it == associative_container.end()) {
             return opt::option<type>{};
         }
-        return opt::option<type>{static_cast<type>(it->second)};
+        return opt::option<type>{it->second};
     } else {
-        using type = impl::copy_reference_t<decltype(*it), T>;
+        using type = decltype(*it);
         if (it == associative_container.end()) {
             return opt::option<type>{};
         }
-        return opt::option<type>{static_cast<type>(*it)};
+        return opt::option<type>{*it};
     }
 }
 

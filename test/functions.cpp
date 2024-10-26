@@ -176,8 +176,6 @@ TEST_CASE("opt::lookup") {
 
     CHECK_UNARY(std::is_same_v<decltype(opt::lookup(a, 0)), opt::option<std::string&>>);
     CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const(a), 0)), opt::option<const std::string&>>);
-    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_rvalue(a), 0)), opt::option<std::string&&>>);
-    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const_rvalue(a), 0)), opt::option<const std::string&&>>);
 
     std::set<int> b{{10, 11, 12}};
     CHECK_EQ(b.size(), 3);
@@ -188,8 +186,6 @@ TEST_CASE("opt::lookup") {
 
     CHECK_UNARY(std::is_same_v<decltype(opt::lookup(b, 0)), opt::option<const int&>>);
     CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const(b), 0)), opt::option<const int&>>);
-    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_rvalue(b), 0)), opt::option<const int&&>>);
-    CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const_rvalue(b), 0)), opt::option<const int&&>>);
 }
 
 TEST_SUITE_END();
