@@ -92,6 +92,7 @@ TEST_CASE("opt::at") {
 
     struct ct {
         int operator[](std::size_t) const { return 1; }
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static)
         std::size_t size() const { return 1; }
     };
     ct c;
