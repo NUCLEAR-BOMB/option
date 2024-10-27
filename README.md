@@ -1,9 +1,12 @@
 
 <p align="center">
-  <img src="docs/img/logo.png" width="300" />
+  <img src="docs/img/logo.png" width="300">
 </p>
 
-Replacement for [`std::optional`][std::optional] with efficient memory usage and additional features for C++17.
+<a href=""><img src="docs/img/C++17.svg" alt="C++17"></a>
+<a href=""><img src="docs/img/include_option_hpp.svg" alt="#include <opt/option.hpp>"></a>
+
+Replacement for [`std::optional`][std::optional] with efficient memory usage and additional features.
 
 - Functionality from [C++23 `std::optional`][std::optional monadic], Rust's [`std::option::Option`][Rust Option] and other `opt::option`'s own stuff. See [reference](./docs/markdown/reference.md).
 - Zero memory overhead with types that have unused values. See [builtin traits](./docs/markdown/builtin_traits.md).
