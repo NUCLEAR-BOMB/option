@@ -1,5 +1,7 @@
 
-# opt::option
+<p align="center">
+  <img src="docs/img/logo.png" width="300" />
+</p>
 
 Replacement for [`std::optional`][std::optional] with efficient memory usage and additional features for C++17.
 
