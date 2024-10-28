@@ -49,8 +49,7 @@ Passed level must be less than `max_level`.
 > If level depth is 1, entire `opt::option<opt::option<int>>` is considered empty (can't access the `opt::option<int>` value and accordingly the `int` value). \
 > If level depth is greater or equal than `max_level` (last nested `opt::option` contains an underlying value), the `int` value is available with every `opt::option` level correspondingly.
 
-> [!IMPORTANT]
-> The `noexcept` specifier is required. It is made to avoid similar to [`std::variant<Types...>::valueless_by_exception`][std::variant valueless_by_exception] state.
+!> The `noexcept` specifier is required. It is made to avoid similar to [`std::variant<Types...>::valueless_by_exception`][std::variant valueless_by_exception] state.
 
 Correct `opt::option_traits` specialization.
 ```cpp
@@ -279,8 +278,7 @@ a.get_unchecked().x = 11;
 // a.my_type_4::z == 11
 ```
 
-> [!IMPORTANT]
-> Some actions involving `get_unchecked` could lead to failing the check of `OPTION_VERIFY`.
+!> Some actions involving `get_unchecked` could lead to failing the check of `OPTION_VERIFY`.
 
 ## Overriding builtin option traits
 

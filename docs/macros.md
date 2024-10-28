@@ -36,7 +36,6 @@ In the debug configuration (`NDEBUG` is not defined), by default, [`std::fprintf
 
 If `true` enables [`opt::option_traits`][option-traits] to use library builtin optimizations; otherwise, only user defined [`opt::option_traits`][option-traits] will be used.
 
-[option-traits]: ./reference.md#option_traits
 
 ### OPTION_FORWARD_DECLARE_STD
 *expects:* `boolean`, *default:* `true`
@@ -95,3 +94,4 @@ Define [`OPTION_VERIFY`](#option_verify) to `LIBASSERT_ASSUME` macro and don't u
 [libassert]: https://github.com/jeremy-rifkin/libassert
 [Consumed Annotation Checking]: https://clang.llvm.org/docs/AttributeReference.html#consumed-annotation-checking
 [Wconsumed]: https://clang.llvm.org/docs/DiagnosticsReference.html#wconsumed
+[option-traits]: ./reference.md#optoption_traits

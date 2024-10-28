@@ -160,8 +160,7 @@ Where `{construct}` is a function that constructs contained object in place.
 - *Trivial* when `std::is_reference_v<T>` or `std::is_trivially_move_constructible_v<T>`.
 - *Postcondition:* `has_value() == other.has_value()`.
 
-> [!IMPORTANT]
-> After move, `other` still holds a value (if it had before), but the value itself is moved from.
+!> After move, `other` still holds a value (if it had before), but the value itself is moved from.
 
 ---
 
@@ -353,8 +352,7 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-> [!IMPORTANT]
-> After move, `other` still holds a value (if it had before), but the value itself is moved from.
+!> After move, `other` still holds a value (if it had before), but the value itself is moved from.
 
 - *`noexcept`* when `std::is_nothrow_move_assignable_v<T> && std::is_nothrow_move_constructible_v<T>`.
 - *Deleted* when `!std::is_reference_v<T>` and `!std::is_move_constructible_v<T> || !std::is_move_assignable_v<T>`.
@@ -456,8 +454,7 @@ if (other.has_value()) {
 ```
 Where `{construct}` is a function that constructs contained object in place.
 
-> [!IMPORTANT]
-> After move, `other` still holds a value (if it had before), but the value itself is moved from.
+!> After move, `other` still holds a value (if it had before), but the value itself is moved from.
 
 - *Enabled* when the following are all `true`:
     - If `T` is a non-reference type:
@@ -2105,7 +2102,7 @@ If `right` contains a value, then compare it with `left` using operator `=>`; ot
 
 ## Helpers
 
-### `std::hash<opt::option>`
+### `std::hash<opt::option>` :id=stdhashoptoption
 
 ```cpp
 template<class T>
@@ -2217,8 +2214,7 @@ and the provided `T*` pointer to the underlying object must be non-`nullptr`.
 
 Usually `set_level` is called after the original object is destructed/uninitialized, but also `set_level` can be called multiple times in a row.
 
-> [!IMPORTANT]
-> The `noexcept` specifier is required (without it the program will not compile).
+!> The `noexcept` specifier is required (without it the program will not compile).
 
 ### `opt::make_option`
 
@@ -2424,11 +2420,16 @@ std::is_same_v<std::remove_reference_t<Y>, std::reference_wrapper<std::remove_co
 - `std::is_convertible_v<const opt::option<Y>&&, X>`.
 
 ### `is_assignable_from_option<X, Y>`
+
 `is_assignable_from_option<X, Y>` is a metafunction, that checks if type `X` is assignable from any expression of type `opt::option<Y>` (possibly `const`), i.e., in the following conditions there is at least one `true`:
 - `std::is_assignable_v<X&, opt::option<Y>&>`.
 - `std::is_assignable_v<X&, const opt::option<Y>&>`.
 - `std::is_assignable_v<X&, opt::option<Y>&&>`.
 - `std::is_assignable_v<X&, const opt::option<Y>&&>`.
+
+### `/*lifetimebound*/`
+
+Attribute `[[msvc::lifetimebound]]` (see [C26815][msvc-C26815] and [C26816][msvc-C26816]) or [`[[clang::lifetimebound]]`][clang-lifetimebound] if one is available.
 
 [UB]: https://en.cppreference.com/w/cpp/language/ub
 [option-verify]: ./macros.md#option_verify
@@ -2438,4 +2439,8 @@ std::is_same_v<std::remove_reference_t<Y>, std::reference_wrapper<std::remove_co
 [std::is_void]: https://en.cppreference.com/w/cpp/types/is_void
 [std::is_function]: https://en.cppreference.com/w/cpp/types/is_function
 [P3168]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2
-[P2218]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2218r0
+[P2218]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/
+[clang-lifetimebound]: https://clang.llvm.org/docs/AttributeReference.html#lifetimebound
+[msvc-C26815]: https://learn.microsoft.com/cpp/code-quality/c26815
+[msvc-C26816]: https://learn.microsoft.com/cpp/code-quality/c26816
+
