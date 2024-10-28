@@ -1,4 +1,4 @@
-
+****
 <p align="center">
   <img src="docs/img/logo.png" width="300">
 </p>
@@ -8,11 +8,11 @@
 
 Replacement for [`std::optional`][std::optional] with efficient memory usage and additional features.
 
-- Functionality from [C++23 `std::optional`][std::optional monadic], Rust's [`std::option::Option`][Rust Option] and other `opt::option`'s own stuff. See [reference](./docs/markdown/reference.md).
-- Zero memory overhead with types that have unused values. See [builtin traits](./docs/markdown/builtin_traits.md).
+- Functionality from [C++23 `std::optional`][std::optional monadic], Rust's [`std::option::Option`][Rust Option] and other `opt::option`'s own stuff. See [reference][docs-reference].
+- Zero memory overhead with types that have unused values. See [builtin traits][docs-builtin-traits].
 - Support for nested `opt::option`s with zero memory overhead.
 - Simpler interface than `std::optional` (constructors without [`std::in_place`][std::in_place]), supports construction of aggregate types in C++17 (using [*direct-list-initialization*][direct-list-initialization] for them).
-- Custom size optimizations for your own types ([`opt::option_traits`](./docs/markdown/reference.md#optoption_traits)). See [option traits guide](./docs/markdown/custom_traits_guide.md).
+- Custom size optimizations for your own types ([`opt::option_traits`][opt-option_traits]). See [option traits guide][docs-custom-traits-guide].
 - Allows reference types.
 
 **Table of contents:**
@@ -130,7 +130,7 @@ b.reset();
 
 # Why `opt::option`?
 
-[`opt::option`](./docs/markdown/reference.md#declaration) allows to minimize the type size to a minimum.
+`opt::option` allows to minimize the type size to a minimum.
 
 Minimizing the type size is always a good thing.
 [Cache locality][cache locality] can often improve performance of the program even more than any other performed optimization.
@@ -149,39 +149,39 @@ Note that size optimizations prevent `opt::option` being `constexpr`-compatible.
 The option library provides extended functionality over standard `std::optional`, which can lead to the use of more efficient and cleaner code.
 
 Most methods/functions are inspired from Rust's [`std::option::Option`][Rust Option]:
-- [`opt::option<T>::has_value_and`](./docs/markdown/reference.md#has_value_and)
-- [`opt::option<T>::take`](./docs/markdown/reference.md#take)
-- [`opt::option<T>::take_if`](./docs/markdown/reference.md#take_if)
-- [`opt::option<T>::inspect`](./docs/markdown/reference.md#inspect)
-- [`opt::option<T>::get_unchecked`](./docs/markdown/reference.md#get_unchecked)
-- [`opt::option<T>::map_or`](./docs/markdown/reference.md#map_or)
-- [`opt::option<T>::map_or_else`](./docs/markdown/reference.md#map_or_else)
-- [`opt::option<T>::filter`](./docs/markdown/reference.md#filter)
-- [`opt::option<T>::flatten`](./docs/markdown/reference.md#flatten)
-- [`opt::option<T>::unzip`](./docs/markdown/reference.md#flatten)
-- [`opt::option<T>::replace`](./docs/markdown/reference.md#replace)
-- [`opt::zip`](./docs/markdown/reference.md#optzip)
-- [`opt::zip_with`](./docs/markdown/reference.md#optzip_with)
-- [`opt::operator|`](./docs/markdown/reference.md#operator-1)
-- [`opt::operator|=`](./docs/markdown/reference.md#operator-2)
-- [`opt::operator&`](./docs/markdown/reference.md#operator-3)
-- [`opt::operator^`](./docs/markdown/reference.md#operator-4)
+- [`opt::option<T>::has_value_and`](https://nuclear-bomb.github.io/option/#/reference?id=has_value_and)
+- [`opt::option<T>::take`](https://nuclear-bomb.github.io/option/#/reference?id=take)
+- [`opt::option<T>::take_if`](https://nuclear-bomb.github.io/option/#/reference?id=take_if)
+- [`opt::option<T>::inspect`](https://nuclear-bomb.github.io/option/#/reference?id=inspect)
+- [`opt::option<T>::get_unchecked`](https://nuclear-bomb.github.io/option/#/reference?id=get_unchecked)
+- [`opt::option<T>::map_or`](https://nuclear-bomb.github.io/option/#/reference?id=map_or)
+- [`opt::option<T>::map_or_else`](https://nuclear-bomb.github.io/option/#/reference?id=map_or_else)
+- [`opt::option<T>::filter`](https://nuclear-bomb.github.io/option/#/reference?id=filter)
+- [`opt::option<T>::flatten`](https://nuclear-bomb.github.io/option/#/reference?id=flatten)
+- [`opt::option<T>::unzip`](https://nuclear-bomb.github.io/option/#/reference?id=flatten)
+- [`opt::option<T>::replace`](https://nuclear-bomb.github.io/option/#/reference?id=replace)
+- [`opt::zip`](https://nuclear-bomb.github.io/option/#/reference?id=optzip)
+- [`opt::zip_with`](https://nuclear-bomb.github.io/option/#/reference?id=optzip_with)
+- [`opt::operator|`](https://nuclear-bomb.github.io/option/#/reference?id=operator-1)
+- [`opt::operator|=`](https://nuclear-bomb.github.io/option/#/reference?id=operator-2)
+- [`opt::operator&`](https://nuclear-bomb.github.io/option/#/reference?id=operator-3)
+- [`opt::operator^`](https://nuclear-bomb.github.io/option/#/reference?id=operator-4)
 
 But the option library has its own functionality:
-- [`opt::option<T>::value_or_throw`](./docs/markdown/reference.md#value-value_or_throw) (explicit `opt::option<T>::value`)
-- [`opt::option<T>::ptr_or_null`](./docs/markdown/reference.md#ptr_or_null)
-- [`opt::option<T>::value_or`](./docs/markdown/reference.md#value_or) (more flexible version, [P2218: More flexible `optional::value_or()`][P2218])
-- [`opt::option<T>::value_or_construct`](./docs/markdown/reference.md#value_or_default) ([P2218: More flexible `optional::value_or()`][P2218])
-- [`opt::option<T>::begin`](./docs/markdown/reference.md#begin) ([P3168: Give `std::optional` Range Support][P3168])
-- [`opt::option<T>::end`](./docs/markdown/reference.md#end) ([P3168: Give `std::optional` Range Support][P3168])
-- [`opt::option_cast`](./docs/markdown/reference.md#optoption_cast)
-- [`opt::from_nullable`](./docs/markdown/reference.md#optfrom_nullable)
-- [`opt::get`](./docs/markdown/reference.md#optget) (from tuple-like or `std::variant`)
-- [`opt::io`](./docs/markdown/reference.md#optio) (read from/write to stream)
-- [`opt::at`](./docs/markdown/reference.md#optat)
-- [`opt::swap`](./docs/markdown/reference.md#optswap)
+- [`opt::option<T>::value_or_throw`](https://nuclear-bomb.github.io/option/#/reference?id=value-value_or_throw) (explicit `opt::option<T>::value`)
+- [`opt::option<T>::ptr_or_null`](https://nuclear-bomb.github.io/option/#/reference?id=ptr_or_null)
+- [`opt::option<T>::value_or`](https://nuclear-bomb.github.io/option/#/reference?id=value_or) (more flexible version, [P2218: More flexible `optional::value_or()`][P2218])
+- [`opt::option<T>::value_or_construct`](https://nuclear-bomb.github.io/option/#/reference?id=value_or_default) ([P2218: More flexible `optional::value_or()`][P2218])
+- [`opt::option<T>::begin`](https://nuclear-bomb.github.io/option/#/reference?id=begin) ([P3168: Give `std::optional` Range Support][P3168])
+- [`opt::option<T>::end`](https://nuclear-bomb.github.io/option/#/reference?id=end) ([P3168: Give `std::optional` Range Support][P3168])
+- [`opt::option_cast`](https://nuclear-bomb.github.io/option/#/reference?id=optoption_cast)
+- [`opt::from_nullable`](https://nuclear-bomb.github.io/option/#/reference?id=optfrom_nullable)
+- [`opt::get`](https://nuclear-bomb.github.io/option/#/reference?id=optget) (from tuple-like or `std::variant`)
+- [`opt::io`](https://nuclear-bomb.github.io/option/#/reference?id=optio) (read from/write to stream)
+- [`opt::at`](https://nuclear-bomb.github.io/option/#/reference?id=optat)
+- [`opt::swap`](https://nuclear-bomb.github.io/option/#/reference?id=optswap)
 
-See [**reference**](./docs/markdown/reference.md) for more details.
+See [**reference**][docs-reference] for more details.
 
 # Compiler support
 
@@ -208,7 +208,7 @@ The `CMakeLists.txt` file in the project root directory provides `option` [`INTE
 - `cxx_std_17` compile feature.
 - Includes `debugger/option.natvis` and `debugger/option.natstepfilter` with ability to disable them.
 
-See [project cmake variables](./docs/markdown/cmake_variables.md) for more information.
+See [project cmake variables][docs-cmake-variables] for more information.
 
 ## [find_package][find_package]
 
@@ -356,7 +356,7 @@ Quick list of built-in size optimizations:
 - **Manual reflection**: sentinel non-static data member (`.SENTINEL`), enumeration sentinel (`::SENTINEL`, `::SENTINEL_START`, `::SENTINEL_END`).
 - **`opt::sentinel`, `opt::sentinel_f`, `opt::member`**: user-defined unused values.
 
-See [**built-in traits**](./docs/markdown/builtin_traits.md) for more information.
+See [**built-in traits**][docs-builtin-traits] for more information.
 
 # Compatibility with `std::optional`
 
@@ -453,3 +453,9 @@ Note that some compilers/versions have unstable sanitizer support, so the CI tes
 [MSVC STL]: https://github.com/microsoft/STL
 [P3168]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2
 [P2218]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2218r0
+[docs-reference]: https://nuclear-bomb.github.io/option/#/reference
+[docs-macros]: https://nuclear-bomb.github.io/option/#/macros
+[docs-custom-traits-guide]: https://nuclear-bomb.github.io/option/#/custom_traits_guide
+[docs-cmake-variables]: https://nuclear-bomb.github.io/option/#/cmake_variables
+[docs-builtin-traits]: https://nuclear-bomb.github.io/option/#/builtin_traits
+[opt-option_traits]: https://nuclear-bomb.github.io/option/#/reference?id=optoption_traits
