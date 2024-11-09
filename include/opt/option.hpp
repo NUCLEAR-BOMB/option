@@ -529,9 +529,6 @@ OPTION_STD_NAMESPACE_END
 
 namespace opt {
 
-template<class T>
-inline constexpr bool has_option_traits = opt::option_traits<T>::max_level >= 1;
-
 namespace impl {
     struct dummy_type_for_traits {};
 }
