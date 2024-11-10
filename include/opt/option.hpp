@@ -2987,10 +2987,18 @@ public:
 
     template<class... Args>
     OPTION_SET_TYPESTATE(consumed)
-    constexpr T& emplace(Args&&... args)
-        OPTION_LIFETIMEBOUND {
+    constexpr T& emplace(Args&&... args) OPTION_LIFETIMEBOUND {
         reset();
         base::construct(static_cast<Args&&>(args)...);
+        return *(*this);
+    }
+
+    template<class... Args>
+    OPTION_SET_TYPESTATE(consumed)
+    constexpr T& try_emplace(Args&&... args) OPTION_LIFETIMEBOUND {
+        if (!has_value()) {
+            base::construct(static_cast<Args&&>(args)...);
+        }
         return *(*this);
     }
 

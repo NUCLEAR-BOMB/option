@@ -1028,6 +1028,23 @@ skip_zip_with:
         CHECK_EQ(a, opt::none);
         CHECK_EQ(b, opt::none);
     }
+    SUBCASE(".try_emplace") {
+        opt::option<T> a = v0;
+        a.try_emplace(v1);
+        CHECK_EQ(a, v0);
+        a.try_emplace(v0);
+        CHECK_EQ(a, v0);
+
+        a = opt::none;
+        a.try_emplace(v0);
+        CHECK_EQ(a, v0);
+        a = opt::none;
+        a.try_emplace(v1);
+        CHECK_EQ(a, v1);
+        a = opt::none;
+        a.try_emplace(v2);
+        CHECK_EQ(a, v2);
+    }
 }
 
 }

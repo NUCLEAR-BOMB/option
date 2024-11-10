@@ -10,6 +10,7 @@
     - [`operator=`](#operator)
     - [`reset`](#reset)
     - [`emplace`](#emplace)
+    - [`try_emplace`](#try_emplace)
     - [`has_value`, `operator bool`](#has_value-operator-bool)
     - [`has_value_and`](#has_value_and)
     - [`take`](#take)
@@ -490,12 +491,36 @@ constexpr T& emplace(Args&&... args) /*lifetimebound*/;
 Constructs the contained from `args...`. \
 If this `opt::option` already contains a value, the contained value is destroyed. Initializes the contained value of type `T` using *direct-list-initialization* with `std::forward<Args>(args)...` as parameters.
 
+Returns a reference to the contained value.
+
 Description in the code equivalent:
 ```cpp
 reset();
 {construct}(std::forward<Args>(args)...);
 ```
 Where `{construct}` is a function that constructs contained object in place.
+
+---
+
+### `try_emplace`
+
+```cpp
+template<class... Args>
+constexpr T& try_emplace(Args&&... args) /*lifetimebound*/;
+```
+Constructs the contained value with `args...` if it's empty, otherwise does nothing.
+
+Returns a reference to the contained value.
+
+Description in the code equivalent:
+```cpp
+if (!has_value()) {
+    {construct}(std::forward<Args>(args)...);
+}
+```
+Where `{construct}` is a function that constructs contained object in place.
+
+---
 
 ### `has_value`, `operator bool`
 
