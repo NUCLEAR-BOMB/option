@@ -214,6 +214,9 @@ TEST_CASE("reference") {
         CHECK(ref.has_value());
         CHECK_EQ(&(ref.get()), &b);
 
+        CHECK_EQ(*ref.begin(), b);
+        CHECK_EQ(ref.begin()[0], b);
+
         const opt::option<const int&> refc{a};
         CHECK(refc.has_value());
         CHECK_EQ(&(refc.get()), &a);

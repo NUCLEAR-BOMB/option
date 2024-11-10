@@ -2393,10 +2393,10 @@ namespace impl {
         using iterator_concept = std::contiguous_iterator_tag;
 #endif
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = std::remove_cv_t<T>;
-        using reference = T&;
+        using value_type = std::remove_reference_t<T>;
+        using reference = value_type&;
         using difference_type = std::ptrdiff_t;
-        using pointer = T*;
+        using pointer = value_type*;
     private:
         pointer ptr{};
     public:
