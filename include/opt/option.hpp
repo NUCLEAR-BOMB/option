@@ -2741,8 +2741,7 @@ namespace impl {
     struct option_checks_base</*IsReference=*/true> {
         template<class T, class U>
         using from_value_ctor = if_<
-            is_not_same_v<remove_cvref<U>, opt::option<T>>
-            && is_not_same_v<remove_cvref<U>, std::in_place_t>
+            is_not_same_v<remove_cvref<U>, std::in_place_t>
             && !opt::is_option_v<remove_cvref<U>>
             && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
                 || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
