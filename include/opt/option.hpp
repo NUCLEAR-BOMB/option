@@ -1778,18 +1778,6 @@ namespace impl {
         explicit construct_from_invoke_tag() = default;
     };
 
-    template<class T>
-    struct is_tuple_like : std::false_type {};
-    template<class T, std::size_t N>
-    struct is_tuple_like<std::array<T, N>> : std::true_type {};
-    template<class T1, class T2>
-    struct is_tuple_like<std::pair<T1, T2>> : std::true_type {};
-    template<class... Ts>
-    struct is_tuple_like<std::tuple<Ts...>> : std::true_type {};
-
-    template<class T>
-    inline constexpr bool is_tuple_like_v = is_tuple_like<T>::value;
-
     template<class Tuple>
     struct tuple_like_of_options_t {
         static_assert(!sizeof(Tuple),
