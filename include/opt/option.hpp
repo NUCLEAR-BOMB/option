@@ -530,12 +530,6 @@ OPTION_STD_NAMESPACE_END
 namespace opt {
 
 namespace impl {
-    struct dummy_type_for_traits {};
-}
-template<>
-struct option_traits<impl::dummy_type_for_traits> {};
-
-namespace impl {
 #if OPTION_HAS_BUILTIN(__is_trivially_destructible) || OPTION_MSVC
     // Don't check for std::is_destructible because non-destructible types are anyway not allowed inside opt::option
     template<class T>
@@ -823,41 +817,36 @@ namespace impl {
     #pragma GCC diagnostic pop
 #endif
 
-    template<std::uintmax_t level, class Type, std::size_t var_index, std::size_t index, class... Ts>
-    struct select_max_level_traits_impl;
+    constexpr std::size_t index_of_max(const std::initializer_list<std::uintmax_t> levels) noexcept {
+        std::size_t idx = 0;
+        std::uintmax_t max_value = levels.begin()[0];
 
-#if OPTION_MSVC
-    #pragma warning(push)
-    #pragma warning(disable : 4296) // 'operator' : expression is always false
+        std::size_t i = 1;
+        for (const std::uintmax_t* it = levels.begin() + 1; it < levels.end(); ++it, ++i) {
+            if (*it > max_value) {
+                max_value = *it;
+                idx = i;
+            }
+        }
+        return idx;
+    }
+
+    template<class... Traits>
+    struct find_max_level {
+        static constexpr std::size_t index = index_of_max({Traits::max_level...});
+#if OPTION_HAS_BUILTIN(__type_pack_element)
+        using type = __type_pack_element<index, Traits...>;
+#else
+        using type = std::tuple_element_t<index, std::tuple<Traits...>>;
 #endif
-
-    template<
-        std::uintmax_t level,
-        class Type,
-        std::size_t var_index,
-        std::size_t index,
-        class T, class... Ts
-    >
-    struct select_max_level_traits_impl<level, Type, var_index, index, T, Ts...>
-        : select_max_level_traits_impl<
-            (opt::option_traits<T>::max_level > level) ? opt::option_traits<T>::max_level : level,
-            if_<(opt::option_traits<T>::max_level > level), T, Type>,
-            var_index + 1,
-            (opt::option_traits<T>::max_level > level) ? var_index : index,
-            Ts...
-        >
-    {};
-
-    template<std::uintmax_t level_, class Type, std::size_t var_index, std::size_t index_>
-    struct select_max_level_traits_impl<level_, Type, var_index, index_> {
-        static constexpr std::uintmax_t level = level_;
-        static constexpr std::size_t index = index_;
-        using type = Type;
     };
-
-    template<class... Ts>
-    struct select_max_level_traits
-        : select_max_level_traits_impl<0, dummy_type_for_traits, 0, 0, Ts...> {};
+    template<>
+    struct find_max_level<> {
+        static constexpr std::size_t index = std::size_t(-1);
+        struct type {
+            static constexpr std::uintmax_t max_level = 0;
+        };
+    };
 
 #ifdef OPTION_HAS_PFR
     template<class Struct>
@@ -865,14 +854,10 @@ namespace impl {
         OPTION_PFR_NAMESPACE is_implicitly_reflectable_v<Struct, option_tag>;
 
     template<class Struct>
-    struct unpack_tuple_select_max_level_traits;
+    struct pfr_find_max_level;
     template<class... Ts>
-    struct unpack_tuple_select_max_level_traits<std::tuple<Ts&...>>
-        : select_max_level_traits<Ts...> {};
-#endif
-
-#if OPTION_MSVC
-    #pragma warning(pop)
+    struct pfr_find_max_level<std::tuple<Ts&...>>
+        : find_max_level<opt::option_traits<Ts>...> {};
 #endif
 
 #if OPTION_CAN_REFLECT_ENUM
@@ -954,11 +939,11 @@ namespace impl {
 #endif
 
     template<class TupleLike, class IndexSeq = std::make_integer_sequence<std::size_t, std::tuple_size<TupleLike>::value>>
-    struct unpack_tuple_like_select_max_level_traits;
+    struct tuple_like_find_max_level;
 
     template<class TupleLike, std::size_t... Index>
-    struct unpack_tuple_like_select_max_level_traits<TupleLike, std::integer_sequence<std::size_t, Index...>>
-        : select_max_level_traits<std::tuple_element_t<Index, TupleLike>...> {};
+    struct tuple_like_find_max_level<TupleLike, std::integer_sequence<std::size_t, Index...>>
+        : find_max_level<opt::option_traits<std::tuple_element_t<Index, TupleLike>>...> {};
 
     namespace tuple_like_get_impl {
 #if OPTION_MSVC
@@ -1351,19 +1336,17 @@ namespace impl {
     template<class... Ts>
     struct internal_option_traits<std::tuple<Ts...>, option_strategy::tuple> {
     private:
-        using select_traits = select_max_level_traits<Ts...>;
-        using type = typename select_traits::type;
-        using traits = ::opt::option_traits<type>;
+        using find_result = find_max_level<opt::option_traits<Ts>...>;
 
-        static constexpr std::size_t tuple_index = select_traits::index;
+        static constexpr std::size_t tuple_index = find_result::index;
     public:
-        static constexpr std::uintmax_t max_level = select_traits::level;
+        static constexpr std::uintmax_t max_level = find_result::type::max_level;
 
         static constexpr std::uintmax_t get_level(const std::tuple<Ts...>* const value) noexcept {
-            return traits::get_level(OPTION_ADDRESSOF(std::get<tuple_index>(*value)));
+            return find_result::type::get_level(OPTION_ADDRESSOF(std::get<tuple_index>(*value)));
         }
         static constexpr void set_level(std::tuple<Ts...>* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(OPTION_ADDRESSOF(std::get<tuple_index>(*value)), level);
+            find_result::type::set_level(OPTION_ADDRESSOF(std::get<tuple_index>(*value)), level);
         }
     };
 
@@ -1386,21 +1369,18 @@ namespace impl {
     template<class T>
     struct internal_option_traits<T, option_strategy::reflectable> {
     private:
-        using select_traits = unpack_tuple_select_max_level_traits<
+        using find_result = pfr_find_max_level<
             decltype(OPTION_PFR_NAMESPACE structure_tie(std::declval<T&>()))
         >;
-        static constexpr std::size_t index = select_traits::index;
-
-        using type = typename select_traits::type;
-        using traits = opt::option_traits<type>;
+        static constexpr std::size_t index = find_result::index;
     public:
-        static constexpr std::uintmax_t max_level = select_traits::level;
+        static constexpr std::uintmax_t max_level = find_result::type::max_level;
 
         static constexpr std::uintmax_t get_level(const T* const value) noexcept {
-            return traits::get_level(OPTION_ADDRESSOF(OPTION_PFR_NAMESPACE get<index>(*value)));
+            return find_result::type::get_level(OPTION_ADDRESSOF(OPTION_PFR_NAMESPACE get<index>(*value)));
         }
         static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(OPTION_ADDRESSOF(OPTION_PFR_NAMESPACE get<index>(*value)), level);
+            find_result::type::set_level(OPTION_ADDRESSOF(OPTION_PFR_NAMESPACE get<index>(*value)), level);
         }
     };
 #endif
@@ -1641,19 +1621,17 @@ namespace impl {
     template<class T>
     struct internal_option_traits<T, option_strategy::tuple_like> {
     private:
-        using select_traits = unpack_tuple_like_select_max_level_traits<T>;
-        using type = typename select_traits::type;
-        using traits = opt::option_traits<type>;
+        using find_result = tuple_like_find_max_level<T>;
 
-        static constexpr std::size_t index = select_traits::index;
+        static constexpr std::size_t index = find_result::index;
     public:
-        static constexpr std::uintmax_t max_level = select_traits::level;
+        static constexpr std::uintmax_t max_level = find_result::type::max_level;
 
         static constexpr std::uintmax_t get_level(const T* const value) noexcept {
-            return traits::get_level(OPTION_ADDRESSOF(tuple_like_get<index>(*value)));
+            return find_result::type::get_level(OPTION_ADDRESSOF(tuple_like_get<index>(*value)));
         }
         static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
-            traits::set_level(OPTION_ADDRESSOF(tuple_like_get<index>(*value)), level);
+            find_result::type::set_level(OPTION_ADDRESSOF(tuple_like_get<index>(*value)), level);
         }
     };
 
