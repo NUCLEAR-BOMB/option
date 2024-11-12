@@ -1851,6 +1851,11 @@ namespace impl {
     template<class T, class U>
     using copy_reference_t = typename copy_reference<T, U>::type;
 
+    template<class T>
+    inline constexpr bool is_reference_wrapper_v = false;
+    template<class T>
+    inline constexpr bool is_reference_wrapper_v<std::reference_wrapper<T>> = true;
+
     // See https://github.com/microsoft/STL/pull/878#issuecomment-639696118
     struct nontrivial_dummy {
         constexpr nontrivial_dummy() noexcept {}
@@ -2252,19 +2257,17 @@ namespace impl {
         bool TrivialMoveCtor,
         bool TrivialMoveAssignment>
     struct option_base<T, TrivialCopyCtor, TrivialCopyAssignment, TrivialMoveCtor, TrivialMoveAssignment, /*is_reference=*/true> {
-        using raw_type = std::remove_reference_t<T>;
+        using unref_type = std::remove_reference_t<T>;
 
-        template<class U>
-        static constexpr raw_type* ref_to_ptr(U&& other) noexcept {
-            using raw_u = std::remove_reference_t<U>;
-            if constexpr (std::is_same_v<raw_u, std::reference_wrapper<std::remove_const_t<raw_type>>>
-                       || std::is_same_v<raw_u, std::reference_wrapper<raw_type>>) {
-                return OPTION_ADDRESSOF(other.get());
-            } else {
-                return OPTION_ADDRESSOF(other);
-            }
+        static constexpr unref_type* ref_to_ptr(T&& other) noexcept {
+            return OPTION_ADDRESSOF(other);
         }
-        raw_type* value;
+        template<class U>
+        static constexpr unref_type* ref_to_ptr(std::reference_wrapper<U> other) noexcept {
+            return OPTION_ADDRESSOF(other.get());
+        }
+
+        unref_type* value;
 
         constexpr option_base() noexcept
             : value{nullptr} {}
@@ -2275,7 +2278,11 @@ namespace impl {
 
         template<class F, class Arg, bool IsAggregate>
         constexpr option_base(construct_from_invoke_tag, std::bool_constant<IsAggregate>, F&& f, Arg&& arg)
-            : value{ref_to_ptr(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)))} {}
+            : value{ref_to_ptr(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)))} {
+            using fn_result = decltype(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)));
+            static_assert(std::is_reference_v<fn_result> || is_reference_wrapper_v<fn_result>,
+                "function returned prvalue, expected lvalue or rvalue");
+        }
 
         OPTION_PURE constexpr bool has_value() const noexcept {
             return value != nullptr;
