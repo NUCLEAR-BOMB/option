@@ -779,6 +779,8 @@ namespace impl {
     template<bool Condition, class If, class Else>
     using if_ = typename if_impl<Condition>::template type<If, Else>;
 
+#if OPTION_USE_BUILTIN_TRAITS
+
 #if OPTION_CLANG
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
@@ -1779,10 +1781,19 @@ namespace impl {
 #elif OPTION_GCC
     #pragma GCC diagnostic pop
 #endif
+
+#endif // OPTION_USE_BUILTIN_TRAITS
 }
 
+#if OPTION_USE_BUILTIN_TRAITS
 template<class T, class>
 struct option_traits : impl::internal_option_traits<T> {};
+#else
+template<class T, class>
+struct option_traits {
+    static constexpr std::uintmax_t max_level = 0;
+};
+#endif
 
 namespace impl {
     struct construct_from_invoke_tag {
@@ -2795,7 +2806,9 @@ class OPTION_DECLSPEC_EMPTY_BASES OPTION_CONSUMABLE(unconsumed) option
 {
     using base = impl::option_base<T>;
 
+#if OPTION_USE_BUILTIN_TRAITS
     template<class, impl::option_strategy> friend struct impl::internal_option_traits;
+#endif
     template<class> friend class option;
 
     using checks = impl::option_checks_base<std::is_reference_v<T>>;
@@ -3258,6 +3271,7 @@ template<class T>
 option(T) -> option<T>;
 
 namespace impl {
+#if OPTION_USE_BUILTIN_TRAITS
     template<class T>
     struct internal_option_traits<opt::option<T>, option_strategy::avaliable_option> {
         using base = typename opt::option<T>::base;
@@ -3287,6 +3301,7 @@ namespace impl {
             bool_traits::set_level(OPTION_ADDRESSOF(static_cast<base*>(value)->has_value_flag), level);
         }
     };
+#endif // OPTION_USE_BUILTIN_TRAITS
 }
 
 template<class T>
@@ -3998,7 +4013,6 @@ public:
         traits::set_level(OPTION_ADDRESSOF(static_cast<T&>(*value)), level);
     }
 };
-
 
 namespace impl {
     template<class T, class>
