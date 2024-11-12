@@ -2722,7 +2722,7 @@ namespace impl {
             && !opt::is_option_v<remove_cvref<U>>
             && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
                 || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
-                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>))),
+                && (std::is_lvalue_reference_v<T> == std::is_lvalue_reference_v<U>))),
             always_non_explicit, option_check_fail>;
 
         template<class T, class First, class... Args>
@@ -2736,7 +2736,7 @@ namespace impl {
             is_not_same_v<U, T>
             && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
                 || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
-                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>))),
+                && (std::is_lvalue_reference_v<T> == std::is_lvalue_reference_v<U>))),
             always_non_explicit, option_check_fail
         >;
         template<class T, class U, class QualU>
@@ -2744,7 +2744,7 @@ namespace impl {
             is_not_same_v<U, T>
             && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
                 || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
-                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>))),
+                && (std::is_lvalue_reference_v<T> == std::is_lvalue_reference_v<U>))),
             always_assign, option_check_fail
         >;
 
@@ -2753,7 +2753,7 @@ namespace impl {
             is_not_same_v<remove_cvref<U>, opt::option<T>>
             && (is_same_reference_wrapper_v<std::remove_reference_t<T>, std::remove_reference_t<U>>
                 || (std::is_convertible_v<std::remove_reference_t<U>*, std::remove_reference_t<T>*>
-                && (std::is_lvalue_reference_v<T> ? std::is_lvalue_reference_v<U> : !std::is_lvalue_reference_v<U>)))
+                && (std::is_lvalue_reference_v<T> == std::is_lvalue_reference_v<U>)))
         >;
     };
 }
