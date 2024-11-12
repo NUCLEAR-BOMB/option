@@ -30,13 +30,13 @@
 | `std::reference_wrapper`                        | 256                              | [0,255]                                 |
 | References                                      | 255                              | [0,254]                                 |
 | Pointer (8 bytes)                               | 512                              | [0xF8E1B1825D5D6C67,0xF8E1B1825D5D6E66] |
-| Pointer (4 bytes)                               | 32                               | [0xFFFFFFC0,0xFFFFFFDF]                 |
+| Pointer (4 bytes)                               | 32                               | [0XFFFFFFC0,0XFFFFFFDF]                 |
 | floating point (8 bytes, signaling NaN)         | 256                              | [0xFFF6C79F55B0898F,0xFFF6C79F55B08A8E] |
 | floating point (8 bytes, quite NaN)             | 256                              | [0xFFFBF26430BB3557,0xFFFBF26430BB3656] |
 | floating point (4 bytes, signaling NaN)         | 256                              | [0xFFBF69AF,0xFFBF6AAE]                 |
 | floating point (4 bytes, quite NaN)             | 256                              | [0xFFC3EFB5,0xFFC3F0B4]                 |
 | Polymorphic type                                | 255                              | [-89152,-88898]                         |
-| `std::basic_string_view`                        | 255                              | data(): -32186, size(): [0,254]         |
+| `std::basic_string_view`                        | 255                              | data(): [-32185,-31931]                 |
 | `std::unique_ptr<T, std::default_delete<T>>`    | 255                              | [-46509,-46255]                         |
 | `std::basic_string`                             | 255                              | capacity(): 0, size(): [0,254]          |
 | `std::vector`                                   | 255                              | data(): 1, {data() + size()}: [0,245]   |
@@ -157,7 +157,7 @@ Since `opt::option` uses a pointer to store references, this option trait stores
 
 ## `std::basic_string_view`
 
-Stores level value inside exposition only length of the character sequence if pointer to character sequence is equal to the sentinel.
+Stores level value inside internal pointer to character sequence.
 
 If exposition only [`std::string_view`][std::string_view]'s pointer is equal to special tag, one of the (possible nested) `opt::option`'s is empty.
 The [`std::string_view`][std::string_view] length is a level.
