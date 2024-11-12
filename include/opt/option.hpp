@@ -3100,6 +3100,7 @@ public:
 
     [[nodiscard]] OPTION_PURE constexpr T& get_unchecked() & noexcept {
         if constexpr (std::is_reference_v<T>) {
+            OPTION_VERIFY(base::value != nullptr, "Dereferencing null pointer");
             return *base::value;
         } else {
             return base::value;
@@ -3107,6 +3108,7 @@ public:
     }
     [[nodiscard]] OPTION_PURE constexpr const T& get_unchecked() const& noexcept {
         if constexpr (std::is_reference_v<T>) {
+            OPTION_VERIFY(base::value != nullptr, "Dereferencing null pointer");
             return *base::value;
         } else {
             return base::value;
@@ -3114,6 +3116,7 @@ public:
     }
     [[nodiscard]] OPTION_PURE constexpr T&& get_unchecked() && noexcept {
         if constexpr (std::is_reference_v<T>) {
+            OPTION_VERIFY(base::value != nullptr, "Dereferencing null pointer");
             return static_cast<T&&>(*base::value);
         } else {
             return static_cast<T&&>(base::value);
@@ -3121,6 +3124,7 @@ public:
     }
     [[nodiscard]] OPTION_PURE constexpr const T&& get_unchecked() const&& noexcept {
         if constexpr (std::is_reference_v<T>) {
+            OPTION_VERIFY(base::value != nullptr, "Dereferencing null pointer");
             return static_cast<const T&&>(*base::value);
         } else {
             return static_cast<const T&&>(base::value);
