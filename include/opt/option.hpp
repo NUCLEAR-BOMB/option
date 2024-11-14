@@ -3344,7 +3344,7 @@ template<class To, class From>
 }
 
 template<class T>
-[[nodiscard]] constexpr opt::option<T&> from_nullable(T* const nullable_ptr) {
+[[nodiscard]] constexpr opt::option<T&> from_nullable(T* const nullable_ptr) noexcept {
     if (nullable_ptr == nullptr) {
         return {};
     } else {

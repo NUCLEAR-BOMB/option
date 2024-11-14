@@ -1279,7 +1279,7 @@ std::cout << b.has_value() << '\n'; // false
 ### `opt::from_nullable`
 ```cpp
 template<class T>
-constexpr option<T&> from_nullable(T* const nullable_ptr);
+constexpr option<T&> from_nullable(T* const nullable_ptr) noexcept;
 ```
 Returns a reference option pointed to the dereferenced value of provided pointer if it is not equal to `nullptr`; otherwise, returns empty option.
 
