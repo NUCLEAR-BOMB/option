@@ -2531,7 +2531,6 @@ namespace impl::option {
         }
     }
 
-    // implementation of opt::option<T>::and_then(F&&)
     template<class Self, class F>
     constexpr auto and_then(Self&& self, F&& f) {
         using invoke_res = impl::remove_cvref<decltype(impl::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self)))>;
@@ -2543,8 +2542,6 @@ namespace impl::option {
         }
     }
 
-    // implementation of opt::option<T>::map(F&&)
-    // map(F&&) -> option<U> : F(T&&) -> U
     template<class T, class Self, class F>
     constexpr auto map(Self&& self, F&& f) {
         using f_result = std::remove_cv_t<decltype(impl::invoke(static_cast<F&&>(f), *static_cast<Self&&>(self)))>;
@@ -2554,7 +2551,6 @@ namespace impl::option {
         return opt::option<f_result>{opt::none};
     }
 
-    // implementation of opt::option<T>::map_or(U&&, F&&)
     template<class T, class Self, class U, class F>
     constexpr impl::remove_cvref<U> map_or(Self&& self, U&& default_value, F&& f) {
         if (self.has_value()) {
@@ -2575,7 +2571,6 @@ namespace impl::option {
         return static_cast<D&&>(d)();
     }
 
-    // implementation of opt::option<T>::or_else(F&&)
     template<class T, class Self, class F>
     constexpr opt::option<T> or_else(Self&& self, F&& f) {
         using f_result = decltype(static_cast<F&&>(f)());
@@ -2587,7 +2582,6 @@ namespace impl::option {
         return static_cast<F&&>(f)();
     }
 
-    // implementation of opt::option<T>::value_or_throw()
     template<class Self>
     constexpr auto&& value_or_throw(Self&& self) {
         if (!self.has_value()) { throw_bad_access(); }
