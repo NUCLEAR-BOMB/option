@@ -1269,20 +1269,20 @@ std::cout << b.has_value() << '\n'; // false
 
 ---
 
-
 ### `opt::from_nullable`
 ```cpp
 template<class T>
-constexpr option<T> from_nullable(T* const nullable_ptr);
+constexpr option<T&> from_nullable(T* const nullable_ptr);
 ```
-Constructs `opt::option<T>` from dereferenced value of proveded pointer if it is not equal to 'nullptr'; otherwise, returns empty `opt::option<T>`.
+Returns a reference option pointed to the dereferenced value of provided pointer if it is not equal to `nullptr`; otherwise, returns empty option.
 
-Description in the simplified code equivalent:
+Description in the code equivalent:
 ```cpp
 if (nullable_ptr == nullptr) {
     return opt::none;
+} else {
+    return *nullable_ptr;
 }
-return *nullable_ptr;
 ```
 
 ---
