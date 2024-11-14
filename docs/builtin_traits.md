@@ -159,9 +159,6 @@ Since `opt::option` uses a pointer to store references, this option trait stores
 
 Stores level value inside internal pointer to character sequence.
 
-If exposition only [`std::string_view`][std::string_view]'s pointer is equal to special tag, one of the (possible nested) `opt::option`'s is empty.
-The [`std::string_view`][std::string_view] length is a level.
-
 This option trait assumes that [`std::string_view`][std::string_view] not checks if passed range (pointer and length) is valid.
 
 ## `std::unique_ptr<T, std::default_delete<T>>`
