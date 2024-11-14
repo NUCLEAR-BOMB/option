@@ -653,11 +653,12 @@ constexpr option& inspect(F&& fn) &;
 template<class F>
 constexpr const option& inspect(F&& fn) const&;
 template<class F>
-constexpr option&& inspect(F&& fn) &&;
+constexpr option& inspect(F&& fn) &&;
 template<class F>
-constexpr const option&& inspect(F&& fn) const&&;
+constexpr const option& inspect(F&& fn) const&&;
 ```
-Invokes `fn` with a reference (possible `const`) to the contained value if the `opt::option` contains one. If it does not, there are no effects. Returns a reference to the this `opt::option`.
+Invokes `fn` with a reference with same ref-qualifiers to the contained value if the `opt::option` contains one. If it does not, there are no effects.
+Returns a reference to the this `opt::option`.
 
 Description in the simplified code equivalent:
 ```cpp

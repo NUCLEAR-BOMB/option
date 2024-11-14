@@ -2603,11 +2603,11 @@ namespace impl::option {
     }
 
     template<class Self, class F>
-    constexpr Self&& inspect(Self&& self, F&& f) {
+    constexpr Self& inspect(Self&& self, F&& f) {
         if (self.has_value()) {
-            impl::invoke(static_cast<F&&>(f), self.get());
+            impl::invoke(static_cast<F&&>(f), static_cast<Self&&>(self).get());
         }
-        return static_cast<Self&&>(self);
+        return self;
     }
 
     template<class Self, class F>
@@ -3041,9 +3041,9 @@ public:
     template<class F>
     constexpr const option& inspect(F&& f) const& { return impl::option::inspect(*this, static_cast<F&&>(f)); }
     template<class F>
-    constexpr option&& inspect(F&& f) && { return impl::option::inspect(static_cast<option&&>(*this), static_cast<F&&>(f)); }
+    constexpr option& inspect(F&& f) && { return impl::option::inspect(static_cast<option&&>(*this), static_cast<F&&>(f)); }
     template<class F>
-    constexpr const option&& inspect(F&& f) const&& { return impl::option::inspect(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
+    constexpr const option& inspect(F&& f) const&& { return impl::option::inspect(static_cast<const option&&>(*this), static_cast<F&&>(f)); }
 
     OPTION_CALLABLE_WHEN(consumed)
     [[nodiscard]] OPTION_PURE constexpr T& get() & noexcept OPTION_LIFETIMEBOUND {
