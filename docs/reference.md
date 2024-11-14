@@ -104,16 +104,10 @@ class option;
 
 ```cpp
 constexpr option() noexcept;
-```
-Default constructor. \
-Constructs an `opt::option` object that does not contain a value.
-- *Postcondition:* `has_value() == false`.
 
----
-
-```cpp
 constexpr option(opt::none_t) noexcept;
 ```
+Default constructor. \
 Constructs an `opt::option` object that does not contain a value.
 - *Postcondition:* `has_value() == false`.
 
@@ -184,6 +178,9 @@ Constructs an `opt::option` object that *contains a value*. Initializes a contai
       - `!opt::is_option_v<remove_cvref<U>>`.
       - [`can_bind_reference<T, U>`](#can_bind_referencex-y).
 
+> [!NOTE]
+> After construction, the `opt::option` will always contain a value regardless of `value` argument.
+
 ---
 
 ```cpp
@@ -199,6 +196,9 @@ Always disabled when `T` is a reference type.
     - `std::is_constructible_v<T, First, Args...> || is_initializable_from<T, First, Args...>`. ([`is_initializable_from`](#is_initializable_fromx-y))
     - `!std::is_same_v<remove_cvref<First>, opt::option<T>>`. ([`remove_cvref`](#remove_cvrefx))
 
+> [!NOTE]
+> After construction, the `opt::option` will always contain a value regardless of `first` and `args...` arguments.
+
 ---
 
 ```cpp
@@ -209,6 +209,9 @@ Constructs an `opt::option` object that contains a value that is initialized usi
 
 Always disabled when `T` is a reference type.
 
+> [!NOTE]
+> After construction, the `opt::option` will always contain a value regardless of `args...` arguments.
+
 ---
 
 ```cpp
@@ -218,6 +221,9 @@ constexpr explicit option(std::in_place_t, std::initializer_list<U> ilist, Args&
 Constructs an `opt::option` object that contains a value that is initialized using *direct-list-initialization* with the arguments `ilist, std::forward<Args>(args)...`.
 
 Always disabled when `T` is a reference type.
+
+> [!NOTE]
+> After construction, the `opt::option` will always contain a value regardless of `ilist` and `args...` arguments.
 
 ---
 
