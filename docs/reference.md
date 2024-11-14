@@ -1576,15 +1576,21 @@ return container.back();
 template<class Option>
 constexpr auto flatten(Option&& opt);
 ```
-Flattens `opt::option` up to the first level (i.e. `opt::option<X>`, where `X` is not an `opt::option`).
+Flattens `opt::option` up to the first level (i.e. `opt::option<Y>`, where `Y` is not an `opt::option`).
 
-Converts:
-- `opt::option<opt::option<X>>` -> `opt::option<X>`,
-- `opt::option<opt::option<opt::option<X>>>` -> `opt::option<X>`,
-- `opt::option<opt::option<opt::option<opt::option<X>>>>` -> `opt::option<X>`,
-- ...
-<!-- -->
-- *Requirements:* the `Option` template parameter must be at least `opt::option<opt::option<X>>` (where `X` can be any type).
+- *Requirements:* the `Option` template parameter must be at least `opt::option<X>` (where `X` can be any type).
+
+The type `Y` is defined to be a reference type to the contained value if `Option` is lvalue reference; otherwise, a prvalue type.
+Examples:
+- `flatten<opt::option<opt::option<int>>>(...)` -> `opt::option<int>`
+- `flatten<opt::option<opt::option<int>>&>(...)` -> `opt::option<int&>`
+- `flatten<opt::option<opt::option<int&>>>(...)` -> `opt::option<int&>`
+- `flatten<opt::option<opt::option<int&>>&>(...)` -> `opt::option<int&>`
+- `flatten<opt::option<opt::option<int&&>>&>(...)` -> `opt::option<int&&>`
+- `flatten<opt::option<opt::option<int&>>&&>(...)` -> `opt::option<int&>`
+
+> [!NOTE]
+> Since there is no way to distinguish prvalue from xvalue in the function's arguments, the function always assumes that prvalue was passed.
 
 Description in the simplified code equivalent to the second level of `opt::option` nesting:
 ```cpp

@@ -1847,9 +1847,23 @@ namespace impl {
     struct copy_reference<T&, U&> {
         using type = T&;
     };
-
     template<class T, class U>
     using copy_reference_t = typename copy_reference<T, U>::type;
+
+    template<class T, class U>
+    struct copy_lvalue_reference {
+        using type = T;
+    };
+    template<class T, class U>
+    struct copy_lvalue_reference<T, U&> {
+        using type = T&;
+    };
+    template<class T, class U>
+    struct copy_lvalue_reference<T&&, U&> {
+        using type = T&&;
+    };
+    template<class T, class U>
+    using copy_lvalue_reference_t = typename copy_lvalue_reference<T, U>::type;
 
     template<class T>
     inline constexpr bool is_reference_wrapper_v = false;
@@ -3349,12 +3363,13 @@ constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right
     left.swap(right);
 }
 
-template<class Self>
-[[nodiscard]] constexpr auto flatten(Self&& self) {
-    if constexpr (!opt::is_option_v<typename impl::remove_cvref<Self>::value_type::value_type>) {
-        return self.has_value() ? static_cast<Self&&>(self).get() : opt::none;
+template<class Option>
+[[nodiscard]] constexpr auto flatten(Option&& opt) {
+    if constexpr (!opt::is_option_v<typename impl::remove_cvref<Option>::value_type>) {
+        using result_type = impl::copy_lvalue_reference_t<typename impl::remove_cvref<Option>::value_type, Option>;
+        return opt.has_value() ? opt::option<result_type>{static_cast<Option&&>(opt).get()} : opt::none;
     } else {
-        return self.has_value() ? flatten(static_cast<Self&&>(self).get()) : opt::none;
+        return opt.has_value() ? flatten(static_cast<Option&&>(opt).get()) : opt::none;
     }
 }
 
