@@ -11,6 +11,7 @@
 #include <limits> // std::numeric_limits
 #include <exception> // std::exception
 #include <cstdint>
+#include <initializer_list>
 
 #if __has_include(<opt/option_fwd.hpp>)
     #include <opt/option_fwd.hpp>
