@@ -2453,9 +2453,8 @@ Attribute `[[msvc::lifetimebound]]` (see [C26815][msvc-C26815] and [C26816][msvc
 [std::is_void]: https://en.cppreference.com/w/cpp/types/is_void
 [std::is_function]: https://en.cppreference.com/w/cpp/types/is_function
 [P3168]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3168r2
-[P2218]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/
+[P2218]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2218r0
 [clang-lifetimebound]: https://clang.llvm.org/docs/AttributeReference.html#lifetimebound
 [msvc-C26815]: https://learn.microsoft.com/cpp/code-quality/c26815
 [msvc-C26816]: https://learn.microsoft.com/cpp/code-quality/c26816
 [trivially-copyable]: https://en.cppreference.com/w/cpp/named_req/TriviallyCopyable
-
