@@ -1040,8 +1040,8 @@ Where `{construct}` is a function that constructs contained object in place.
 ### `begin`
 
 ```cpp
-constexpr iterator begin() noexcept;
-constexpr const_iterator begin() const noexcept;
+constexpr iterator begin() noexcept /*lifetimebound*/;
+constexpr const_iterator begin() const noexcept /*lifetimebound*/;
 ```
 If contains a value, returns an iterator to the contained value. Otherwise, a past-the-end iterator.
 
@@ -1080,8 +1080,8 @@ for (const auto& v : b) {
 ### `end`
 
 ```cpp
-constexpr iterator end() noexcept;
-constexpr const_iterator end() const noexcept;
+constexpr iterator end() noexcept /*lifetimebound*/;
+constexpr const_iterator end() const noexcept /*lifetimebound*/;
 ```
 Returns a past-the-end iterator. Equivalent to `begin() + has_value()`.
 
