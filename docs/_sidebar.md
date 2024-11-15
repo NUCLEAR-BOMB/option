@@ -1,6 +1,4 @@
 
-* [Home](/)
-
 * [Reference](reference.md#reference)
 * [Macros](macros.md#macros)
 * [Custom traits guide](custom_traits_guide.md#custom-option-traits-guide)
