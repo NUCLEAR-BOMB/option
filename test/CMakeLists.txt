@@ -29,7 +29,8 @@ add_executable(option-test
     "special_traits.test.cpp"
     "forward_std.test.cpp"
     "meta.test.cpp"
-    "functions.cpp"
+    "functions.test.cpp"
+    "constexpr.test.cpp"
     "main.cpp"
     
     "utils.hpp"

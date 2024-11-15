@@ -1892,12 +1892,13 @@ namespace impl {
     template<class T>
     struct option_destruct_base<T, /*TriviallyDestructible=*/true, /*HasTraits=*/false> {
         union {
+            nontrivial_dummy dummy;
             std::remove_const_t<T> value;
         };
         bool has_value_flag;
 
         constexpr option_destruct_base() noexcept
-            : has_value_flag(false) {}
+            : dummy{}, has_value_flag(false) {}
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
@@ -1930,12 +1931,13 @@ namespace impl {
     template<class T>
     struct option_destruct_base<T, /*TriviallyDestructible=*/false, /*HasTraits=*/false> {
         union {
+            nontrivial_dummy dummy;
             std::remove_const_t<T> value;
         };
         bool has_value_flag;
 
         constexpr option_destruct_base() noexcept
-            : has_value_flag(false) {}
+            : dummy{}, has_value_flag(false) {}
 
         template<class... Args>
         constexpr option_destruct_base(std::in_place_t, std::true_type, Args&&... args)
