@@ -2923,7 +2923,8 @@ public:
         } else {
             if (other.has_value()) {
                 if (has_value()) {
-                    base::assign(other.get());
+                    base::value = other.get();
+                    OPTION_VERIFY(has_value(), "After assignment, the value is in an empty state");
                 } else {
                     base::construct(other.get());
                 }
