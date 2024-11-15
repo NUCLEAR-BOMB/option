@@ -2961,19 +2961,19 @@ public:
     }
 
     OPTION_NO_SANITIZE_OBJECT_SIZE
-    [[nodiscard]] constexpr iterator begin() noexcept {
+    [[nodiscard]] constexpr iterator begin() noexcept OPTION_LIFETIMEBOUND {
         return iterator{has_value() ? OPTION_ADDRESSOF(get()) : nullptr};
     }
     OPTION_NO_SANITIZE_OBJECT_SIZE
-    [[nodiscard]] constexpr const_iterator begin() const noexcept {
+    [[nodiscard]] constexpr const_iterator begin() const noexcept OPTION_LIFETIMEBOUND {
         return const_iterator{has_value() ? OPTION_ADDRESSOF(get()) : nullptr};
     }
     OPTION_NO_SANITIZE_OBJECT_SIZE
-    [[nodiscard]] constexpr iterator end() noexcept {
+    [[nodiscard]] constexpr iterator end() noexcept OPTION_LIFETIMEBOUND {
         return iterator{has_value() ? (OPTION_ADDRESSOF(get()) + 1) : nullptr};
     }
     OPTION_NO_SANITIZE_OBJECT_SIZE
-    [[nodiscard]] constexpr const_iterator end() const noexcept {
+    [[nodiscard]] constexpr const_iterator end() const noexcept OPTION_LIFETIMEBOUND {
         return const_iterator{has_value() ? (OPTION_ADDRESSOF(get()) + 1) : nullptr};
     }
 
