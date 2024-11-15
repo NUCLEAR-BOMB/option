@@ -1,30 +1,6 @@
 
 # Size optimizations
 
-- [`bool`](#bool)
-- [`std::reference_wrapper`](#stdreference_wrapper)
-- [`std::pair`](#stdpair)
-- [`std::tuple`](#stdtuple)
-- [Tuple-like types](#tuple-like-types)
-- [`std::array`](#stdarray)
-- [Reflectable types](#reflectable-types)
-- [Polymorphic types](#polymorphic-types)
-- [Pointers](#pointers)
-- [Floating point](#floating-point)
-- [Reference](#reference)
-- [`std::basic_string_view`](#stdbasic_string_view)
-- [`std::unique_ptr<T, std::default_delete<T>>`](#stdunique_ptrt-stddefault_deletet)
-- [`std::basic_string`](#stdbasic_string)
-- [`std::vector`](#stdvector)
-- [`SENTINEL` member](#sentinel-member)
-- [Enumeration `SENTINEL`](#enumeration-sentinel)
-- [Enumeration `SENTINEL_START`](#enumeration-sentinel_start)
-- [Enumeration `SENTINEL_START` and `SENTINEL_END`](#enumeration-sentinel_start-and-sentinel_end)
-- [Enumeration](#enumeration)
-- [Pointers to members](#pointers-to-members)
-- [`std::complex`](#stdcomplex)
-- [`opt::option`](#optoption)
-
 | Type                                            | max_level                        | level range                             |
 | :---------------------------------------------- | :------------------------------- | :-------------------------------------- |
 | `bool`                                          | 254                              | [2,255]                                 |

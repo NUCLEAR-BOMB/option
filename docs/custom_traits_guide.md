@@ -1,15 +1,6 @@
 
 # Custom option traits guide
 
-- [Custom option traits guide](#custom-option-traits-guide)
-  - [How `opt::option_traits` affects `opt::option`](#how-optoption_traits-affects-optoption)
-  - [Creating new `opt::option_traits` specialization](#creating-new-optoption_traits-specialization)
-  - [Optional static methods](#optional-static-methods)
-  - [SFINAE](#sfinae)
-  - [Disabling specializations](#disabling-specializations)
-  - [Accessing empty state](#accessing-empty-state)
-  - [Overriding builtin option traits](#overriding-builtin-option-traits)
-
 ## How `opt::option_traits` affects `opt::option`
 
 The main purpose of `opt::option_traits` is to redude size of the `opt::option` to absolute minimum.

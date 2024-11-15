@@ -4,18 +4,6 @@
 > [!WARNING]
 > Defining macro that not listed in the following list will possible result code break between different versions.
 
-- [OPTION_USE_QUIET_NAN](#option_use_quiet_nan)
-- [OPTION_VERIFY](#option_verify)
-- [OPTION_USE_BUILTIN_TRAITS](#option_use_builtin_traits)
-- [OPTION_FORWARD_DECLARE_STD](#option_forward_declare_std)
-- [OPTION_CONSUMED_ANNOTATION_CHECKING](#option_consumed_annotation_checking)
-- [**boost.pfr**/**pfr** library related](#boostpfrpfr-library-related)
-    - [OPTION_PFR_FILE](#option_pfr_file)
-    - [OPTION_USE_PFR](#option_use_pfr)
-- [**libassert** library related](#libassert-library-related)
-    - [OPTION_LIBASSERT_FILE](#option_libassert_file)
-    - [OPTION_USE_LIBASSERT](#option_use_libassert)
-
 ### OPTION_USE_QUIET_NAN
 *expects:* `boolean`, *default:* `false`
 

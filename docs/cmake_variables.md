@@ -5,15 +5,6 @@ CMake variables that controls build system. See [option][cmake-option].
 
 You can define these variables by providing [`-D`][cmake-d] CMake argument.
 
-- [`OPTION_TEST`](#option_test)
-- [`OPTION_EXAMPLES`](#option_examples)
-- [`USE_SANITIZER`](#use_sanitizer)
-- [`USE_CLANG_TIDY`](#use_clang_tidy)
-- [`OPTION_INSTALL`](#option_install)
-- [`OPTION_USE_NATVIS`](#option_use_natvis)
-- [`OPTION_USE_NATSTEPFILTER`](#option_use_natstepfilter)
-- [`USE_LIBASSERT`](#use_libassert)
-
 ## `OPTION_TEST`
 
 **default:** [`${PROJECT_IS_TOP_LEVEL}`][is-project-top-level]
