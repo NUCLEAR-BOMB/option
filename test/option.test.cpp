@@ -13,6 +13,7 @@
 #include <string_view>
 #include <functional>
 #include <cstdint>
+#include <complex>
 
 #include "utils.hpp"
 
@@ -196,8 +197,11 @@ template<> struct sample_values<std::vector<int>> {
     using ilist = std::initializer_list<int>;
     std::vector<int> values[5]{ilist{1}, ilist{2, 3}, ilist{4, 5, 6}, ilist{7, 8, 9, 10}, ilist{11, 12, 13, 14, 15}};
 };
+template<> struct sample_values<std::complex<float>> {
+    std::complex<float> values[5]{{1.f, 2.f}, {3.f, 4.f}, {5.f, 6.f}, {7.f, 8.f}, {9.f, 10.f}};
+};
 
-TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, /*std::tuple<int, empty_struct, long>,*/ /*std::array<empty_struct, 2>,*/ /*aggregate_with_empty_struct,*/ int) {
+TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int, std::complex<float>) {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];

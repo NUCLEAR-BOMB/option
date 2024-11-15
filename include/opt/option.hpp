@@ -506,6 +506,9 @@ OPTION_STD_NAMESPACE_CXX11_END
     // Forward declared in <utility>
     // template<class... Types>
     // class tuple; // Defined in header <tuple>
+
+    template<class T>
+    class complex; // Defined in header <complex>
 OPTION_STD_NAMESPACE_END
 #else
     #include <string_view>
@@ -514,6 +517,7 @@ OPTION_STD_NAMESPACE_END
     #include <memory>
     #include <array>
     #include <variant>
+    #include <complex>
 #endif
 
 #if OPTION_IS_CXX20
@@ -1003,6 +1007,7 @@ namespace impl {
 #if OPTION_CAN_REFLECT_ENUM
         enumeration,
 #endif
+        complex,
 #ifdef OPTION_HAS_PFR
         reflectable,
 #endif
@@ -1058,6 +1063,10 @@ namespace impl {
     template<class Elem>
     struct dispatch_specializations<std::unique_ptr<Elem, std::default_delete<Elem>>> {
         static constexpr option_strategy value = option_strategy::unique_ptr;
+    };
+    template<class T>
+    struct dispatch_specializations<std::complex<T>> {
+        static constexpr option_strategy value = option_strategy::complex;
     };
 
     template<class T>
@@ -1383,7 +1392,7 @@ namespace impl {
             find_result::type::set_level(OPTION_ADDRESSOF(OPTION_PFR_NAMESPACE get<index>(*value)), level);
         }
     };
-#endif
+#endif // defined(OPTION_HAS_PFR)
     template<class T>
     struct internal_option_traits<T, option_strategy::polymorphic> {
     private:
@@ -1563,7 +1572,7 @@ namespace impl {
             impl::ptr_bit_copy(value, underlying(level + max_enumerator_value));
         }
     };
-#endif
+#endif // OPTION_CAN_REFLECT_ENUM
     template<class T>
     struct internal_option_traits<T, option_strategy::enumeration_sentinel> {
     private:
@@ -1752,7 +1761,25 @@ namespace impl {
             std::memcpy(reinterpret_cast<std::uint8_t*>(value) + 0, &first, ptr_size);
         }
     };
-#endif
+#endif // !OPTION_UNKNOWN_STD
+
+    template<class T>
+    struct internal_option_traits<std::complex<T>, option_strategy::complex> {
+    private:
+        using fp_traits = opt::option_traits<T>;
+    public:
+        static constexpr std::uintmax_t max_level = fp_traits::max_level;
+
+        static constexpr std::uintmax_t get_level(const std::complex<T>* const value) noexcept {
+            const T real_part = value->real();
+            return fp_traits::get_level(OPTION_ADDRESSOF(real_part));
+        }
+        static constexpr void set_level(std::complex<T>* const value, const std::uintmax_t level) noexcept {
+            T real_part{};
+            fp_traits::set_level(OPTION_ADDRESSOF(real_part), level);
+            value->real(real_part);
+        }
+    };
 
 #if OPTION_CLANG
     #pragma clang diagnostic pop
@@ -1779,27 +1806,26 @@ namespace impl {
     };
 
     template<class Tuple>
-    struct tuple_like_of_options_t {
+    struct tuple_like_of_options {
         static_assert(!sizeof(Tuple),
             "To unzip opt::option<T>, T must be tuple-like."
             "A type T that satisfies tuple-like must be a specialization of "
             "std::array, std::pair, std::tuple");
     };
-
     template<class... Ts>
-    struct tuple_like_of_options_t<std::tuple<Ts...>> {
+    struct tuple_like_of_options<std::tuple<Ts...>> {
         using type = std::tuple<opt::option<Ts>...>;
     };
     template<class T1, class T2>
-    struct tuple_like_of_options_t<std::pair<T1, T2>> {
+    struct tuple_like_of_options<std::pair<T1, T2>> {
         using type = std::pair<opt::option<T1>, opt::option<T2>>;
     };
     template<class T, std::size_t N>
-    struct tuple_like_of_options_t<std::array<T, N>> {
+    struct tuple_like_of_options<std::array<T, N>> {
         using type = std::array<opt::option<T>, N>;
     };
     template<class Tuple>
-    using tuple_like_of_options = typename tuple_like_of_options_t<Tuple>::type;
+    using tuple_like_of_options_t = typename tuple_like_of_options<Tuple>::type;
 
 #if !OPTION_IS_CXX20
     template<bool IsAggregate, bool IsConstructible, class, class T, class... Args>
@@ -3379,7 +3405,7 @@ template<class Option>
 namespace impl {
     template<class TupleLikeType, class Self, std::size_t... Idx>
     constexpr auto unzip_impl(Self&& self, std::index_sequence<Idx...>) {
-        using tuple_like_of_options = impl::tuple_like_of_options<TupleLikeType>;
+        using tuple_like_of_options = impl::tuple_like_of_options_t<TupleLikeType>;
         if (self.has_value()) {
             return tuple_like_of_options{
                 opt::option<std::tuple_element_t<Idx, TupleLikeType>>{std::get<Idx>(static_cast<Self&&>(self).get())}...

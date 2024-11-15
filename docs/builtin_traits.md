@@ -22,6 +22,7 @@
 - [Enumeration `SENTINEL_START` and `SENTINEL_END`](#enumeration-sentinel_start-and-sentinel_end)
 - [Enumeration](#enumeration)
 - [Pointers to members](#pointers-to-members)
+- [`std::complex`](#stdcomplex)
 - [`opt::option`](#optoption)
 
 | Type                                            | max_level                        | level range                             |
@@ -249,6 +250,10 @@ For MSVC it is stored:
 - When type has *unknown inheritance*: `uintptr_t` offset, `int` adjustment, `int` offset to vptr, `int` virtual table index.
 
 More details: [MSVC][pmf msvc], [Itanium C++ ABI][pmf itanium abi].
+
+## `std::complex`
+
+Stores level value in the real part of the complex number.
 
 ## `opt::option`
 
