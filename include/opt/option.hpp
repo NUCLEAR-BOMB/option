@@ -3025,7 +3025,6 @@ public:
 
     template<class P>
     [[nodiscard]] constexpr option<T> take_if(P&& predicate) {
-        static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
         if (has_value() && bool(impl::invoke(static_cast<P&&>(predicate), get()))) {
             return take();
         }

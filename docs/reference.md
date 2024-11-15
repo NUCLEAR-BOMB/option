@@ -549,7 +549,7 @@ std::cout << b.has_value() << '\n'; // false
 template<class P>
 constexpr option take_if(P&& predicate);
 ```
-Takes the value out of the `opt::option`, but only if the `predicate` evaluates to `true` with a non-const contained value as an argument. \
+Takes the value out of the `opt::option`, but only if the `predicate` evaluates to `true`. \
 Returns an empty `opt::option` if this `opt::option` does not contain a value or `predicate` evaluates to `false` with the non-const contained value as an argument; otherwise, return the expression `take()`.
 
 Description in the simplified code equivalent:
