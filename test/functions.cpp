@@ -14,6 +14,22 @@
 
 #include "utils.hpp"
 
+struct type_with_traits {
+    int x;
+
+    bool operator==(const type_with_traits& other) const { return x == other.x; }
+};
+template<>
+struct opt::option_traits<type_with_traits> {
+    static constexpr std::uintmax_t max_level = 1;
+    static constexpr std::uintmax_t get_level(const type_with_traits* const value) noexcept {
+        return std::uintmax_t(value->x - 123);
+    }
+    static constexpr void set_level(type_with_traits* const value, const std::uintmax_t) noexcept {
+        value->x = 123;
+    }
+};
+
 namespace {
 
 TEST_SUITE_BEGIN("functions");
@@ -187,6 +203,16 @@ TEST_CASE("opt::lookup") {
 
     CHECK_UNARY(std::is_same_v<decltype(opt::lookup(b, 0)), opt::option<const int&>>);
     CHECK_UNARY(std::is_same_v<decltype(opt::lookup(as_const(b), 0)), opt::option<const int&>>);
+}
+
+TEST_CASE("opt::as_option") {
+    CHECK_EQ(opt::as_option(type_with_traits{1}), type_with_traits{1});
+    CHECK_EQ(opt::as_option(type_with_traits{122}), type_with_traits{122});
+    CHECK_EQ(opt::as_option(type_with_traits{134}), type_with_traits{134});
+    CHECK_EQ(opt::as_option(type_with_traits{123}), opt::none);
+
+    CHECK_EQ(opt::as_option(std::array{type_with_traits{1}, type_with_traits{123}}), std::array{type_with_traits{1}, type_with_traits{123}});
+    CHECK_EQ(opt::as_option(std::array{type_with_traits{123}, type_with_traits{1}}), opt::none);
 }
 
 TEST_SUITE_END();

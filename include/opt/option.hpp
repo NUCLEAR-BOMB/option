@@ -3352,6 +3352,15 @@ template<class T>
     }
 }
 
+template<class T>
+[[nodiscard]] constexpr opt::option<T> as_option(const T& value) noexcept {
+    static_assert(std::is_trivially_copyable_v<T> && opt::option_traits<T>::max_level > 0);
+
+    opt::option<T> result;
+    result.get_unchecked() = value;
+    return result;
+}
+
 template<class T, class U>
 constexpr impl::option::enable_swap<T, U> swap(option<T>& left, option<U>& right) noexcept(impl::option::nothrow_swap<T, U>) {
     left.swap(right);

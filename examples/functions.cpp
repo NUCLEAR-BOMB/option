@@ -137,6 +137,30 @@ void unzip() {
     std::cout << (!unzipped_b[0] && !unzipped_b[1] && !unzipped_b[2]) << '\n'; //$ true
 }
 
+struct my_type {
+    int x;
+};
+
+template<>
+struct opt::option_traits<my_type> {
+    static constexpr std::uintmax_t max_level = 1;
+
+    static constexpr std::uintmax_t get_level(const my_type* const value) noexcept {
+        return value->x - 100;
+    }
+    static constexpr void set_level(my_type* const value, std::uintmax_t) noexcept {
+        value->x = 100;
+    }
+};
+
+void as_option() {
+    opt::option<my_type> a = opt::as_option(my_type{1});
+    std::cout << opt::io(a.map(&my_type::x), "empty") << '\n'; //$ 1
+
+    a = opt::as_option(my_type{100});
+    std::cout << opt::io(a.map(&my_type::x), "empty") << '\n'; //$ empty
+}
+
 int main() {
     std::cout << std::boolalpha;
     zip();
@@ -148,4 +172,5 @@ int main() {
     at();
     flatten();
     unzip();
+    as_option();
 }

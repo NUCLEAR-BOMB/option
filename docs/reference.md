@@ -1277,6 +1277,7 @@ std::cout << b.has_value() << '\n'; // false
 ---
 
 ### `opt::from_nullable`
+
 ```cpp
 template<class T>
 constexpr option<T&> from_nullable(T* const nullable_ptr) noexcept;
@@ -1290,6 +1291,51 @@ if (nullable_ptr == nullptr) {
 } else {
     return *nullable_ptr;
 }
+```
+
+---
+
+### `opt::as_option`
+
+```cpp
+template<class T>
+constexpr option<T> as_option(const T& value) noexcept;
+```
+Converts `value` into `opt::option<T>` by assigning the underlying value to `value`.
+The returned option can exists in an empty state.
+
+- *Requirements:* must be [trivially copyable][trivially-copyable] and `opt::option_traits<T>::max_level` greater than 0.
+
+Description in the code equivalent:
+```cpp
+option<T> result;
+result.get_unchecked() = value;
+return result;
+```
+
+**Example:**
+```cpp
+struct my_type {
+    int x;
+};
+
+template<>
+struct opt::option_traits<my_type> {
+    static constexpr std::uintmax_t max_level = 1;
+
+    static constexpr std::uintmax_t get_level(const my_type* const value) noexcept {
+        return value->x - 100;
+    }
+    static constexpr void set_level(my_type* const value, std::uintmax_t) noexcept {
+        value->x = 100;
+    }
+};
+
+opt::option<my_type> a = opt::as_option(my_type{1});
+std::cout << opt::io(a.map(&my_type::x), "empty") << '\n'; //$ 1
+
+a = opt::as_option(my_type{100});
+std::cout << opt::io(a.map(&my_type::x), "empty") << '\n'; //$ empty
 ```
 
 ---
@@ -2481,4 +2527,5 @@ Attribute `[[msvc::lifetimebound]]` (see [C26815][msvc-C26815] and [C26816][msvc
 [clang-lifetimebound]: https://clang.llvm.org/docs/AttributeReference.html#lifetimebound
 [msvc-C26815]: https://learn.microsoft.com/cpp/code-quality/c26815
 [msvc-C26816]: https://learn.microsoft.com/cpp/code-quality/c26816
+[trivially-copyable]: https://en.cppreference.com/w/cpp/named_req/TriviallyCopyable
 
