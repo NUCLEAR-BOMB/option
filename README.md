@@ -148,38 +148,7 @@ Note that size optimizations prevent `opt::option` being `constexpr`-compatible.
 
 The option library provides extended functionality over standard `std::optional`, which can lead to the use of more efficient and cleaner code.
 
-Most methods/functions are inspired from Rust's [`std::option::Option`][Rust Option]:
-- [`opt::option<T>::has_value_and`](https://nuclear-bomb.github.io/option/#/reference?id=has_value_and)
-- [`opt::option<T>::take`](https://nuclear-bomb.github.io/option/#/reference?id=take)
-- [`opt::option<T>::take_if`](https://nuclear-bomb.github.io/option/#/reference?id=take_if)
-- [`opt::option<T>::inspect`](https://nuclear-bomb.github.io/option/#/reference?id=inspect)
-- [`opt::option<T>::get_unchecked`](https://nuclear-bomb.github.io/option/#/reference?id=get_unchecked)
-- [`opt::option<T>::map_or`](https://nuclear-bomb.github.io/option/#/reference?id=map_or)
-- [`opt::option<T>::map_or_else`](https://nuclear-bomb.github.io/option/#/reference?id=map_or_else)
-- [`opt::option<T>::filter`](https://nuclear-bomb.github.io/option/#/reference?id=filter)
-- [`opt::option<T>::flatten`](https://nuclear-bomb.github.io/option/#/reference?id=flatten)
-- [`opt::option<T>::unzip`](https://nuclear-bomb.github.io/option/#/reference?id=flatten)
-- [`opt::option<T>::replace`](https://nuclear-bomb.github.io/option/#/reference?id=replace)
-- [`opt::zip`](https://nuclear-bomb.github.io/option/#/reference?id=optzip)
-- [`opt::zip_with`](https://nuclear-bomb.github.io/option/#/reference?id=optzip_with)
-- [`opt::operator|`](https://nuclear-bomb.github.io/option/#/reference?id=operator-1)
-- [`opt::operator|=`](https://nuclear-bomb.github.io/option/#/reference?id=operator-2)
-- [`opt::operator&`](https://nuclear-bomb.github.io/option/#/reference?id=operator-3)
-- [`opt::operator^`](https://nuclear-bomb.github.io/option/#/reference?id=operator-4)
-
-But the option library has its own functionality:
-- [`opt::option<T>::value_or_throw`](https://nuclear-bomb.github.io/option/#/reference?id=value-value_or_throw) (explicit `opt::option<T>::value`)
-- [`opt::option<T>::ptr_or_null`](https://nuclear-bomb.github.io/option/#/reference?id=ptr_or_null)
-- [`opt::option<T>::value_or`](https://nuclear-bomb.github.io/option/#/reference?id=value_or) (more flexible version, [P2218: More flexible `optional::value_or()`][P2218])
-- [`opt::option<T>::value_or_construct`](https://nuclear-bomb.github.io/option/#/reference?id=value_or_default) ([P2218: More flexible `optional::value_or()`][P2218])
-- [`opt::option<T>::begin`](https://nuclear-bomb.github.io/option/#/reference?id=begin) ([P3168: Give `std::optional` Range Support][P3168])
-- [`opt::option<T>::end`](https://nuclear-bomb.github.io/option/#/reference?id=end) ([P3168: Give `std::optional` Range Support][P3168])
-- [`opt::option_cast`](https://nuclear-bomb.github.io/option/#/reference?id=optoption_cast)
-- [`opt::from_nullable`](https://nuclear-bomb.github.io/option/#/reference?id=optfrom_nullable)
-- [`opt::get`](https://nuclear-bomb.github.io/option/#/reference?id=optget) (from tuple-like or `std::variant`)
-- [`opt::io`](https://nuclear-bomb.github.io/option/#/reference?id=optio) (read from/write to stream)
-- [`opt::at`](https://nuclear-bomb.github.io/option/#/reference?id=optat)
-- [`opt::swap`](https://nuclear-bomb.github.io/option/#/reference?id=optswap)
+See [**feature list**][docs-feature-list] for a list of available features.
 
 See [**reference**][docs-reference] for more details.
 
@@ -458,4 +427,5 @@ Note that some compilers/versions have unstable sanitizer support, so the CI tes
 [docs-custom-traits-guide]: https://nuclear-bomb.github.io/option/#/custom_traits_guide
 [docs-cmake-variables]: https://nuclear-bomb.github.io/option/#/cmake_variables
 [docs-builtin-traits]: https://nuclear-bomb.github.io/option/#/builtin_traits
+[docs-feature-list]:  https://nuclear-bomb.github.io/option/#/feature_list
 [opt-option_traits]: https://nuclear-bomb.github.io/option/#/reference?id=optoption_traits
