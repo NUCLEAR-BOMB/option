@@ -164,8 +164,8 @@ struct opt::option_traits<my_type_3<T>, std::enable_if_t<!std::is_same_v<T, floa
 };
 ```
 
-Enables `opt::option_traits` only when `!std::is_same_v<T, float>` is `true` for `my_type_3<T>.`.
-When that condition is not met, `opt::option` don't uses `opt::option_traits`.
+> Enables `opt::option_traits` only when `!std::is_same_v<T, float>` is `true` for `my_type_3<T>.`.
+> When that condition is not met, `opt::option` don't uses `opt::option_traits`.
 
 ```cpp
 opt::option<my_type_3<int>> a;
@@ -203,8 +203,7 @@ struct opt::option_traits<double> {
     static constexpr std::uintmax_t max_level = 0;
 }
 ```
-
-Disable size optimization for `double` (`opt::option<double>`).
+> Disable size optimization for `double` (`opt::option<double>`).
 
 After this specialization the size of`opt::option<double>` will be greater than `double` (`opt::option` will store "has value" flag).
 
@@ -237,8 +236,8 @@ struct opt::option_traits<my_type_4> {
     }
 };
 ```
-When `my_type_4::x` is -1, level value is `my_type_4::y`.
-Doesn't affect `my_type_4::z`.
+> When `my_type_4::x` is -1, level value is `my_type_4::y`.
+> Doesn't affect `my_type_4::z`.
 
 > [!WARNING]
 > When accessing the value in an empty state, contents that are not initialized inside `set_level` have unspecified value.
@@ -289,8 +288,8 @@ struct opt::option_traits<float> {
 };
 ```
 
-Override builtin `float` option trait.
-When the value is 0, option is considered empty.
+> Override builtin `float` option trait.
+> When the value is 0, option is considered empty.
 
 ```cpp
 opt::option<float> a;
@@ -308,9 +307,6 @@ a = 1.f;
 
 > [!TIP]
 > This could be useful if `opt::option` behaves incorrectly (compiler optimizations, platform specific stuff).
-
-
-
 
 [sfinae]: https://en.cppreference.com/w/cpp/language/sfinae
 [std::variant valueless_by_exception]: https://en.cppreference.com/w/cpp/utility/variant/valueless_by_exception
