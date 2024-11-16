@@ -132,7 +132,7 @@ b.reset();
 
 `opt::option` allows to minimize the type size to a minimum.
 
-Minimizing the type size is always a good thing.
+Minimizing the type size is always a good thing if used properly. \
 [Cache locality][cache locality] can often improve performance of the program even more than any other performed optimization.
 
 It supports reference types, so you can avoid using inconvenient `std::reference_wrapper` and dangerous nullable pointers.
