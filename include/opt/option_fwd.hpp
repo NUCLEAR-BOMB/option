@@ -12,6 +12,9 @@ class option;
 template<class T, class = void>
 struct option_traits;
 
+template<class T, class = void>
+struct sentinel_option_traits;
+
 template<class>
 struct is_option { static constexpr bool value = false; };
 template<class T>

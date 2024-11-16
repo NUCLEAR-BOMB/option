@@ -8,6 +8,15 @@
 
 #include "utils.hpp"
 
+struct my_type1 {
+    int x;
+    bool operator==(const my_type1& other) const { return x == other.x; }
+};
+template<>
+struct opt::sentinel_option_traits<my_type1> {
+    static constexpr my_type1 sentinel_value{1};
+};
+
 namespace {
 
 TEST_SUITE_BEGIN("opt::sentinel");
@@ -179,6 +188,23 @@ TEST_CASE("opt::sentinel_f") {
     CHECK_EQ(a, opt::none);
     a.reset();
     CHECK_EQ(a, opt::none);
+}
+
+TEST_CASE("opt::sentinel_option_traits") {
+    opt::option<my_type1> a;
+    CHECK_EQ(sizeof(a), sizeof(my_type1));
+    CHECK_UNARY_FALSE(a.has_value());
+    a = my_type1{2};
+    CHECK_EQ(a, my_type1{2});
+    a->x = 3;
+    CHECK_EQ(a, my_type1{3});
+    a.reset();
+    CHECK_UNARY_FALSE(a.has_value());
+    CHECK_EQ(a.get_unchecked(), my_type1{1});
+    a.get_unchecked() = my_type1{0};
+    CHECK_EQ(a, my_type1{0});
+    a->x = 1;
+    CHECK_UNARY_FALSE(a.has_value());
 }
 
 }

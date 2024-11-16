@@ -2230,6 +2230,55 @@ Usually `set_level` is called after the original object is destructed/uninitiali
 
 !> The `noexcept` specifier is required (without it the program will not compile).
 
+---
+
+### `opt::sentinel_option_traits`
+
+```cpp
+template<class T, class = void>
+struct sentinel_option_traits;
+```
+
+Same as `opt::option_traits`, but the only requirement is to provide a `static` `constexpr` member with name `sentinel_value`.
+
+The `sentinel_value` member denotes the value which will be used in `get_level` and `set_level` static methods. \
+
+Requirements:
+- `T` must be equality comparable with itself (e.g. `std::declval<const T&>() == std::declval<const T&>()` must be a valid expression).
+- `T` must be assignable by itself (e.g. `std::declval<T&>() = std::declval<const T&>()` must be a valid expression).
+
+Explanation:
+`opt::option_traits` has a specialization that only enables when `opt::sentinel_option_traits` is a complete type. \
+In this specialization it defines `max_level` to be `1`, `get_level` and `set_level` `constexpr` `static` methods that uses `sentinel_value` to identify/set the empty state of `opt::option`.
+
+**Example:**
+```cpp
+struct my_type {
+    unsigned x;
+
+    bool operator==(const my_type& other) const { return x == other.x; }
+};
+template<>
+struct opt::sentinel_option_traits<my_type> {
+    static constexpr my_type sentinel_value{0u};
+};
+
+opt::option<my_type> a{5u};
+
+std::cout << (sizeof(a) == sizeof(my_type)) << '\n'; // true
+std::cout << a->x << '\n'; // 5
+
+a.reset();
+std::cout << a.get_unchecked().x << '\n'; // 0
+
+a = my_type{1u};
+std::cout << a->x << '\n'; // 1
+a->x = 0u;
+std::cout << a.has_value() << '\n'; // false
+```
+
+---
+
 ### `opt::make_option`
 
 ```cpp

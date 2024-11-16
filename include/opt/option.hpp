@@ -1748,6 +1748,7 @@ namespace impl {
             return fp_traits::get_level(OPTION_ADDRESSOF(real_part));
         }
         static constexpr void set_level(std::complex<T>* const value, const std::uintmax_t level) noexcept {
+            OPTION_VERIFY(level < max_level, "Level is out of range");
             T real_part{};
             fp_traits::set_level(OPTION_ADDRESSOF(real_part), level);
             value->real(real_part);
@@ -1771,6 +1772,28 @@ template<class T, class>
 struct option_traits {
     static constexpr std::uintmax_t max_level = 0;
 };
+#endif
+
+#if OPTION_CLANG
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wcomma"
+#endif
+
+template<class T>
+struct option_traits<T, decltype(sizeof(sentinel_option_traits<T>), void())> {
+    static constexpr std::uintmax_t max_level = 1;
+
+    static constexpr std::uintmax_t get_level(const T* const value) noexcept {
+        return std::uintmax_t(!(*value == sentinel_option_traits<T>::sentinel_value));
+    }
+    static constexpr void set_level(T* const value, const std::uintmax_t level) noexcept {
+        OPTION_VERIFY(level == 0, "Level is out of range");
+        *value = sentinel_option_traits<T>::sentinel_value;
+    }
+};
+
+#if OPTION_CLANG
+    #pragma clang diagnostic pop
 #endif
 
 namespace impl {

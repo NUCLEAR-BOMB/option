@@ -28,8 +28,34 @@ void custom() {
     std::cout << a.get_unchecked().val << '\n'; //$ -1
 }
 
+struct my_type {
+    unsigned x;
+
+    bool operator==(const my_type& other) const { return x == other.x; }
+};
+template<>
+struct opt::sentinel_option_traits<my_type> {
+    static constexpr my_type sentinel_value{0u};
+};
+
+void using_sentinel() {
+    opt::option<my_type> a{5u};
+
+    std::cout << (sizeof(a) == sizeof(my_type)) << '\n'; //$ true
+    std::cout << a->x << '\n'; //$ 5
+
+    a.reset();
+    std::cout << a.get_unchecked().x << '\n'; //$ 0
+
+    a = my_type{1u};
+    std::cout << a->x << '\n'; //$ 1
+    a->x = 0u;
+    std::cout << a.has_value() << '\n'; //$ false
+}
+
 int main() {
     std::cout << std::boolalpha;
 
     custom();
+    using_sentinel();
 }
