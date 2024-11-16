@@ -53,9 +53,23 @@ void using_sentinel() {
     std::cout << a.has_value() << '\n'; //$ false
 }
 
+struct my_type2 {
+    std::uint64_t x;
+    std::uint32_t y;
+    std::uint8_t PADDING{};
+};
+
+void with_padding() {
+    opt::option<my_type2> a{1u, 2u};
+
+    std::cout << (sizeof(a) == sizeof(my_type2)) << '\n'; //$ true
+    std::cout << "x = " << a->x << " y = " << a->y << '\n'; //$ x = 1 y = 2
+}
+
 int main() {
     std::cout << std::boolalpha;
 
     custom();
     using_sentinel();
+    with_padding();
 }

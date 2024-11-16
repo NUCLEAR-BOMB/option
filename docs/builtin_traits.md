@@ -19,7 +19,6 @@
 | `std::vector`                                   | 255                              | data(): 1, {data() + size()}: [0,245]   |
 | Pointers to members (4 bytes)                   | 255                              | [0xFFFFFC17,0xFFFFFD15]                 |
 | Pointers to members (8 bytes)                   | 255                              | [0xFFFFFFFFD3B2F9B2,0xFFFFFFFFD3B2FAB0] |
-| `SENTINEL` member                               | [*](#sentinel-member)            | [1,[*](#sentinel-member)]               |
 | Enumeration `SENTINEL`                          | 1                                | `::SENTINEL`                            |
 | Enumeration `SENTINEL_START`                    | [*](#enumeration-sentinel_start) | [`::SENTINEL_START`,-1]                 |
 | Enumeration `SENTINEL_START` and `SENTINEL_END` | [*](#enumeration-sentinel_start-and-sentinel_end) | [`::SENTINEL_START`,`::SENTINEL_END`] |
@@ -157,14 +156,29 @@ Stores level value in the internal (standard library defined) representation of 
 
 The template parameter `Allocator` must satisfy `std::is_empty_v` and `!std::is_final_v` in order to enable this option trait.
 
-## `SENTINEL` member
+## `PADDING` member
 
-Stores level value in the `.SENTINEL` data member inside provided type. 
+Stores level value in the `.PADDING` non-static member inside provided type.
 
-Requires an data member `SENTINEL`.
-It must be non-`const`, satisfy `std::is_unsigned_v` and be accessible outside the type (the expression `std::declval<T&>().SENTINEL` must be valid).
+It must be non-`const`, unsigned integer type and be accessible outside the type (the expression `std::declval<T&>().PADDING` must be valid).
 
-The `max_level` is defined by the expression `~T(0)`, where `T` is type of `SENTINEL` member.
+The `max_level` is defined by the expression `~T(0)`, where `T` is type of `PADDING` member.
+
+When type that holds `.PADDING` is constructed, `.PADDING` member must be equal to `0`.
+
+**Examples:**
+```cpp
+struct my_type2 {
+    std::uint64_t x;
+    std::uint32_t y;
+    std::uint8_t PADDING{};
+};
+
+opt::option<my_type2> a{1u, 2u};
+
+std::cout << (sizeof(a) == sizeof(my_type2)) << '\n'; // true
+std::cout << "x = " << a->x << " y = " << a->y << '\n'; // x = 1 y = 2
+```
 
 ## Enumeration `SENTINEL`
 

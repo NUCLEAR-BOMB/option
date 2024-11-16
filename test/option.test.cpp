@@ -162,14 +162,14 @@ template<> struct sample_values<int(*)(int)> {
     };
 };
 
-struct struct_with_sentinel {
+struct struct_with_padding_member {
     int x;
-    std::uint8_t SENTINEL{};
+    std::uint8_t PADDING{};
 
-    bool operator==(const struct_with_sentinel& o) const { return x == o.x; }
+    bool operator==(const struct_with_padding_member& o) const { return x == o.x; }
 };
-template<> struct sample_values<struct_with_sentinel> {
-    struct_with_sentinel values[5]{struct_with_sentinel{1}, struct_with_sentinel{2}, struct_with_sentinel{3}, struct_with_sentinel{4}, struct_with_sentinel{5}};
+template<> struct sample_values<struct_with_padding_member> {
+    struct_with_padding_member values[5]{{1}, {2}, {3}, {4}, {5}};
 };
 
 template<> struct sample_values<std::pair<empty_struct, int>> {
@@ -201,7 +201,7 @@ template<> struct sample_values<std::complex<float>> {
     std::complex<float> values[5]{{1.f, 2.f}, {3.f, 4.f}, {5.f, 6.f}, {7.f, 8.f}, {9.f, 10.f}};
 };
 
-TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_sentinel, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int, std::complex<float>) {
+TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_padding_member, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int, std::complex<float>) {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];

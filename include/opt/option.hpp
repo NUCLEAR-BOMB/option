@@ -675,9 +675,9 @@ namespace impl {
         = noexcept(Traits::set_level(std::declval<std::remove_const_t<T>*>(), std::declval<std::uintmax_t>()));
 
     template<class T, class = void>
-    inline constexpr bool has_sentinel_member = false;
+    inline constexpr bool has_padding_member = false;
     template<class T>
-    inline constexpr bool has_sentinel_member<T, decltype(std::declval<std::remove_const_t<T>&>().SENTINEL, void())> = true;
+    inline constexpr bool has_padding_member<T, decltype(std::declval<T&>().PADDING, void())> = true;
 
     template<class T, class = void>
     inline constexpr bool has_sentinel_enumerator = false;
@@ -972,7 +972,7 @@ namespace impl {
         unique_ptr,
         member_pointer_32,
         member_pointer_64,
-        sentinel_member,
+        padding_member,
         tuple_like,
         enumeration_sentinel,
         enumeration_sentinel_start,
@@ -1095,8 +1095,8 @@ namespace impl {
         if constexpr (std::is_polymorphic_v<T> && sizeof(T) >= sizeof(std::uintptr_t)) {
             return st::polymorphic;
         } else
-        if constexpr (has_sentinel_member<T>) {
-            return st::sentinel_member;
+        if constexpr (has_padding_member<T>) {
+            return st::padding_member;
         } else
         if constexpr (std::is_enum_v<T>) {
             if constexpr (has_sentinel_enumerator<T>) {
@@ -1501,20 +1501,19 @@ namespace impl {
         }
     };
     template<class T>
-    struct internal_option_traits<T, option_strategy::sentinel_member> {
+    struct internal_option_traits<T, option_strategy::padding_member> {
     private:
-        using member_type = decltype(std::declval<T&>().SENTINEL);
-        static_assert(std::is_unsigned_v<member_type>, ".SENTINEL member must be an unsigned integer type");
+        using member_type = decltype(std::declval<T&>().PADDING);
+        static_assert(std::is_unsigned_v<member_type>, ".PADDING member must be an unsigned integer");
     public:
         static constexpr std::uintmax_t max_level = std::uintmax_t(~member_type(0));
 
         static std::uintmax_t get_level(const T* const value) noexcept {
-            // return value->SENTINEL != 0 ? value->SENTINEL - 1 : std::uintmax_t(-1);
-            return std::uintmax_t(std::uintmax_t(value->SENTINEL) - 1);
+            return std::uintmax_t(std::uintmax_t(value->PADDING) - 1);
         }
         static void set_level(T* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
-            value->SENTINEL = member_type(level + 1);
+            value->PADDING = member_type(level + 1);
         }
     };
 #if OPTION_CAN_REFLECT_ENUM

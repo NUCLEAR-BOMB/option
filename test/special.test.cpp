@@ -908,7 +908,7 @@ TEST_CASE("pointer to member function") {
 
 TEST_CASE("with sentinel member") {
     SUBCASE("uint8_t") {
-        struct s1 { std::uint8_t SENTINEL{}; };
+        struct s1 { std::uint8_t PADDING{}; };
     
         opt::option<s1> a;
         CHECK_EQ(sizeof(opt::option<s1>), sizeof(s1));
@@ -927,7 +927,7 @@ TEST_CASE("with sentinel member") {
         b = a;
         CHECK(b.has_value());
     
-        struct s2 { int x; std::uint8_t SENTINEL{}; };
+        struct s2 { int x; std::uint8_t PADDING{}; };
     
         opt::option<s2> c;
         CHECK_EQ(sizeof(opt::option<s2>), sizeof(s2));
@@ -958,7 +958,7 @@ TEST_CASE("with sentinel member") {
 #endif
     }
     SUBCASE("uint16_t") {
-        struct s1 { std::uint16_t SENTINEL{}; };
+        struct s1 { std::uint16_t PADDING{}; };
 
         opt::option<s1> a;
         CHECK_EQ(sizeof(opt::option<s1>), sizeof(s1));
@@ -985,7 +985,7 @@ TEST_CASE("with sentinel member") {
         a = b;
         CHECK(a.has_value());
 
-        struct s2 { int x; std::uint16_t SENTINEL{}; };
+        struct s2 { int x; std::uint16_t PADDING{}; };
 
         opt::option<s2> c;
         CHECK_EQ(sizeof(opt::option<s2>), sizeof(s2));
@@ -1004,7 +1004,7 @@ TEST_CASE("with sentinel member") {
         CHECK_UNARY_FALSE(c.has_value());
     }
     SUBCASE("uint32_t") {
-        struct s1 { std::uint32_t SENTINEL{}; };
+        struct s1 { std::uint32_t PADDING{}; };
 
         opt::option<s1> a;
         CHECK_EQ(sizeof(opt::option<s1>), sizeof(s1));
@@ -1031,7 +1031,7 @@ TEST_CASE("with sentinel member") {
         a = b;
         CHECK(a.has_value());
 
-        struct s2 { int x; std::uint32_t SENTINEL{}; };
+        struct s2 { int x; std::uint32_t PADDING{}; };
 
         opt::option<s2> c;
         CHECK_EQ(sizeof(opt::option<s2>), sizeof(s2));
