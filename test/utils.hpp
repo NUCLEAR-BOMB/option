@@ -114,3 +114,6 @@ OPTION_NO_SANITIZE_OBJECT_SIZE
 constexpr void no_sanitize_object_size_invoke(F&& f) {
     static_cast<F&&>(f)();
 }
+
+template<class T>
+inline constexpr std::size_t true_sizeof = std::is_reference_v<T> ? sizeof(std::remove_reference_t<T>*) : sizeof(T);

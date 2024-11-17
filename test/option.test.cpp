@@ -24,6 +24,8 @@
         #pragma STDC FENV_ACCESS ON
     #endif
 #endif
+
+// NOLINTBEGIN(readability-braces-around-statements)
     
 namespace {
 
@@ -185,23 +187,34 @@ template<> struct sample_values<std::vector<int>> {
 template<> struct sample_values<std::complex<float>> {
     std::complex<float> values[5]{{1.f, 2.f}, {3.f, 4.f}, {5.f, 6.f}, {7.f, 8.f}, {9.f, 10.f}};
 };
+template<> struct sample_values<int&> {
+    int vals[5]{1, 2, 3, 4, 5};
+    std::reference_wrapper<int> values[5]{vals[0], vals[1], vals[2], vals[3], vals[4]};
+};
+template<> struct sample_values<const int&> {
+    const int vals[5]{1, 2, 3, 4, 5};
+    std::reference_wrapper<const int> values[5]{vals[0], vals[1], vals[2], vals[3], vals[4]};
+};
 
 template<class T>
 void template_option_case_body() {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
-    const auto& v0 = sample.values[0];
-    const auto& v1 = sample.values[1];
-    const auto& v2 = sample.values[2];
-    const auto& v3 = sample.values[3];
-    const auto& v4 = sample.values[4];
+    const T& v0 = sample.values[0];
+    const T& v1 = sample.values[1];
+    const T& v2 = sample.values[2];
+    const T& v3 = sample.values[3];
+    const T& v4 = sample.values[4];
+
+    static constexpr bool is_reference = std::is_reference_v<T>;
+    static constexpr bool is_assignable = std::is_copy_assignable_v<T>;
 
     if constexpr (!std::is_same_v<T, int>) {
-        CHECK_EQ(sizeof(opt::option<T>), sizeof(T));
-        CHECK_EQ(sizeof(opt::option<opt::option<T>>), sizeof(T));
-        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<T>>>), sizeof(T));
-        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>), sizeof(T));
-        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<opt::option<T>>>>>), sizeof(T));
+        CHECK_EQ(sizeof(opt::option<T>), true_sizeof<T>);
+        CHECK_EQ(sizeof(opt::option<opt::option<T>>), true_sizeof<T>);
+        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<T>>>), true_sizeof<T>);
+        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<T>>>>), true_sizeof<T>);
+        CHECK_EQ(sizeof(opt::option<opt::option<opt::option<opt::option<opt::option<T>>>>>), true_sizeof<T>);
     }
 
     SUBCASE("constructor") {
@@ -254,7 +267,7 @@ void template_option_case_body() {
         a = opt::none;
         CHECK_UNARY_FALSE(a.has_value());
         {
-            const opt::option tmp{v1};
+            const opt::option<T> tmp{v1};
             a = tmp;
         }
         CHECK_UNARY(a.has_value());
@@ -364,7 +377,7 @@ void template_option_case_body() {
         CHECK_UNARY(d.has_value());
         CHECK_UNARY(c.has_value()); // NOLINT(bugprone-use-after-move,clang-analyzer-cplusplus.Move)
     }
-    SUBCASE("ref assignment") {
+    if constexpr (is_assignable) SUBCASE("ref assignment") {
         opt::option<T> a;
         CHECK_EQ(a, opt::none);
         a = v0;
@@ -534,20 +547,22 @@ void template_option_case_body() {
         CHECK_EQ(opt::option<T>{v1}.map(fn3), 1u);
         CHECK_EQ(opt::option<T>{opt::none}.map(fn3), opt::none);
 
-        bool var = false;
-        const auto fn4 = [&](T& x) -> opt::option<int> {
-            if (var) { x = v0; }
-            return x == v0 ? opt::none : opt::option<int>{1};
-        };
-        opt::option<T> a{v0};
-        CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{opt::none}));
-        CHECK_EQ(a, v0);
-        a = v1;
-        CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{1}));
-        CHECK_EQ(a, v1);
-        var = true;
-        CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{opt::none}));
-        CHECK_EQ(a, v0);
+        if constexpr (is_assignable) {
+            bool var = false;
+            const auto fn4 = [&](T& x) -> opt::option<int> {
+                if (var) { x = v0; }
+                return x == v0 ? opt::none : opt::option<int>{1};
+            };
+            opt::option<T> a{v0};
+            CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{opt::none}));
+            CHECK_EQ(a, v0);
+            a = v1;
+            CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{1}));
+            CHECK_EQ(a, v1);
+            var = true;
+            CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{opt::none}));
+            CHECK_EQ(a, v0);
+        }
     }
     SUBCASE(".or_else") {
         const auto fn1 = [&]() { return opt::option<T>{v0}; };
@@ -594,7 +609,7 @@ void template_option_case_body() {
             CHECK_EQ(d, static_cast<int>(v1));
         }
     }
-    SUBCASE("deduction guides") {
+    if constexpr (!is_reference) SUBCASE("deduction guides") {
         // NOLINTBEGIN(misc-const-correctness)
         auto a = opt::option{v0};
         CHECK_UNARY(std::is_same_v<decltype(a), opt::option<T>>);
@@ -645,24 +660,26 @@ void template_option_case_body() {
         a = opt::none;
         CHECK_EQ(a.filter(fn1), opt::none);
 
-        const auto fn2 = [&](T& x) {
-            T prev = x;
-            x = v1;
-            return prev == v0;
-        };
-        a = v0;
-        CHECK_EQ(a.filter(fn2), v1);
-        CHECK_EQ(a, v1);
-        a = v1;
-        CHECK_EQ(a.filter(fn2), opt::none);
-        CHECK_EQ(a, v1);
+        if constexpr (!is_reference) {
+            const auto fn2 = [&](T& x) {
+                T prev = x;
+                x = v1;
+                return prev == v0;
+            };
+            a = v0;
+            CHECK_EQ(a.filter(fn2), v1);
+            CHECK_EQ(a, v1);
+            a = v1;
+            CHECK_EQ(a.filter(fn2), opt::none);
+            CHECK_EQ(a, v1);
+        }
     }
     SUBCASE("flatten") {
-        auto a = opt::make_option(opt::make_option(v0));
+        auto a = opt::make_option(opt::option<T>{v0});
         CHECK_EQ(**a, v0);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(a)), opt::option<T&>>);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(as_rvalue(a))), opt::option<T>>);
-        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::make_option(v0)))), opt::option<T>>);
+        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::option<T>{v0}))), opt::option<T>>);
         auto b = opt::flatten(a);
         CHECK_EQ(*b, v0);
 
@@ -676,11 +693,11 @@ void template_option_case_body() {
         b = opt::flatten(a);
         CHECK_UNARY_FALSE(b.has_value());
 
-        auto c = opt::make_option(opt::make_option(opt::make_option(v1)));
+        auto c = opt::make_option(opt::make_option(opt::option<T>{v1}));
         CHECK_EQ(***c, v1);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(c)), opt::option<T&>>);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(as_rvalue(c))), opt::option<T>>);
-        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::make_option(opt::make_option(v0))))), opt::option<T>>);
+        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::make_option(opt::option<T>{v0})))), opt::option<T>>);
         CHECK_EQ(opt::flatten(c), v1);
         (**c) = opt::none;
         CHECK_EQ(opt::flatten(c), opt::none);
@@ -740,14 +757,16 @@ void template_option_case_body() {
         CHECK_EQ(a, v0);
         CHECK_UNARY_FALSE(b.has_value());
 
-        a = v1;
-        CHECK_EQ(a, v1);
-        b = a.take_if([&](T& x) {
-            x = v0;
-            return true;
-        });
-        CHECK_EQ(b, v0);
-        CHECK_UNARY_FALSE(a.has_value());
+        if constexpr (is_assignable) {
+            a = v1;
+            CHECK_EQ(a, v1);
+            b = a.take_if([&](T& x) {
+                x = v0;
+                return true;
+            });
+            CHECK_EQ(b, v0);
+            CHECK_UNARY_FALSE(a.has_value());
+        }
     }
     SUBCASE(".has_value_and") {
         opt::option a{v0};
@@ -761,20 +780,24 @@ void template_option_case_body() {
     }
     SUBCASE(".inspect") {
         opt::option<T> a;
-        a.inspect([&](T& x) { x = v0; });
-        CHECK_UNARY_FALSE(a.has_value());
+        a.inspect([](T&) {});
 
-        a = v0;
-        CHECK_EQ(a, v0);
-        a.inspect([&](T& x) { x = v1; });
-        CHECK_EQ(a, v1);
+        if constexpr (is_assignable) {
+            a.inspect([&](T& x) { x = v0; });
+            CHECK_UNARY_FALSE(a.has_value());
 
-        a.inspect([&](T& x) { x = v2; }).inspect([&](T& x) { x = v3; });
-        CHECK_EQ(a, v3);
+            a = v0;
+            CHECK_EQ(a, v0);
+            a.inspect([&](T& x) { x = v1; });
+            CHECK_EQ(a, v1);
+
+            a.inspect([&](T& x) { x = v2; }).inspect([&](T& x) { x = v3; });
+            CHECK_EQ(a, v3);
+        }
     }
     SUBCASE("unzip") {
         SUBCASE("std::tuple") {
-            opt::option a{std::tuple{v0, v1, v2, v3}};
+            opt::option<std::tuple<T, T, T, T>> a{v0, v1, v2, v3};
             CHECK_UNARY(a.has_value());
 
             auto b = opt::unzip(a);
@@ -801,7 +824,7 @@ void template_option_case_body() {
             CHECK_UNARY_FALSE(c4.has_value());
         }
         SUBCASE("std::pair") {
-            opt::option a{std::pair{v0, v1}};
+            opt::option<std::pair<T, T>> a{v0, v1};
             CHECK_UNARY(a.has_value());
 
             auto b = opt::unzip(a);
@@ -819,8 +842,8 @@ void template_option_case_body() {
             CHECK_UNARY_FALSE(c1.has_value());
             CHECK_UNARY_FALSE(c2.has_value());
         }
-        SUBCASE("std::array") {
-            opt::option a{std::array{v0, v1, v2}};
+        if constexpr (!is_reference) SUBCASE("std::array") {
+            opt::option<std::array<T, 3>> a{{v0, v1, v2}};
             CHECK_UNARY(a.has_value());
 
             auto b = opt::unzip(a);
@@ -843,6 +866,7 @@ void template_option_case_body() {
         }
     }
     SUBCASE(".begin") {
+        // NOLINTBEGIN(misc-const-correctness)
         opt::option<T> a;
         for ([[maybe_unused]] T& x : a) {
             CHECK_UNARY(false);
@@ -858,21 +882,32 @@ void template_option_case_body() {
         CHECK_EQ(a.begin(), --(++(a.begin())));
         CHECK_EQ(a.begin(), ++(--(a.begin())));
         CHECK_EQ(*(a.begin()), v0);
-        *(a.begin()) = v1;
-        CHECK_EQ(a, v1);
 
         for (T& x : a) {
-            CHECK_EQ(x, v1);
-            x = v2;
+            CHECK_EQ(x, v0);
         }
-        CHECK_EQ(a, v2);
+        a = v1;
         for (const T& x : a) {
-            CHECK_EQ(x, v2);
+            CHECK_EQ(x, v1);
         }
-        a = v3;
-        for (const T& x : as_const(a)) {
-            CHECK_EQ(x, v3);
+        if constexpr (is_assignable) {
+            *(a.begin()) = v1;
+            CHECK_EQ(a, v1);
+
+            for (T& x : a) {
+                CHECK_EQ(x, v1);
+                x = v2;
+            }
+            CHECK_EQ(a, v2);
+            for (const T& x : a) {
+                CHECK_EQ(x, v2);
+            }
+            a = v3;
+            for (const T& x : as_const(a)) {
+                CHECK_EQ(x, v3);
+            }
         }
+        // NOLINTEND(misc-const-correctness)
     }
     SUBCASE(".end") {
         opt::option<T> a;
@@ -882,10 +917,14 @@ void template_option_case_body() {
         CHECK_LT(a.begin(), a.end());
         CHECK_GT(a.end(), a.begin());
         CHECK_NE(a.begin(), a.end());
-        no_sanitize_object_size_invoke([&] {
-            *(a.end() - 1) = v1;
-        });
-        CHECK_EQ(a, v1);
+        if constexpr (is_assignable) {
+            no_sanitize_object_size_invoke([&] {
+                *(a.end() - 1) = v1;
+            });
+            CHECK_EQ(a, v1);
+        } else {
+            a = v1;
+        }
 
         auto it = a.begin();
         CHECK_EQ(*it, v1);
@@ -920,15 +959,17 @@ void template_option_case_body() {
             CHECK_EQ(std::get<1>(*c), v1);
         }
 
-        a.reset();
-        c = opt::zip(a, b);
-        CHECK_UNARY_FALSE(c.has_value());
+        if constexpr (is_assignable) {
+            a.reset();
+            c = opt::zip(a, b);
+            CHECK_UNARY_FALSE(c.has_value());
 
-        b.reset();
-        c = opt::zip(a, b);
-        CHECK_UNARY_FALSE(c.has_value());
+            b.reset();
+            c = opt::zip(a, b);
+            CHECK_UNARY_FALSE(c.has_value());
+        }
     }
-    SUBCASE("opt::zip_with") {
+    if constexpr (!is_reference) SUBCASE("opt::zip_with") {
         const auto fn1 = [&](const T& x) -> int {
             return x == v0 ? 1 : 0;
         };
@@ -971,7 +1012,7 @@ void template_option_case_body() {
         opt::zip_with(fn4, b, opt::option<T>{v1});
         CHECK_EQ(b, v0);
     }
-    SUBCASE("opt::from_nullable") {
+    if constexpr (!is_reference) SUBCASE("opt::from_nullable") {
         T a = v0;
         T* ptr = &a;
 
@@ -1037,7 +1078,32 @@ void reg_tests() noexcept {
 }
 
 const int reg_tests_var = (
-    reg_tests<std::vector<int>, opt::enforce<float>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_padding_member, int(*)(int), std::string_view, polymorphic_type, aggregate_int_float, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int, std::complex<float>>()
+    reg_tests<
+        int&,
+        const int&,
+        std::vector<int>,
+        opt::enforce<float>,
+        opt::sentinel<int, -1, -2, -3, -4, -5>,
+        std::string,
+        struct_with_padding_member,
+        int(*)(int),
+        std::string_view,
+        polymorphic_type,
+        aggregate_int_float,
+        std::tuple<int, float, int>,
+        double,
+        bool,
+        std::reference_wrapper<int>,
+        int*,
+        float,
+        std::pair<int, float>,
+        std::pair<float, int>,
+        std::array<float, 4>,
+        int,
+        std::complex<float>
+    >()
     , 0);
 
 }
+
+// NOLINTEND(readability-braces-around-statements)

@@ -1820,14 +1820,14 @@ namespace impl {
     struct is_initializable_from_impl<true, false, decltype(T{std::declval<Args>()...}, void()), T, Args...>
         : std::true_type {};
 
-#if !OPTION_MSVC
+    #if !OPTION_MSVC
     template<class T, class... Args>
     using is_initializable_from = is_initializable_from_impl<std::is_aggregate_v<T>, std::is_constructible_v<T, Args...>, void, T, Args...>;
-#else
+    #else // ^^^ !OPTION_MSVC / vvv OPTION_MSVC
     template<class T, class... Args>
     using is_initializable_from = is_initializable_from_impl<__is_aggregate(T), __is_constructible(T, Args...), void, T, Args...>;
-#endif
-#else
+    #endif
+#else // ^^^ !OPTION_IS_CXX20 / vvv OPTION_IS_CXX20
     template<class T, class... Args>
     using is_initializable_from = std::is_constructible<T, Args...>;
 #endif
