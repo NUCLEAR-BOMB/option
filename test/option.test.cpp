@@ -1024,7 +1024,7 @@ void template_option_case_body() {
 }
 
 template<class... Ts>
-void reg_tests() {
+void reg_tests() noexcept {
     int index = 0;
     (doctest::detail::regTest(
         doctest::detail::TestCase(&template_option_case_body<Ts>,
