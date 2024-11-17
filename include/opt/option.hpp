@@ -3336,8 +3336,9 @@ template<class... Options, std::enable_if_t<std::conjunction_v<opt::is_option<im
 [[nodiscard]] constexpr auto zip(Options&&... options)
     -> opt::option<std::tuple<typename impl::remove_cvref<Options>::value_type...>>
 {
+    using result_tuple = std::tuple<typename impl::remove_cvref<Options>::value_type...>;
     if ((options.has_value() && ...)) {
-        return opt::option{std::tuple{static_cast<Options&&>(options).get()...}};
+        return opt::option{result_tuple{static_cast<Options&&>(options).get()...}};
     } else {
         return {};
     }
