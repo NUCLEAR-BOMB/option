@@ -3251,7 +3251,7 @@ public:
             return;
         }
         if (has_value() && other.has_value()) {
-            swap(get(), other.get());
+            swap(base::value, other.base::value);
             return;
         }
         if (has_value()) {
