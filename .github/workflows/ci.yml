@@ -40,7 +40,7 @@ jobs:
               -fno-sanitize-recover=all
               -ffp-exception-behavior=maytrap
               --stdlib=libstdc++
-            global_cxx_options: '-std=c++20'
+            cmake_options: -DCMAKE_CXX_STANDARD=20
 
           - name: 'clang 18'
             cxx: 'clang++-18'
@@ -184,7 +184,7 @@ jobs:
               -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
               -fno-sanitize-recover=all
               -fno-sanitize=vptr
-            global_cxx_options: '-std=c++20'
+            cmake_options: -DCMAKE_CXX_STANDARD=20
 
           - name: 'gcc 14'
             cxx: 'g++-14'
@@ -520,7 +520,8 @@ jobs:
 
           - name: 'v143 C++20'
             toolset: 'v143'
-            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO /std:c++20'
+            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
+            cmake_options: -DCMAKE_CXX_STANDARD=20
 
           - name: 'ClangCL'
             toolset: 'ClangCL'
@@ -539,7 +540,7 @@ jobs:
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
       - name: Configure CMake (Debug x64)
-        run: cmake -B build -A x64 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x64}}" ${{matrix.cmake_options_x64}}
+        run: cmake -B build -A x64 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x64}}" ${{matrix.cmake_options_x64}} ${{matrix.cmake_options}}
 
       - name: Build (Debug x64)
         run: cmake --build build --config Debug --parallel $env:NUMBER_OF_PROCESSORS
@@ -563,7 +564,7 @@ jobs:
         run: cmake --build build --config Release --target run-option-codegen-test
 
       - name: Configure CMake (Debug x32)
-        run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x32}}" ${{matrix.cmake_options_x32}}
+        run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x32}}" ${{matrix.cmake_options_x32}} ${{matrix.cmake_options}}
 
       - name: Build (Debug x32)
         run: cmake --build build-x32 --config Debug --parallel $env:NUMBER_OF_PROCESSORS
