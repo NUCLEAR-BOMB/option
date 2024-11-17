@@ -2756,7 +2756,7 @@ namespace impl {
         using from_args_ctor = std::enable_if<sizeof(First) == 0>;
 
         template<class T, class InPlaceT, class... Args>
-        using from_in_place_args_ctor = std::enable_if<sizeof(InPlaceT) == 0>;
+        using from_in_place_args_ctor = std::enable_if<sizeof...(Args) == 1>;
 
         template<class T, class U, class QualU>
         using from_option_like_ctor = if_<
