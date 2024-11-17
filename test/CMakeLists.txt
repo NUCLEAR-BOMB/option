@@ -13,8 +13,8 @@ if (DEFINED OPTION_DEV_CLANGCL_SANITIZERS AND NOT CMAKE_BUILD_TYPE STREQUAL "Rel
         link_libraries(
             "$ENV{ProgramFiles}/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan-i386.lib"
             "$ENV{ProgramFiles}/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan_cxx-i386.lib"
-            clang_rt.ubsan_standalone_cxx-x86_64.lib
-            clang_rt.ubsan_standalone-x86_64.lib
+            clang_rt.ubsan_standalone_cxx-i386.lib
+            clang_rt.ubsan_standalone-i386.lib
         )
     endif()
 endif()
