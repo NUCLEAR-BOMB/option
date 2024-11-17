@@ -4070,6 +4070,19 @@ public:
     }
 };
 
+template<class T>
+struct std::hash<opt::option<T&>> {
+    constexpr std::size_t operator()(const opt::option<T&>& val) const noexcept(noexcept(std::hash<T*>{}(val.ptr_or_null()))) {
+        return std::hash<T*>{}(val.ptr_or_null());
+    }
+};
+template<class T>
+struct std::hash<opt::option<T&&>> {
+    constexpr std::size_t operator()(const opt::option<T&&>& val) const noexcept(noexcept(std::hash<T*>{}(val.ptr_or_null()))) {
+        return std::hash<T*>{}(val.ptr_or_null());
+    }
+};
+
 #if OPTION_CLANG && OPTION_CONSUMED_ANNOTATION_CHECKING
     #pragma clang diagnostic pop
 #endif

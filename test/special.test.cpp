@@ -1572,27 +1572,47 @@ inline constexpr bool is_hashable = std::conjunction_v<
 
 // NOLINTBEGIN(misc-const-correctness)
 TEST_CASE("std::hash") {
-    opt::option<int> a;
-    [[maybe_unused]] const std::size_t hash_a = std::hash<opt::option<int>>{}(a);
-    CHECK_UNARY(is_hashable<decltype(a)>);
-    CHECK_UNARY(is_hashable<int>);
-    CHECK_UNARY(noexcept(std::hash<opt::option<int>>{}(a)));
+    SUBCASE("non references") {
+        opt::option<int> a;
+        [[maybe_unused]] const std::size_t hash_a = std::hash<opt::option<int>>{}(a);
+        CHECK_UNARY(is_hashable<decltype(a)>);
+        CHECK_UNARY(is_hashable<int>);
+        CHECK_UNARY(noexcept(std::hash<opt::option<int>>{}(a)));
 
-    opt::option<const float> b;
-    [[maybe_unused]] const std::size_t hash_b = std::hash<opt::option<const float>>{}(b);
-    CHECK_UNARY(is_hashable<decltype(b)>);
-    CHECK_UNARY(is_hashable<float>);
-    CHECK_UNARY(noexcept(std::hash<opt::option<const float>>{}(b)));
+        opt::option<const float> b;
+        [[maybe_unused]] const std::size_t hash_b = std::hash<opt::option<const float>>{}(b);
+        CHECK_UNARY(is_hashable<decltype(b)>);
+        CHECK_UNARY(is_hashable<float>);
+        CHECK_UNARY(noexcept(std::hash<opt::option<const float>>{}(b)));
 
-    struct unhashable_type {
-        int x;
-    };
-    opt::option<unhashable_type> c;
-    CHECK_UNARY_FALSE(is_hashable<decltype(c)>);
-    CHECK_UNARY_FALSE(is_hashable<unhashable_type>);
+        struct unhashable_type {
+            int x;
+        };
+        opt::option<unhashable_type> c;
+        CHECK_UNARY_FALSE(is_hashable<decltype(c)>);
+        CHECK_UNARY_FALSE(is_hashable<unhashable_type>);
 
-    opt::option<const unhashable_type> d;
-    CHECK_UNARY_FALSE(is_hashable<decltype(d)>);
+        opt::option<const unhashable_type> d;
+        CHECK_UNARY_FALSE(is_hashable<decltype(d)>);
+    }
+    SUBCASE("references") {
+        int a = 1;
+        opt::option<int&> ar = a;
+        [[maybe_unused]] const std::size_t ar_hash = std::hash<opt::option<int&>>{}(ar);
+        CHECK_UNARY(is_hashable<decltype(ar)>);
+
+        opt::option<const int&> acr = a;
+        [[maybe_unused]] const std::size_t acr_hash = std::hash<opt::option<const int&>>{}(acr);
+        CHECK_UNARY(is_hashable<decltype(acr)>);
+
+        opt::option<int&&> arr = as_rvalue(a);
+        [[maybe_unused]] const std::size_t arr_hash = std::hash<opt::option<int&&>>{}(arr);
+        CHECK_UNARY(is_hashable<decltype(arr)>);
+
+        opt::option<const int&&> acrr = as_rvalue(a);
+        [[maybe_unused]] const std::size_t acrr_hash = std::hash<opt::option<const int&&>>{}(acrr);
+        CHECK_UNARY(is_hashable<decltype(acrr)>);
+    }
 }
 // NOLINTEND(misc-const-correctness)
 
