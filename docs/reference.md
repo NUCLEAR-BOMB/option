@@ -814,8 +814,8 @@ std::cout << a.map_or_else(
 ### `ptr_or_null`
 
 ```cpp
-constexpr std::remove_reference_t<T>* ptr_or_null() & noexcept /*lifetimebound*/;
-constexpr const std::remove_reference_t<T>* ptr_or_null() const& noexcept /*lifetimebound*/;
+constexpr std::remove_reference_t<T&>* ptr_or_null() & noexcept /*lifetimebound*/;
+constexpr std::remove_reference_t<const T&>* ptr_or_null() const& noexcept /*lifetimebound*/;
 ```
 Returns a pointer to the contained value (`std::addressof(get())`) if `opt::option` contains one. If it does not, returns `nullptr` instead.
 

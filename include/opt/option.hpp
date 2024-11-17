@@ -3205,10 +3205,10 @@ public:
     template<class D, class F>
     [[nodiscard]] constexpr auto map_or_else(D&& def, F&& f) const&& { return impl::option::map_or_else<T>(static_cast<const option&&>(*this), static_cast<D&&>(def), static_cast<F&&>(f)); }
 
-    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T>* ptr_or_null() noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T&>* ptr_or_null() noexcept OPTION_LIFETIMEBOUND {
         return has_value() ? OPTION_ADDRESSOF(get()) : nullptr;
     }
-    [[nodiscard]] OPTION_PURE constexpr const std::remove_reference_t<T>* ptr_or_null() const noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<const T&>* ptr_or_null() const noexcept OPTION_LIFETIMEBOUND {
         return has_value() ? OPTION_ADDRESSOF(get()) : nullptr;
     }
 
