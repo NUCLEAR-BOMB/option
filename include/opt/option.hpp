@@ -3364,11 +3364,11 @@ template<class Fn, class... Options, std::enable_if_t<std::conjunction_v<opt::is
 
 template<class To, class From>
 [[nodiscard]] constexpr opt::option<To> option_cast(const opt::option<From>& value) {
-    return value.map([](const From& x) { return To(x); });
+    return value.map([](const From& x) -> To { return To(x); });
 }
 template<class To, class From>
 [[nodiscard]] constexpr opt::option<To> option_cast(opt::option<From>&& value) {
-    return static_cast<opt::option<From>&&>(value).map([](From&& x) { return To(static_cast<From&&>(x)); });
+    return static_cast<opt::option<From>&&>(value).map([](From&& x) -> To { return To(static_cast<From&&>(x)); });
 }
 
 template<class T>
