@@ -956,7 +956,7 @@ namespace impl {
         array,
         avaliable_option,
         unavaliable_option,
-        reference,
+        reference_option,
         pointer_64,
         pointer_32,
         float64_sNaN,
@@ -996,6 +996,14 @@ namespace impl {
             = opt::option_traits<T>::max_level >= 1
                 ? option_strategy::avaliable_option
                 : option_strategy::unavaliable_option;
+    };
+    template<class T>
+    struct dispatch_specializations<opt::option<T&>> {
+        static constexpr option_strategy value = option_strategy::reference_option;
+    };
+    template<class T>
+    struct dispatch_specializations<opt::option<T&&>> {
+        static constexpr option_strategy value = option_strategy::reference_option;
     };
     template<>
     struct dispatch_specializations<bool> {
@@ -1049,9 +1057,6 @@ namespace impl {
 
         if constexpr (dispatch_st != st::other) {
             return dispatch_st;
-        } else
-        if constexpr (std::is_reference_v<T>) {
-            return st::reference;
         } else
         if constexpr (std::is_pointer_v<T>) {
             if constexpr (sizeof(T) == 8) {
@@ -1155,22 +1160,6 @@ namespace impl {
         static void set_level(bool* const value, const std::uintmax_t level) noexcept {
             OPTION_VERIFY(level < max_level, "Level is out of range");
             impl::ptr_bit_copy(value, uint_bool(level + 2));
-        }
-    };
-    template<class T>
-    struct internal_option_traits<T, option_strategy::reference> {
-    private:
-        using unref = std::remove_reference_t<T>;
-    public:
-        static constexpr std::uintmax_t max_level = 255;
-
-        static std::uintmax_t get_level(const unref* const* const value) noexcept {
-            const std::uintptr_t uptr = impl::ptr_bit_cast<std::uintptr_t>(value);
-            return uptr;
-        }
-        static void set_level(unref** const value, const std::uintmax_t level) noexcept {
-            OPTION_VERIFY(level < max_level, "Level is out of range");
-            impl::ptr_bit_copy(value, std::uintptr_t(level));
         }
     };
 
@@ -3307,6 +3296,21 @@ namespace impl {
         }
         static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
             bool_traits::set_level(OPTION_ADDRESSOF(static_cast<base*>(value)->has_value_flag), level);
+        }
+    };
+    template<class T>
+    struct internal_option_traits<opt::option<T>, option_strategy::reference_option> {
+        using base = typename opt::option<T>::base;
+
+        static constexpr std::uintmax_t max_level = 256;
+
+        static std::uintmax_t get_level(const opt::option<T>* const value) noexcept {
+            const auto uint = reinterpret_cast<std::uintptr_t>(static_cast<const base*>(value)->value);
+            return std::uintmax_t(uint) - 1;
+        }
+        static void set_level(opt::option<T>* const value, const std::uintmax_t level) noexcept {
+            const auto uint = reinterpret_cast<std::remove_reference_t<T>*>(std::uintptr_t(level + 1));
+            static_cast<base*>(value)->value = uint;
         }
     };
 #endif // OPTION_USE_BUILTIN_TRAITS
