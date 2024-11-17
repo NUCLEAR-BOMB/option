@@ -502,7 +502,7 @@ jobs:
         run: cmake --build build --config Release --target run-option-codegen-test
 
   windows:
-    name: 'Windows VS ${{matrix.toolset}}'
+    name: 'Windows VS ${{matrix.name}}'
     runs-on: windows-latest
 
     env:
@@ -514,10 +514,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - toolset: 'v143'
+          - name: 'v143'
+            toolset: 'v143'
             options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
 
-          - toolset: 'ClangCL'
+          - name: 'v143 C++20'
+            toolset: 'v143'
+            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO /std:c++20'
+
+          - name: 'ClangCL'
+            toolset: 'ClangCL'
             options_x64: '-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable -fno-sanitize-recover=all'
             cmake_options_x64: >-
               -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
