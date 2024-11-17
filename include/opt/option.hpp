@@ -3088,12 +3088,12 @@ public:
         }
     }
     OPTION_CALLABLE_WHEN(consumed)
-    [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<const T> operator->() const noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<const T&>* operator->() const noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return OPTION_ADDRESSOF(get());
     }
     OPTION_CALLABLE_WHEN(consumed)
-    [[nodiscard]] OPTION_PURE constexpr std::add_pointer_t<T> operator->() noexcept OPTION_LIFETIMEBOUND {
+    [[nodiscard]] OPTION_PURE constexpr std::remove_reference_t<T&>* operator->() noexcept OPTION_LIFETIMEBOUND {
         OPTION_VERIFY(has_value(), "Accessing the value of an empty opt::option<T>");
         return OPTION_ADDRESSOF(get());
     }
