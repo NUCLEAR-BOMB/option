@@ -518,13 +518,10 @@ jobs:
             options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
 
           - toolset: 'ClangCL'
-            options: '-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable -fno-sanitize-recover=all'
+            options_x64: '-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable -fno-sanitize-recover=all'
             cmake_options_x64: >-
               -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
               "-DCMAKE_EXE_LINKER_FLAGS_INIT=`"$env:ProgramFiles/LLVM/lib/clang/18/lib/windows/clang_rt.asan-x86_64.lib`" `"$env:ProgramFiles/LLVM/lib/clang/18/lib/windows/clang_rt.asan_cxx-x86_64.lib`" clang_rt.ubsan_standalone_cxx-x86_64.lib clang_rt.ubsan_standalone-x86_64.lib"
-            cmake_options_x32: >-
-              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
-              "-DCMAKE_EXE_LINKER_FLAGS_INIT=`"$env:ProgramFiles/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan-i386.lib`" `"$env:ProgramFiles/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/lib/clang/17/lib/windows/clang_rt.asan_cxx-i386.lib`" clang_rt.ubsan_standalone_cxx-i386.lib clang_rt.ubsan_standalone-i386.lib"
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.7
@@ -536,7 +533,7 @@ jobs:
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
       - name: Configure CMake (Debug x64)
-        run: cmake -B build -A x64 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options}}" ${{matrix.cmake_options_x64}}
+        run: cmake -B build -A x64 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x64}}" ${{matrix.cmake_options_x64}}
 
       - name: Build (Debug x64)
         run: cmake --build build --config Debug --parallel $env:NUMBER_OF_PROCESSORS
@@ -560,7 +557,7 @@ jobs:
         run: cmake --build build --config Release --target run-option-codegen-test
 
       - name: Configure CMake (Debug x32)
-        run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options}}" ${{matrix.cmake_options_x32}}
+        run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x32}}" ${{matrix.cmake_options_x32}}
 
       - name: Build (Debug x32)
         run: cmake --build build-x32 --config Debug --parallel $env:NUMBER_OF_PROCESSORS
@@ -575,11 +572,9 @@ jobs:
         run: cmake --build build-x32 --config Release --parallel $env:NUMBER_OF_PROCESSORS
 
       - name: Run tests (Release x32)
-        if: matrix.toolset != 'ClangCL'
         run: cmake --build build-x32 --config Release --target run-option-test
 
       - name: Check examples (Release x32)
-        if: matrix.toolset != 'ClangCL'
         run: cmake --build build-x32 --config Release --target check-option-examples
 
   intel-compiler:
