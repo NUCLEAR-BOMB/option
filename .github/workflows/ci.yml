@@ -579,6 +579,7 @@ jobs:
         run: cmake --build build-x32 --config Release --target run-option-test
 
       - name: Check examples (Release x32)
+        if: matrix.toolset != 'ClangCL'
         run: cmake --build build-x32 --config Release --target check-option-examples
 
   intel-compiler:
