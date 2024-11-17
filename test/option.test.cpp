@@ -113,21 +113,6 @@ template<> struct sample_values<aggregate_with_empty_struct> {
     };
 };
 
-struct empty_polymorphic_type {
-    empty_polymorphic_type() = default;
-    empty_polymorphic_type(const empty_polymorphic_type&) = default;
-    empty_polymorphic_type& operator=(const empty_polymorphic_type&) = default;
-
-    virtual ~empty_polymorphic_type() = default;
-
-    bool operator==(const empty_polymorphic_type&) const { return true; }
-};
-static_assert(std::is_polymorphic_v<empty_polymorphic_type>);
-
-template<> struct sample_values<empty_polymorphic_type> {
-    empty_polymorphic_type values[5]{{}, {}, {}, {}, {}};
-};
-
 struct polymorphic_type {
     int x;
 
@@ -201,7 +186,8 @@ template<> struct sample_values<std::complex<float>> {
     std::complex<float> values[5]{{1.f, 2.f}, {3.f, 4.f}, {5.f, 6.f}, {7.f, 8.f}, {9.f, 10.f}};
 };
 
-TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_padding_member, int(*)(int), std::string_view, polymorphic_type, empty_polymorphic_type, aggregate_int_float, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int, std::complex<float>) {
+template<class T>
+void template_option_case_body() {
     const sample_values<T> sample;
     // Allow captured structured bindings in lambda
     const auto& v0 = sample.values[0];
@@ -511,7 +497,6 @@ TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt:
             CHECK_EQ(a.value_or_construct(), T{});
         }
     }
-    if (v0 == v1) { goto skip_and_then; }
     SUBCASE(".and_then") {
         const auto fn1 = [&](const T& x) -> opt::option<int> {
             return x == v0 ? 0 : 1;
@@ -527,8 +512,6 @@ TEST_CASE_TEMPLATE("opt::option", T, std::vector<int>, opt::enforce<float>, opt:
         CHECK_EQ(opt::option<T>{v1}.and_then(fn2), 123u);
         CHECK_EQ(opt::option<T>{opt::none}.and_then(fn2), opt::none);
     }
-skip_and_then:
-    if (v0 == v1) { goto skip_map; }
     SUBCASE(".map") {
         const auto fn1 = [&](const T& x) -> T {
             return x == v0 ? v1 : v0;
@@ -566,7 +549,6 @@ skip_and_then:
         CHECK_EQ(a.map(fn4), opt::make_option(opt::option<int>{opt::none}));
         CHECK_EQ(a, v0);
     }
-skip_map:
     SUBCASE(".or_else") {
         const auto fn1 = [&]() { return opt::option<T>{v0}; };
         CHECK_EQ(opt::option<T>{v0}.or_else(fn1), v0);
@@ -651,7 +633,6 @@ skip_map:
         a = v1;
         CHECK_EQ(*(as_const(a).ptr_or_null()), v1);
     }
-    if (v0 == v1) { goto skip_filter; }
     SUBCASE(".filter") {
         const auto fn1 = [&](const T& x) {
             return x == v0;
@@ -676,8 +657,6 @@ skip_map:
         CHECK_EQ(a.filter(fn2), opt::none);
         CHECK_EQ(a, v1);
     }
-skip_filter:
-    if (v0 == v1) { goto skip_flatten; }
     SUBCASE("flatten") {
         auto a = opt::make_option(opt::make_option(v0));
         CHECK_EQ(**a, v0);
@@ -710,8 +689,6 @@ skip_filter:
         c = opt::none;
         CHECK_EQ(opt::flatten(c), opt::none);
     }
-skip_flatten:
-    if (v0 == v1) { goto skip_map_or; }
     SUBCASE(".map_or") {
         const auto fn1 = [&](const T& x) {
             return x == v0 ? v1 : v0;
@@ -730,8 +707,6 @@ skip_flatten:
         CHECK_EQ(opt::option<T>{v1}.map_or(3, fn2), 1);
         CHECK_EQ(opt::option<T>{opt::none}.map_or(3, fn2), 3);
     }
-skip_map_or:
-    if (v0 == v1) { goto skip_map_or_else; }
     SUBCASE(".map_or_else") {
         const auto fn1 = [&](const T& x) {
             return x == v0 ? v1 : v0;
@@ -753,8 +728,6 @@ skip_map_or:
         CHECK_EQ(opt::option<T>{v1}.map_or_else(fn4, fn3), -1);
         CHECK_EQ(opt::option<T>{opt::none}.map_or_else(fn4, fn3), 0);
     }
-skip_map_or_else:
-    if (v0 == v1) { goto skip_take_if; }
     SUBCASE(".take_if") {
         opt::option<T> a = v0;
         opt::option<T> b = a.take_if([&](const T& x) { return x == v0; });
@@ -776,7 +749,6 @@ skip_map_or_else:
         CHECK_EQ(b, v0);
         CHECK_UNARY_FALSE(a.has_value());
     }
-skip_take_if:
     SUBCASE(".has_value_and") {
         opt::option a{v0};
         CHECK_UNARY(a.has_value_and([&](const T& x) { return x == v0; }));
@@ -787,7 +759,6 @@ skip_take_if:
         CHECK_UNARY_FALSE(a.has_value_and([&](const T& x) { return x == v0; }));
         CHECK_UNARY_FALSE(a.has_value_and([&](const T& x) { return x == v1; }));
     }
-    if (v0 == v1) { goto skip_inspect; }
     SUBCASE(".inspect") {
         opt::option<T> a;
         a.inspect([&](T& x) { x = v0; });
@@ -801,7 +772,6 @@ skip_take_if:
         a.inspect([&](T& x) { x = v2; }).inspect([&](T& x) { x = v3; });
         CHECK_EQ(a, v3);
     }
-skip_inspect:
     SUBCASE("unzip") {
         SUBCASE("std::tuple") {
             opt::option a{std::tuple{v0, v1, v2, v3}};
@@ -958,7 +928,6 @@ skip_inspect:
         c = opt::zip(a, b);
         CHECK_UNARY_FALSE(c.has_value());
     }
-    if (v0 == v1) { goto skip_zip_with; }
     SUBCASE("opt::zip_with") {
         const auto fn1 = [&](const T& x) -> int {
             return x == v0 ? 1 : 0;
@@ -1002,7 +971,6 @@ skip_inspect:
         opt::zip_with(fn4, b, opt::option<T>{v1});
         CHECK_EQ(b, v0);
     }
-skip_zip_with:
     SUBCASE("opt::from_nullable") {
         T a = v0;
         T* ptr = &a;
@@ -1054,5 +1022,22 @@ skip_zip_with:
         CHECK_EQ(a, v2);
     }
 }
+
+template<class... Ts>
+void reg_tests() {
+    int index = 0;
+    (doctest::detail::regTest(
+        doctest::detail::TestCase(&template_option_case_body<Ts>,
+        "option.test.cpp",
+        0,
+        doctest_detail_test_suite_ns::getCurrentTestSuite(),
+        doctest::toString<Ts>(),
+        300 * 1000 + index++) * "option"
+    ), ...);
+}
+
+const int reg_tests_var = (
+    reg_tests<std::vector<int>, opt::enforce<float>, opt::sentinel<int, -1, -2, -3, -4, -5>, std::string, struct_with_padding_member, int(*)(int), std::string_view, polymorphic_type, aggregate_int_float, std::tuple<int, float, int>, double, bool, std::reference_wrapper<int>, int*, float, std::pair<int, float>, std::pair<float, int>, std::array<float, 4>, int, std::complex<float>>()
+    , 0);
 
 }
