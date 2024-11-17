@@ -2282,10 +2282,12 @@ std::cout << a.has_value() << '\n'; // false
 ### `opt::make_option`
 
 ```cpp
-template<class T>
+template</*secret non-type template parameter*/, class T>
 constexpr opt::option<std::decay_t<T>> make_option(T&& value);
 ```
-Creates `opt::option` from `value`. Returns `opt::option<std::decay_t<T>>{std::forward<T>(value)}`
+Creates `opt::option` from `value`. Returns `opt::option<std::decay_t<T>>{std::forward<T>(value)}`.
+
+The `/*secret non-type template parameter*/` doesn't allow to call this overload with explicit template argument and deduces to other overloads.
 
 ---
 

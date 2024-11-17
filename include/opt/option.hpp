@@ -3316,7 +3316,11 @@ namespace impl {
 #endif // OPTION_USE_BUILTIN_TRAITS
 }
 
-template<class T>
+namespace impl {
+    enum class make_option_secret { init = 1 };
+}
+
+template<impl::make_option_secret = impl::make_option_secret::init, class T>
 OPTION_RETURN_TYPESTATE(consumed)
 [[nodiscard]] constexpr option<std::decay_t<T>> make_option(T&& value) {
     return option<std::decay_t<T>>{static_cast<T&&>(value)};

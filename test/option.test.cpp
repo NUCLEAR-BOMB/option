@@ -675,11 +675,11 @@ void template_option_case_body() {
         }
     }
     SUBCASE("flatten") {
-        auto a = opt::make_option(opt::option<T>{v0});
+        auto a = opt::make_option(opt::make_option<T>(v0));
         CHECK_EQ(**a, v0);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(a)), opt::option<T&>>);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(as_rvalue(a))), opt::option<T>>);
-        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::option<T>{v0}))), opt::option<T>>);
+        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::make_option<T>(v0)))), opt::option<T>>);
         auto b = opt::flatten(a);
         CHECK_EQ(*b, v0);
 
@@ -693,11 +693,11 @@ void template_option_case_body() {
         b = opt::flatten(a);
         CHECK_UNARY_FALSE(b.has_value());
 
-        auto c = opt::make_option(opt::make_option(opt::option<T>{v1}));
+        auto c = opt::make_option(opt::make_option(opt::make_option<T>(v1)));
         CHECK_EQ(***c, v1);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(c)), opt::option<T&>>);
         CHECK_UNARY(std::is_same_v<decltype(opt::flatten(as_rvalue(c))), opt::option<T>>);
-        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::make_option(opt::option<T>{v0})))), opt::option<T>>);
+        CHECK_UNARY(std::is_same_v<decltype(opt::flatten(opt::make_option(opt::make_option(opt::make_option<T>(v0))))), opt::option<T>>);
         CHECK_EQ(opt::flatten(c), v1);
         (**c) = opt::none;
         CHECK_EQ(opt::flatten(c), opt::none);
