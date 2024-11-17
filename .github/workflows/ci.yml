@@ -529,6 +529,14 @@ jobs:
             cmake_options_x64: >-
               -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
               "-DCMAKE_EXE_LINKER_FLAGS_INIT=`"$env:ProgramFiles/LLVM/lib/clang/18/lib/windows/clang_rt.asan-x86_64.lib`" `"$env:ProgramFiles/LLVM/lib/clang/18/lib/windows/clang_rt.asan_cxx-x86_64.lib`" clang_rt.ubsan_standalone_cxx-x86_64.lib clang_rt.ubsan_standalone-x86_64.lib"
+          
+          - name: 'ClangCL C++20'
+            toolset: 'ClangCL'
+            options_x64: '-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable -fno-sanitize-recover=all'
+            cmake_options_x64: >-
+              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+              "-DCMAKE_EXE_LINKER_FLAGS_INIT=`"$env:ProgramFiles/LLVM/lib/clang/18/lib/windows/clang_rt.asan-x86_64.lib`" `"$env:ProgramFiles/LLVM/lib/clang/18/lib/windows/clang_rt.asan_cxx-x86_64.lib`" clang_rt.ubsan_standalone_cxx-x86_64.lib clang_rt.ubsan_standalone-x86_64.lib"
+            cmake_options: -DCMAKE_CXX_STANDARD=20
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.7
