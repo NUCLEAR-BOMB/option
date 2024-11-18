@@ -562,7 +562,7 @@ jobs:
           version: '18.1.8'
           force-url: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz'
 
-      - name: Configure CMake (Debug x64)
+      - name: Configure CMake (x64)
         run: cmake -B build -A x64 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x64}}" ${{matrix.cmake_options_x64}} ${{matrix.cmake_options}}
 
       - name: Build (Debug x64)
@@ -586,7 +586,7 @@ jobs:
       - name: Run codegen tests
         run: cmake --build build --config Release --target run-option-codegen-test
 
-      - name: Configure CMake (Debug x32)
+      - name: Configure CMake (x32)
         run: cmake -B build-x32 -A Win32 -T "${{matrix.toolset}}" "-DOPTION_EXTRA_FLAGS=${{matrix.options_x32}}" ${{matrix.cmake_options_x32}} ${{matrix.cmake_options}}
 
       - name: Build (Debug x32)
