@@ -503,7 +503,7 @@ jobs:
 
   windows:
     name: 'Windows VS ${{matrix.name}}'
-    runs-on: windows-latest
+    runs-on: ${{matrix.os}}
 
     env:
       VERBOSE: 1
@@ -516,15 +516,23 @@ jobs:
         include:
           - name: 'v143'
             toolset: 'v143'
+            os: windows-2022
             options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
 
           - name: 'v143 C++20'
             toolset: 'v143'
+            os: windows-2022
             options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
             cmake_options: -DCMAKE_CXX_STANDARD=20
 
+          - name: 'v142'
+            toolset: 'v142'
+            os: windows-2019
+            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
+
           - name: 'ClangCL'
             toolset: 'ClangCL'
+            os: windows-2022
             options_x64: '-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable -fno-sanitize-recover=all'
             cmake_options_x64: >-
               -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
@@ -532,6 +540,7 @@ jobs:
           
           - name: 'ClangCL C++20'
             toolset: 'ClangCL'
+            os: windows-2022
             options_x64: '-fsanitize=undefined,alignment,bool,builtin,bounds,enum,float-cast-overflow,float-divide-by-zero,function,integer-divide-by-zero,null,object-size,pointer-overflow,return,returns-nonnull-attribute,shift,shift-base,shift-exponent,unreachable -fno-sanitize-recover=all'
             cmake_options_x64: >-
               -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
