@@ -531,12 +531,6 @@ jobs:
             options: '/Zi /DEBUG /INCREMENTAL:NO'
             cmake_options: -DUSE_LIBASSERT=FALSE
 
-          - name: 'v141'
-            toolset: 'v141'
-            os: windows-2019
-            options: '/Zi /DEBUG /INCREMENTAL:NO /w /WX-'
-            cmake_options: -DUSE_LIBASSERT=FALSE
-
           - name: 'ClangCL'
             toolset: 'ClangCL'
             os: windows-2022
