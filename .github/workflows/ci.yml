@@ -529,6 +529,7 @@ jobs:
             toolset: 'v142'
             os: windows-2019
             options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
+            cmake_options: -DUSE_LIBASSERT=FALSE
 
           - name: 'ClangCL'
             toolset: 'ClangCL'
