@@ -229,6 +229,17 @@ jobs:
               -fno-sanitize=vptr
             cmake_options: '-DOLD_LIBSTDCPP=TRUE'
 
+          - name: 'gcc 10'
+            cxx: 'g++-10'
+            cc: 'gcc-10'
+            os: 'ubuntu-22.04'
+            packages: 'llvm-15 g++-10-multilib'
+            options: >-
+              -fsanitize=address,undefined,alignment,bool,shift,shift-exponent,shift-base,integer-divide-by-zero,unreachable,null,return,bounds,bounds-strict,object-size,float-divide-by-zero,float-cast-overflow,enum,pointer-overflow,builtin
+              -fno-sanitize-recover=all
+              -fno-sanitize=vptr
+            cmake_options: '-DOLD_LIBSTDCPP=TRUE'
+
           # - name: 'gcc 10'
           #   cxx: 'g++-10'
           #   cc: 'gcc-10'
