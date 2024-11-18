@@ -534,7 +534,7 @@ jobs:
           - name: 'v141'
             toolset: 'v141'
             os: windows-2019
-            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
+            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO /w'
             cmake_options: -DUSE_LIBASSERT=FALSE
 
           - name: 'ClangCL'
