@@ -354,6 +354,10 @@ OPTION_STD_NAMESPACE_CXX11_END
     class variant; // Defined in header <variant>
 
 #if OPTION_MSVC
+    #pragma push_macro("_EXPORT_STD")
+    #ifndef _EXPORT_STD
+        #define _EXPORT_STD
+    #endif
     _EXPORT_STD template<size_t I, class... Types>
     _NODISCARD constexpr auto get_if(variant<Types...>*) noexcept;
     _EXPORT_STD template<size_t I, class... Types>
@@ -388,6 +392,7 @@ OPTION_STD_NAMESPACE_CXX11_END
     _NODISCARD constexpr T&& get(array<T, Size>&&) noexcept;
     _EXPORT_STD template<size_t I, class T, size_t Size>
     _NODISCARD constexpr const T&& get(const array<T, Size>&&) noexcept;
+    #pragma pop_macro("_EXPORT_STD")
 #elif OPTION_LIBCPP
     template<std::size_t N, class T>
     struct variant_alternative;
