@@ -187,7 +187,7 @@ opt::option<double> option_double_return() {
 //$ mov dl, 0x1
 //$ ret
 
-//$ @optional_double_return {gcc 14, gcc 11, gcc 12}:
+//$ @optional_double_return {gcc 14, gcc <13}:
 //$ mov byte ptr [rsp - 0x10], 0x1
 //$ movsd xmm0, qword ptr <optional_double_return()+0x11>
 //$ mov rax, qword ptr [rsp - 0x10]
@@ -419,9 +419,14 @@ opt::option<int> option_int_return_none() {
 //$ xor eax, eax
 //$ ret
 
-//$ @optional_int_return_default_ctor {gcc}:
+//$ @optional_int_return_default_ctor {gcc >=11}:
 //$ mov byte ptr [rsp - 0x4], 0x0
 //$ mov rax, qword ptr [rsp - 0x8]
+//$ ret
+
+//$ @optional_int_return_default_ctor {gcc <11}:
+//$ mov dword ptr [rsp - 0xc], 0x0
+//$ mov rax, qword ptr [rsp - 0x10]
 //$ ret
 
 //$ @optional_int_return_default_ctor {msvc}:
