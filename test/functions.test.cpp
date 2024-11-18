@@ -11,6 +11,7 @@
 #include <type_traits>
 #include <map>
 #include <set>
+#include <variant>
 
 #include "utils.hpp"
 
