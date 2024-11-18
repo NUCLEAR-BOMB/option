@@ -96,6 +96,10 @@ def find_condition_version(cond):
 def check_version(specified_version, version):
     if len(version) == 0:
         return True
+    elif version[:2] == '<=':
+        return specified_version <= parse_compiler_version(version[2:])
+    elif version[:2] == '>=':
+        return specified_version >= parse_compiler_version(version[2:])
     elif version[0] == '<':
         return specified_version < parse_compiler_version(version[1:])
     elif version[0] == '>':
