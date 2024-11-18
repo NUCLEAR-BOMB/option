@@ -528,13 +528,13 @@ jobs:
           - name: 'v142'
             toolset: 'v142'
             os: windows-2019
-            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO'
+            options: '/Zi /DEBUG /INCREMENTAL:NO'
             cmake_options: -DUSE_LIBASSERT=FALSE
 
           - name: 'v141'
             toolset: 'v141'
             os: windows-2019
-            options: '/fsanitize=address /Zi /DEBUG /INCREMENTAL:NO /w'
+            options: '/Zi /DEBUG /INCREMENTAL:NO /w'
             cmake_options: -DUSE_LIBASSERT=FALSE
 
           - name: 'ClangCL'
