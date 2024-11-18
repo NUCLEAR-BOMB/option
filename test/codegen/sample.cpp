@@ -98,8 +98,16 @@ void option_float_assign(opt::option<float>* a) {
 //$ mov byte ptr [rcx + 0x4], 0x1
 //$ ret
 
-//$ @optional_float_assign {msvc}:
+//$ @optional_float_assign {msvc >19.29.30157.0}:
 //$ mov dword ptr [rsp + 0x8], 0x3f800000
+//$ mov byte ptr [rsp + 0xc], 0x1
+//$ mov rax, qword ptr [rsp + 0x8]
+//$ mov qword ptr [rcx], rax
+//$ ret
+
+//$ @optional_float_assign {msvc <=19.29.30157.0}:
+//$ movss xmm0, dword ptr <void __cdecl optional_float_assign(class std::optional<float> *)+0x8>
+//$ movss dword ptr [rsp + 0x8], xmm0
 //$ mov byte ptr [rsp + 0xc], 0x1
 //$ mov rax, qword ptr [rsp + 0x8]
 //$ mov qword ptr [rcx], rax
@@ -218,8 +226,14 @@ enum class enum_uint16 : std::uint16_t { a = 2 };
 //$ mov eax, 0x2
 //$ ret
 
-//$ @option_enum_uint16_return {msvc}:
+//$ @option_enum_uint16_return {msvc >19.29.30157.0}:
 //$ mov word ptr [rcx], 0x2
+//$ mov rax, rcx
+//$ ret
+
+//$ @option_enum_uint16_return {msvc <=19.29.30157.0}:
+//$ mov eax, 0x2
+//$ mov word ptr [rcx], ax
 //$ mov rax, rcx
 //$ ret
 
@@ -242,10 +256,17 @@ opt::option<enum_uint16> option_enum_uint16_return() {
 //$ mov eax, dword ptr [rsp - 0x4]
 //$ ret
 
-//$ @optional_enum_uint16_return {msvc}:
+//$ @optional_enum_uint16_return {msvc >19.29.30157.0}:
 //$ mov word ptr [rcx], 0x2
 //$ mov rax, rcx
 //$ mov byte ptr [rcx + 0x2], 0x1
+//$ ret
+
+//$ @optional_enum_uint16_return {msvc <=19.29.30157.0}:
+//$ mov eax, 0x2
+//$ mov byte ptr [rcx + 0x2], 0x1
+//$ mov word ptr [rcx], ax
+//$ mov rax, rcx
 //$ ret
 
 //$ @optional_enum_uint16_return {clang-cl}:
