@@ -424,8 +424,16 @@ opt::option<int> option_int_return_none() {
 //$ mov rax, qword ptr [rsp - 0x8]
 //$ ret
 
-//$ @optional_int_return_default_ctor {gcc <11}:
+//$ @optional_int_return_default_ctor {gcc 10..<11}:
 //$ mov dword ptr [rsp - 0xc], 0x0
+//$ mov rax, qword ptr [rsp - 0x10]
+//$ ret
+
+//$ @optional_int_return_default_ctor {gcc <10}:
+//$ xor eax, eax
+//$ mov byte ptr [rsp - 0x9], 0x0
+//$ mov word ptr [rsp - 0xb], ax
+//$ mov byte ptr [rsp - 0xc], 0x0
 //$ mov rax, qword ptr [rsp - 0x10]
 //$ ret
 
