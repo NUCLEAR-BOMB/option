@@ -1740,6 +1740,28 @@ TEST_CASE("value_or") {
 #endif
 }
 
+TEST_CASE("non-explicit from arguments constructor") {
+    struct type {
+        int x;
+        float y;
+
+        bool operator==(const type& other) const { return x == other.x && y == other.y; }
+    };
+    const auto fn1 = []() -> type {
+        return {1, 2.f};
+    };
+    CHECK_EQ(fn1(), type{1, 2.f});
+    const auto fn2 = []() -> opt::option<type> {
+        return {3, 4.f};
+    };
+    CHECK_EQ(fn2(), type{3, 4.f});
+
+    const auto fn3 = [](type) {};
+    fn3({5, 6.f});
+    const auto fn4 = [](opt::option<type>) {};
+    fn4({7, 8.f});
+}
+
 TEST_SUITE_END();
 
 struct struct1 {

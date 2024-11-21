@@ -2851,7 +2851,7 @@ public:
     template<class First, class Second, class... Args,
         class = typename checks::template from_args_ctor<T, First, Second, Args...>::type>
     OPTION_RETURN_TYPESTATE(consumed)
-    constexpr explicit option(First&& first, Second&& second, Args&&... args)
+    constexpr option(First&& first, Second&& second, Args&&... args)
         : base(std::in_place, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<First&&>(first), static_cast<Second&&>(second), static_cast<Args&&>(args)...) {}
 
     template<class InPlaceT, class... Args,
