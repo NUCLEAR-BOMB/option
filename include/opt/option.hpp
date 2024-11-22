@@ -2697,16 +2697,15 @@ namespace impl {
         using from_value_ctor = if_<
             is_not_same_v<remove_cvref<U>, opt::option<T>>
             && is_not_same_v<remove_cvref<U>, std::in_place_t>
+            && is_not_same_v<remove_cvref<U>, opt::none_t>
             && (!std::is_same_v<std::remove_cv_t<T>, bool> || !opt::is_option_v<remove_cvref<U>>),
             check_from_value_ctor<T, U>, option_check_fail>;
 
         template<class T, class First, class... Args>
         using from_args_ctor = std::enable_if<
-            and_v<
-                is_not_same<remove_cvref<First>, opt::option<T>>,
-                is_not_same<remove_cvref<First>, std::in_place_t>,
-                is_initializable_from<T, First, Args...>
-            >
+            is_not_same_v<remove_cvref<First>, opt::option<T>>
+            && is_not_same_v<remove_cvref<First>, std::in_place_t>
+            && is_initializable_from_v<T, First, Args...>
         >;
         
         template<class T, class InPlaceT, class... Args>
