@@ -1925,12 +1925,8 @@ namespace impl {
             : value(static_cast<Args&&>(args)...), has_value_flag(true) {}
 
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
-
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
 
         constexpr void reset() noexcept {
             has_value_flag = false;
@@ -1964,12 +1960,8 @@ namespace impl {
             : value(static_cast<Args&&>(args)...), has_value_flag(true) {}
 
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))}, has_value_flag(true) {}
-
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))), has_value_flag(true) {}
 
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
             if (has_value_flag) {
@@ -2024,13 +2016,8 @@ namespace impl {
         }
 
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
 
@@ -2074,13 +2061,8 @@ namespace impl {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::true_type, F&& f, Arg&& arg)
+        constexpr option_destruct_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))} {
-            OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
-        }
-        template<class F, class Arg>
-        constexpr option_destruct_base(construct_from_invoke_tag, std::false_type, F&& f, Arg&& arg)
-            : value(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg))) {
             OPTION_VERIFY(has_value(), "After the construction, the value is in an empty state. Possibly because of the constructor arguments");
         }
         OPTION_CONSTEXPR_CXX20 ~option_destruct_base() {
@@ -2307,8 +2289,8 @@ namespace impl {
         constexpr option_base(const std::in_place_t, std::bool_constant<IsAggregate>, Arg&& arg) noexcept
             : value{ref_to_ptr(static_cast<Arg&&>(arg))} {}
 
-        template<class F, class Arg, bool IsAggregate>
-        constexpr option_base(construct_from_invoke_tag, std::bool_constant<IsAggregate>, F&& f, Arg&& arg)
+        template<class F, class Arg>
+        constexpr option_base(construct_from_invoke_tag, F&& f, Arg&& arg)
             : value{ref_to_ptr(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)))} {
             using fn_result = decltype(impl::invoke(static_cast<F&&>(f), static_cast<Arg&&>(arg)));
             static_assert(std::is_reference_v<fn_result> || is_reference_wrapper_v<fn_result>,
@@ -2868,7 +2850,7 @@ public:
     template<class F, class Arg>
     OPTION_RETURN_TYPESTATE(consumed)
     constexpr explicit option(const impl::construct_from_invoke_tag, F&& f, Arg&& arg)
-        : base(impl::construct_from_invoke_tag{}, std::bool_constant<std::is_aggregate_v<T>>{}, static_cast<F&&>(f), static_cast<Arg&&>(arg)) {}
+        : base(impl::construct_from_invoke_tag{}, static_cast<F&&>(f), static_cast<Arg&&>(arg)) {}
 
     template<class U,
         typename checks::template from_option_like_ctor<T, U, const U&>::template constructor_is_explicit<false>::type = 0>
